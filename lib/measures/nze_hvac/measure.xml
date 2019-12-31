@@ -1,0 +1,329 @@
+<measure>
+  <schema_version>3.0</schema_version>
+  <name>nze_hvac</name>
+  <uid>f060dff2-b28d-4194-a6af-e66d88ddb33c</uid>
+  <version_id>b5112f54-1550-4aed-ad12-4a3f7e472552</version_id>
+  <version_modified>20191210T143704Z</version_modified>
+  <xml_checksum>0E5E4776</xml_checksum>
+  <class_name>NzeHvac</class_name>
+  <display_name>NZEHVAC</display_name>
+  <description>This measure replaces the existing HVAC system if any with the user selected HVAC system.  The user can select how to partition the system, applying it to the whole building, a system per building type, a system per building story, or automatically partition based on residential/non-residential occupany types and space loads.</description>
+  <modeler_description>HVAC system creation logic uses [openstudio-standards](https://github.com/NREL/openstudio-standards) and efficiency values are defined in the openstudio-standards Standards spreadsheet under the *NREL ZNE Ready 2017* template.</modeler_description>
+  <arguments>
+    <argument>
+      <name>remove_existing_hvac</name>
+      <display_name>Remove existing HVAC?</display_name>
+      <type>Boolean</type>
+      <required>true</required>
+      <model_dependent>false</model_dependent>
+      <default_value>false</default_value>
+      <choices>
+        <choice>
+          <value>true</value>
+          <display_name>true</display_name>
+        </choice>
+        <choice>
+          <value>false</value>
+          <display_name>false</display_name>
+        </choice>
+      </choices>
+    </argument>
+    <argument>
+      <name>hvac_system_type</name>
+      <display_name>HVAC System Type:</display_name>
+      <description>Details on HVAC system type in measure documentation.</description>
+      <type>Choice</type>
+      <required>true</required>
+      <model_dependent>false</model_dependent>
+      <default_value>DOAS with fan coil chiller with central air source heat pump</default_value>
+      <choices>
+        <choice>
+          <value>DOAS with fan coil chiller with boiler</value>
+          <display_name>DOAS with fan coil chiller with boiler</display_name>
+        </choice>
+        <choice>
+          <value>DOAS with fan coil chiller with central air source heat pump</value>
+          <display_name>DOAS with fan coil chiller with central air source heat pump</display_name>
+        </choice>
+        <choice>
+          <value>DOAS with fan coil air-cooled chiller with boiler</value>
+          <display_name>DOAS with fan coil air-cooled chiller with boiler</display_name>
+        </choice>
+        <choice>
+          <value>DOAS with fan coil air-cooled chiller with central air source heat pump</value>
+          <display_name>DOAS with fan coil air-cooled chiller with central air source heat pump</display_name>
+        </choice>
+        <choice>
+          <value>Fan coil chiller with boiler</value>
+          <display_name>Fan coil chiller with boiler</display_name>
+        </choice>
+        <choice>
+          <value>Fan coil chiller with central air source heat pump</value>
+          <display_name>Fan coil chiller with central air source heat pump</display_name>
+        </choice>
+        <choice>
+          <value>Fan coil air-cooled chiller with boiler</value>
+          <display_name>Fan coil air-cooled chiller with boiler</display_name>
+        </choice>
+        <choice>
+          <value>Fan coil air-cooled chiller with central air source heat pump</value>
+          <display_name>Fan coil air-cooled chiller with central air source heat pump</display_name>
+        </choice>
+        <choice>
+          <value>DOAS with radiant slab coil chiller with boiler</value>
+          <display_name>DOAS with radiant slab coil chiller with boiler</display_name>
+        </choice>
+        <choice>
+          <value>DOAS with radiant slab chiller with central air source heat pump</value>
+          <display_name>DOAS with radiant slab chiller with central air source heat pump</display_name>
+        </choice>
+        <choice>
+          <value>DOAS with radiant slab air-cooled chiller with boiler</value>
+          <display_name>DOAS with radiant slab air-cooled chiller with boiler</display_name>
+        </choice>
+        <choice>
+          <value>DOAS with radiant slab air-cooled chiller with central air source heat pump</value>
+          <display_name>DOAS with radiant slab air-cooled chiller with central air source heat pump</display_name>
+        </choice>
+        <choice>
+          <value>DOAS with VRF</value>
+          <display_name>DOAS with VRF</display_name>
+        </choice>
+        <choice>
+          <value>VRF</value>
+          <display_name>VRF</display_name>
+        </choice>
+        <choice>
+          <value>DOAS with water source heat pumps cooling tower with boiler</value>
+          <display_name>DOAS with water source heat pumps cooling tower with boiler</display_name>
+        </choice>
+        <choice>
+          <value>DOAS with water source heat pumps with ground source heat pump</value>
+          <display_name>DOAS with water source heat pumps with ground source heat pump</display_name>
+        </choice>
+        <choice>
+          <value>Water source heat pumps cooling tower with boiler</value>
+          <display_name>Water source heat pumps cooling tower with boiler</display_name>
+        </choice>
+        <choice>
+          <value>Water source heat pumps with ground source heat pump</value>
+          <display_name>Water source heat pumps with ground source heat pump</display_name>
+        </choice>
+        <choice>
+          <value>VAV chiller with gas boiler reheat</value>
+          <display_name>VAV chiller with gas boiler reheat</display_name>
+        </choice>
+        <choice>
+          <value>VAV chiller with central air source heat pump reheat</value>
+          <display_name>VAV chiller with central air source heat pump reheat</display_name>
+        </choice>
+        <choice>
+          <value>VAV air-cooled chiller with gas boiler reheat</value>
+          <display_name>VAV air-cooled chiller with gas boiler reheat</display_name>
+        </choice>
+        <choice>
+          <value>VAV air-cooled chiller with central air source heat pump reheat</value>
+          <display_name>VAV air-cooled chiller with central air source heat pump reheat</display_name>
+        </choice>
+        <choice>
+          <value>PVAV with gas boiler reheat</value>
+          <display_name>PVAV with gas boiler reheat</display_name>
+        </choice>
+        <choice>
+          <value>PVAV with central air source heat pump reheat</value>
+          <display_name>PVAV with central air source heat pump reheat</display_name>
+        </choice>
+      </choices>
+    </argument>
+    <argument>
+      <name>doas_dcv</name>
+      <display_name>DOAS capable of demand control ventilation?</display_name>
+      <description>If a DOAS system, this will make air terminals variable air volume instead of constant volume.</description>
+      <type>Boolean</type>
+      <required>true</required>
+      <model_dependent>false</model_dependent>
+      <default_value>false</default_value>
+      <choices>
+        <choice>
+          <value>true</value>
+          <display_name>true</display_name>
+        </choice>
+        <choice>
+          <value>false</value>
+          <display_name>false</display_name>
+        </choice>
+      </choices>
+    </argument>
+    <argument>
+      <name>hvac_system_partition</name>
+      <display_name>HVAC System Partition:</display_name>
+      <description>Automatic Partition will separate the HVAC system by residential/non-residential and if loads and schedules are substantially different.</description>
+      <type>Choice</type>
+      <required>true</required>
+      <model_dependent>false</model_dependent>
+      <default_value>Automatic Partition</default_value>
+      <choices>
+        <choice>
+          <value>Automatic Partition</value>
+          <display_name>Automatic Partition</display_name>
+        </choice>
+        <choice>
+          <value>Whole Building</value>
+          <display_name>Whole Building</display_name>
+        </choice>
+        <choice>
+          <value>One System Per Building Story</value>
+          <display_name>One System Per Building Story</display_name>
+        </choice>
+        <choice>
+          <value>One System Per Building Type</value>
+          <display_name>One System Per Building Type</display_name>
+        </choice>
+      </choices>
+    </argument>
+  </arguments>
+  <outputs/>
+  <provenances/>
+  <tags>
+    <tag>HVAC.Whole System</tag>
+  </tags>
+  <attributes>
+    <attribute>
+      <name>Uses SketchUp API</name>
+      <value>false</value>
+      <datatype>boolean</datatype>
+    </attribute>
+    <attribute>
+      <name>Measure Type</name>
+      <value>ModelMeasure</value>
+      <datatype>string</datatype>
+    </attribute>
+    <attribute>
+      <name>Intended Software Tool</name>
+      <value>Apply Measure Now</value>
+      <datatype>string</datatype>
+    </attribute>
+    <attribute>
+      <name>Intended Software Tool</name>
+      <value>OpenStudio Application</value>
+      <datatype>string</datatype>
+    </attribute>
+    <attribute>
+      <name>Intended Software Tool</name>
+      <value>Parametric Analysis Tool</value>
+      <datatype>string</datatype>
+    </attribute>
+    <attribute>
+      <name>Intended Software Tool</name>
+      <value>Analysis Spreadsheet</value>
+      <datatype>string</datatype>
+    </attribute>
+    <attribute>
+      <name>Intended Use Case</name>
+      <value>Model Articulation</value>
+      <datatype>string</datatype>
+    </attribute>
+    <attribute>
+      <name>Intended Use Case</name>
+      <value>New Construction EE</value>
+      <datatype>string</datatype>
+    </attribute>
+  </attributes>
+  <files>
+    <file>
+      <filename>USA_IL_Chicago-OHare.Intl.AP.725300_TMY3.epw</filename>
+      <filetype>epw</filetype>
+      <usage_type>test</usage_type>
+      <checksum>C254B53F</checksum>
+    </file>
+    <file>
+      <filename>USA_MD_Baltimore-Washington.Intl.AP.724060_TMY3.epw</filename>
+      <filetype>epw</filetype>
+      <usage_type>test</usage_type>
+      <checksum>A76C8897</checksum>
+    </file>
+    <file>
+      <filename>USA_VT_Burlington.Intl.AP.726170_TMY3.epw</filename>
+      <filetype>epw</filetype>
+      <usage_type>test</usage_type>
+      <checksum>628C5698</checksum>
+    </file>
+    <file>
+      <filename>glass_box_baltimore.osm</filename>
+      <filetype>osm</filetype>
+      <usage_type>test</usage_type>
+      <checksum>57483CB6</checksum>
+    </file>
+    <file>
+      <filename>primary_school_burlington.osm</filename>
+      <filetype>osm</filetype>
+      <usage_type>test</usage_type>
+      <checksum>A6F3BD1F</checksum>
+    </file>
+    <file>
+      <filename>USA_TX_Houston-Bush.Intercontinental.AP.722430_TMY3.epw</filename>
+      <filetype>epw</filetype>
+      <usage_type>test</usage_type>
+      <checksum>EE565FCC</checksum>
+    </file>
+    <file>
+      <filename>LICENSE.md</filename>
+      <filetype>md</filetype>
+      <usage_type>license</usage_type>
+      <checksum>9640B6CB</checksum>
+    </file>
+    <file>
+      <filename>README.md.erb</filename>
+      <filetype>erb</filetype>
+      <usage_type>readmeerb</usage_type>
+      <checksum>703C9964</checksum>
+    </file>
+    <file>
+      <filename>office_houston.osm</filename>
+      <filetype>osm</filetype>
+      <usage_type>test</usage_type>
+      <checksum>44192754</checksum>
+    </file>
+    <file>
+      <filename>office_chicago.osm</filename>
+      <filetype>osm</filetype>
+      <usage_type>test</usage_type>
+      <checksum>D57BDC09</checksum>
+    </file>
+    <file>
+      <filename>office_chicago_exp_tstat.osm</filename>
+      <filetype>osm</filetype>
+      <usage_type>test</usage_type>
+      <checksum>E1A64B6D</checksum>
+    </file>
+    <file>
+      <filename>office_retail_mix_chicago.osm</filename>
+      <filetype>osm</filetype>
+      <usage_type>test</usage_type>
+      <checksum>3CD04C05</checksum>
+    </file>
+    <file>
+      <version>
+        <software_program>OpenStudio</software_program>
+        <identifier>2.9.0</identifier>
+        <min_compatible>2.9.0</min_compatible>
+      </version>
+      <filename>measure.rb</filename>
+      <filetype>rb</filetype>
+      <usage_type>script</usage_type>
+      <checksum>E3BE0D02</checksum>
+    </file>
+    <file>
+      <filename>NZEHVAC_Test.rb</filename>
+      <filetype>rb</filetype>
+      <usage_type>test</usage_type>
+      <checksum>BD3DCE4B</checksum>
+    </file>
+    <file>
+      <filename>README.md</filename>
+      <filetype>md</filetype>
+      <usage_type>readme</usage_type>
+      <checksum>80C9C58F</checksum>
+    </file>
+  </files>
+</measure>

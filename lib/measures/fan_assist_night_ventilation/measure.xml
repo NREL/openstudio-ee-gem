@@ -1,0 +1,165 @@
+<measure>
+  <schema_version>3.0</schema_version>
+  <name>fan_assist_night_ventilation</name>
+  <uid>5e77cb11-0fa9-432b-97bd-87c40949ee1f</uid>
+  <version_id>2bc161ef-10d6-475c-84a6-60712758764c</version_id>
+  <version_modified>20180710T213336Z</version_modified>
+  <xml_checksum>26DDAE64</xml_checksum>
+  <class_name>FanAssistNightVentilation</class_name>
+  <display_name>Fan Assist Night Ventilation</display_name>
+  <description>This measure is meant to roughly model the impact of fan assisted night ventilation. The user needs to have a ventilation schedule in the model, operable windows where natural ventilation is desired, and air walls or interior operable windows in walls and floors to define the path of air through the building. The user specified flow rate is proportionally split up based on the area of exterior operable windows. The size of interior air walls and windows doesn't matter.</description>
+  <modeler_description>It's up to the modeler to choose a flow rate that is approriate for the fenestration and interior openings within the building. Each zone with operable windows will get a zone ventilation object. The measure will first look for a celing opening to find a connection for zone a zone mixing object. If a ceiling isn't found, then it looks for a wall. Don't provide more than one ceiling paths or more than one wall path. The end result is zone ventilation object followed by a path of zone mixing objects. The fan consumption is modeled in the zone ventilation object, but no heat is brought in from the fan. There is no zone ventilation object at the end of the path of zones. In addition to schedule, the zone ventilation is controlled by a minimum outdoor temperature.
+
+The measure was developed for use in un-conditioned models. Has not been tested in conjunction with mechanical systems.
+
+To address an issue in OpenStudio zones with ZoneVentilation, this measure adds an exhaust fan added as well, but the CFM value for the exhaust fan is set to 0.0</modeler_description>
+  <arguments>
+    <argument>
+      <name>design_flow_rate</name>
+      <display_name>Exhaust Flow Rate</display_name>
+      <type>Double</type>
+      <units>cfm</units>
+      <required>true</required>
+      <model_dependent>false</model_dependent>
+      <default_value>1000</default_value>
+    </argument>
+    <argument>
+      <name>fan_pressure_rise</name>
+      <display_name>Fan Pressure Rise</display_name>
+      <type>Double</type>
+      <units>Pa</units>
+      <required>true</required>
+      <model_dependent>false</model_dependent>
+      <default_value>500</default_value>
+    </argument>
+    <argument>
+      <name>efficiency</name>
+      <display_name>Fan Total Efficiency</display_name>
+      <type>Double</type>
+      <required>true</required>
+      <model_dependent>false</model_dependent>
+      <default_value>0.65</default_value>
+    </argument>
+    <argument>
+      <name>ventilation_schedule</name>
+      <display_name>Choose a Ventilation Schedule.</display_name>
+      <type>Choice</type>
+      <required>true</required>
+      <model_dependent>false</model_dependent>
+    </argument>
+    <argument>
+      <name>min_outdoor_temp</name>
+      <display_name>Minimum Outdoor Temperature</display_name>
+      <type>Double</type>
+      <units>F</units>
+      <required>true</required>
+      <model_dependent>false</model_dependent>
+      <default_value>55</default_value>
+    </argument>
+  </arguments>
+  <outputs/>
+  <provenances/>
+  <tags>
+    <tag>HVAC.Ventilation</tag>
+  </tags>
+  <attributes>
+    <attribute>
+      <name>Measure Type</name>
+      <value>ModelMeasure</value>
+      <datatype>string</datatype>
+    </attribute>
+    <attribute>
+      <name>Intended Software Tool</name>
+      <value>Apply Measure Now</value>
+      <datatype>string</datatype>
+    </attribute>
+    <attribute>
+      <name>Intended Software Tool</name>
+      <value>OpenStudio Application</value>
+      <datatype>string</datatype>
+    </attribute>
+    <attribute>
+      <name>Intended Software Tool</name>
+      <value>Parametric Analysis Tool</value>
+      <datatype>string</datatype>
+    </attribute>
+    <attribute>
+      <name>Intended Use Case</name>
+      <value>Model Articulation</value>
+      <datatype>string</datatype>
+    </attribute>
+  </attributes>
+  <files>
+    <file>
+      <filename>example_model.osm</filename>
+      <filetype>osm</filetype>
+      <usage_type>test</usage_type>
+      <checksum>6643C1A7</checksum>
+    </file>
+    <file>
+      <filename>FanAssistNightVentilationMeasureGuide.pdf</filename>
+      <filetype>pdf</filetype>
+      <usage_type>resource</usage_type>
+      <checksum>374EC8C7</checksum>
+    </file>
+    <file>
+      <filename>EdgeTest.osm</filename>
+      <filetype>osm</filetype>
+      <usage_type>test</usage_type>
+      <checksum>57D36626</checksum>
+    </file>
+    <file>
+      <filename>1028_night_purge_test_192.osm</filename>
+      <filetype>osm</filetype>
+      <usage_type>test</usage_type>
+      <checksum>B5B5CCA9</checksum>
+    </file>
+    <file>
+      <filename>demo_a.osm</filename>
+      <filetype>osm</filetype>
+      <usage_type>test</usage_type>
+      <checksum>6E213AF1</checksum>
+    </file>
+    <file>
+      <filename>no_opp_win.osm</filename>
+      <filetype>osm</filetype>
+      <usage_type>test</usage_type>
+      <checksum>B4E2D89E</checksum>
+    </file>
+    <file>
+      <version>
+        <software_program>OpenStudio</software_program>
+        <identifier>2.0.0</identifier>
+        <min_compatible>2.0.0</min_compatible>
+      </version>
+      <filename>measure.rb</filename>
+      <filetype>rb</filetype>
+      <usage_type>script</usage_type>
+      <checksum>4C43912A</checksum>
+    </file>
+    <file>
+      <filename>LICENSE.md</filename>
+      <filetype>md</filetype>
+      <usage_type>license</usage_type>
+      <checksum>9640B6CB</checksum>
+    </file>
+    <file>
+      <filename>README.md.erb</filename>
+      <filetype>erb</filetype>
+      <usage_type>readmeerb</usage_type>
+      <checksum>703C9964</checksum>
+    </file>
+    <file>
+      <filename>README.md</filename>
+      <filetype>md</filetype>
+      <usage_type>readme</usage_type>
+      <checksum>D87E7C11</checksum>
+    </file>
+    <file>
+      <filename>fan_assist_night_ventilation_test.rb</filename>
+      <filetype>rb</filetype>
+      <usage_type>test</usage_type>
+      <checksum>5178E15A</checksum>
+    </file>
+  </files>
+</measure>
