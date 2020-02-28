@@ -142,7 +142,7 @@ class NzeHvac < OpenStudio::Measure::ModelMeasure
                                      chilled_water_loop_cooling_type: 'AirCooled')
                                      #fan_coil_capacity_control_method: 'VariableFanVariableFlow')
 
-    when 'DOAS with radiant slab coil chiller with boiler'
+    when 'DOAS with radiant slab chiller with boiler'
       standard.model_add_hvac_system(model, doas_system_type, ht = 'NaturalGas', znht = nil, cl = 'Electricity', zones,
                                      hot_water_loop_type: 'LowTemperature',
                                      air_loop_heating_type: 'Water',
@@ -275,7 +275,7 @@ class NzeHvac < OpenStudio::Measure::ModelMeasure
     hvac_system_type_choices << 'Fan coil chiller with central air source heat pump'
     hvac_system_type_choices << 'Fan coil air-cooled chiller with boiler'
     hvac_system_type_choices << 'Fan coil air-cooled chiller with central air source heat pump'
-    hvac_system_type_choices << 'DOAS with radiant slab coil chiller with boiler'
+    hvac_system_type_choices << 'DOAS with radiant slab chiller with boiler'
     hvac_system_type_choices << 'DOAS with radiant slab chiller with central air source heat pump'
     hvac_system_type_choices << 'DOAS with radiant slab air-cooled chiller with boiler'
     hvac_system_type_choices << 'DOAS with radiant slab air-cooled chiller with central air source heat pump'
