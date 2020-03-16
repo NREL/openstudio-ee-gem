@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 # *******************************************************************************
 # OpenStudio(R), Copyright (c) 2008-2020, Alliance for Sustainable Energy, LLC.
 # All rights reserved.
@@ -329,10 +331,10 @@ class GLHEProExportLoadsforGroundHeatExchangerSizing < OpenStudio::Measure::Repo
 
         # Determine the monthly heating information
         mon_hourly_htg_w = ann_hourly_htg_w.values(start_t, end_t)
-        #if mon_hourly_htg_w.empty?
+        # if mon_hourly_htg_w.empty?
         #  runner.registerWarning("No heating data for #{start_t} to #{end_t}, check the run period of your simulation.")
         #  next
-        #end
+        # end
         mon_hourly_htg_w_arr = []
         for i in 0..(mon_hourly_htg_w.size - 1)
           mon_hourly_htg_w_arr << mon_hourly_htg_w[i].to_f
@@ -344,10 +346,10 @@ class GLHEProExportLoadsforGroundHeatExchangerSizing < OpenStudio::Measure::Repo
 
         # Determine the monthly cooling information
         mon_hourly_clg_w = ann_hourly_clg_w.values(start_t, end_t)
-        #if mon_hourly_clg_w.empty?
+        # if mon_hourly_clg_w.empty?
         #  runner.registerWarning("No cooling data for #{start_t} to #{end_t}, check the run period of your simulation.")
         #  next
-        #end
+        # end
         mon_hourly_clg_w_arr = []
         for i in 0..(mon_hourly_clg_w.size - 1)
           mon_hourly_clg_w_arr << mon_hourly_clg_w[i].to_f

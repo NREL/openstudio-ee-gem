@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 # *******************************************************************************
 # OpenStudio(R), Copyright (c) 2008-2020, Alliance for Sustainable Energy, LLC.
 # All rights reserved.
@@ -48,7 +50,7 @@ class ReplaceWaterHeaterMixedWithThermalStorageChilledWaterTest < Minitest::Test
   # end
 
   def test_good_argument_values
-    #skip "Broken in 2.5.1, address immediately"
+    # skip "Broken in 2.5.1, address immediately"
 
     # create an instance of the measure
     measure = ReplaceWaterHeaterMixedWithThermalStorageChilledWater.new

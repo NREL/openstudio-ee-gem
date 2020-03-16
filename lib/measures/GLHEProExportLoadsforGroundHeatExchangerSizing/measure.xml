@@ -3,8 +3,8 @@
   <schema_version>3.0</schema_version>
   <name>glhe_pro_export_loadsfor_ground_heat_exchanger_sizing</name>
   <uid>7bb0ce67-cffb-4ef6-b7fb-093c7c43e263</uid>
-  <version_id>0c5f5115-99bb-4599-a604-c8f557acaf11</version_id>
-  <version_modified>20200316T205256Z</version_modified>
+  <version_id>3acb4938-5b77-483b-8317-dbf878566323</version_id>
+  <version_modified>20200316T215552Z</version_modified>
   <xml_checksum>2C8A3EEF</xml_checksum>
   <class_name>GLHEProExportLoadsforGroundHeatExchangerSizing</class_name>
   <display_name>GLHEProExportLoadsforGroundHeatExchangerSizing</display_name>
@@ -144,23 +144,6 @@
       <checksum>E0468DD6</checksum>
     </file>
     <file>
-      <filename>GLHEProExportLoadsforGroundHeatExchangerSizing_Test.rb</filename>
-      <filetype>rb</filetype>
-      <usage_type>test</usage_type>
-      <checksum>2FC5E319</checksum>
-    </file>
-    <file>
-      <version>
-        <software_program>OpenStudio</software_program>
-        <identifier>2.0.0</identifier>
-        <min_compatible>2.0.0</min_compatible>
-      </version>
-      <filename>measure.rb</filename>
-      <filetype>rb</filetype>
-      <usage_type>script</usage_type>
-      <checksum>619DDD80</checksum>
-    </file>
-    <file>
       <filename>README.md.erb</filename>
       <filetype>erb</filetype>
       <usage_type>readmeerb</usage_type>
@@ -171,6 +154,23 @@
       <filetype>md</filetype>
       <usage_type>readme</usage_type>
       <checksum>CA89050A</checksum>
+    </file>
+    <file>
+      <filename>GLHEProExportLoadsforGroundHeatExchangerSizing_Test.rb</filename>
+      <filetype>rb</filetype>
+      <usage_type>test</usage_type>
+      <checksum>EB40F738</checksum>
+    </file>
+    <file>
+      <version>
+        <software_program>OpenStudio</software_program>
+        <identifier>2.0.0</identifier>
+        <min_compatible>2.0.0</min_compatible>
+      </version>
+      <filename>measure.rb</filename>
+      <filetype>rb</filetype>
+      <usage_type>script</usage_type>
+      <checksum>D51CA7F6</checksum>
     </file>
   </files>
 </measure>

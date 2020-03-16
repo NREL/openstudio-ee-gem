@@ -3,8 +3,8 @@
   <schema_version>3.0</schema_version>
   <name>reduce_night_time_lighting_loads</name>
   <uid>acce8fde-a5d7-4c27-af89-28327132bafa</uid>
-  <version_id>558b200c-360a-4244-a284-71a2218ca854</version_id>
-  <version_modified>20200316T205302Z</version_modified>
+  <version_id>6563f080-71b9-4740-8843-f027d9525fee</version_id>
+  <version_modified>20200316T215559Z</version_modified>
   <xml_checksum>0AC58119</xml_checksum>
   <class_name>ReduceNightTimeLightingLoads</class_name>
   <display_name>Reduce Night Time Lighting Loads</display_name>
@@ -216,6 +216,12 @@
       <checksum>BB62736F</checksum>
     </file>
     <file>
+      <filename>LICENSE.md</filename>
+      <filetype>md</filetype>
+      <usage_type>license</usage_type>
+      <checksum>E0468DD6</checksum>
+    </file>
+    <file>
       <version>
         <software_program>OpenStudio</software_program>
         <identifier>2.0.0</identifier>
@@ -224,19 +230,13 @@
       <filename>measure.rb</filename>
       <filetype>rb</filetype>
       <usage_type>script</usage_type>
-      <checksum>A142DD47</checksum>
+      <checksum>7DC74222</checksum>
     </file>
     <file>
       <filename>ReduceNightTimeLightingLoads_Test.rb</filename>
       <filetype>rb</filetype>
       <usage_type>test</usage_type>
-      <checksum>77950202</checksum>
-    </file>
-    <file>
-      <filename>LICENSE.md</filename>
-      <filetype>md</filetype>
-      <usage_type>license</usage_type>
-      <checksum>E0468DD6</checksum>
+      <checksum>7E16BB99</checksum>
     </file>
   </files>
 </measure>

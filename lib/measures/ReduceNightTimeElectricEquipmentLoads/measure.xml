@@ -3,8 +3,8 @@
   <schema_version>3.0</schema_version>
   <name>reduce_night_time_electric_equipment_loads</name>
   <uid>7bde0d05-3714-43e2-91b4-aa1e12e714bf</uid>
-  <version_id>cca9951a-4fe6-4634-a693-1d0eecafcd5c</version_id>
-  <version_modified>20200316T205257Z</version_modified>
+  <version_id>cb3bda03-f000-4985-a04e-a87f7b00583f</version_id>
+  <version_modified>20200316T215553Z</version_modified>
   <xml_checksum>F4EB279D</xml_checksum>
   <class_name>ReduceNightTimeElectricEquipmentLoads</class_name>
   <display_name>Reduce Night Time Electric Equipment Loads</display_name>
@@ -216,6 +216,12 @@
       <checksum>AD37D0FB</checksum>
     </file>
     <file>
+      <filename>LICENSE.md</filename>
+      <filetype>md</filetype>
+      <usage_type>license</usage_type>
+      <checksum>E0468DD6</checksum>
+    </file>
+    <file>
       <version>
         <software_program>OpenStudio</software_program>
         <identifier>2.0.0</identifier>
@@ -224,19 +230,13 @@
       <filename>measure.rb</filename>
       <filetype>rb</filetype>
       <usage_type>script</usage_type>
-      <checksum>208F8C5C</checksum>
+      <checksum>E2664449</checksum>
     </file>
     <file>
       <filename>ReduceNightTimeElectricEquipmentLoads_Test.rb</filename>
       <filetype>rb</filetype>
       <usage_type>test</usage_type>
-      <checksum>9B2E1B63</checksum>
-    </file>
-    <file>
-      <filename>LICENSE.md</filename>
-      <filetype>md</filetype>
-      <usage_type>license</usage_type>
-      <checksum>E0468DD6</checksum>
+      <checksum>2DFF7716</checksum>
     </file>
   </files>
 </measure>

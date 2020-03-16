@@ -3,15 +3,30 @@
   <schema_version>3.0</schema_version>
   <name>increase_insulation_r_value_for_exterior_walls</name>
   <uid>3fdf9c39-d305-449b-a4b5-077166af5a67</uid>
-  <version_id>3df8ebd4-5604-40aa-87ca-aec4a83dcee3</version_id>
-  <version_modified>20200316T205257Z</version_modified>
+  <version_id>ca7f4ace-5c64-4582-a0b6-3b072e8f4b35</version_id>
+  <version_modified>20200316T215553Z</version_modified>
   <xml_checksum>0F858D9E</xml_checksum>
   <class_name>IncreaseInsulationRValueForExteriorWalls</class_name>
   <display_name>Increase R-value of Insulation for Exterior Walls to a Specific Value</display_name>
   <description>Set the R-Value of exterior wall insulation to a specified value.  Higher R-Values provide better insulation, lowering heat loss and heat gain through the exterior walls. Costs for a construction can be adjusted</description>
-  <modeler_description>Set the R-Value (ft^2*h*R/Btu) of the insulation material layer in air exposed exterior walls to a specified value. Find constructions used for exterior walls, make copies of these and assign them to the appropriate construction sets or surfaces. Identify which layer of the construction is the insulation layer. Layer to change could be Material, No Mass Material, or Air Gap Material. If the Insulation layer is "Material? the thickness will be changed to attain the desired R-Value. If the insulation layer is "No Mass Material? or "Air Gap Material? the Thermal Resistance can be directly entered. If the construction doesn't appear to have an insulation layer it will not be altered. Surfaces with "Adiabatic" boundary conditions are not specifically assumed to be interior or exterior. As a result constructions used on "Adiabatic" surfaces will not be altered. Constructions for surfaces with a "Ground" boundary condition will also not be altered. Constructions with an insulation layer that already exceeds the requested R-Value will also not be altered.
-
-The resulting construction will retain the cost data from the source construction, however material and installation cost can be increased which will affect replacement cost if it happens during the analysis period. Additionally a one-time cost can be added to reflect any retrofit costs that occur at some point prior to replacement.
+  <modeler_description>Set the R-Value (ft^2*h*R/Btu) of the insulation material layer in air exposed exterior walls to a specified value. Find constructions used for exterior walls, make copies of these and assign them to the appropriate construction sets or surfaces. Identify which layer of the construction is the insulation layer. Layer to change could be Material, No Mass Material, or Air Gap Material. If the Insulation layer is "Material? the thickness will be changed to attain the desired R-Value. If the insulation layer is "No Mass Material? or "Air Gap Material? the Thermal Resistance can be directly entered. If the construction doesn't appear to have an insulation layer it will not be altered. Surfaces with "Adiabatic" boundary conditions are not specifically assumed to be interior or exterior. As a result constructions used on "Adiabatic" surfaces will not be altered. Constructions for surfaces with a "Ground" boundary condition will also not be altered. Constructions with an insulation layer that already exceeds the requested R-Value will also not be altered.
+
+
+
+
+
+
+
+
+
+
+
+The resulting construction will retain the cost data from the source construction, however material and installation cost can be increased which will affect replacement cost if it happens during the analysis period. Additionally a one-time cost can be added to reflect any retrofit costs that occur at some point prior to replacement.
+
+
+
+
+
   </modeler_description>
   <arguments>
     <argument>
@@ -133,7 +148,7 @@ The resulting construction will retain the cost data from the source constructio
       <filename>IncreaseInsulationRValueForExteriorWalls_01_Test.rb</filename>
       <filetype>rb</filetype>
       <usage_type>test</usage_type>
-      <checksum>E8003143</checksum>
+      <checksum>77800D45</checksum>
     </file>
     <file>
       <version>
@@ -144,7 +159,7 @@ The resulting construction will retain the cost data from the source constructio
       <filename>measure.rb</filename>
       <filetype>rb</filetype>
       <usage_type>script</usage_type>
-      <checksum>157D5D80</checksum>
+      <checksum>B1B01DC6</checksum>
     </file>
   </files>
 </measure>

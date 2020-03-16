@@ -3,8 +3,8 @@
   <schema_version>3.0</schema_version>
   <name>reduce_ventilation_by_percentage</name>
   <uid>f0859a47-fddf-4962-9035-2f9fc9d6e283</uid>
-  <version_id>b53a41d7-f348-4d57-b864-828d233d3990</version_id>
-  <version_modified>20200316T205257Z</version_modified>
+  <version_id>66790178-4cdf-44e0-bcf3-e1d2be03b294</version_id>
+  <version_modified>20200316T215553Z</version_modified>
   <xml_checksum>ECE70A70</xml_checksum>
   <class_name>ReduceVentilationByPercentage</class_name>
   <display_name>ReduceVentilationByPercentage</display_name>
@@ -17,10 +17,10 @@
       <type>Choice</type>
       <required>true</required>
       <model_dependent>false</model_dependent>
-      <default_value>{a2b7761a-4c60-42a7-8166-62143c66b258}</default_value>
+      <default_value>{aee36b4d-8f14-4c70-96eb-826b20529af6}</default_value>
       <choices>
         <choice>
-          <value>{a2b7761a-4c60-42a7-8166-62143c66b258}</value>
+          <value>{aee36b4d-8f14-4c70-96eb-826b20529af6}</value>
           <display_name>*Entire Building*</display_name>
         </choice>
       </choices>
@@ -71,6 +71,12 @@
       <checksum>13B80C30</checksum>
     </file>
     <file>
+      <filename>LICENSE.md</filename>
+      <filetype>md</filetype>
+      <usage_type>license</usage_type>
+      <checksum>E0468DD6</checksum>
+    </file>
+    <file>
       <version>
         <software_program>OpenStudio</software_program>
         <identifier>2.0.0</identifier>
@@ -79,19 +85,13 @@
       <filename>measure.rb</filename>
       <filetype>rb</filetype>
       <usage_type>script</usage_type>
-      <checksum>E9A01A56</checksum>
+      <checksum>7C468276</checksum>
     </file>
     <file>
       <filename>ReduceVentilationByPercentage_Test.rb</filename>
       <filetype>rb</filetype>
       <usage_type>test</usage_type>
-      <checksum>05626F50</checksum>
-    </file>
-    <file>
-      <filename>LICENSE.md</filename>
-      <filetype>md</filetype>
-      <usage_type>license</usage_type>
-      <checksum>E0468DD6</checksum>
+      <checksum>F335DB3B</checksum>
     </file>
   </files>
 </measure>

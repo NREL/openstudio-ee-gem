@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 # *******************************************************************************
 # OpenStudio(R), Copyright (c) 2008-2020, Alliance for Sustainable Energy, LLC.
 # All rights reserved.
@@ -593,5 +595,4 @@ class ReduceSpaceInfiltrationByPercentage_Test < Minitest::Test
     # assert(result.info.size == 1)
     # assert(result.warnings.size == 1)
   end
-
 end
