@@ -1,9 +1,10 @@
+<?xml version="1.0"?>
 <measure>
   <schema_version>3.0</schema_version>
   <name>fan_assist_night_ventilation</name>
   <uid>5e77cb11-0fa9-432b-97bd-87c40949ee1f</uid>
-  <version_id>2bc161ef-10d6-475c-84a6-60712758764c</version_id>
-  <version_modified>20180710T213336Z</version_modified>
+  <version_id>ede144ac-691f-4fc2-a22a-fdc742d34427</version_id>
+  <version_modified>20200316T205301Z</version_modified>
   <xml_checksum>26DDAE64</xml_checksum>
   <class_name>FanAssistNightVentilation</class_name>
   <display_name>Fan Assist Night Ventilation</display_name>
@@ -57,8 +58,8 @@ To address an issue in OpenStudio zones with ZoneVentilation, this measure adds 
       <default_value>55</default_value>
     </argument>
   </arguments>
-  <outputs/>
-  <provenances/>
+  <outputs />
+  <provenances />
   <tags>
     <tag>HVAC.Ventilation</tag>
   </tags>
@@ -127,23 +128,6 @@ To address an issue in OpenStudio zones with ZoneVentilation, this measure adds 
       <checksum>B4E2D89E</checksum>
     </file>
     <file>
-      <version>
-        <software_program>OpenStudio</software_program>
-        <identifier>2.0.0</identifier>
-        <min_compatible>2.0.0</min_compatible>
-      </version>
-      <filename>measure.rb</filename>
-      <filetype>rb</filetype>
-      <usage_type>script</usage_type>
-      <checksum>4C43912A</checksum>
-    </file>
-    <file>
-      <filename>LICENSE.md</filename>
-      <filetype>md</filetype>
-      <usage_type>license</usage_type>
-      <checksum>9640B6CB</checksum>
-    </file>
-    <file>
       <filename>README.md.erb</filename>
       <filetype>erb</filetype>
       <usage_type>readmeerb</usage_type>
@@ -156,10 +140,27 @@ To address an issue in OpenStudio zones with ZoneVentilation, this measure adds 
       <checksum>D87E7C11</checksum>
     </file>
     <file>
+      <version>
+        <software_program>OpenStudio</software_program>
+        <identifier>2.0.0</identifier>
+        <min_compatible>2.0.0</min_compatible>
+      </version>
+      <filename>measure.rb</filename>
+      <filetype>rb</filetype>
+      <usage_type>script</usage_type>
+      <checksum>C2CAD07D</checksum>
+    </file>
+    <file>
+      <filename>LICENSE.md</filename>
+      <filetype>md</filetype>
+      <usage_type>license</usage_type>
+      <checksum>E0468DD6</checksum>
+    </file>
+    <file>
       <filename>fan_assist_night_ventilation_test.rb</filename>
       <filetype>rb</filetype>
       <usage_type>test</usage_type>
-      <checksum>5178E15A</checksum>
+      <checksum>E5786AFD</checksum>
     </file>
   </files>
 </measure>
