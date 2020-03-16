@@ -3,16 +3,41 @@
   <schema_version>3.0</schema_version>
   <name>improve_fan_belt_efficiency</name>
   <uid>ebeca0aa-a432-4283-a714-17116f7c8f8c</uid>
-  <version_id>13f6c3a3-a101-4c52-9fb1-90bbd75ffe01</version_id>
-  <version_modified>20200316T205302Z</version_modified>
+  <version_id>3a76e922-3b73-464c-bd84-36ec1413808c</version_id>
+  <version_modified>20200316T215559Z</version_modified>
   <xml_checksum>F78494F2</xml_checksum>
   <class_name>ImproveFanBeltEfficiency</class_name>
   <display_name>Improve Fan Belt Efficiency</display_name>
-  <description>The assessment team observed opportunities for fan belt improvements on HVAC fan drives. These motors are asynchronous induction motors.
-
-Improvements in belt efficiency result in energy savings at the motor. The three common belt efficiency measures are belt tightening (1%-5% savings per motor), replace standard v-belts with cogged v-belts (2% savings per motor), and replace standard belts with synchronous belts (3% savings per motor).
-
-Well-adjusted belts run cooler, last longer, and operate at higher efficiency than standard belts. The belts associated with the largest motors, longest run times, and that are run closest to full load should be given priority when making replacements.
+  <description>The assessment team observed opportunities for fan belt improvements on HVAC fan drives. These motors are asynchronous induction motors.
+
+
+
+
+
+
+
+
+
+
+
+Improvements in belt efficiency result in energy savings at the motor. The three common belt efficiency measures are belt tightening (1%-5% savings per motor), replace standard v-belts with cogged v-belts (2% savings per motor), and replace standard belts with synchronous belts (3% savings per motor).
+
+
+
+
+
+
+
+
+
+
+
+Well-adjusted belts run cooler, last longer, and operate at higher efficiency than standard belts. The belts associated with the largest motors, longest run times, and that are run closest to full load should be given priority when making replacements.
+
+
+
+
+
   </description>
   <modeler_description>This measure alters fans on all or a single air loop in the building. The three belt ECMs options are then exposed as three user argument fields with a default populated for each. The range of efficiency improvements will be listed in the user argument description. The three user arguments will be summed and added to the existing motor efficiency. The cost arguments are user arguments that are also populated with a default.  If arguments are left blank, the user is notified that the model has not changed in the run manager. A warning is issued if the motor efficiency &gt;96% and an error is issued if efficiency is &gt;100%.</modeler_description>
   <arguments>
@@ -22,10 +47,10 @@ Well-adjusted belts run cooler, last longer, and operate at higher efficiency th
       <type>Choice</type>
       <required>true</required>
       <model_dependent>false</model_dependent>
-      <default_value>{8feddda9-58f8-4741-958b-5fb2c0db0a29}</default_value>
+      <default_value>{faf426ca-0bae-4419-9742-a1c5a6fcc592}</default_value>
       <choices>
         <choice>
-          <value>{8feddda9-58f8-4741-958b-5fb2c0db0a29}</value>
+          <value>{faf426ca-0bae-4419-9742-a1c5a6fcc592}</value>
           <display_name>*All Air Loops*</display_name>
         </choice>
       </choices>
@@ -160,6 +185,12 @@ Well-adjusted belts run cooler, last longer, and operate at higher efficiency th
       <checksum>0A5ECB03</checksum>
     </file>
     <file>
+      <filename>LICENSE.md</filename>
+      <filetype>md</filetype>
+      <usage_type>license</usage_type>
+      <checksum>E0468DD6</checksum>
+    </file>
+    <file>
       <version>
         <software_program>OpenStudio</software_program>
         <identifier>2.0.0</identifier>
@@ -168,19 +199,13 @@ Well-adjusted belts run cooler, last longer, and operate at higher efficiency th
       <filename>measure.rb</filename>
       <filetype>rb</filetype>
       <usage_type>script</usage_type>
-      <checksum>D17557CD</checksum>
+      <checksum>8A140FD2</checksum>
     </file>
     <file>
       <filename>ImproveFanBeltEfficiency_Test.rb</filename>
       <filetype>rb</filetype>
       <usage_type>test</usage_type>
-      <checksum>7D820170</checksum>
-    </file>
-    <file>
-      <filename>LICENSE.md</filename>
-      <filetype>md</filetype>
-      <usage_type>license</usage_type>
-      <checksum>E0468DD6</checksum>
+      <checksum>3F864F1D</checksum>
     </file>
   </files>
 </measure>

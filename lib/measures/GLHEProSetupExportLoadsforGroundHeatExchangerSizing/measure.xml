@@ -3,8 +3,8 @@
   <schema_version>3.0</schema_version>
   <name>glhe_pro_setup_export_loadsfor_ground_heat_exchanger_sizing</name>
   <uid>9fd3ea9b-ed9f-423a-95dd-fb2bcea0d641</uid>
-  <version_id>b04d4829-e839-4d66-8006-e8760046b27d</version_id>
-  <version_modified>20200316T205256Z</version_modified>
+  <version_id>cdf5e532-06bf-40e7-bded-6ab8957fc773</version_id>
+  <version_modified>20200316T215552Z</version_modified>
   <xml_checksum>9DEA48C0</xml_checksum>
   <class_name>GLHEProSetupExportLoadsforGroundHeatExchangerSizing</class_name>
   <display_name>GLHEProSetupExportLoadsforGroundHeatExchangerSizing</display_name>
@@ -52,6 +52,12 @@
       <checksum>37E8A56F</checksum>
     </file>
     <file>
+      <filename>LICENSE.md</filename>
+      <filetype>md</filetype>
+      <usage_type>license</usage_type>
+      <checksum>E0468DD6</checksum>
+    </file>
+    <file>
       <version>
         <software_program>OpenStudio</software_program>
         <identifier>2.0.0</identifier>
@@ -60,13 +66,7 @@
       <filename>measure.rb</filename>
       <filetype>rb</filetype>
       <usage_type>script</usage_type>
-      <checksum>1DB04792</checksum>
-    </file>
-    <file>
-      <filename>LICENSE.md</filename>
-      <filetype>md</filetype>
-      <usage_type>license</usage_type>
-      <checksum>E0468DD6</checksum>
+      <checksum>4254094E</checksum>
     </file>
   </files>
 </measure>

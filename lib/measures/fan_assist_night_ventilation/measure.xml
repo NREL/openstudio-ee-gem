@@ -3,8 +3,8 @@
   <schema_version>3.0</schema_version>
   <name>fan_assist_night_ventilation</name>
   <uid>5e77cb11-0fa9-432b-97bd-87c40949ee1f</uid>
-  <version_id>ede144ac-691f-4fc2-a22a-fdc742d34427</version_id>
-  <version_modified>20200316T205301Z</version_modified>
+  <version_id>9ad3d64e-8adc-46c2-b8a0-bef3e55c5072</version_id>
+  <version_modified>20200316T215558Z</version_modified>
   <xml_checksum>26DDAE64</xml_checksum>
   <class_name>FanAssistNightVentilation</class_name>
   <display_name>Fan Assist Night Ventilation</display_name>
@@ -140,6 +140,12 @@ To address an issue in OpenStudio zones with ZoneVentilation, this measure adds 
       <checksum>D87E7C11</checksum>
     </file>
     <file>
+      <filename>LICENSE.md</filename>
+      <filetype>md</filetype>
+      <usage_type>license</usage_type>
+      <checksum>E0468DD6</checksum>
+    </file>
+    <file>
       <version>
         <software_program>OpenStudio</software_program>
         <identifier>2.0.0</identifier>
@@ -148,19 +154,13 @@ To address an issue in OpenStudio zones with ZoneVentilation, this measure adds 
       <filename>measure.rb</filename>
       <filetype>rb</filetype>
       <usage_type>script</usage_type>
-      <checksum>C2CAD07D</checksum>
-    </file>
-    <file>
-      <filename>LICENSE.md</filename>
-      <filetype>md</filetype>
-      <usage_type>license</usage_type>
-      <checksum>E0468DD6</checksum>
+      <checksum>B7BB2EC9</checksum>
     </file>
     <file>
       <filename>fan_assist_night_ventilation_test.rb</filename>
       <filetype>rb</filetype>
       <usage_type>test</usage_type>
-      <checksum>E5786AFD</checksum>
+      <checksum>32D2B043</checksum>
     </file>
   </files>
 </measure>

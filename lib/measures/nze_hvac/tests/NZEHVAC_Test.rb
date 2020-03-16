@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 # *******************************************************************************
 # OpenStudio(R), Copyright (c) 2008-2020, Alliance for Sustainable Energy, LLC.
 # All rights reserved.
@@ -41,8 +43,7 @@ require 'minitest/autorun'
 require_relative '../measure.rb'
 
 class NzeHvac_Test < Minitest::Test
-
-  ##**** HELPER SCRIPTS ****##
+  # #**** HELPER SCRIPTS ****##
 
   def run_dir(test_name)
     # always generate test output in specially named 'output' directory so result files are not made part of the measure
@@ -105,7 +106,7 @@ class NzeHvac_Test < Minitest::Test
     # load the test model
     translator = OpenStudio::OSVersion::VersionTranslator.new
     model = translator.loadModel(OpenStudio::Path.new(osm_path))
-    assert((not model.empty?))
+    assert(!model.empty?)
     model = model.get
 
     # set model weather file
@@ -140,7 +141,7 @@ class NzeHvac_Test < Minitest::Test
 
     # assert that it ran correctly
     assert(result.value.valueName == 'Success')
-    assert(result.warnings.size == 0)
+    assert(result.warnings.empty?)
 
     # show the output
     show_output(result)
@@ -219,15 +220,14 @@ class NzeHvac_Test < Minitest::Test
         errs << "The annual eui is #{annual_eui.round(1)} kBtu/ft^2, higher than expected for an NZE building." unless (int_equipment_eui + int_lighting_eui) > 70
       end
 
-      assert(errs.size == 0, errs.join('\n'))
+      assert(errs.empty?, errs.join('\n'))
     end
 
     # change back directory
     Dir.chdir(start_dir)
-
   end
 
-  ##**** TESTS ****##
+  # #**** TESTS ****##
 
   def test_number_of_arguments_and_argument_names
     # this test ensures that the current test is matched to the measure inputs
@@ -269,7 +269,7 @@ class NzeHvac_Test < Minitest::Test
     run_nze_hvac_measure_test(test_name, osm_path, epw_path,
                               hvac_system_type_input: 'DOAS with radiant slab chiller with central air source heat pump',
                               hvac_system_partition_input: 'Whole Building',
-                              max_unmet_hrs: 650.0) # todo - lower back to 600 hours after address issue with this test in release after 2.9.0
+                              max_unmet_hrs: 650.0) # TODO: - lower back to 600 hours after address issue with this test in release after 2.9.0
   end
 
   def test_office_doas_vrf_per_story

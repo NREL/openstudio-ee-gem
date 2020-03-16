@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 # *******************************************************************************
 # OpenStudio(R), Copyright (c) 2008-2020, Alliance for Sustainable Energy, LLC.
 # All rights reserved.
@@ -156,13 +158,13 @@ class GLHEProExportLoadsforGroundHeatExchangerSizing_Test < Minitest::Test
     model = model.get
     model.addObjects(request_model.objects)
     model.save(model_out_path(test_name), true)
-    
+
     if ENV['OPENSTUDIO_TEST_NO_CACHE_SQLFILE']
       if File.exist?(sql_path(test_name))
         FileUtils.rm_f(sql_path(test_name))
       end
     end
-    
+
     if is_openstudio_2?
       setup_test_2(test_name, epw_path)
     else
@@ -253,7 +255,7 @@ class GLHEProExportLoadsforGroundHeatExchangerSizing_Test < Minitest::Test
 
   # test_GLHEProExportLoadsforGroundHeatExchangerSizing_good_model
   def test_GLHEProExportLoadsforGroundHeatExchangerSizing_good_model
-    #skip "Broken in 2.5.1, address immediately"
+    # skip "Broken in 2.5.1, address immediately"
 
     test_name = 'good_model'
     model_in_path = "#{File.dirname(__FILE__)}/gshp_w_dchw_dhw.osm"

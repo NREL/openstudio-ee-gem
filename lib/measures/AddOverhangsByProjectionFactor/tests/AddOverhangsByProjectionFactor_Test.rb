@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 # *******************************************************************************
 # OpenStudio(R), Copyright (c) 2008-2020, Alliance for Sustainable Energy, LLC.
 # All rights reserved.
@@ -90,7 +92,7 @@ class AddOverhangsByProjectionFactor_Test < Minitest::Test
     model = model.get
 
     model.getSpaces.each do |space|
-      if /Space 104/.match(space.name.get)
+      if /Space 104/.match?(space.name.get)
         # should be two space shading groups
         assert_equal(2, space.shadingSurfaceGroups.size)
       else
