@@ -39,7 +39,7 @@
 # http://nrel.github.io/OpenStudio-user-documentation/reference/measure_writing_guide/
 
 # start the measure
-class AddVariableSpeedRTUControlLogic < OpenStudio::Ruleset::WorkspaceUserScript
+class AddVariableSpeedRTUControlLogic < OpenStudio::Measure::EnergyPlusMeasure
   # human readable name
   def name
     return 'Add Variable Speed RTU Control Logic'
@@ -66,58 +66,58 @@ The measure is set up so that a separate block of EMS code is inserted for each 
 
   # define the arguments that the user will input
   def arguments(workspace)
-    args = OpenStudio::Ruleset::OSArgumentVector.new
+    args = OpenStudio::Measure::OSArgumentVector.new
 
     # make an argument for ventilation fan speed fraction
-    vent_fan_speed = OpenStudio::Ruleset::OSArgument.makeDoubleArgument('vent_fan_speed', false)
+    vent_fan_speed = OpenStudio::Measure::OSArgument.makeDoubleArgument('vent_fan_speed', false)
     vent_fan_speed.setDisplayName('Fan speed fraction during ventilation mode.')
     vent_fan_speed.setDefaultValue(0.4)
     args << vent_fan_speed
 
     # make an argument for stage_one cooling fan speed fraction
-    stage_one_cooling_fan_speed = OpenStudio::Ruleset::OSArgument.makeDoubleArgument('stage_one_cooling_fan_speed', false)
+    stage_one_cooling_fan_speed = OpenStudio::Measure::OSArgument.makeDoubleArgument('stage_one_cooling_fan_speed', false)
     stage_one_cooling_fan_speed.setDisplayName('Fan speed fraction during stage one DX cooling.')
     stage_one_cooling_fan_speed.setDefaultValue(0.4)
     args << stage_one_cooling_fan_speed
 
     # make an argument for stage_two cooling fan speed fraction
-    stage_two_cooling_fan_speed = OpenStudio::Ruleset::OSArgument.makeDoubleArgument('stage_two_cooling_fan_speed', false)
+    stage_two_cooling_fan_speed = OpenStudio::Measure::OSArgument.makeDoubleArgument('stage_two_cooling_fan_speed', false)
     stage_two_cooling_fan_speed.setDisplayName('Fan speed fraction during stage two DX cooling.')
     stage_two_cooling_fan_speed.setDefaultValue(0.5)
     args << stage_two_cooling_fan_speed
 
     # make an argument for stage_three cooling fan speed fraction
-    stage_three_cooling_fan_speed = OpenStudio::Ruleset::OSArgument.makeDoubleArgument('stage_three_cooling_fan_speed', false)
+    stage_three_cooling_fan_speed = OpenStudio::Measure::OSArgument.makeDoubleArgument('stage_three_cooling_fan_speed', false)
     stage_three_cooling_fan_speed.setDisplayName('Fan speed fraction during stage three DX cooling. Not used for two-speed systems.')
     stage_three_cooling_fan_speed.setDefaultValue(0.75)
     args << stage_three_cooling_fan_speed
 
     # make an argument for stage_four cooling fan speed fraction
-    stage_four_cooling_fan_speed = OpenStudio::Ruleset::OSArgument.makeDoubleArgument('stage_four_cooling_fan_speed', false)
+    stage_four_cooling_fan_speed = OpenStudio::Measure::OSArgument.makeDoubleArgument('stage_four_cooling_fan_speed', false)
     stage_four_cooling_fan_speed.setDisplayName('Fan speed fraction during stage four DX cooling. Not used for two-speed systems.')
     stage_four_cooling_fan_speed.setDefaultValue(1.0)
     args << stage_four_cooling_fan_speed
 
     # make an argument for stage_one heating fan speed fraction
-    stage_one_heating_fan_speed = OpenStudio::Ruleset::OSArgument.makeDoubleArgument('stage_one_heating_fan_speed', false)
+    stage_one_heating_fan_speed = OpenStudio::Measure::OSArgument.makeDoubleArgument('stage_one_heating_fan_speed', false)
     stage_one_heating_fan_speed.setDisplayName('Fan speed fraction during stage one DX heating.')
     stage_one_heating_fan_speed.setDefaultValue(0.4)
     args << stage_one_heating_fan_speed
 
     # make an argument for stage_two heating fan speed fraction
-    stage_two_heating_fan_speed = OpenStudio::Ruleset::OSArgument.makeDoubleArgument('stage_two_heating_fan_speed', false)
+    stage_two_heating_fan_speed = OpenStudio::Measure::OSArgument.makeDoubleArgument('stage_two_heating_fan_speed', false)
     stage_two_heating_fan_speed.setDisplayName('Fan speed fraction during stage two DX heating.')
     stage_two_heating_fan_speed.setDefaultValue(0.5)
     args << stage_two_heating_fan_speed
 
     # make an argument for stage_three heating fan speed fraction
-    stage_three_heating_fan_speed = OpenStudio::Ruleset::OSArgument.makeDoubleArgument('stage_three_heating_fan_speed', false)
+    stage_three_heating_fan_speed = OpenStudio::Measure::OSArgument.makeDoubleArgument('stage_three_heating_fan_speed', false)
     stage_three_heating_fan_speed.setDisplayName('Fan speed fraction during stage three DX heating. Not used for two-speed systems.')
     stage_three_heating_fan_speed.setDefaultValue(0.75)
     args << stage_three_heating_fan_speed
 
     # make an argument for stage_four heating fan speed fraction
-    stage_four_heating_fan_speed = OpenStudio::Ruleset::OSArgument.makeDoubleArgument('stage_four_heating_fan_speed', false)
+    stage_four_heating_fan_speed = OpenStudio::Measure::OSArgument.makeDoubleArgument('stage_four_heating_fan_speed', false)
     stage_four_heating_fan_speed.setDisplayName('Fan speed fraction during stage four DX heating. Not used for two-speed systems.')
     stage_four_heating_fan_speed.setDefaultValue(1.0)
     args << stage_four_heating_fan_speed

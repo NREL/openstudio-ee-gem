@@ -47,14 +47,14 @@ class AddVariableSpeedRTUControlLogic_Test < Minitest::Test
     measure = AddVariableSpeedRTUControlLogic.new
 
     # create an instance of a runner
-    runner = OpenStudio::Ruleset::OSRunner.new
+    runner = OpenStudio::Measure::OSRunner.new(OpenStudio::WorkflowJSON.new)
 
     # make an empty workspace
     workspace = OpenStudio::Workspace.new('Draft'.to_StrictnessLevel, 'EnergyPlus'.to_IddFileType)
 
     # get arguments
     arguments = measure.arguments(workspace)
-    argument_map = OpenStudio::Ruleset.convertOSArgumentVectorToMap(arguments)
+    argument_map = OpenStudio::Measure.convertOSArgumentVectorToMap(arguments)
 
     # run the measure
     measure.run(workspace, runner, argument_map)
