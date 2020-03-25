@@ -1,10 +1,9 @@
-<?xml version="1.0"?>
 <measure>
   <schema_version>3.0</schema_version>
   <name>add_overhangs_by_projection_factor</name>
   <uid>1e29e117-3916-4368-b24d-75da54045956</uid>
-  <version_id>f49468f4-fcb2-4f06-9794-b278335d3094</version_id>
-  <version_modified>20200316T215558Z</version_modified>
+  <version_id>f128deed-eaa4-40fe-8dab-bfd2775a1743</version_id>
+  <version_modified>20200325T031059Z</version_modified>
   <xml_checksum>6DE831F7</xml_checksum>
   <class_name>AddOverhangsByProjectionFactor</class_name>
   <display_name>Add Overhangs by Projection Factor</display_name>
@@ -72,8 +71,8 @@
       <model_dependent>false</model_dependent>
     </argument>
   </arguments>
-  <outputs />
-  <provenances />
+  <outputs/>
+  <provenances/>
   <tags>
     <tag>Envelope.Fenestration</tag>
   </tags>
@@ -125,12 +124,6 @@
       <checksum>E0468DD6</checksum>
     </file>
     <file>
-      <filename>AddOverhangsByProjectionFactor_Test.rb</filename>
-      <filetype>rb</filetype>
-      <usage_type>test</usage_type>
-      <checksum>B2A7A3B6</checksum>
-    </file>
-    <file>
       <version>
         <software_program>OpenStudio</software_program>
         <identifier>2.0.0</identifier>
@@ -140,6 +133,12 @@
       <filetype>rb</filetype>
       <usage_type>script</usage_type>
       <checksum>F171A410</checksum>
+    </file>
+    <file>
+      <filename>AddOverhangsByProjectionFactor_Test.rb</filename>
+      <filetype>rb</filetype>
+      <usage_type>test</usage_type>
+      <checksum>1247729F</checksum>
     </file>
   </files>
 </measure>

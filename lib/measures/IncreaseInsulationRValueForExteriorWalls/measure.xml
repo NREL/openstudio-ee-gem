@@ -1,10 +1,9 @@
-<?xml version="1.0"?>
 <measure>
   <schema_version>3.0</schema_version>
   <name>increase_insulation_r_value_for_exterior_walls</name>
   <uid>3fdf9c39-d305-449b-a4b5-077166af5a67</uid>
-  <version_id>ca7f4ace-5c64-4582-a0b6-3b072e8f4b35</version_id>
-  <version_modified>20200316T215553Z</version_modified>
+  <version_id>eb22b8fb-ea01-46e2-9f15-39d29bee2bed</version_id>
+  <version_modified>20200325T031058Z</version_modified>
   <xml_checksum>0F858D9E</xml_checksum>
   <class_name>IncreaseInsulationRValueForExteriorWalls</class_name>
   <display_name>Increase R-value of Insulation for Exterior Walls to a Specific Value</display_name>
@@ -80,8 +79,8 @@ The resulting construction will retain the cost data from the source constructio
       <default_value>0</default_value>
     </argument>
   </arguments>
-  <outputs />
-  <provenances />
+  <outputs/>
+  <provenances/>
   <tags>
     <tag>Envelope.Opaque</tag>
   </tags>
@@ -145,12 +144,6 @@ The resulting construction will retain the cost data from the source constructio
       <checksum>E0468DD6</checksum>
     </file>
     <file>
-      <filename>IncreaseInsulationRValueForExteriorWalls_01_Test.rb</filename>
-      <filetype>rb</filetype>
-      <usage_type>test</usage_type>
-      <checksum>77800D45</checksum>
-    </file>
-    <file>
       <version>
         <software_program>OpenStudio</software_program>
         <identifier>2.0.0</identifier>
@@ -160,6 +153,12 @@ The resulting construction will retain the cost data from the source constructio
       <filetype>rb</filetype>
       <usage_type>script</usage_type>
       <checksum>B1B01DC6</checksum>
+    </file>
+    <file>
+      <filename>IncreaseInsulationRValueForExteriorWalls_01_Test.rb</filename>
+      <filetype>rb</filetype>
+      <usage_type>test</usage_type>
+      <checksum>014F2A31</checksum>
     </file>
   </files>
 </measure>

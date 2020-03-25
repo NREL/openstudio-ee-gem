@@ -1,10 +1,9 @@
-<?xml version="1.0"?>
 <measure>
   <schema_version>3.0</schema_version>
   <name>create_variable_speed_rtu</name>
   <uid>7fb36b3a-5591-4627-a2b0-7709fbeae593</uid>
-  <version_id>224663fc-952e-48b9-8da7-f99de435a456</version_id>
-  <version_modified>20200316T215554Z</version_modified>
+  <version_id>886ef5ed-aeb1-4dc8-9d02-2f38076cd48d</version_id>
+  <version_modified>20200325T031058Z</version_modified>
   <xml_checksum>A9D5932A</xml_checksum>
   <class_name>CreateVariableSpeedRTU</class_name>
   <display_name>Create Variable Speed RTU</display_name>
@@ -17,10 +16,10 @@
       <type>Choice</type>
       <required>true</required>
       <model_dependent>false</model_dependent>
-      <default_value>{13c5f355-1dbf-4891-8a84-f97250a24c74}</default_value>
+      <default_value>*All CAV Air Loops*</default_value>
       <choices>
         <choice>
-          <value>{13c5f355-1dbf-4891-8a84-f97250a24c74}</value>
+          <value>{617cea75-f64e-4a2a-be06-702cd1654500}</value>
           <display_name>*All CAV Air Loops*</display_name>
         </choice>
       </choices>
@@ -125,8 +124,8 @@
       <model_dependent>false</model_dependent>
     </argument>
   </arguments>
-  <outputs />
-  <provenances />
+  <outputs/>
+  <provenances/>
   <tags>
     <tag>HVAC.Whole System</tag>
   </tags>
@@ -191,7 +190,7 @@
       <filename>create_variable_speed_rtu_test.rb</filename>
       <filetype>rb</filetype>
       <usage_type>test</usage_type>
-      <checksum>AA05BE53</checksum>
+      <checksum>E2BD8597</checksum>
     </file>
     <file>
       <version>
@@ -202,7 +201,7 @@
       <filename>measure.rb</filename>
       <filetype>rb</filetype>
       <usage_type>script</usage_type>
-      <checksum>9D8B6938</checksum>
+      <checksum>D2CA3B8A</checksum>
     </file>
   </files>
 </measure>
