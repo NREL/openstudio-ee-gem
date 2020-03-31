@@ -248,7 +248,7 @@ The measure is set up so that a separate block of EMS code is inserted for each 
     selected_terminal_units = []
     revised_terminal_unit_name = nil
     number_of_cooling_speeds = nil
-    selected_terminal_units = workspace.getObjectsByType('AirTerminal:SingleDuct:Uncontrolled'.to_IddObjectType)
+    selected_terminal_units = workspace.getObjectsByType('AirTerminal:SingleDuct:ConstantVolume:NoReheat'.to_IddObjectType)
     selected_terminal_units.each do |terminal_unit|
       terminal_unit_name = terminal_unit.getString(0, true).get
       revised_terminal_unit_name = terminal_unit_name.tr(' ', '_')
