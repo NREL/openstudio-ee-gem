@@ -1,17 +1,18 @@
+<?xml version="1.0"?>
 <measure>
   <schema_version>3.0</schema_version>
   <name>glhe_pro_setup_export_loadsfor_ground_heat_exchanger_sizing</name>
   <uid>9fd3ea9b-ed9f-423a-95dd-fb2bcea0d641</uid>
-  <version_id>6c5bab0b-e86e-419c-8259-b1acdace1336</version_id>
-  <version_modified>20180626T202324Z</version_modified>
+  <version_id>cdf5e532-06bf-40e7-bded-6ab8957fc773</version_id>
+  <version_modified>20200316T215552Z</version_modified>
   <xml_checksum>9DEA48C0</xml_checksum>
   <class_name>GLHEProSetupExportLoadsforGroundHeatExchangerSizing</class_name>
   <display_name>GLHEProSetupExportLoadsforGroundHeatExchangerSizing</display_name>
   <description>Requests that EnergyPlus output the district heating and district cooling rates at an hourly interval.  These rates will be used by the Measure called "GLHEPro Export Loads for Ground Heat Exchanger Sizing" to create a .gt1 file that is used by GLHEPro to help designers size ground heat exchangers.  The ground heat exchanger object exported from GLHEPro can then be re-imported into OpenStudio to replace the district heating and district cooling objects.  This is done by the Measure callled "GLHEPro GFunction Import</description>
   <modeler_description>The model should be set up so that both the heating and cooling coils for the zone-level water source heat pumps are connected to the demand side of the plant loop, and that the supply side of the plant loop contains a district heating and district cooling object.  The .gt1 file that is exported will be named after the plant loop.</modeler_description>
-  <arguments/>
-  <outputs/>
-  <provenances/>
+  <arguments />
+  <outputs />
+  <provenances />
   <tags>
     <tag>Reporting.QAQC</tag>
   </tags>
@@ -39,23 +40,6 @@
   </attributes>
   <files>
     <file>
-      <version>
-        <software_program>OpenStudio</software_program>
-        <identifier>2.0.0</identifier>
-        <min_compatible>2.0.0</min_compatible>
-      </version>
-      <filename>measure.rb</filename>
-      <filetype>rb</filetype>
-      <usage_type>script</usage_type>
-      <checksum>F78F046B</checksum>
-    </file>
-    <file>
-      <filename>LICENSE.md</filename>
-      <filetype>md</filetype>
-      <usage_type>license</usage_type>
-      <checksum>9640B6CB</checksum>
-    </file>
-    <file>
       <filename>README.md.erb</filename>
       <filetype>erb</filetype>
       <usage_type>readmeerb</usage_type>
@@ -66,6 +50,23 @@
       <filetype>md</filetype>
       <usage_type>readme</usage_type>
       <checksum>37E8A56F</checksum>
+    </file>
+    <file>
+      <filename>LICENSE.md</filename>
+      <filetype>md</filetype>
+      <usage_type>license</usage_type>
+      <checksum>E0468DD6</checksum>
+    </file>
+    <file>
+      <version>
+        <software_program>OpenStudio</software_program>
+        <identifier>2.0.0</identifier>
+        <min_compatible>2.0.0</min_compatible>
+      </version>
+      <filename>measure.rb</filename>
+      <filetype>rb</filetype>
+      <usage_type>script</usage_type>
+      <checksum>4254094E</checksum>
     </file>
   </files>
 </measure>

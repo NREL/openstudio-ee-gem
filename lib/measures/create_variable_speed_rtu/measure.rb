@@ -1,5 +1,7 @@
+# frozen_string_literal: true
+
 # *******************************************************************************
-# OpenStudio(R), Copyright (c) 2008-2018, Alliance for Sustainable Energy, LLC.
+# OpenStudio(R), Copyright (c) 2008-2020, Alliance for Sustainable Energy, LLC.
 # All rights reserved.
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
@@ -37,7 +39,7 @@
 # http://nrel.github.io/OpenStudio-user-documentation/reference/measure_writing_guide/
 
 # start the measure
-class CreateVariableSpeedRTU < OpenStudio::Ruleset::ModelUserScript
+class CreateVariableSpeedRTU < OpenStudio::Measure::ModelMeasure
   # human readable name
   def name
     return 'Create Variable Speed RTU'
@@ -55,7 +57,7 @@ class CreateVariableSpeedRTU < OpenStudio::Ruleset::ModelUserScript
 
   # define the arguments that the user will input
   def arguments(model)
-    args = OpenStudio::Ruleset::OSArgumentVector.new
+    args = OpenStudio::Measure::OSArgumentVector.new
 
     # populate choice argument for air loops in the model
     air_loop_handles = OpenStudio::StringVector.new
@@ -85,7 +87,7 @@ class CreateVariableSpeedRTU < OpenStudio::Ruleset::ModelUserScript
     air_loop_display_names << '*All CAV Air Loops*'
 
     # make an argument for air loops
-    object = OpenStudio::Ruleset::OSArgument.makeChoiceArgument('object', air_loop_handles, air_loop_display_names, true)
+    object = OpenStudio::Measure::OSArgument.makeChoiceArgument('object', air_loop_handles, air_loop_display_names, true)
     object.setDisplayName('Choose an Air Loop to change from CAV to VAV.')
     object.setDefaultValue('*All CAV Air Loops*') # if no air loop is chosen this will run on all air loops
     args << object
@@ -94,31 +96,31 @@ class CreateVariableSpeedRTU < OpenStudio::Ruleset::ModelUserScript
     cooling_coil_options = OpenStudio::StringVector.new
     cooling_coil_options << 'Two-Stage Compressor'
     cooling_coil_options << 'Four-Stage Compressor'
-    cooling_coil_type = OpenStudio::Ruleset::OSArgument.makeChoiceArgument('cooling_coil_type', cooling_coil_options, true)
+    cooling_coil_type = OpenStudio::Measure::OSArgument.makeChoiceArgument('cooling_coil_type', cooling_coil_options, true)
     cooling_coil_type.setDisplayName('Choose the type of cooling coil.')
     cooling_coil_type.setDefaultValue('Two-Stage Compressor')
     args << cooling_coil_type
 
     # make an argument for rated cooling coil EER
-    rated_cc_eer = OpenStudio::Ruleset::OSArgument.makeDoubleArgument('rated_cc_eer', false)
+    rated_cc_eer = OpenStudio::Measure::OSArgument.makeDoubleArgument('rated_cc_eer', false)
     rated_cc_eer.setDisplayName('Rated Cooling Coil EER')
     # rated_cc_eer.setDefaultValue(0.0)
     args << rated_cc_eer
 
     # make an argument for 75% cooling coil EER
-    three_quarter_cc_eer = OpenStudio::Ruleset::OSArgument.makeDoubleArgument('three_quarter_cc_eer', false)
+    three_quarter_cc_eer = OpenStudio::Measure::OSArgument.makeDoubleArgument('three_quarter_cc_eer', false)
     three_quarter_cc_eer.setDisplayName('Cooling Coil EER at 75% Capacity')
     # three_quarter_cc_eer.setDefaultValue(0.0)
     args << three_quarter_cc_eer
 
     # make an argument for 50% cooling coil EER
-    half_cc_eer = OpenStudio::Ruleset::OSArgument.makeDoubleArgument('half_cc_eer', false)
+    half_cc_eer = OpenStudio::Measure::OSArgument.makeDoubleArgument('half_cc_eer', false)
     half_cc_eer.setDisplayName('Cooling Coil EER at 50% Capacity')
     # half_cc_eer.setDefaultValue(0.0)
     args << half_cc_eer
 
     # make an argument for 25% cooling coil EER
-    quarter_cc_eer = OpenStudio::Ruleset::OSArgument.makeDoubleArgument('quarter_cc_eer', false)
+    quarter_cc_eer = OpenStudio::Measure::OSArgument.makeDoubleArgument('quarter_cc_eer', false)
     quarter_cc_eer.setDisplayName('Cooling Coil EER at 25% Capacity')
     # quarter_cc_eer.setDefaultValue(0.0)
     args << quarter_cc_eer
@@ -127,37 +129,37 @@ class CreateVariableSpeedRTU < OpenStudio::Ruleset::ModelUserScript
     heating_coil_options = OpenStudio::StringVector.new
     heating_coil_options << 'Gas Heating Coil'
     heating_coil_options << 'Heat Pump'
-    heating_coil_type = OpenStudio::Ruleset::OSArgument.makeChoiceArgument('heating_coil_type', heating_coil_options, true)
+    heating_coil_type = OpenStudio::Measure::OSArgument.makeChoiceArgument('heating_coil_type', heating_coil_options, true)
     heating_coil_type.setDisplayName('Choose the type of heating coil.')
     heating_coil_type.setDefaultValue('Gas Heating Coil')
     args << heating_coil_type
 
     # make an argument for rated gas heating coil efficiency
-    rated_hc_gas_efficiency = OpenStudio::Ruleset::OSArgument.makeDoubleArgument('rated_hc_gas_efficiency', false)
+    rated_hc_gas_efficiency = OpenStudio::Measure::OSArgument.makeDoubleArgument('rated_hc_gas_efficiency', false)
     rated_hc_gas_efficiency.setDisplayName('Rated Gas Heating Coil Efficiency (0-1.00)')
     # rated_hc_gas_efficiency.setDefaultValue(0.0)
     args << rated_hc_gas_efficiency
 
     # make an argument for rated heating coil COP
-    rated_hc_cop = OpenStudio::Ruleset::OSArgument.makeDoubleArgument('rated_hc_cop', false)
+    rated_hc_cop = OpenStudio::Measure::OSArgument.makeDoubleArgument('rated_hc_cop', false)
     rated_hc_cop.setDisplayName('Rated Heating Coil COP')
     # rated_hc_cop.setDefaultValue(0.0)
     args << rated_hc_cop
 
     # make an argument for 75% heating coil COP
-    three_quarter_hc_cop = OpenStudio::Ruleset::OSArgument.makeDoubleArgument('three_quarter_hc_cop', false)
+    three_quarter_hc_cop = OpenStudio::Measure::OSArgument.makeDoubleArgument('three_quarter_hc_cop', false)
     three_quarter_hc_cop.setDisplayName('Heating Coil COP at 75% Capacity')
     # three_quarter_hc_cop.setDefaultValue(0.0)
     args << three_quarter_hc_cop
 
     # make an argument for 50% heating coil COP
-    half_hc_cop = OpenStudio::Ruleset::OSArgument.makeDoubleArgument('half_hc_cop', false)
+    half_hc_cop = OpenStudio::Measure::OSArgument.makeDoubleArgument('half_hc_cop', false)
     half_hc_cop.setDisplayName('Heating Coil COP at 50% Capacity')
     # half_hc_cop.setDefaultValue(0.0)
     args << half_hc_cop
 
     # make an argument for 25% heating coil COP
-    quarter_hc_cop = OpenStudio::Ruleset::OSArgument.makeDoubleArgument('quarter_hc_cop', false)
+    quarter_hc_cop = OpenStudio::Measure::OSArgument.makeDoubleArgument('quarter_hc_cop', false)
     quarter_hc_cop.setDisplayName('Heating Coil COP at 25% Capacity')
     # quarter_hc_cop.setDefaultValue(0.0)
     args << quarter_hc_cop

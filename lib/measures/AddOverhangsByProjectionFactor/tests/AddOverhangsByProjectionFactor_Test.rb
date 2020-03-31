@@ -1,5 +1,7 @@
+# frozen_string_literal: true
+
 # *******************************************************************************
-# OpenStudio(R), Copyright (c) 2008-2018, Alliance for Sustainable Energy, LLC.
+# OpenStudio(R), Copyright (c) 2008-2020, Alliance for Sustainable Energy, LLC.
 # All rights reserved.
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
@@ -90,7 +92,7 @@ class AddOverhangsByProjectionFactor_Test < Minitest::Test
     model = model.get
 
     model.getSpaces.each do |space|
-      if /Space 104/.match(space.name.get)
+      if space.name.get =~ Regexp.new(/Space 104/)
         # should be two space shading groups
         assert_equal(2, space.shadingSurfaceGroups.size)
       else
@@ -124,7 +126,7 @@ class AddOverhangsByProjectionFactor_Test < Minitest::Test
     assert_equal(4, result.info.size)
 
     model.getSpaces.each do |space|
-      if /Space 101/.match(space.name.get) || /Space 103/.match(space.name.get) || /Space 104/.match(space.name.get)
+      if space.name.get =~ Regexp.new(/Space 101/) || space.name.get =~ Regexp.new(/Space 103/) || space.name.get =~ Regexp.new(/Space 104/)
         # should be one space shading groups
         assert_equal(1, space.shadingSurfaceGroups.size)
       else

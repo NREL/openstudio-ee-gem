@@ -35,8 +35,18 @@
 # OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 # *******************************************************************************
 
-module OpenStudio
-  module EeMeasures
-    VERSION = '0.1.0'.freeze
-  end
-end
+require 'bundler/gem_tasks'
+require 'rspec/core/rake_task'
+
+RSpec::Core::RakeTask.new(:spec)
+
+require 'rubocop/rake_task'
+RuboCop::RakeTask.new
+
+# Load in the rake tasks from the base extension gem
+require 'openstudio/extension/rake_task'
+require 'openstudio/ee_measures'
+rake_task = OpenStudio::Extension::RakeTask.new
+rake_task.set_extension_class(OpenStudio::EeMeasures::Extension)
+
+task default: :spec
