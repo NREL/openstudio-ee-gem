@@ -152,7 +152,7 @@ class IncreaseInsulationRValueForExteriorWalls_Test < Minitest::Test
 
     measure.run(model, runner, argument_map)
     result = runner.result
-    show_output(result) #this displays the output when you run the test
+    show_output(result) # this displays the output when you run the test
     assert(result.value.valueName == 'Success')
     assert(result.info.size == 9)
     assert(result.warnings.size == 2)
