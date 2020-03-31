@@ -1,9 +1,10 @@
+<?xml version="1.0"?>
 <measure>
   <schema_version>3.0</schema_version>
   <name>glhe_pro_g_function_import</name>
   <uid>001536d4-5048-4bc7-a327-57852f33c263</uid>
-  <version_id>9ede4848-4403-42fa-bc1c-6b5ed5510f6f</version_id>
-  <version_modified>20180703T211434Z</version_modified>
+  <version_id>527a7edd-5e69-4ebe-89a2-6def8694d653</version_id>
+  <version_modified>20200316T215552Z</version_modified>
   <xml_checksum>4435983D</xml_checksum>
   <class_name>GLHEProGFunctionImport</class_name>
   <display_name>GLHEProGFunctionImport</display_name>
@@ -25,8 +26,8 @@
       <model_dependent>false</model_dependent>
     </argument>
   </arguments>
-  <outputs/>
-  <provenances/>
+  <outputs />
+  <provenances />
   <tags>
     <tag>HVAC.Whole System</tag>
   </tags>
@@ -44,23 +45,6 @@
   </attributes>
   <files>
     <file>
-      <version>
-        <software_program>OpenStudio</software_program>
-        <identifier>2.0.0</identifier>
-        <min_compatible>2.0.0</min_compatible>
-      </version>
-      <filename>measure.rb</filename>
-      <filetype>rb</filetype>
-      <usage_type>script</usage_type>
-      <checksum>AD21A68B</checksum>
-    </file>
-    <file>
-      <filename>LICENSE.md</filename>
-      <filetype>md</filetype>
-      <usage_type>license</usage_type>
-      <checksum>9640B6CB</checksum>
-    </file>
-    <file>
       <filename>README.md.erb</filename>
       <filetype>erb</filetype>
       <usage_type>readmeerb</usage_type>
@@ -73,10 +57,27 @@
       <checksum>B8DDF400</checksum>
     </file>
     <file>
+      <filename>LICENSE.md</filename>
+      <filetype>md</filetype>
+      <usage_type>license</usage_type>
+      <checksum>E0468DD6</checksum>
+    </file>
+    <file>
+      <version>
+        <software_program>OpenStudio</software_program>
+        <identifier>2.0.0</identifier>
+        <min_compatible>2.0.0</min_compatible>
+      </version>
+      <filename>measure.rb</filename>
+      <filetype>rb</filetype>
+      <usage_type>script</usage_type>
+      <checksum>037C4D30</checksum>
+    </file>
+    <file>
       <filename>GLHEProGFunctionImport_Test.rb</filename>
       <filetype>rb</filetype>
       <usage_type>test</usage_type>
-      <checksum>83D25C78</checksum>
+      <checksum>20D188BC</checksum>
     </file>
   </files>
 </measure>
