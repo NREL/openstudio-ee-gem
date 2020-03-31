@@ -49,4 +49,7 @@ require 'openstudio/ee_measures'
 rake_task = OpenStudio::Extension::RakeTask.new
 rake_task.set_extension_class(OpenStudio::EeMeasures::Extension)
 
+require 'openstudio_measure_tester/rake_task'
+OpenStudioMeasureTester::RakeTask.new
+
 task default: :spec
