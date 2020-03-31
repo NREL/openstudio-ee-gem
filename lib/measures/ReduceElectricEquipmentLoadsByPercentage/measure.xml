@@ -1,14 +1,15 @@
+<?xml version="1.0"?>
 <measure>
   <schema_version>3.0</schema_version>
   <name>reduce_electric_equipment_loads_by_percentage</name>
   <uid>0902e302-70db-4339-99b0-17f08bc93629</uid>
-  <version_id>b368f05c-813b-4df5-9d21-09f980ea33da</version_id>
-  <version_modified>20190319T172949Z</version_modified>
+  <version_id>5a5c83a1-1847-4b93-969b-bf78c64fcbd7</version_id>
+  <version_modified>20200316T215557Z</version_modified>
   <xml_checksum>F9A5B8F0</xml_checksum>
   <class_name>ReduceElectricEquipmentLoadsByPercentage</class_name>
   <display_name>Reduce Electric Equipment Loads by Percentage</display_name>
-  <description>Reduce Electric Equipment Loads by Percentage&lt;/display_name>
-  &lt;description>Reduce electric equipment loads. This will affect equipment that have a, power, power per area (LPD), or power per person value. This can be applied to the entire building or a specific space type. A positive percentage represents an increase electric equipment power, while a negative percentage can be used for an increase in electric equipment power.</description>
+  <description>Reduce Electric Equipment Loads by Percentage&lt;/display_name&gt;
+  &lt;description&gt;Reduce electric equipment loads. This will affect equipment that have a, power, power per area (LPD), or power per person value. This can be applied to the entire building or a specific space type. A positive percentage represents an increase electric equipment power, while a negative percentage can be used for an increase in electric equipment power.</description>
   <modeler_description>Loop through all electric equipment objects in the specified space type or the entire building. Clone the definition if it has not already been cloned, rename and adjust the power based on the specified percentage. Link the new definition to the existing electric equipment instance. Loop through objects first in space types and then in spaces, but only for spaces that are in the specified space type, unless entire building has been chosen.</modeler_description>
   <arguments>
     <argument>
@@ -17,10 +18,10 @@
       <type>Choice</type>
       <required>true</required>
       <model_dependent>false</model_dependent>
-      <default_value>*Entire Building*</default_value>
+      <default_value>{62946157-540d-4cd0-9a2c-14d9582d8624}</default_value>
       <choices>
         <choice>
-          <value>{ff45f1e0-ab60-4291-9773-5ab21ca7dfba}</value>
+          <value>{62946157-540d-4cd0-9a2c-14d9582d8624}</value>
           <display_name>*Entire Building*</display_name>
         </choice>
       </choices>
@@ -107,8 +108,8 @@
       <default_value>1</default_value>
     </argument>
   </arguments>
-  <outputs/>
-  <provenances/>
+  <outputs />
+  <provenances />
   <tags>
     <tag>Equipment.Electric Equipment</tag>
   </tags>
@@ -148,18 +149,6 @@
       <checksum>38E06CA8</checksum>
     </file>
     <file>
-      <filename>ReduceElectricEquipmentLoadsByPercentage_Test.rb</filename>
-      <filetype>rb</filetype>
-      <usage_type>test</usage_type>
-      <checksum>B82B5383</checksum>
-    </file>
-    <file>
-      <filename>LICENSE.md</filename>
-      <filetype>md</filetype>
-      <usage_type>license</usage_type>
-      <checksum>9640B6CB</checksum>
-    </file>
-    <file>
       <filename>README.md.erb</filename>
       <filetype>erb</filetype>
       <usage_type>readmeerb</usage_type>
@@ -172,6 +161,18 @@
       <checksum>4FC6A4A7</checksum>
     </file>
     <file>
+      <filename>LICENSE.md</filename>
+      <filetype>md</filetype>
+      <usage_type>license</usage_type>
+      <checksum>E0468DD6</checksum>
+    </file>
+    <file>
+      <filename>ReduceElectricEquipmentLoadsByPercentage_Test.rb</filename>
+      <filetype>rb</filetype>
+      <usage_type>test</usage_type>
+      <checksum>71D4F26D</checksum>
+    </file>
+    <file>
       <version>
         <software_program>OpenStudio</software_program>
         <identifier>2.0.0</identifier>
@@ -180,7 +181,7 @@
       <filename>measure.rb</filename>
       <filetype>rb</filetype>
       <usage_type>script</usage_type>
-      <checksum>C4522647</checksum>
+      <checksum>C4BD878E</checksum>
     </file>
   </files>
 </measure>

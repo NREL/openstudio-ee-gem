@@ -1,5 +1,7 @@
+# frozen_string_literal: true
+
 # *******************************************************************************
-# OpenStudio(R), Copyright (c) 2008-2018, Alliance for Sustainable Energy, LLC.
+# OpenStudio(R), Copyright (c) 2008-2020, Alliance for Sustainable Energy, LLC.
 # All rights reserved.
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
@@ -150,7 +152,7 @@ class IncreaseInsulationRValueForExteriorWalls_Test < Minitest::Test
 
     measure.run(model, runner, argument_map)
     result = runner.result
-    # show_output(result) #this displays the output when you run the test
+    show_output(result) # this displays the output when you run the test
     assert(result.value.valueName == 'Success')
     assert(result.info.size == 9)
     assert(result.warnings.size == 2)
@@ -194,7 +196,9 @@ class IncreaseInsulationRValueForExteriorWalls_Test < Minitest::Test
 
     # test messages
     assert(!result.finalCondition.empty?)
-    assert(/applied to 1,077 \(ft\^2\)/.match(result.finalCondition.get.logMessage))
+    assert(result.finalCondition.get.logMessage =~ Regexp.new(/applied to 1,077 \(ft\^2\)/))
+    assert(result.finalCondition.get.logMessage =~ Regexp.new(/applied to 1,077 \(ft\^2\)/))
+    assert(result.finalCondition.get.logMessage =~ Regexp.new(/applied to 1,077 \(ft\^2\)/))
 
     # loop over info warnings
 
@@ -204,7 +208,7 @@ class IncreaseInsulationRValueForExteriorWalls_Test < Minitest::Test
     expected_messages["Construction 'Test_No Insulation' does not appear to have an insulation layer and was not altered."] = false
     result.warnings.each do |warning|
       expected_messages.each_key do |message|
-        if Regexp.new(message).match(warning.logMessage)
+        if warning.logMessage =~ Regexp.new(message)
           assert(expected_messages[message] == false, "Message '#{message}' found multiple times")
           expected_messages[message] = true
         end
@@ -477,8 +481,8 @@ class IncreaseInsulationRValueForExteriorWalls_Test < Minitest::Test
 
   def test_IncreaseInsulationRValueForExteriorWalls__no_mass
     # test file is 2.5.1
-    if OpenStudio::VersionString.new(OpenStudio::openStudioVersion) >= OpenStudio::VersionString.new('2.5.1')
-      
+    if OpenStudio::VersionString.new(OpenStudio.openStudioVersion) >= OpenStudio::VersionString.new('2.5.1')
+
       # create an instance of the measure
       measure = IncreaseInsulationRValueForExteriorWalls.new
 
@@ -524,10 +528,10 @@ class IncreaseInsulationRValueForExteriorWalls_Test < Minitest::Test
 
       measure.run(model, runner, argument_map)
       result = runner.result
-      show_output(result) #this displays the output when you run the test
+      show_output(result) # this displays the output when you run the test
       assert(result.value.valueName == 'Success')
-      #assert(result.info.size == 4)
-      #assert(result.warnings.size == 1)
+      # assert(result.info.size == 4)
+      # assert(result.warnings.size == 1)
     end
   end
 end
