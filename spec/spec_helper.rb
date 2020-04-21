@@ -36,7 +36,7 @@
 # *******************************************************************************
 
 require 'bundler/setup'
-require 'openstudio/ee'
+require 'openstudio/ee_measures'
 
 RSpec.configure do |config|
   # Enable flags like --only-failures and --next-failure
