@@ -273,7 +273,7 @@ class GLHEProExportLoadsforGroundHeatExchangerSizing < OpenStudio::Measure::Repo
       ann_hourly_htg_w_vals = ann_hourly_htg_w.values
       for i in 0..(ann_hourly_htg_w_vals.size - 1)
         htg_w = ann_hourly_htg_w_vals[i]
-        htg_btu_per_hr = OpenStudio.convert(htg_w, 'W', 'kBtu/hr').get
+        htg_btu_per_hr = OpenStudio.convert(htg_w.to_f, 'W', 'kBtu/hr').get
         ann_hourly_htg_btu_per_hr_vals << htg_btu_per_hr
       end
 
@@ -282,7 +282,7 @@ class GLHEProExportLoadsforGroundHeatExchangerSizing < OpenStudio::Measure::Repo
       ann_hourly_clg_w_vals = ann_hourly_clg_w.values
       for i in 0..(ann_hourly_clg_w_vals.size - 1)
         clg_w = ann_hourly_clg_w_vals[i]
-        clg_btu_per_hr = OpenStudio.convert(clg_w, 'W', 'kBtu/hr').get
+        clg_btu_per_hr = OpenStudio.convert(clg_w.to_f, 'W', 'kBtu/hr').get
         ann_hourly_clg_btu_per_hr_vals << clg_btu_per_hr
       end
 
@@ -340,9 +340,9 @@ class GLHEProExportLoadsforGroundHeatExchangerSizing < OpenStudio::Measure::Repo
           mon_hourly_htg_w_arr << mon_hourly_htg_w[i].to_f
         end
         mon_htg_cons_w_hr = mon_hourly_htg_w_arr.sum
-        mon_htg_cons_kBtu = OpenStudio.convert(mon_htg_cons_w_hr, 'W*hr', 'kBtu').get
+        mon_htg_cons_kBtu = OpenStudio.convert(mon_htg_cons_w_hr.to_f, 'W*hr', 'kBtu').get
         mon_htg_peak_dmd_w = mon_hourly_htg_w_arr.max
-        mon_htg_peak_dmd_Btu_hr = OpenStudio.convert(mon_htg_peak_dmd_w, 'W', 'Btu/hr').get
+        mon_htg_peak_dmd_Btu_hr = OpenStudio.convert(mon_htg_peak_dmd_w.to_f, 'W', 'Btu/hr').get
 
         # Determine the monthly cooling information
         mon_hourly_clg_w = ann_hourly_clg_w.values(start_t, end_t)
@@ -355,9 +355,9 @@ class GLHEProExportLoadsforGroundHeatExchangerSizing < OpenStudio::Measure::Repo
           mon_hourly_clg_w_arr << mon_hourly_clg_w[i].to_f
         end
         mon_clg_cons_w_hr = mon_hourly_clg_w_arr.sum
-        mon_clg_cons_kBtu = OpenStudio.convert(mon_clg_cons_w_hr, 'W*hr', 'kBtu').get
+        mon_clg_cons_kBtu = OpenStudio.convert(mon_clg_cons_w_hr.to_f, 'W*hr', 'kBtu').get
         mon_clg_peak_dmd_w = mon_hourly_clg_w_arr.max
-        mon_clg_peak_dmd_Btu_hr = OpenStudio.convert(mon_clg_peak_dmd_w, 'W', 'Btu/hr').get
+        mon_clg_peak_dmd_Btu_hr = OpenStudio.convert(mon_clg_peak_dmd_w.to_f, 'W', 'Btu/hr').get
 
         # Report out the monthly values and add to the array
         runner.registerInfo("htg: #{mon_htg_cons_kBtu} kBtu, clg: #{mon_clg_cons_kBtu} kBtu, htg peak: #{mon_htg_peak_dmd_Btu_hr} Btu/hr, clg peak: #{mon_clg_peak_dmd_Btu_hr} Btu/hr.")
