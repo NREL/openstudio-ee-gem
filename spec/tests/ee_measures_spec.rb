@@ -37,13 +37,13 @@
 
 require_relative '../spec_helper'
 
-RSpec.describe OpenStudio::Ee do
+RSpec.describe OpenStudio::EeMeasures do
   it 'has a version number' do
-    expect(OpenStudio::Ee::VERSION).not_to be nil
+    expect(OpenStudio::EeMeasures::VERSION).not_to be nil
   end
 
   it 'has a measures directory' do
-    instance = OpenStudio::Ee::Extension.new
+    instance = OpenStudio::EeMeasures::Extension.new
     expect(File.exist?(File.join(instance.measures_dir, 'AddDaylightSensors/'))).to be true
   end
 end
