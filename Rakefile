@@ -1,5 +1,3 @@
-# frozen_string_literal: true
-
 # *******************************************************************************
 # OpenStudio(R), Copyright (c) 2008-2020, Alliance for Sustainable Energy, LLC.
 # All rights reserved.
@@ -47,6 +45,9 @@ RuboCop::RakeTask.new
 require 'openstudio/extension/rake_task'
 require 'openstudio/ee_measures'
 rake_task = OpenStudio::Extension::RakeTask.new
-rake_task.set_extension_class(OpenStudio::EeMeasures::Extension)
+rake_task.set_extension_class(OpenStudio::EeMeasures::Extension, 'nrel/openstudio-ee-gem')
+
+require 'openstudio_measure_tester/rake_task'
+OpenStudioMeasureTester::RakeTask.new
 
 task default: :spec
