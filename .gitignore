@@ -27,3 +27,6 @@
 # ignore files made when run openstudio measure -r locally for testing
 lib/measures/.rubocop.yml
 lib/test/*
+
+# Ignore measure tester gem local test results
+test_results/
