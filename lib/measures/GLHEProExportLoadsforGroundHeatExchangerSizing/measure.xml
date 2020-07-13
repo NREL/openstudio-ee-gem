@@ -3,8 +3,8 @@
   <schema_version>3.0</schema_version>
   <name>glhe_pro_export_loadsfor_ground_heat_exchanger_sizing</name>
   <uid>7bb0ce67-cffb-4ef6-b7fb-093c7c43e263</uid>
-  <version_id>9e7b6db7-cdf7-46cd-98af-e527072e4431</version_id>
-  <version_modified>20200423T205217Z</version_modified>
+  <version_id>018eb00c-c555-404e-89e8-7f198b700a5c</version_id>
+  <version_modified>20200713T205331Z</version_modified>
   <xml_checksum>2C8A3EEF</xml_checksum>
   <class_name>GLHEProExportLoadsforGroundHeatExchangerSizing</class_name>
   <display_name>GLHEProExportLoadsforGroundHeatExchangerSizing</display_name>
