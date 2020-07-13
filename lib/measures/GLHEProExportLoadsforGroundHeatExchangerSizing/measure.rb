@@ -53,7 +53,7 @@ class GLHEProExportLoadsforGroundHeatExchangerSizing < OpenStudio::Measure::Repo
   end
 
   # define the arguments that the user will input
-  def arguments
+  arguments(model = nil)
     args = OpenStudio::Measure::OSArgumentVector.new
 
     return args
