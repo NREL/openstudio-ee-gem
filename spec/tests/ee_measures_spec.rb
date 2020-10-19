@@ -44,6 +44,6 @@ RSpec.describe OpenStudio::EeMeasures do
 
   it 'has a measures directory' do
     instance = OpenStudio::EeMeasures::Extension.new
-    expect(File.exist?(File.join(instance.measures_dir, 'AddDaylightSensors/'))).to be true
+    expect(File.exist?(File.join(instance.measures_dir, 'ReplaceFanTotalEfficiency/'))).to be true
   end
 end
