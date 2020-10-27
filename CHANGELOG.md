@@ -1,5 +1,37 @@
 # OpenStudio EE Gem
 
+## Version 0.2.1
+
+* Update openstudio-extension to 0.2.5
+* Removes the following from lib/measures:
+    * AddDaylightSensors
+    * EnableDemandControlledVentilation
+    * EnableEconomizerControl
+    * ImproveFanBeltEfficiency
+    * ImproveMotorEfficiency
+    * IncreaseInsulationRValueForExteriorWalls
+    * IncreaseInsulationRValueForRoofs
+    * ReduceElectricEquipmentLoadsByPercentage
+    * ReduceLightingLoadsByPercentage
+    * ReduceSpaceInfiltrationByPercentage
+    * ReduceVentilationByPercentage
+    * create_variable_speed_rtu
+* Adds the following to lib/measures:
+    * ImproveFanTotalEfficiencyByPercentage
+    * ReplaceFanTotalEfficiency
+    * add_apszhp_to_each_zone
+    * add_energy_recovery_ventilator
+    * improve_simple_glazing_by_percentage
+    * reduce_water_use_by_percentage
+    * replace_hvac_with_gshp_and_doas
+    * replace_simple_glazing
+    * set_boiler_thermal_efficiency
+    * set_water_heater_efficiency_heat_lossand_peak_water_flow_rate
+    * tenant_star_internal_loads
+    * vr_fwith_doas
+
+
+
 ## Version 0.2.0
 
 * Support for OpenStudio 3.0
