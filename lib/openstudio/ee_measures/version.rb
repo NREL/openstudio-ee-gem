@@ -37,6 +37,6 @@
 
 module OpenStudio
   module EeMeasures
-    VERSION = '0.2.1'.freeze
+    VERSION = '0.2.1'
   end
 end
