@@ -208,7 +208,7 @@ class IncreaseInsulationRValueForExteriorWalls_Test < Minitest::Test
     expected_messages["Construction 'Test_No Insulation' does not appear to have an insulation layer and was not altered."] = false
     result.warnings.each do |warning|
       expected_messages.each_key do |message|
-        if warning.logMessage =~ Regexp.new(message)
+        if warning.logMessage.match?(Regexp.new(message))
           assert(expected_messages[message] == false, "Message '#{message}' found multiple times")
           expected_messages[message] = true
         end
