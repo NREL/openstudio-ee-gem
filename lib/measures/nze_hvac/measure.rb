@@ -427,17 +427,19 @@ class NzeHvac < OpenStudio::Measure::ModelMeasure
         return false
     end
 
-    # check that the directory name isn't too long for a sizing run; sometimes this isn't necessary
-    # if "#{Dir.pwd} }/SizingRun".length > 90
-    #   runner.registerError("Directory path #{Dir.pwd}/SizingRun is greater than 90 characters and too long perform a sizing run.")
-    #   return false
-    # end
-
     # check that weather file exists for a sizing run
     if !model.weatherFile.is_initialized
       runner.registerError('Weather file not set. Cannot perform sizing run.')
       return false
     end
+
+    # ensure sizing OA method is aligned
+    model.getControllerMechanicalVentilations.each do |controller|
+      controller.setSystemOutdoorAirMethod('ZoneSum')
+    end
+
+    # logic to ensure variable, not cycling, pump operation for chillers
+    model.getChillerElectricEIRs.each { |chiller| chiller.setChillerFlowMode('LeavingSetpointModulated') }
 
     # log the build messages and errors to a file before sizing run in case of failure
     log_messages_to_file("#{Dir.pwd}/openstudio-standards.log", debug = true)
