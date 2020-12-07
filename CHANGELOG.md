@@ -1,5 +1,11 @@
 # OpenStudio EE Gem
 
+## Version 0.3.1
+
+* Adds the following to lib/measures:
+    * IncreaseInsulationRValueForExteriorWallsByPercentage
+    * IncreaseInsulationRValueForRoofsByPercentage
+
 ## Version 0.3.0
 
 * Support for OpenStudio 3.1
