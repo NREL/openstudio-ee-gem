@@ -12,7 +12,7 @@ gemspec
 # checkout the latest version (develop) from github.
 allow_local = ENV['FAVOR_LOCAL_GEMS']
 
-# uncomment when you want CI to use develop branch of extension gem
+# uncomment when you want CI to use develop branch of extension gem (making a change so CI runs, no need to merge this)
 gem 'openstudio-extension', github: 'NREL/OpenStudio-extension-gem', branch: 'develop'
 
 # uncomment when you want CI to use develop branch of openstudio-standards gem
