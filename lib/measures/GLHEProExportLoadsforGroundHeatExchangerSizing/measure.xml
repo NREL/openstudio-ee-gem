@@ -3,8 +3,8 @@
   <schema_version>3.0</schema_version>
   <name>glhe_pro_export_loadsfor_ground_heat_exchanger_sizing</name>
   <uid>7bb0ce67-cffb-4ef6-b7fb-093c7c43e263</uid>
-  <version_id>ba9023aa-374a-4a78-9c7d-09cbd752e093</version_id>
-  <version_modified>20200714T172140Z</version_modified>
+  <version_id>fdd78344-2bb4-416c-abc6-50dbfec0d4f1</version_id>
+  <version_modified>20210423T161943Z</version_modified>
   <xml_checksum>2C8A3EEF</xml_checksum>
   <class_name>GLHEProExportLoadsforGroundHeatExchangerSizing</class_name>
   <display_name>GLHEProExportLoadsforGroundHeatExchangerSizing</display_name>
@@ -138,22 +138,28 @@
       <checksum>B2BD6A64</checksum>
     </file>
     <file>
-      <filename>LICENSE.md</filename>
-      <filetype>md</filetype>
-      <usage_type>license</usage_type>
-      <checksum>E0468DD6</checksum>
-    </file>
-    <file>
       <filename>README.md.erb</filename>
       <filetype>erb</filetype>
       <usage_type>readmeerb</usage_type>
       <checksum>703C9964</checksum>
     </file>
     <file>
+      <filename>README.md</filename>
+      <filetype>md</filetype>
+      <usage_type>readme</usage_type>
+      <checksum>CA89050A</checksum>
+    </file>
+    <file>
+      <filename>LICENSE.md</filename>
+      <filetype>md</filetype>
+      <usage_type>license</usage_type>
+      <checksum>A21A3ED2</checksum>
+    </file>
+    <file>
       <filename>GLHEProExportLoadsforGroundHeatExchangerSizing_Test.rb</filename>
       <filetype>rb</filetype>
       <usage_type>test</usage_type>
-      <checksum>EB40F738</checksum>
+      <checksum>0AB56C4A</checksum>
     </file>
     <file>
       <version>
@@ -164,13 +170,7 @@
       <filename>measure.rb</filename>
       <filetype>rb</filetype>
       <usage_type>script</usage_type>
-      <checksum>496F92E3</checksum>
-    </file>
-    <file>
-      <filename>README.md</filename>
-      <filetype>md</filetype>
-      <usage_type>readme</usage_type>
-      <checksum>0B68E96D</checksum>
+      <checksum>8A852CDA</checksum>
     </file>
   </files>
 </measure>
