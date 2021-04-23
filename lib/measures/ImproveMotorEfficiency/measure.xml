@@ -3,8 +3,8 @@
   <schema_version>3.0</schema_version>
   <name>improve_motor_efficiency</name>
   <uid>52013ba9-7b9b-4ffd-bc67-d4c0fa05d7ae</uid>
-  <version_id>c4e4527d-3b59-4591-a6ac-f820a82e0a51</version_id>
-  <version_modified>20200316T215557Z</version_modified>
+  <version_id>aac6ec90-36aa-4bfd-8a48-a97e6c8cfeed</version_id>
+  <version_modified>20210423T161945Z</version_modified>
   <xml_checksum>F78494F2</xml_checksum>
   <class_name>ImproveMotorEfficiency</class_name>
   <display_name>Improve Motor Efficiency in Selected Fans and Pumps</display_name>
@@ -31,10 +31,10 @@ The cost arguments are user arguments that start with a default of $0. Operation
       <type>Choice</type>
       <required>true</required>
       <model_dependent>false</model_dependent>
-      <default_value>{a7bc53ae-325b-48c9-bae3-4d95a2838e39}</default_value>
+      <default_value>{f20984c1-6a96-4c69-b514-994f82fc002c}</default_value>
       <choices>
         <choice>
-          <value>{a7bc53ae-325b-48c9-bae3-4d95a2838e39}</value>
+          <value>{f20984c1-6a96-4c69-b514-994f82fc002c}</value>
           <display_name>*All Plant and Air Loops*</display_name>
         </choice>
       </choices>
@@ -172,7 +172,7 @@ The cost arguments are user arguments that start with a default of $0. Operation
       <filename>LICENSE.md</filename>
       <filetype>md</filetype>
       <usage_type>license</usage_type>
-      <checksum>E0468DD6</checksum>
+      <checksum>A21A3ED2</checksum>
     </file>
     <file>
       <version>
@@ -183,13 +183,13 @@ The cost arguments are user arguments that start with a default of $0. Operation
       <filename>measure.rb</filename>
       <filetype>rb</filetype>
       <usage_type>script</usage_type>
-      <checksum>06B60D3C</checksum>
+      <checksum>77562095</checksum>
     </file>
     <file>
       <filename>ImproveMotorEfficiency_Test.rb</filename>
       <filetype>rb</filetype>
       <usage_type>test</usage_type>
-      <checksum>0A54E6F9</checksum>
+      <checksum>75FA2C22</checksum>
     </file>
   </files>
 </measure>
