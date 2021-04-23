@@ -3,8 +3,8 @@
   <schema_version>3.0</schema_version>
   <name>add_daylight_sensors</name>
   <uid>62babdc7-c81e-4dfd-96e8-af1628a55167</uid>
-  <version_id>4cb39c28-b1c9-4a77-a1cc-06304e73cb41</version_id>
-  <version_modified>20200316T215554Z</version_modified>
+  <version_id>81ebd731-7cf6-4f7a-a07a-25a99d42ce53</version_id>
+  <version_modified>20210423T161941Z</version_modified>
   <xml_checksum>0AC58119</xml_checksum>
   <class_name>AddDaylightSensors</class_name>
   <display_name>Add Daylight Sensor at the Center of Spaces with a Specified Space Type Assigned</display_name>
@@ -211,7 +211,7 @@
       <filename>LICENSE.md</filename>
       <filetype>md</filetype>
       <usage_type>license</usage_type>
-      <checksum>E0468DD6</checksum>
+      <checksum>A21A3ED2</checksum>
     </file>
     <file>
       <version>
@@ -222,13 +222,13 @@
       <filename>measure.rb</filename>
       <filetype>rb</filetype>
       <usage_type>script</usage_type>
-      <checksum>6265A583</checksum>
+      <checksum>D887DC57</checksum>
     </file>
     <file>
       <filename>AddDaylightSensors_Test.rb</filename>
       <filetype>rb</filetype>
       <usage_type>test</usage_type>
-      <checksum>4298E1F6</checksum>
+      <checksum>AFBE30AE</checksum>
     </file>
   </files>
 </measure>
