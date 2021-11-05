@@ -1,5 +1,10 @@
 # OpenStudio EE Gem
 
+## Version 0.5.0
+* Support for OpenStudio 3.3 (upgrade to extension gem 0.5.1 and standards gem 0.2.15)
+* Fixed [#9]( https://github.com/NREL/openstudio-ee-gem/issues/9 ), nze_hvac is failing in 3.1
+* Fixed [#32]( https://github.com/NREL/openstudio-ee-gem/pull/32 ), adding compatibility matrix and contribution policy
+
 ## Version 0.4.0
 
 * Support Ruby ~> 2.7
