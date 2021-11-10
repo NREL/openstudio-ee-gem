@@ -19,13 +19,20 @@ Or install it yourself as:
 
     $ gem install 'openstudio-ee-measures'
 
-## Usage
+# Compatibility Matrix
 
-To be filled out later.
+|OpenStudio EE Gem|OpenStudio|Ruby|
+|:--------------:|:----------:|:--------:|
+| 0.5.0 | 3.3      | 2.7    |
+| 0.4.0 | 3.2      | 2.7    |
+| 0.3.0 - 0.3.2  | 3.1      | 2.5    |
+| 0.2.0 - 0.2.1  | 3.0      | 2.5    |
+| 0.1.0 | 2.9     | 2.2.4    |
 
-## TODO
+# Contributing 
 
-- [x] Remove measures from OpenStudio-Measures to standardize on this location
+Please review the [OpenStudio Contribution Policy](https://openstudio.net/openstudio-contribution-policy) if you would like to contribute code to this gem.
+
 
 # Releasing
 
