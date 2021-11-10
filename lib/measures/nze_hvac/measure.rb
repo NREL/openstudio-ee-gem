@@ -369,7 +369,7 @@ class NzeHvac < OpenStudio::Measure::ModelMeasure
     # remove existing hvac system from model
     if remove_existing_hvac
       runner.registerInfo('Removing existing HVAC systems from the model')
-      std.remove_HVAC(model)
+      std.remove_hvac(model)
     end
 
     # exclude plenum zones, zones without thermostats, and zones with no floor area
