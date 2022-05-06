@@ -3,8 +3,8 @@
   <schema_version>3.0</schema_version>
   <name>improve_fan_belt_efficiency</name>
   <uid>ebeca0aa-a432-4283-a714-17116f7c8f8c</uid>
-  <version_id>59205a99-1a70-4532-96ff-a2a2aee142a1</version_id>
-  <version_modified>20220506T154334Z</version_modified>
+  <version_id>c458d99c-98a3-43d0-8eed-0bc348f4c78c</version_id>
+  <version_modified>20220506T162539Z</version_modified>
   <xml_checksum>F78494F2</xml_checksum>
   <class_name>ImproveFanBeltEfficiency</class_name>
   <display_name>Improve Fan Belt Efficiency</display_name>
@@ -47,10 +47,10 @@ Well-adjusted belts run cooler, last longer, and operate at higher efficiency th
       <type>Choice</type>
       <required>true</required>
       <model_dependent>false</model_dependent>
-      <default_value>{d66b6789-3cf5-4f75-950c-37a588b4d0c5}</default_value>
+      <default_value>{57e4a9f8-6429-4196-848a-ef824cedf436}</default_value>
       <choices>
         <choice>
-          <value>{d66b6789-3cf5-4f75-950c-37a588b4d0c5}</value>
+          <value>{57e4a9f8-6429-4196-848a-ef824cedf436}</value>
           <display_name>*All Air Loops*</display_name>
         </choice>
       </choices>
@@ -206,18 +206,6 @@ Well-adjusted belts run cooler, last longer, and operate at higher efficiency th
       <filetype>rb</filetype>
       <usage_type>test</usage_type>
       <checksum>5E4C576B</checksum>
-    </file>
-    <file>
-      <filename>0320_ModelWithHVAC_01/run.db</filename>
-      <filetype>db</filetype>
-      <usage_type>test</usage_type>
-      <checksum>1B15A7A5</checksum>
-    </file>
-    <file>
-      <filename>0320_ModelWithHVAC_01/files/USA_IL_Chicago-OHare.Intl.AP.725300_TMY3.epw</filename>
-      <filetype>epw</filetype>
-      <usage_type>test</usage_type>
-      <checksum>3B177CE0</checksum>
     </file>
   </files>
 </measure>
