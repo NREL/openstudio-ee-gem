@@ -3,8 +3,8 @@
   <schema_version>3.0</schema_version>
   <name>add_daylight_sensors</name>
   <uid>62babdc7-c81e-4dfd-96e8-af1628a55167</uid>
-  <version_id>6c5343fe-6371-4479-88b4-a98ade65ccbc</version_id>
-  <version_modified>20220506T154330Z</version_modified>
+  <version_id>4fbdcaad-4d5e-4d46-a4f7-0b60ee85cc17</version_id>
+  <version_modified>20220506T162539Z</version_modified>
   <xml_checksum>0AC58119</xml_checksum>
   <class_name>AddDaylightSensors</class_name>
   <display_name>Add Daylight Sensor at the Center of Spaces with a Specified Space Type Assigned</display_name>
@@ -229,18 +229,6 @@
       <filetype>rb</filetype>
       <usage_type>test</usage_type>
       <checksum>43A44507</checksum>
-    </file>
-    <file>
-      <filename>ModelForDaylightSensors/run.db</filename>
-      <filetype>db</filetype>
-      <usage_type>test</usage_type>
-      <checksum>9919A820</checksum>
-    </file>
-    <file>
-      <filename>ModelForDaylightSensors/files/USA_CO_Golden-NREL.724666_TMY3.epw</filename>
-      <filetype>epw</filetype>
-      <usage_type>test</usage_type>
-      <checksum>9D6AAD98</checksum>
     </file>
   </files>
 </measure>

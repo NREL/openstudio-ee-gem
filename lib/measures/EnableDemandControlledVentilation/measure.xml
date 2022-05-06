@@ -3,8 +3,8 @@
   <schema_version>3.0</schema_version>
   <name>enable_demand_controlled_ventilation</name>
   <uid>3ff4b412-8689-4b11-a588-935c621dc97d</uid>
-  <version_id>ceb622fc-daf8-4c32-b217-6c7966d7eedc</version_id>
-  <version_modified>20220506T154330Z</version_modified>
+  <version_id>617e00e2-5140-4478-b7ed-0210a76a220a</version_id>
+  <version_modified>20220506T162539Z</version_modified>
   <xml_checksum>ECE70A70</xml_checksum>
   <class_name>EnableDemandControlledVentilation</class_name>
   <display_name>Enable Demand Controlled Ventilation</display_name>
@@ -115,18 +115,6 @@ The cost arguments are user arguments that start with a default of $0.</modeler_
       <filetype>rb</filetype>
       <usage_type>test</usage_type>
       <checksum>425E39AD</checksum>
-    </file>
-    <file>
-      <filename>0320_ModelWithHVAC_01/run.db</filename>
-      <filetype>db</filetype>
-      <usage_type>test</usage_type>
-      <checksum>1B15A7A5</checksum>
-    </file>
-    <file>
-      <filename>0320_ModelWithHVAC_01/files/USA_IL_Chicago-OHare.Intl.AP.725300_TMY3.epw</filename>
-      <filetype>epw</filetype>
-      <usage_type>test</usage_type>
-      <checksum>3B177CE0</checksum>
     </file>
   </files>
 </measure>
