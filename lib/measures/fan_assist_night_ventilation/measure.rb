@@ -218,7 +218,6 @@ To address an issue in OpenStudio zones with ZoneVentilation, this measure adds 
       zone_ventilation.setName("PathStart_#{zone.name}")
       zone_ventilation.addToThermalZone(zone)
       zone_ventilation.setVentilationType('Exhaust') # switched from Natural to use power. Need to set fan properties. Used exhaust so no heat from fan in stream
-      zone_ventilation.setDesignFlowRateCalculationMethod('Flow/Zone')
       fraction_flow = design_flow_rate_si * zone_opp_area / bldg_area_counter
       zone_ventilation.setDesignFlowRate(fraction_flow)
       zone_design_flow_rate_ip = OpenStudio.convert(zone_ventilation.designFlowRate, 'm^3/s', 'cfm').get
