@@ -1,6 +1,6 @@
-# OpenStudio EE Measures 
+# OpenStudio(R) EE Measures 
 
-EE measures used by OpenStudio. This contains general use energy efficiency measures. Some measures here may also be suitable for calibration or model articulation. Similarly, some measures in other measure gem repos may also be suitable for energy efficiency usage.
+EE measures used by OpenStudio(R). This contains general use energy efficiency measures. Some measures here may also be suitable for calibration or model articulation. Similarly, some measures in other measure gem repos may also be suitable for energy efficiency usage.
 
 
 ## Installation
