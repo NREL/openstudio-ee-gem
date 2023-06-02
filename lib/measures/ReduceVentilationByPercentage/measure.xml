@@ -3,8 +3,8 @@
   <schema_version>3.0</schema_version>
   <name>reduce_ventilation_by_percentage</name>
   <uid>f0859a47-fddf-4962-9035-2f9fc9d6e283</uid>
-  <version_id>37871853-0aea-401a-994a-80792e3652f3</version_id>
-  <version_modified>20220506T154330Z</version_modified>
+  <version_id>50064f02-2e2d-4baf-8a2a-2cea677dc011</version_id>
+  <version_modified>20230602T151915Z</version_modified>
   <xml_checksum>ECE70A70</xml_checksum>
   <class_name>ReduceVentilationByPercentage</class_name>
   <display_name>ReduceVentilationByPercentage</display_name>
@@ -17,10 +17,10 @@
       <type>Choice</type>
       <required>true</required>
       <model_dependent>false</model_dependent>
-      <default_value>{99d7a554-59a6-4331-82d5-a0325a421847}</default_value>
+      <default_value>{6c69fd90-38cb-4e59-9d2b-9aba4541f0f3}</default_value>
       <choices>
         <choice>
-          <value>{99d7a554-59a6-4331-82d5-a0325a421847}</value>
+          <value>{6c69fd90-38cb-4e59-9d2b-9aba4541f0f3}</value>
           <display_name>*Entire Building*</display_name>
         </choice>
       </choices>
@@ -74,7 +74,7 @@
       <filename>LICENSE.md</filename>
       <filetype>md</filetype>
       <usage_type>license</usage_type>
-      <checksum>64FFEBDE</checksum>
+      <checksum>0DDDFB54</checksum>
     </file>
     <file>
       <version>
@@ -85,13 +85,13 @@
       <filename>measure.rb</filename>
       <filetype>rb</filetype>
       <usage_type>script</usage_type>
-      <checksum>81E3CBCE</checksum>
+      <checksum>9EE9A262</checksum>
     </file>
     <file>
       <filename>ReduceVentilationByPercentage_Test.rb</filename>
       <filetype>rb</filetype>
       <usage_type>test</usage_type>
-      <checksum>5F44E5CE</checksum>
+      <checksum>0439434E</checksum>
     </file>
   </files>
 </measure>

@@ -3,8 +3,8 @@
   <schema_version>3.0</schema_version>
   <name>create_variable_speed_rtu</name>
   <uid>7fb36b3a-5591-4627-a2b0-7709fbeae593</uid>
-  <version_id>248a8779-8489-4690-ac4f-c170abdd11fc</version_id>
-  <version_modified>20220506T154330Z</version_modified>
+  <version_id>c60c2d11-2eef-4896-ab40-fb3040e23da0</version_id>
+  <version_modified>20230602T151915Z</version_modified>
   <xml_checksum>A9D5932A</xml_checksum>
   <class_name>CreateVariableSpeedRTU</class_name>
   <display_name>Create Variable Speed RTU</display_name>
@@ -17,10 +17,10 @@
       <type>Choice</type>
       <required>true</required>
       <model_dependent>false</model_dependent>
-      <default_value>{f5e14dc0-d9b3-45fd-ad58-4f86c3afbddd}</default_value>
+      <default_value>{e1b8e482-ac46-4d0a-9d42-e3554d593d00}</default_value>
       <choices>
         <choice>
-          <value>{f5e14dc0-d9b3-45fd-ad58-4f86c3afbddd}</value>
+          <value>{e1b8e482-ac46-4d0a-9d42-e3554d593d00}</value>
           <display_name>*All CAV Air Loops*</display_name>
         </choice>
       </choices>
@@ -185,13 +185,13 @@
       <filename>LICENSE.md</filename>
       <filetype>md</filetype>
       <usage_type>license</usage_type>
-      <checksum>64FFEBDE</checksum>
+      <checksum>0DDDFB54</checksum>
     </file>
     <file>
       <filename>create_variable_speed_rtu_test.rb</filename>
       <filetype>rb</filetype>
       <usage_type>test</usage_type>
-      <checksum>07AE1C4F</checksum>
+      <checksum>9278314B</checksum>
     </file>
     <file>
       <version>
@@ -202,7 +202,7 @@
       <filename>measure.rb</filename>
       <filetype>rb</filetype>
       <usage_type>script</usage_type>
-      <checksum>CF154202</checksum>
+      <checksum>D38F0FFA</checksum>
     </file>
   </files>
 </measure>
