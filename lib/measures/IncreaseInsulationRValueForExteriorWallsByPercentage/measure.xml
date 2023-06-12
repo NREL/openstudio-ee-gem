@@ -3,8 +3,8 @@
   <schema_version>3.0</schema_version>
   <name>increase_insulation_r_value_for_exterior_walls_by_percentage</name>
   <uid>7508c563-22bd-49f4-b646-aac69b02a82d</uid>
-  <version_id>4630b995-e70d-4183-9d6f-8439042ebfaa</version_id>
-  <version_modified>20220506T154330Z</version_modified>
+  <version_id>1b9c0c5a-4d80-43de-97dd-c38c8f8e4a3a</version_id>
+  <version_modified>20230602T151915Z</version_modified>
   <xml_checksum>EB1A0C08</xml_checksum>
   <class_name>IncreaseInsulationRValueForExteriorWallsByPercentage</class_name>
   <display_name>Increase R-value of Insulation for Exterior Walls By a Specified Percentage</display_name>
@@ -76,7 +76,7 @@
       <filename>LICENSE.md</filename>
       <filetype>md</filetype>
       <usage_type>license</usage_type>
-      <checksum>64FFEBDE</checksum>
+      <checksum>0DDDFB54</checksum>
     </file>
     <file>
       <version>
@@ -87,13 +87,13 @@
       <filename>measure.rb</filename>
       <filetype>rb</filetype>
       <usage_type>script</usage_type>
-      <checksum>576EDD36</checksum>
+      <checksum>76660F68</checksum>
     </file>
     <file>
       <filename>IncreaseInsulationRValueForExteriorWalls_Test.rb</filename>
       <filetype>rb</filetype>
       <usage_type>test</usage_type>
-      <checksum>FE746AEE</checksum>
+      <checksum>6A0AD82C</checksum>
     </file>
   </files>
 </measure>
