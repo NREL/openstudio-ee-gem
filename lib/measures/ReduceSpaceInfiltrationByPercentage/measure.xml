@@ -3,8 +3,8 @@
   <schema_version>3.0</schema_version>
   <name>reduce_space_infiltration_by_percentage</name>
   <uid>6e9de4b1-aa97-4010-80c8-529e53ffe943</uid>
-  <version_id>2de44dca-39bc-452d-b717-214357a32527</version_id>
-  <version_modified>20220506T154330Z</version_modified>
+  <version_id>379b5b5a-6b8d-4b11-a239-e638f98665a0</version_id>
+  <version_modified>20230602T151915Z</version_modified>
   <xml_checksum>EACB548E</xml_checksum>
   <class_name>ReduceSpaceInfiltrationByPercentage</class_name>
   <display_name>ReduceSpaceInfiltrationByPercentage</display_name>
@@ -17,10 +17,10 @@
       <type>Choice</type>
       <required>true</required>
       <model_dependent>false</model_dependent>
-      <default_value>{d886f559-36e0-4218-9ee6-01f4f14360c0}</default_value>
+      <default_value>{9f49c9f1-b3fb-4a26-be9d-43bac23adfcb}</default_value>
       <choices>
         <choice>
-          <value>{d886f559-36e0-4218-9ee6-01f4f14360c0}</value>
+          <value>{9f49c9f1-b3fb-4a26-be9d-43bac23adfcb}</value>
           <display_name>*Entire Building*</display_name>
         </choice>
       </choices>
@@ -159,13 +159,13 @@
       <filename>LICENSE.md</filename>
       <filetype>md</filetype>
       <usage_type>license</usage_type>
-      <checksum>64FFEBDE</checksum>
+      <checksum>0DDDFB54</checksum>
     </file>
     <file>
       <filename>ReduceSpaceInfiltrationByPercentage_Test.rb</filename>
       <filetype>rb</filetype>
       <usage_type>test</usage_type>
-      <checksum>570B545F</checksum>
+      <checksum>9F83F933</checksum>
     </file>
     <file>
       <version>
@@ -176,7 +176,7 @@
       <filename>measure.rb</filename>
       <filetype>rb</filetype>
       <usage_type>script</usage_type>
-      <checksum>9D0BBEA7</checksum>
+      <checksum>F7F6B0AE</checksum>
     </file>
   </files>
 </measure>
