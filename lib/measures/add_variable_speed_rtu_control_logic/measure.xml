@@ -3,8 +3,8 @@
   <schema_version>3.0</schema_version>
   <name>add_variable_speed_rtu_control_logic</name>
   <uid>7d0aebdd-58c5-4e0e-9217-5dbdc82886fd</uid>
-  <version_id>b322b303-5c30-4ece-9ab5-47e7be5362ef</version_id>
-  <version_modified>20220506T154330Z</version_modified>
+  <version_id>ff8bf785-5192-403c-9d9c-d96985743183</version_id>
+  <version_modified>20230602T151915Z</version_modified>
   <xml_checksum>A310923F</xml_checksum>
   <class_name>AddVariableSpeedRTUControlLogic</class_name>
   <display_name>Add Variable Speed RTU Control Logic</display_name>
@@ -142,13 +142,13 @@ The measure is set up so that a separate block of EMS code is inserted for each 
       <filename>LICENSE.md</filename>
       <filetype>md</filetype>
       <usage_type>license</usage_type>
-      <checksum>64FFEBDE</checksum>
+      <checksum>0DDDFB54</checksum>
     </file>
     <file>
       <filename>add_variable_speed_rtu_control_logic_test.rb</filename>
       <filetype>rb</filetype>
       <usage_type>test</usage_type>
-      <checksum>EE6BEE52</checksum>
+      <checksum>7BCFD2AF</checksum>
     </file>
     <file>
       <version>
@@ -159,7 +159,7 @@ The measure is set up so that a separate block of EMS code is inserted for each 
       <filename>measure.rb</filename>
       <filetype>rb</filetype>
       <usage_type>script</usage_type>
-      <checksum>BC052CDD</checksum>
+      <checksum>DDAE53AF</checksum>
     </file>
   </files>
 </measure>

@@ -3,8 +3,8 @@
   <schema_version>3.0</schema_version>
   <name>increase_insulation_r_value_for_exterior_walls</name>
   <uid>3fdf9c39-d305-449b-a4b5-077166af5a67</uid>
-  <version_id>303662fc-ad6b-4ea7-814d-1de32be13b6b</version_id>
-  <version_modified>20220506T154330Z</version_modified>
+  <version_id>b3bf7aeb-9af7-4b24-aeea-4a82b26d06a9</version_id>
+  <version_modified>20230602T151915Z</version_modified>
   <xml_checksum>0F858D9E</xml_checksum>
   <class_name>IncreaseInsulationRValueForExteriorWalls</class_name>
   <display_name>Increase R-value of Insulation for Exterior Walls to a Specific Value</display_name>
@@ -142,7 +142,7 @@ The resulting construction will retain the cost data from the source constructio
       <filename>LICENSE.md</filename>
       <filetype>md</filetype>
       <usage_type>license</usage_type>
-      <checksum>64FFEBDE</checksum>
+      <checksum>0DDDFB54</checksum>
     </file>
     <file>
       <version>
@@ -153,13 +153,13 @@ The resulting construction will retain the cost data from the source constructio
       <filename>measure.rb</filename>
       <filetype>rb</filetype>
       <usage_type>script</usage_type>
-      <checksum>F93F5865</checksum>
+      <checksum>EDD84D57</checksum>
     </file>
     <file>
       <filename>IncreaseInsulationRValueForExteriorWalls_01_Test.rb</filename>
       <filetype>rb</filetype>
       <usage_type>test</usage_type>
-      <checksum>EE242B58</checksum>
+      <checksum>308798DD</checksum>
     </file>
   </files>
 </measure>
