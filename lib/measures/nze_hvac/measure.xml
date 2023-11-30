@@ -1,10 +1,10 @@
 <?xml version="1.0"?>
 <measure>
-  <schema_version>3.0</schema_version>
+  <schema_version>3.1</schema_version>
   <name>nze_hvac</name>
   <uid>f060dff2-b28d-4194-a6af-e66d88ddb33c</uid>
-  <version_id>9a5329ca-ac91-4440-9fb6-c61a5eeb9c0f</version_id>
-  <version_modified>20230602T151918Z</version_modified>
+  <version_id>30f88170-8790-4a5b-a7a2-75840782b1f7</version_id>
+  <version_modified>2023-11-30T22:42:51Z</version_modified>
   <xml_checksum>0E5E4776</xml_checksum>
   <class_name>NzeHvac</class_name>
   <display_name>NZEHVAC</display_name>
@@ -232,70 +232,10 @@
   </attributes>
   <files>
     <file>
-      <filename>USA_IL_Chicago-OHare.Intl.AP.725300_TMY3.epw</filename>
-      <filetype>epw</filetype>
-      <usage_type>test</usage_type>
-      <checksum>C254B53F</checksum>
-    </file>
-    <file>
-      <filename>USA_MD_Baltimore-Washington.Intl.AP.724060_TMY3.epw</filename>
-      <filetype>epw</filetype>
-      <usage_type>test</usage_type>
-      <checksum>A76C8897</checksum>
-    </file>
-    <file>
-      <filename>USA_VT_Burlington.Intl.AP.726170_TMY3.epw</filename>
-      <filetype>epw</filetype>
-      <usage_type>test</usage_type>
-      <checksum>628C5698</checksum>
-    </file>
-    <file>
-      <filename>glass_box_baltimore.osm</filename>
-      <filetype>osm</filetype>
-      <usage_type>test</usage_type>
-      <checksum>57483CB6</checksum>
-    </file>
-    <file>
-      <filename>primary_school_burlington.osm</filename>
-      <filetype>osm</filetype>
-      <usage_type>test</usage_type>
-      <checksum>A6F3BD1F</checksum>
-    </file>
-    <file>
-      <filename>USA_TX_Houston-Bush.Intercontinental.AP.722430_TMY3.epw</filename>
-      <filetype>epw</filetype>
-      <usage_type>test</usage_type>
-      <checksum>EE565FCC</checksum>
-    </file>
-    <file>
-      <filename>README.md.erb</filename>
-      <filetype>erb</filetype>
-      <usage_type>readmeerb</usage_type>
-      <checksum>703C9964</checksum>
-    </file>
-    <file>
-      <filename>office_houston.osm</filename>
-      <filetype>osm</filetype>
-      <usage_type>test</usage_type>
-      <checksum>44192754</checksum>
-    </file>
-    <file>
-      <filename>office_chicago.osm</filename>
-      <filetype>osm</filetype>
-      <usage_type>test</usage_type>
-      <checksum>D57BDC09</checksum>
-    </file>
-    <file>
-      <filename>office_chicago_exp_tstat.osm</filename>
-      <filetype>osm</filetype>
-      <usage_type>test</usage_type>
-      <checksum>E1A64B6D</checksum>
-    </file>
-    <file>
-      <filename>office_retail_mix_chicago.osm</filename>
-      <filetype>osm</filetype>
-      <usage_type>test</usage_type>
-      <checksum>3CD04C05</checksum>
+      <filename>LICENSE.md</filename>
+      <filetype>md</filetype>
+      <usage_type>license</usage_type>
+      <checksum>0DDDFB54</checksum>
     </file>
     <file>
       <filename>README.md</filename>
@@ -304,10 +244,10 @@
       <checksum>80C9C58F</checksum>
     </file>
     <file>
-      <filename>LICENSE.md</filename>
-      <filetype>md</filetype>
-      <usage_type>license</usage_type>
-      <checksum>0DDDFB54</checksum>
+      <filename>README.md.erb</filename>
+      <filetype>erb</filetype>
+      <usage_type>readmeerb</usage_type>
+      <checksum>703C9964</checksum>
     </file>
     <file>
       <version>
@@ -324,7 +264,67 @@
       <filename>NZEHVAC_Test.rb</filename>
       <filetype>rb</filetype>
       <usage_type>test</usage_type>
-      <checksum>694B18BC</checksum>
+      <checksum>B2D92497</checksum>
+    </file>
+    <file>
+      <filename>USA_IL_Chicago-OHare.Intl.AP.725300_TMY3.epw</filename>
+      <filetype>epw</filetype>
+      <usage_type>test</usage_type>
+      <checksum>C254B53F</checksum>
+    </file>
+    <file>
+      <filename>USA_MD_Baltimore-Washington.Intl.AP.724060_TMY3.epw</filename>
+      <filetype>epw</filetype>
+      <usage_type>test</usage_type>
+      <checksum>A76C8897</checksum>
+    </file>
+    <file>
+      <filename>USA_TX_Houston-Bush.Intercontinental.AP.722430_TMY3.epw</filename>
+      <filetype>epw</filetype>
+      <usage_type>test</usage_type>
+      <checksum>EE565FCC</checksum>
+    </file>
+    <file>
+      <filename>USA_VT_Burlington.Intl.AP.726170_TMY3.epw</filename>
+      <filetype>epw</filetype>
+      <usage_type>test</usage_type>
+      <checksum>628C5698</checksum>
+    </file>
+    <file>
+      <filename>glass_box_baltimore.osm</filename>
+      <filetype>osm</filetype>
+      <usage_type>test</usage_type>
+      <checksum>57483CB6</checksum>
+    </file>
+    <file>
+      <filename>office_chicago.osm</filename>
+      <filetype>osm</filetype>
+      <usage_type>test</usage_type>
+      <checksum>D57BDC09</checksum>
+    </file>
+    <file>
+      <filename>office_chicago_exp_tstat.osm</filename>
+      <filetype>osm</filetype>
+      <usage_type>test</usage_type>
+      <checksum>E1A64B6D</checksum>
+    </file>
+    <file>
+      <filename>office_houston.osm</filename>
+      <filetype>osm</filetype>
+      <usage_type>test</usage_type>
+      <checksum>44192754</checksum>
+    </file>
+    <file>
+      <filename>office_retail_mix_chicago.osm</filename>
+      <filetype>osm</filetype>
+      <usage_type>test</usage_type>
+      <checksum>3CD04C05</checksum>
+    </file>
+    <file>
+      <filename>primary_school_burlington.osm</filename>
+      <filetype>osm</filetype>
+      <usage_type>test</usage_type>
+      <checksum>A6F3BD1F</checksum>
     </file>
   </files>
 </measure>
