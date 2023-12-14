@@ -41,8 +41,8 @@ class GLHEProExportLoadsforGroundHeatExchangerSizing < OpenStudio::Measure::Repo
 
     # note: these variable requests replace the functionality of GLHEProSetupExportLoadsforGroundHeatExchangerSizing measure
 
-    result << OpenStudio::IdfObject.load('Output:Variable,,District Heating Rate,hourly;').get
-    result << OpenStudio::IdfObject.load('Output:Variable,,District Cooling Rate,hourly;').get
+    result << OpenStudio::IdfObject.load('Output:Variable,,District Heating Water Rate,hourly;').get
+    result << OpenStudio::IdfObject.load('Output:Variable,,District Cooling Water Rate,hourly;').get
 
     # get the last model
     model = runner.lastOpenStudioModel
@@ -215,7 +215,7 @@ class GLHEProExportLoadsforGroundHeatExchangerSizing < OpenStudio::Measure::Repo
       runner.registerInfo("Getting monthly load data for #{loop_name}.")
 
       # Get the hourly annual heating load in Watts
-      ann_hourly_htg_w = sql.timeSeries(annEnvPd, 'Hourly', 'District Heating Rate', dist_htg_name.upcase)
+      ann_hourly_htg_w = sql.timeSeries(annEnvPd, 'Hourly', 'District Heating Water Rate', dist_htg_name.upcase)
       if ann_hourly_htg_w.empty?
         runner.registerWarning("No hourly heating data found for '#{dist_htg_name}' on '#{loop_name}'")
         next
@@ -224,7 +224,7 @@ class GLHEProExportLoadsforGroundHeatExchangerSizing < OpenStudio::Measure::Repo
       end
 
       # Get the hourly annual cooling load in Watts
-      ann_hourly_clg_w = sql.timeSeries(annEnvPd, 'Hourly', 'District Cooling Rate', dist_clg_name.upcase)
+      ann_hourly_clg_w = sql.timeSeries(annEnvPd, 'Hourly', 'District Cooling Water Rate', dist_clg_name.upcase)
       if ann_hourly_clg_w.empty?
         runner.registerWarning("No hourly cooling data found for '#{dist_clg_name}' on '#{loop_name}'")
         next
