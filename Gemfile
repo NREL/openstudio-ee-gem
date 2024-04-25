@@ -14,7 +14,7 @@ allow_local = ENV['FAVOR_LOCAL_GEMS']
 
 # Delete when these branchesa are merged and released
 gem 'openstudio-extension', github: 'NREL/OpenStudio-extension-gem', branch: 'wenyi-fix-build-temp'
-#gem 'openstudio-standards', '= 0.2.17.rc1', :github => 'NREL/openstudio-standards', :ref => '3.5.0_changes'
+gem 'openstudio-standards', github: 'NREL/openstudio-standards', tag: 'v0.6.0.rc2'
 
 
 # uncomment when you want CI to use develop branch of extension gem
