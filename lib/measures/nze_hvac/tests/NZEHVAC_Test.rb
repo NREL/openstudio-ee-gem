@@ -146,9 +146,9 @@ class NzeHvac_Test < Minitest::Test
 
       # test for unmet hours
       errs = []
-      unmet_heating_hrs = std.model_annual_occupied_unmet_heating_hours(model)
-      unmet_cooling_hrs = std.model_annual_occupied_unmet_cooling_hours(model)
-      unmet_hrs = std.model_annual_occupied_unmet_hours(model)
+      unmet_heating_hrs = OpenstudioStandards::SqlFile.model_get_annual_occupied_unmet_heating_hours(model)
+      unmet_cooling_hrs = OpenstudioStandards::SqlFile.model_get_annual_occupied_unmet_cooling_hours(model)
+      unmet_hrs = OpenstudioStandards::SqlFile.model_get_annual_occupied_unmet_hours(model)
       if unmet_hrs
         if unmet_hrs > max_unmet_hrs
           errs << "For #{test_name} there were #{unmet_heating_hrs.round(1)} unmet occupied heating hours and #{unmet_cooling_hrs.round(1)} unmet occupied cooling hours (total: #{unmet_hrs.round(1)}), more than the limit of #{max_unmet_hrs}." if unmet_hrs > max_unmet_hrs
@@ -160,21 +160,21 @@ class NzeHvac_Test < Minitest::Test
       end
 
       # calculate EUIs to determine if HVAC EUI is appropriate
-      annual_eui = std.model_annual_eui_kbtu_per_ft2(model)
-      int_lighting_eui = std.model_annual_eui_kbtu_per_ft2_by_fuel_and_enduse(model, 'Electricity', 'Interior Lighting').round(1)
-      ext_lighting_eui = std.model_annual_eui_kbtu_per_ft2_by_fuel_and_enduse(model, 'Electricity', 'Exterior Lighting').round(1)
-      int_equipment_elec_eui = std.model_annual_eui_kbtu_per_ft2_by_fuel_and_enduse(model, 'Electricity', 'Interior Equipment').round(1)
-      int_equipment_gas_eui = std.model_annual_eui_kbtu_per_ft2_by_fuel_and_enduse(model, 'Natural Gas', 'Interior Equipment').round(1)
+      annual_eui = OpenstudioStandards::SqlFile.model_get_annual_eui_kbtu_per_ft2(model)
+      int_lighting_eui = OpenstudioStandards::SqlFile.model_get_annual_eui_kbtu_per_ft2_by_fuel_and_enduse(model, 'Electricity', 'Interior Lighting').round(1)
+      ext_lighting_eui = OpenstudioStandards::SqlFile.model_get_annual_eui_kbtu_per_ft2_by_fuel_and_enduse(model, 'Electricity', 'Exterior Lighting').round(1)
+      int_equipment_elec_eui = OpenstudioStandards::SqlFile.model_get_annual_eui_kbtu_per_ft2_by_fuel_and_enduse(model, 'Electricity', 'Interior Equipment').round(1)
+      int_equipment_gas_eui = OpenstudioStandards::SqlFile.model_get_annual_eui_kbtu_per_ft2_by_fuel_and_enduse(model, 'Natural Gas', 'Interior Equipment').round(1)
       int_equipment_eui = (int_equipment_elec_eui + int_equipment_gas_eui).round(1)
-      refrigeration_eui = std.model_annual_eui_kbtu_per_ft2_by_fuel_and_enduse(model, 'Electricity', 'Refrigeration').round(1)
-      shw_elec_eui = std.model_annual_eui_kbtu_per_ft2_by_fuel_and_enduse(model, 'Electricity', 'Water Systems').round(1)
-      shw_gas_eui = std.model_annual_eui_kbtu_per_ft2_by_fuel_and_enduse(model, 'Natural Gas', 'Water Systems').round(1)
+      refrigeration_eui = OpenstudioStandards::SqlFile.model_get_annual_eui_kbtu_per_ft2_by_fuel_and_enduse(model, 'Electricity', 'Refrigeration').round(1)
+      shw_elec_eui = OpenstudioStandards::SqlFile.model_get_annual_eui_kbtu_per_ft2_by_fuel_and_enduse(model, 'Electricity', 'Water Systems').round(1)
+      shw_gas_eui = OpenstudioStandards::SqlFile.model_get_annual_eui_kbtu_per_ft2_by_fuel_and_enduse(model, 'Natural Gas', 'Water Systems').round(1)
       shw_eui = (shw_elec_eui + shw_gas_eui).round(1)
-      fan_eui = std.model_annual_eui_kbtu_per_ft2_by_fuel_and_enduse(model, 'Electricity', 'Fans').round(1)
-      pump_eui = std.model_annual_eui_kbtu_per_ft2_by_fuel_and_enduse(model, 'Electricity', 'Pumps').round(1)
-      cooling_eui = std.model_annual_eui_kbtu_per_ft2_by_fuel_and_enduse(model, 'Electricity', 'Cooling').round(1)
-      heating_elec_eui = std.model_annual_eui_kbtu_per_ft2_by_fuel_and_enduse(model, 'Electricity', 'Heating').round(1)
-      heating_gas_eui = std.model_annual_eui_kbtu_per_ft2_by_fuel_and_enduse(model, 'Natural Gas', 'Heating').round(1)
+      fan_eui = OpenstudioStandards::SqlFile.model_get_annual_eui_kbtu_per_ft2_by_fuel_and_enduse(model, 'Electricity', 'Fans').round(1)
+      pump_eui = OpenstudioStandards::SqlFile.model_get_annual_eui_kbtu_per_ft2_by_fuel_and_enduse(model, 'Electricity', 'Pumps').round(1)
+      cooling_eui = OpenstudioStandards::SqlFile.model_get_annual_eui_kbtu_per_ft2_by_fuel_and_enduse(model, 'Electricity', 'Cooling').round(1)
+      heating_elec_eui = OpenstudioStandards::SqlFile.model_get_annual_eui_kbtu_per_ft2_by_fuel_and_enduse(model, 'Electricity', 'Heating').round(1)
+      heating_gas_eui = OpenstudioStandards::SqlFile.model_get_annual_eui_kbtu_per_ft2_by_fuel_and_enduse(model, 'Natural Gas', 'Heating').round(1)
       heating_eui = (heating_elec_eui + heating_gas_eui).round(1)
       hvac_eui = (fan_eui + pump_eui + cooling_eui + heating_eui).round(1)
       puts "Annual EUI (kBtu/ft^2): #{annual_eui.round(1)}, split:"
