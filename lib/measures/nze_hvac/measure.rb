@@ -356,7 +356,7 @@ class NzeHvac < OpenStudio::Measure::ModelMeasure
       when 'Automatic Partition'
         # group zones by occupancy type (residential/nonresidential)
         # split non-dominant groups if their total area exceeds 20,000 ft2.
-        sys_groups = std.model_group_zones_by_type(model, OpenStudio.convert(20000, 'ft^2', 'm^2').get)
+        sys_groups = OpenstudioStandards::Geometry.model_group_thermal_zones_by_occupancy_type(model, min_area_m2: OpenStudio.convert(20000, 'ft^2', 'm^2').get)
 
         # assume secondary system type is PSZ-AC for VAV Reheat otherwise assume same hvac system type
         sec_sys_type = hvac_system_type # same as primary system type
@@ -381,13 +381,13 @@ class NzeHvac < OpenStudio::Measure::ModelMeasure
         add_system_to_zones(model, runner, hvac_system_type, conditioned_zones, std, doas_dcv: doas_dcv)
 
       when 'One System Per Building Story'
-        story_groups = std.model_group_zones_by_story(model, conditioned_zones)
+        story_groups = OpenstudioStandards::Geometry.model_group_thermal_zones_by_building_story(model, conditioned_zones)
         story_groups.each do |story_zones|
           add_system_to_zones(model, runner, hvac_system_type, story_zones, std, doas_dcv: doas_dcv)
         end
 
       when 'One System Per Building Type'
-        system_groups = std.model_group_zones_by_building_type(model, 0.0)
+        system_groups = OpenstudioStandards::Geometry.model_group_thermal_zones_by_building_type(model, min_area_m2: 0.0)
         system_groups.each do |system_group|
           add_system_to_zones(model, runner, hvac_system_type, system_group['zones'], std, doas_dcv: doas_dcv)
         end
