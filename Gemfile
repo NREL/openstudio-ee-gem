@@ -13,8 +13,11 @@ gemspec
 allow_local = ENV['FAVOR_LOCAL_GEMS']
 
 # Delete when these branchesa are merged and released
-#gem 'openstudio-extension', github: 'NREL/OpenStudio-extension-gem', branch: 'v0.6.0-rc1'
-#gem 'openstudio-standards', '= 0.2.17.rc1', :github => 'NREL/openstudio-standards', :ref => '3.5.0_changes'
+#gem 'openstudio-extension', github: 'NREL/OpenStudio-extension-gem', branch: 'wenyi-fix-build-temp', ref: "34a39a24aee2259de"
+#gem 'openstudio-standards', github: 'NREL/openstudio-standards', tag: 'v0.6.0.rc2', ref: "1c42110"
+#gem 'openstudio_measure_tester', :git => 'https://github.com/NREL/OpenStudio-measure-tester-gem.git', :branch => 'wenyi-dependencies-update'
+#gem 'openstudio-workflow', :git => 'https://github.com/NREL/OpenStudio-workflow-gem.git', :branch => 'develop', ref: "32126e9b9f6"
+#gem 'bcl', :git => 'https://github.com/wenyikuang/bcl-gem.git', :branch => 'develop'
 
 
 # uncomment when you want CI to use develop branch of extension gem
