@@ -3,8 +3,8 @@
   <schema_version>3.1</schema_version>
   <name>nze_hvac</name>
   <uid>f060dff2-b28d-4194-a6af-e66d88ddb33c</uid>
-  <version_id>30f88170-8790-4a5b-a7a2-75840782b1f7</version_id>
-  <version_modified>2023-11-30T22:42:51Z</version_modified>
+  <version_id>b44fd444-f022-4409-af31-2b29e9603e31</version_id>
+  <version_modified>2024-05-09T20:11:49Z</version_modified>
   <xml_checksum>0E5E4776</xml_checksum>
   <class_name>NzeHvac</class_name>
   <display_name>NZEHVAC</display_name>
@@ -252,19 +252,19 @@
     <file>
       <version>
         <software_program>OpenStudio</software_program>
-        <identifier>2.9.0</identifier>
-        <min_compatible>3.3.0</min_compatible>
+        <identifier>3.8.0</identifier>
+        <min_compatible>3.8.0</min_compatible>
       </version>
       <filename>measure.rb</filename>
       <filetype>rb</filetype>
       <usage_type>script</usage_type>
-      <checksum>1711274D</checksum>
+      <checksum>7EAD5ED0</checksum>
     </file>
     <file>
       <filename>NZEHVAC_Test.rb</filename>
       <filetype>rb</filetype>
       <usage_type>test</usage_type>
-      <checksum>B2D92497</checksum>
+      <checksum>90B2A846</checksum>
     </file>
     <file>
       <filename>USA_IL_Chicago-OHare.Intl.AP.725300_TMY3.epw</filename>
