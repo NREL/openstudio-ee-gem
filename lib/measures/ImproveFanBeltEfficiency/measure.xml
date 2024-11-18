@@ -1,10 +1,10 @@
 <?xml version="1.0"?>
 <measure>
-  <schema_version>3.0</schema_version>
+  <schema_version>3.1</schema_version>
   <name>improve_fan_belt_efficiency</name>
   <uid>ebeca0aa-a432-4283-a714-17116f7c8f8c</uid>
-  <version_id>ebb40687-ed5b-4fe7-a6a8-45da30a3a895</version_id>
-  <version_modified>20230602T151919Z</version_modified>
+  <version_id>56c62406-02e3-4e7c-980e-dcc2d62466fa</version_id>
+  <version_modified>2024-11-16T23:47:46Z</version_modified>
   <xml_checksum>F78494F2</xml_checksum>
   <class_name>ImproveFanBeltEfficiency</class_name>
   <display_name>Improve Fan Belt Efficiency</display_name>
@@ -47,10 +47,10 @@ Well-adjusted belts run cooler, last longer, and operate at higher efficiency th
       <type>Choice</type>
       <required>true</required>
       <model_dependent>false</model_dependent>
-      <default_value>{9e804813-d523-43be-b94a-f423b2cfeacb}</default_value>
+      <default_value>{28f2e284-58a1-4e3f-8cb7-7996c448d473}</default_value>
       <choices>
         <choice>
-          <value>{9e804813-d523-43be-b94a-f423b2cfeacb}</value>
+          <value>{28f2e284-58a1-4e3f-8cb7-7996c448d473}</value>
           <display_name>*All Air Loops*</display_name>
         </choice>
       </choices>
@@ -167,16 +167,10 @@ Well-adjusted belts run cooler, last longer, and operate at higher efficiency th
   </attributes>
   <files>
     <file>
-      <filename>0320_ModelWithHVAC_01.osm</filename>
-      <filetype>osm</filetype>
-      <usage_type>test</usage_type>
-      <checksum>4A5352A1</checksum>
-    </file>
-    <file>
-      <filename>README.md.erb</filename>
-      <filetype>erb</filetype>
-      <usage_type>readmeerb</usage_type>
-      <checksum>703C9964</checksum>
+      <filename>LICENSE.md</filename>
+      <filetype>md</filetype>
+      <usage_type>license</usage_type>
+      <checksum>8C5A8023</checksum>
     </file>
     <file>
       <filename>README.md</filename>
@@ -185,10 +179,10 @@ Well-adjusted belts run cooler, last longer, and operate at higher efficiency th
       <checksum>0A5ECB03</checksum>
     </file>
     <file>
-      <filename>LICENSE.md</filename>
-      <filetype>md</filetype>
-      <usage_type>license</usage_type>
-      <checksum>0DDDFB54</checksum>
+      <filename>README.md.erb</filename>
+      <filetype>erb</filetype>
+      <usage_type>readmeerb</usage_type>
+      <checksum>703C9964</checksum>
     </file>
     <file>
       <version>
@@ -200,6 +194,12 @@ Well-adjusted belts run cooler, last longer, and operate at higher efficiency th
       <filetype>rb</filetype>
       <usage_type>script</usage_type>
       <checksum>DC853729</checksum>
+    </file>
+    <file>
+      <filename>0320_ModelWithHVAC_01.osm</filename>
+      <filetype>osm</filetype>
+      <usage_type>test</usage_type>
+      <checksum>4A5352A1</checksum>
     </file>
     <file>
       <filename>ImproveFanBeltEfficiency_Test.rb</filename>
