@@ -1,10 +1,10 @@
 <?xml version="1.0"?>
 <measure>
-  <schema_version>3.0</schema_version>
+  <schema_version>3.1</schema_version>
   <name>create_variable_speed_rtu</name>
   <uid>7fb36b3a-5591-4627-a2b0-7709fbeae593</uid>
-  <version_id>c60c2d11-2eef-4896-ab40-fb3040e23da0</version_id>
-  <version_modified>20230602T151915Z</version_modified>
+  <version_id>0242ce06-9dab-48a8-9e7d-22b82eb252d7</version_id>
+  <version_modified>2024-11-16T23:47:44Z</version_modified>
   <xml_checksum>A9D5932A</xml_checksum>
   <class_name>CreateVariableSpeedRTU</class_name>
   <display_name>Create Variable Speed RTU</display_name>
@@ -17,10 +17,10 @@
       <type>Choice</type>
       <required>true</required>
       <model_dependent>false</model_dependent>
-      <default_value>{e1b8e482-ac46-4d0a-9d42-e3554d593d00}</default_value>
+      <default_value>{5bb1dcf7-f019-4fbd-929b-f538fc763f84}</default_value>
       <choices>
         <choice>
-          <value>{e1b8e482-ac46-4d0a-9d42-e3554d593d00}</value>
+          <value>{5bb1dcf7-f019-4fbd-929b-f538fc763f84}</value>
           <display_name>*All CAV Air Loops*</display_name>
         </choice>
       </choices>
@@ -164,10 +164,10 @@
   </attributes>
   <files>
     <file>
-      <filename>example_model.osm</filename>
-      <filetype>osm</filetype>
-      <usage_type>test</usage_type>
-      <checksum>69467654</checksum>
+      <filename>LICENSE.md</filename>
+      <filetype>md</filetype>
+      <usage_type>license</usage_type>
+      <checksum>8C5A8023</checksum>
     </file>
     <file>
       <filename>README.md</filename>
@@ -182,18 +182,6 @@
       <checksum>703C9964</checksum>
     </file>
     <file>
-      <filename>LICENSE.md</filename>
-      <filetype>md</filetype>
-      <usage_type>license</usage_type>
-      <checksum>0DDDFB54</checksum>
-    </file>
-    <file>
-      <filename>create_variable_speed_rtu_test.rb</filename>
-      <filetype>rb</filetype>
-      <usage_type>test</usage_type>
-      <checksum>9278314B</checksum>
-    </file>
-    <file>
       <version>
         <software_program>OpenStudio</software_program>
         <identifier>1.12.2</identifier>
@@ -203,6 +191,18 @@
       <filetype>rb</filetype>
       <usage_type>script</usage_type>
       <checksum>D38F0FFA</checksum>
+    </file>
+    <file>
+      <filename>create_variable_speed_rtu_test.rb</filename>
+      <filetype>rb</filetype>
+      <usage_type>test</usage_type>
+      <checksum>9278314B</checksum>
+    </file>
+    <file>
+      <filename>example_model.osm</filename>
+      <filetype>osm</filetype>
+      <usage_type>test</usage_type>
+      <checksum>69467654</checksum>
     </file>
   </files>
 </measure>

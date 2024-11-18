@@ -3,8 +3,8 @@
   <schema_version>3.1</schema_version>
   <name>nze_hvac</name>
   <uid>f060dff2-b28d-4194-a6af-e66d88ddb33c</uid>
-  <version_id>b44fd444-f022-4409-af31-2b29e9603e31</version_id>
-  <version_modified>2024-05-09T20:11:49Z</version_modified>
+  <version_id>8cbe5655-0c53-4e6d-8518-bfed32b6b4b8</version_id>
+  <version_modified>2024-11-16T23:47:44Z</version_modified>
   <xml_checksum>0E5E4776</xml_checksum>
   <class_name>NzeHvac</class_name>
   <display_name>NZEHVAC</display_name>
@@ -235,7 +235,7 @@
       <filename>LICENSE.md</filename>
       <filetype>md</filetype>
       <usage_type>license</usage_type>
-      <checksum>0DDDFB54</checksum>
+      <checksum>8C5A8023</checksum>
     </file>
     <file>
       <filename>README.md</filename>
