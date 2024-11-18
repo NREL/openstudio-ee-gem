@@ -31,7 +31,6 @@ Gem::Specification.new do |spec|
   spec.add_dependency 'openstudio-extension', '~> 0.8.2'
   spec.add_dependency 'openstudio-standards', '0.7.0'
   spec.add_dependency 'multipart-post', '2.4.0'
-  spec.add_dependency 'regexp_parser', '2.9.0'
   spec.add_dependency 'addressable', '2.8.1'
 
   spec.add_development_dependency 'rake', '~> 13.0'
