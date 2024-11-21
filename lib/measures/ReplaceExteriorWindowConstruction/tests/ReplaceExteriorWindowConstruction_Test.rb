@@ -11,11 +11,6 @@ require_relative '../measure.rb'
 require 'minitest/autorun'
 
 class ReplaceExteriorWindowConstruction_Test < Minitest::Test
-  # def setup
-  # end
-
-  # def teardown
-  # end
 
   def test_ReplaceExteriorWindowConstruction
     # create an instance of the measure
@@ -116,6 +111,10 @@ class ReplaceExteriorWindowConstruction_Test < Minitest::Test
     result = runner.result
     show_output(result)
     assert(result.value.valueName == 'Success')
+
+    # save the model to test output directory
+    output_file_path = OpenStudio::Path.new(File.dirname(__FILE__) + '/output/new_construction_FullyCosted.osm')
+    model.save(output_file_path, true)
     end
 
   def test_ReplaceExteriorWindowConstruction_retrofit_FullyCosted
@@ -191,6 +190,9 @@ class ReplaceExteriorWindowConstruction_Test < Minitest::Test
     result = runner.result
     show_output(result)
     assert(result.value.valueName == 'Success')
+    # save the model to test output directory
+    output_file_path = OpenStudio::Path.new(File.dirname(__FILE__) + '/output/retrofit_FullyCosted.osm')
+    model.save(output_file_path, true)    
   end
 
   def test_ReplaceExteriorWindowConstruction_retrofit_MinimalCost
@@ -264,8 +266,11 @@ class ReplaceExteriorWindowConstruction_Test < Minitest::Test
 
     measure.run(model, runner, argument_map)
     result = runner.result
-    # show_output(result)
+    show_output(result)
     assert(result.value.valueName == 'Success')
+    # save the model to test output directory
+    output_file_path = OpenStudio::Path.new(File.dirname(__FILE__) + '/output/retrofit_MinimalCost.osm')
+    model.save(output_file_path, true)    
   end
 
   def test_ReplaceExteriorWindowConstruction_retrofit_NoCost
@@ -339,8 +344,11 @@ class ReplaceExteriorWindowConstruction_Test < Minitest::Test
 
     measure.run(model, runner, argument_map)
     result = runner.result
-    # show_output(result)
+    show_output(result)
     assert(result.value.valueName == 'Success')
+    # save the model to test output directory
+    output_file_path = OpenStudio::Path.new(File.dirname(__FILE__) + '/output/retrofit_NoCost.osm')
+    model.save(output_file_path, true)    
   end
 
   def test_ReplaceExteriorWindowConstruction_ReverseTranslatedModel
@@ -414,8 +422,11 @@ class ReplaceExteriorWindowConstruction_Test < Minitest::Test
 
     measure.run(model, runner, argument_map)
     result = runner.result
-    # show_output(result)
+    show_output(result)
     assert(result.value.valueName == 'Success')
+    # save the model to test output directory
+    output_file_path = OpenStudio::Path.new(File.dirname(__FILE__) + '/output/ReverseTranslatedModel.osm')
+    model.save(output_file_path, true)    
   end
 
   def test_ReplaceExteriorWindowConstruction_EmptySpaceNoLoadsOrSurfaces
@@ -493,7 +504,10 @@ class ReplaceExteriorWindowConstruction_Test < Minitest::Test
 
     measure.run(model, runner, argument_map)
     result = runner.result
-    # show_output(result)
+    show_output(result)
     assert(result.value.valueName == 'NA')
+    # save the model to test output directory
+    output_file_path = OpenStudio::Path.new(File.dirname(__FILE__) + '/output/EmptySpaceNoLoadsOrSurfaces.osm')
+    model.save(output_file_path, true)    
   end
 end

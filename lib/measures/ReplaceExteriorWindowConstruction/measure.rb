@@ -17,9 +17,7 @@ class ReplaceExteriorWindowConstruction < OpenStudio::Measure::ModelMeasure
 
   # human readable description of modeling approach
   def modeler_description
-    return 'Replace fixed and/or operable exterior window constructions with another construction in the model.  Skylights (windows in roofs vs. walls) will not be altered. Windows in surfaces with "Adiabatic" boundary conditions are not specifically assumed to be interior or exterior. As a result constructions used on windows in "Adiabatic" surfaces will not be altered. Material &amp; installation, demolition, and O&amp;M costs can be added to the applied window construction. Optionally any prior costs associated with construction can be removed.
-
-    For costs added as part of a design alternatives "Years Until Costs Start? is typically "0?. For a new construction scenario "Demolition Costs Occur During Initial Construction?? is "false?. For retrofit scenario "Demolition Costs Occur During Initial Construction?? is "true?. O&amp;M cost and frequency can be whatever is appropriate for the component.'
+    return "Replace fixed and/or operable exterior window constructions with another construction in the model.  Skylights (windows in roofs vs. walls) will not be altered. Windows in surfaces with `Adiabatic` boundary conditions are not specifically assumed to be interior or exterior. As a result constructions used on windows in `Adiabatic` surfaces will not be altered. `Material, installation, demolition, and O and M costs` can be added to the applied window construction. Optionally any prior costs associated with construction can be removed. <br/> <br/> For costs added as part of a design alternatives `Years Until Costs Start?` is typically `0`. For a new construction scenario `Demolition Costs Occur During Initial Construction?` is `false`. For retrofit scenario `Demolition Costs Occur During Initial Construction?` is `true`. `O and M cost and frequency` can be whatever is appropriate for the component."
   end
 
   # define the arguments that the user will input
