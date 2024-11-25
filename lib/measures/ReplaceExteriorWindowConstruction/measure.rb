@@ -152,6 +152,10 @@ class ReplaceExteriorWindowConstruction < OpenStudio::Measure::ModelMeasure
       end
     end
 
+    # run EC3 and put output here
+    ec3_output =["testA","TestB"]
+    runner.registerInfo("I found #{ec3_output.size} glazing objects in EC3")
+
     # set flags and counters to use later
     costs_requested = false
     costs_removed = false
