@@ -3,8 +3,8 @@
   <schema_version>3.1</schema_version>
   <name>nze_hvac</name>
   <uid>f060dff2-b28d-4194-a6af-e66d88ddb33c</uid>
-  <version_id>8cbe5655-0c53-4e6d-8518-bfed32b6b4b8</version_id>
-  <version_modified>2024-11-16T23:47:44Z</version_modified>
+  <version_id>5a23df2a-8da4-419b-b102-64f88077b5d8</version_id>
+  <version_modified>2024-11-26T20:39:00Z</version_modified>
   <xml_checksum>0E5E4776</xml_checksum>
   <class_name>NzeHvac</class_name>
   <display_name>NZEHVAC</display_name>
@@ -258,13 +258,7 @@
       <filename>measure.rb</filename>
       <filetype>rb</filetype>
       <usage_type>script</usage_type>
-      <checksum>7EAD5ED0</checksum>
-    </file>
-    <file>
-      <filename>NZEHVAC_Test.rb</filename>
-      <filetype>rb</filetype>
-      <usage_type>test</usage_type>
-      <checksum>90B2A846</checksum>
+      <checksum>F3FAC6D8</checksum>
     </file>
     <file>
       <filename>USA_IL_Chicago-OHare.Intl.AP.725300_TMY3.epw</filename>
@@ -295,6 +289,12 @@
       <filetype>osm</filetype>
       <usage_type>test</usage_type>
       <checksum>57483CB6</checksum>
+    </file>
+    <file>
+      <filename>nze_hvac_test.rb</filename>
+      <filetype>rb</filetype>
+      <usage_type>test</usage_type>
+      <checksum>BC3EA04F</checksum>
     </file>
     <file>
       <filename>office_chicago.osm</filename>
