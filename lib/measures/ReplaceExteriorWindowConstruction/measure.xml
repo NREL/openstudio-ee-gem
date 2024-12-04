@@ -3,8 +3,8 @@
   <schema_version>3.1</schema_version>
   <name>replace_exterior_window_construction</name>
   <uid>95116deb-0716-4cdc-af27-09c463befc7c</uid>
-  <version_id>2effc12a-e8a0-4755-bb94-a1af2fff1581</version_id>
-  <version_modified>2024-11-21T01:40:34Z</version_modified>
+  <version_id>464d60e7-4702-4a27-b56a-a5075a7fb57c</version_id>
+  <version_modified>2024-12-04T18:48:12Z</version_modified>
   <xml_checksum>6DE831F7</xml_checksum>
   <class_name>ReplaceExteriorWindowConstruction</class_name>
   <display_name>Replace Exterior Window Constructions with a Different Construction from the Model.</display_name>
@@ -194,7 +194,7 @@
       <filename>measure.rb</filename>
       <filetype>rb</filetype>
       <usage_type>script</usage_type>
-      <checksum>567D24F4</checksum>
+      <checksum>DE7556EA</checksum>
     </file>
     <file>
       <filename>EnvelopeAndLoadTestModel_01.osm</filename>
