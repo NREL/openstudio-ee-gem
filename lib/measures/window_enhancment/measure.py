@@ -1,14 +1,12 @@
-"""insert your copyright here.
-
-# see the URL below for information on how to write OpenStudio measures
-# http://nrel.github.io/OpenStudio-user-documentation/reference/measure_writing_guide/
-"""
+# *******************************************************************************
+# OpenStudio(R), Copyright (c) Alliance for Sustainable Energy, LLC.
+# See also https://openstudio.net/license
+# *******************************************************************************
 
 import typing
-
 import openstudio
 
-################################################################EC3 API Call#############################################################################
+# EC3 API Call
 import requests
 import json
 import re
@@ -29,40 +27,40 @@ EC3_category_array = {
             "SCM",
             "Cement",
             "Aggregates"
-        ], 
+        ],
         "Masonry": [
             "Brick",
             "ConcreteUnitMasonry",
             "Mortar",
             "Cementitious",
             "Aggregates"
-        ],   
-        "Steel":[],  
-        "Aluminum":[],  
-        "Wood":[],
-        "Sheathing":[], 
-        "ThermalMoistureProtection":[],  
-        "Cladding":[],  
-        "Openings":[],  
-        "Finishes":[], 
-        "ConveyingEquipment":[], 
-        "NetworkInfrastrucure":[],  
-        "Asphalt":[],  
-        "Accessories":[],  
-        "ManufacturingInputs":[], 
-        "BulkMaterials":[],  
-        "Placeholders":[]
+        ],
+        "Steel": [],
+        "Aluminum": [],
+        "Wood": [],
+        "Sheathing": [],
+        "ThermalMoistureProtection": [], 
+        "Cladding": [],
+        "Openings": [], 
+        "Finishes": [],
+        "ConveyingEquipment": [],
+        "NetworkInfrastrucure": [], 
+        "Asphalt": [],
+        "Accessories": [], 
+        "ManufacturingInputs": [],
+        "BulkMaterials": [],
+        "Placeholders": []
     },
     "BuildingAssemblies": {
-        "NewCoustomAssembly":[], 
-        "ReinforcedConcrete":[],  
-        "Walls":[],  
-        "Floors":[],  
-        "GlazingFenesration":[],  
+        "NewCoustomAssembly": [],
+        "ReinforcedConcrete": [], 
+        "Walls": [],
+        "Floors": [], 
+        "GlazingFenesration": [], 
     },
 }
 
-# Define the URL with query parameters
+# Define the URL with query parameters (FIXME: Not including API key in public repo. Will need to be included in a gitignored config.ini file)
 windows_url = (
     "https://api.buildingtransparency.org/api/epds"
     "?page_number=1&page_size=25&fields=id%2Copen_xpd_uuid%2Cis_failed%2Cfailures%2Cerrors%2Cwarnings"
@@ -300,13 +298,13 @@ class WindowEnhancment(openstudio.measure.ModelMeasure):
         if not new_object.to_Construction().is_empty():
             construction = new_object.to_Construction.get()
 
-        #make a bool argument for fixed windows
+        # make a bool argument for fixed windows
         change_fixed_windows = openstudio.measure.OSArgument.makeBoolArgument("change_fixed_windows", True)
         change_fixed_windows.setDisplayName("Change Fixed Windows?")
         change_fixed_windows.setDefaultValue(True)
         args.append(change_fixed_windows)
 
-        #make a bool argument for operable windows
+        # make a bool argument for operable windows
         change_operable_windows = openstudio.measure.OSArgument.makeBoolArgument("change_operable_windows", True)
         change_operable_windows.setDisplayName("Change Operable Windows?")
         change_operable_windows.setDefaultValue(True)
@@ -335,7 +333,7 @@ class WindowEnhancment(openstudio.measure.ModelMeasure):
         vol_wframe.setDisplayName("Volume of window frame in m3")
         vol_wframe.setDefaultValue(0.0)
         args.append(vol_wframe)
-        
+
         return args
 
     def run(
@@ -360,22 +358,22 @@ class WindowEnhancment(openstudio.measure.ModelMeasure):
         if ci_igu < 0:
             runner.registerError("GWP of IGU can not be zero.")
             return False
-        
+
         # check the ci_wframe for reasonableness
         if ci_wframe < 0:
             runner.registerError("GWP of window frame can not be zero.")
             return False
-        
+
         # check the vol_igu for reasonableness
         if vol_igu < 0:
             runner.registerError("Volume of IGU can not be zero.")
             return False
-        
+
         # check the vol_wframe for reasonableness
         if vol_wframe < 0:
             runner.registerError("Volume of window frame can not be zero.")
             return False
-        
+
         # report initial condition of model
         runner.registerInitialCondition(f"The building started with {len(model.getSpaces())} spaces.")
 
@@ -383,15 +381,15 @@ class WindowEnhancment(openstudio.measure.ModelMeasure):
         new_space = openstudio.model.Space(model)
         new_space.setName("space_name")
 
-        #https://openstudio-sdk-documentation.s3.amazonaws.com/cpp/OpenStudio-1.7.0-doc/model/html/classopenstudio_1_1model_1_1_glazing.html
+        # https://openstudio-sdk-documentation.s3.amazonaws.com/cpp/OpenStudio-1.7.0-doc/model/html/classopenstudio_1_1model_1_1_glazing.html
         igu = openstudio.model.Glazing(model)
         igu.setName("IGU")
 
-        #https://openstudio-sdk-documentation.s3.amazonaws.com/cpp/OpenStudio-1.7.0-doc/model/html/classopenstudio_1_1model_1_1_shade.html
+        # https://openstudio-sdk-documentation.s3.amazonaws.com/cpp/OpenStudio-1.7.0-doc/model/html/classopenstudio_1_1model_1_1_shade.html
         shade = openstudio.model.ShadingMaterial(model)
         shade_thickness = shade.getThickness()
 
-        #https://openstudio-sdk-documentation.s3.amazonaws.com/cpp/OpenStudio-1.7.0-doc/model/html/classopenstudio_1_1model_1_1_window_property_frame_and_divider.html
+        # https://openstudio-sdk-documentation.s3.amazonaws.com/cpp/OpenStudio-1.7.0-doc/model/html/classopenstudio_1_1model_1_1_window_property_frame_and_divider.html
         wframe = openstudio.model.WindowPropertyFrameAndDivider(model)
         wframe.setFrameWidth(thickness)
         wframe_thickness = wframe.frameWidth()
