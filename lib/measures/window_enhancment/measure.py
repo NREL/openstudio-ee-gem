@@ -252,11 +252,6 @@ class WindowEnhancment(openstudio.measure.ModelMeasure):
         """
         return "I'm going to use layred construction and not simple glazing to do this. We have to think about how to address simple glazing with this."
 
-    def arguments(self, model: typing.Optional[openstudio.model.Model] = None):
-        """Prepares user arguments for the measure.
-
-        Measure arguments define which -- if any -- input parameters the user may set before running the measure.
-        """
         # define the arguments that the user will input
     def arguments(self, model: typing.Optional[openstudio.model.Model] = None):
         """Prepares user arguments for the measure.
