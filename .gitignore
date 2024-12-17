@@ -30,3 +30,5 @@ lib/test/*
 
 # Ignore measure tester gem local test results
 test_results/
+
+config.ini
