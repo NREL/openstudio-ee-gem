@@ -244,7 +244,7 @@ for wframe_epd_no, wframe_epd in enumerate(wframe_response, start=1):
     object_key = "object" + str(wframe_epd_no)
     wframe_epd_data[object_key] = wframe_object
     #print(wframe_object)
-    #pprint.pp(wframe_object)
+    pprint.pp(wframe_object)
 
 class WindowEnhancment(openstudio.measure.ModelMeasure):
     """A ModelMeasure."""
@@ -409,7 +409,9 @@ class WindowEnhancment(openstudio.measure.ModelMeasure):
         new_space.setName("space_name")
 
         #https://openstudio-sdk-documentation.s3.amazonaws.com/cpp/OpenStudio-1.7.0-doc/model/html/classopenstudio_1_1model_1_1_glazing.html
-        igu = openstudio.model.Glazing(model)
+        igu_pane_1 = openstudio.model.StandardGlazing(model)
+        igu_pane_2 = openstudio.model.Glazing(model)
+        openstudio.model.AirGap/WindowMaterial.GasField
         igu.setName("IGU")
 
         #https://openstudio-sdk-documentation.s3.amazonaws.com/cpp/OpenStudio-1.7.0-doc/model/html/classopenstudio_1_1model_1_1_shade.html
