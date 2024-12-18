@@ -76,7 +76,7 @@ igu_url =  (
     "https://api.buildingtransparency.org/api/materials"
     "?page_number=1&page_size=100"
     "&mf=!EC3%20search(%22InsulatingGlazingUnits%22)%20WHERE%20"
-    "%0A%20%20jurisdiction%3A%20IN(%22021%22)%20AND%0A%20%20"
+    "%0A%20%20jurisdiction%3A%20IN(%22US%22%2C%20%22CA%22)%20AND%0A%20%20"
     "epd__date_validity_ends%3A%20%3E%20%222024-12-05%22%20AND%0A%20%20"
     "epd_types%3A%20IN(%22Product%20EPDs%22)%20"
     "!pragma%20eMF(%222.0%2F1%22)%2C%20lcia(%22TRACI%202.1%22)"
@@ -86,7 +86,7 @@ wframe_url = (
     "https://api.buildingtransparency.org/api/materials"
     "?page_number=1&page_size=25"
     "&mf=!EC3%20search(%22AluminiumExtrusions%22)%20WHERE%20"
-    "%0A%20%20jurisdiction%3A%20IN(%22021%22)%20AND%0A%20%20"
+    "%0A%20%20jurisdiction%3A%20IN(%22US%22%2C%20%22CA%22)%20AND%0A%20%20"
     "epd__date_validity_ends%3A%20%3E%20%222024-12-09%22%20AND%0A%20%20"
     "epd_types%3A%20IN(%22Product%20EPDs%22)%20"
     "!pragma%20eMF(%222.0%2F1%22)%2C%20lcia(%22TRACI%202.1%22)"
@@ -173,7 +173,7 @@ for igu_epd_no, igu_epd in enumerate(igu_response, start=1):
     igu_object["gwp_per_unit_volume"] = f"{gwp_per_unit_volume} m3"
     object_key = "object" + str(igu_epd_no)
     igu_epd_data[object_key] = igu_object
-    #pprint.pp(igu_object)
+    pprint.pp(igu_object)
 
 for wframe_epd_no, wframe_epd in enumerate(wframe_response, start=1):
     print(f"========================================EPD No. {wframe_epd_no}:==========================================")
