@@ -410,8 +410,8 @@ class WindowEnhancment(openstudio.measure.ModelMeasure):
 
         #https://openstudio-sdk-documentation.s3.amazonaws.com/cpp/OpenStudio-1.7.0-doc/model/html/classopenstudio_1_1model_1_1_glazing.html
         igu_pane_1 = openstudio.model.StandardGlazing(model)
-        igu_pane_2 = openstudio.model.Glazing(model)
-        openstudio.model.AirGap/WindowMaterial.GasField
+        igu_pane_2 = openstudio.model.StandardGlazing(model)
+        openstudio.model.WindowMaterialGasField
         igu.setName("IGU")
 
         #https://openstudio-sdk-documentation.s3.amazonaws.com/cpp/OpenStudio-1.7.0-doc/model/html/classopenstudio_1_1model_1_1_shade.html
