@@ -25,7 +25,7 @@ class WindowEnhancment(openstudio.measure.ModelMeasure):
 
     def modeler_description(self):
         """
-        Layered construction approach will be used. 
+        Layered construction approach will be used.
         """
         return "Layered construction approach being used."
 
