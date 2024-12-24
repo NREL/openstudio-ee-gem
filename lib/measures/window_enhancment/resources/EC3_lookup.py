@@ -84,6 +84,7 @@ wframe_url = (
     "!pragma%20eMF(%222.0%2F1%22)%2C%20lcia(%22TRACI%202.1%22)"
 )
 
+
 # Headers for the request
 headers = {
     "Accept": "application/json",
@@ -127,7 +128,9 @@ wframe_epd_data = {}
 for igu_epd_no, igu_epd in enumerate(igu_response, start=1):
     print(f"========================================EPD No. {igu_epd_no}:==========================================")
     # Initialize gwp per unit volume of IGU  
-    gwp_per_unit_volume = "unidentified functional unit"
+    gwp_per_unit_volume = "Not specified"
+    gwp_per_unit_area = "Not specified"
+    gwp_per_unit_mass = "Not specified"
     # Create an empty list to store each key,value pair in an individual EPD object 
     igu_object = {}
 
@@ -142,35 +145,48 @@ for igu_epd_no, igu_epd in enumerate(igu_response, start=1):
             warnings = igu_epd.get("warnings")
             mass_per_declared_unit = igu_epd.get("mass_per_declared_unit")
             density_unit = igu_epd.get("density")
+            gwp_per_unit_mass = igu_epd.get("gwp_per_kg")
 
-            # Calculate gwp per unit volume based on the conditions
-            if declared_unit and "m2" in declared_unit and thickness_unit and "mm" in str(thickness_unit):
+            # Calculations
+            if declared_unit and "m3" in declared_unit:
+                gwp_per_category_declared_unit_value = float(re.search(r"[-+]?\d*\.?\d+", str(gwp_per_category_declared_unit)).group())
+                gwp_per_unit_volume = gwp_per_category_declared_unit_value
 
-                thickness = re.search(r"[-+]?\d*\.?\d+", thickness_unit)  # Extract numeric part
-                thickness = float(thickness.group())
-                gwp_per_category_declared_unit_value = re.search(r"[-+]?\d*\.?\d+", str(gwp_per_category_declared_unit))
-                gwp_per_category_declared_unit_value = float(gwp_per_category_declared_unit_value.group())
-                # Convert thickness to meters
-                thickness = float(thickness) * 1e-3
-                gwp_per_unit_volume = gwp_per_category_declared_unit_value / thickness
-            
-            elif declared_unit and "kg" in declared_unit and density_unit and "kg / m3" in density_unit:
-                density = re.search(r"[-+]?\d*\.?\d+", density_unit)  # Extract numeric part
-                density = float(density.group())
+            elif declared_unit and "m2" in declared_unit and thickness_unit and "mm" in str(thickness_unit):
+                thickness = float(re.search(r"[-+]?\d*\.?\d+", thickness_unit).group())  # Extract numeric part
+                gwp_per_category_declared_unit_value = float(re.search(r"[-+]?\d*\.?\d+", str(gwp_per_category_declared_unit)).group())
+                thickness = thickness * 1e-3 # Convert thickness to meters
+                gwp_per_unit_volume = round(gwp_per_category_declared_unit_value / thickness,2)
+                gwp_per_unit_area = gwp_per_category_declared_unit_value
+
+            elif declared_unit and "kg" in declared_unit and density_unit:
+                density = float(re.search(r"[-+]?\d*\.?\d+", density_unit).group())  # Extract numeric part
                 gwp_per_unit_volume = gwp_per_category_declared_unit_value * density
+                gwp_per_unit_volume = round(gwp_per_unit_volume,2)
+            
+            elif declared_unit and "t" in declared_unit and density_unit:
+                density = float(re.search(r"[-+]?\d*\.?\d+", density_unit).group())  # Extract numeric part
+                gwp_per_category_declared_unit_value = float(re.search(r"[-+]?\d*\.?\d+", str(gwp_per_category_declared_unit)).group())
+                gwp_per_unit_volume = (gwp_per_category_declared_unit_value / 1000) * density
+                gwp_per_unit_volume = round(gwp_per_unit_volume,2)
+                
 
-            elif declared_unit and "kg" in declared_unit and warnings and "'density': ['Not specified']" in str(warnings):
-                gwp_per_unit_volume = "density not available"
-
-    igu_object["gwp_per_unit_volume"] = f"{gwp_per_unit_volume} m3"
+    igu_object["gwp_per_unit_volume"] = f"{gwp_per_unit_volume} kg CO2e/m3"
+    igu_object["gwp_per_unit_area"] = f"{gwp_per_unit_area} kg CO2e/m2"
+    if gwp_per_unit_mass == None:
+        igu_object["gwp_per_unit_mass"] = "Not avaialble in this EPD"
+    else:
+        igu_object["gwp_per_unit_mass"] = f"{gwp_per_unit_mass}/kg"
     object_key = "object" + str(igu_epd_no)
     igu_epd_data[object_key] = igu_object
-    #pprint.pp(igu_object)
+    pprint.pp(igu_object)
 
 for wframe_epd_no, wframe_epd in enumerate(wframe_response, start=1):
     print(f"========================================EPD No. {wframe_epd_no}:==========================================")
-    # Initialize gwp per unit volume of IGU  
-    gwp_per_unit_volume = "unidentified functional unit"
+    # Initialize gwp per unit volume of window frame 
+    gwp_per_unit_volume = "Not specified"
+    gwp_per_unit_area = "Not specified"
+    gwp_per_unit_mass = "Not specified"
     # Create an empty list to store each key,value pair in an individual EPD object 
     wframe_object = {}
 
@@ -184,29 +200,39 @@ for wframe_epd_no, wframe_epd in enumerate(wframe_response, start=1):
             gwp_per_category_declared_unit = wframe_epd.get("gwp_per_category_declared_unit")
             warnings = wframe_epd.get("warnings")
             mass_per_declared_unit = wframe_epd.get("mass_per_declared_unit")
-            density_unit = igu_epd.get("density")
+            density_unit = wframe_epd.get("density")
+            gwp_per_unit_mass = wframe_epd.get("gwp_per_kg")
 
-            # Calculate gwp per unit volume based on the conditions
-            if declared_unit and "m2" in declared_unit and thickness_unit and "mm" in str(thickness_unit):
+            # Calculations
+            if declared_unit and "m3" in declared_unit:
+                gwp_per_category_declared_unit_value = float(re.search(r"[-+]?\d*\.?\d+", str(gwp_per_category_declared_unit)).group())
+                gwp_per_unit_volume = gwp_per_category_declared_unit_value
 
-                thickness = re.search(r"[-+]?\d*\.?\d+", thickness_unit)  # Extract numeric part
-                thickness = float(thickness.group())
-                gwp_per_category_declared_unit_value = re.search(r"[-+]?\d*\.?\d+", str(gwp_per_category_declared_unit))
-                gwp_per_category_declared_unit_value = float(gwp_per_category_declared_unit_value.group())
-                # Convert thickness to meters
-                thickness = float(thickness) * 1e-3
-                gwp_per_unit_volume = gwp_per_category_declared_unit_value / thickness
+            elif declared_unit and "m2" in declared_unit and thickness_unit and "mm" in str(thickness_unit):
+                thickness = float(re.search(r"[-+]?\d*\.?\d+", thickness_unit).group())  # Extract numeric part
+                gwp_per_category_declared_unit_value = float(re.search(r"[-+]?\d*\.?\d+", str(gwp_per_category_declared_unit)).group())
+                thickness = thickness * 1e-3 # Convert thickness to meters
+                gwp_per_unit_volume = round(gwp_per_category_declared_unit_value / thickness,2)
+                gwp_per_unit_area = gwp_per_category_declared_unit_value
 
-            elif declared_unit and "kg" in declared_unit and density_unit and "kg / m3" in density_unit:
-                density = re.search(r"[-+]?\d*\.?\d+", density_unit)  # Extract numeric part
-                density = float(density.group())
+            elif declared_unit and "kg" in declared_unit and density_unit:
+                density = float(re.search(r"[-+]?\d*\.?\d+", density_unit).group())  # Extract numeric part
                 gwp_per_unit_volume = gwp_per_category_declared_unit_value * density
+                gwp_per_unit_volume = round(gwp_per_unit_volume,2)
+            
+            elif declared_unit and "t" in declared_unit and density_unit:
+                density = float(re.search(r"[-+]?\d*\.?\d+", density_unit).group())  # Extract numeric part
+                gwp_per_category_declared_unit_value = float(re.search(r"[-+]?\d*\.?\d+", str(gwp_per_category_declared_unit)).group())
+                gwp_per_unit_volume = (gwp_per_category_declared_unit_value / 1000) * density
+                gwp_per_unit_volume = round(gwp_per_unit_volume,2)
 
-            elif declared_unit and "kg" in declared_unit and warnings and "'density': ['Not specified']" in str(warnings):
-                gwp_per_unit_volume = "density not available"
-
-    wframe_object["gwp_per_unit_volume"] = f"{gwp_per_unit_volume} m3"
+    wframe_object["gwp_per_unit_volume"] = f"{gwp_per_unit_volume} kg CO2 e/m3"
+    wframe_object["gwp_per_unit_area"] = f"{gwp_per_unit_area} kg CO2 e/m2"
+    if gwp_per_unit_mass == None:
+        wframe_object["gwp_per_unit_mass"] = "Not avaialble in this EPD"
+    else:
+        wframe_object["gwp_per_unit_mass"] = f"{gwp_per_unit_mass}/kg"
     object_key = "object" + str(wframe_epd_no)
     wframe_epd_data[object_key] = wframe_object
     #print(wframe_object)
-    pprint.pp(wframe_object)
+    #pprint.pp(wframe_object)
