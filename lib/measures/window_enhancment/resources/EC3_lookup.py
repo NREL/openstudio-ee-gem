@@ -3,6 +3,7 @@ import requests
 import json
 import re
 import pprint
+import statistics
 
 print("EC3 API Call:")
 
@@ -101,7 +102,7 @@ gypsum_url = (
 # Headers for the request
 headers = {
     "Accept": "application/json",
-    "Authorization": "Bearer z7z4qVkNNmKeXtBM41C2DTSj0Sta7h"
+    "Authorization": "Bearer <token>"
 }
 
 # Execute the GET request
@@ -136,7 +137,13 @@ exclude_keys = [
 
 # Create an empty list to store EPDs of IGU
 igu_epd_data = {}
+igu_gwp_per_volume = []
+igu_gwp_per_mass = []
+igu_gwp_per_area = []
 wframe_epd_data = {}
+wframe_gwp_per_volume = []
+wframe_gwp_per_mass = []
+wframe_gwp_per_area = []
 
 for igu_epd_no, igu_epd in enumerate(igu_response, start=1):
     print(f"========================================EPD No. {igu_epd_no}:==========================================")
@@ -160,27 +167,22 @@ for igu_epd_no, igu_epd in enumerate(igu_response, start=1):
             density_unit = igu_epd.get("density")
             gwp_per_unit_mass = igu_epd.get("gwp_per_kg")
 
-            # Calculations
+            # Per volume
             if declared_unit and "m3" in declared_unit:
                 gwp_per_category_declared_unit_value = float(re.search(r"[-+]?\d*\.?\d+", str(gwp_per_category_declared_unit)).group())
                 declared_unit_value = float(re.search(r"[-+]?\d*\.?\d+", str(declared_unit)).group())
                 gwp_per_unit_volume = gwp_per_category_declared_unit_value/declared_unit_value
-
-            elif declared_unit and "sf" in declared_unit:
-                gwp_per_category_declared_unit_value = float(re.search(r"[-+]?\d*\.?\d+", str(gwp_per_category_declared_unit)).group())
-                declared_unit_value = float(re.search(r"[-+]?\d*\.?\d+", str(declared_unit)).group())
-                gwp_per_unit_area = (gwp_per_category_declared_unit_value/declared_unit_value)/0.092903
 
             elif declared_unit and "m2" in declared_unit and thickness_unit and "mm" in str(thickness_unit):
                 thickness = float(re.search(r"[-+]?\d*\.?\d+", thickness_unit).group())  # Extract numeric part
                 gwp_per_category_declared_unit_value = float(re.search(r"[-+]?\d*\.?\d+", str(gwp_per_category_declared_unit)).group())
                 thickness = thickness * 1e-3 # Convert thickness to meters
                 gwp_per_unit_volume = round(gwp_per_category_declared_unit_value / thickness,2)
-                gwp_per_unit_area = gwp_per_category_declared_unit_value
 
-            elif declared_unit and "kg" in declared_unit and density_unit:
+            elif density_unit and gwp_per_unit_mass:
                 density = float(re.search(r"[-+]?\d*\.?\d+", density_unit).group())  # Extract numeric part
-                gwp_per_unit_volume = gwp_per_category_declared_unit_value * density
+                gwp_per_unit_mass = float(re.search(r"[-+]?\d*\.?\d+", str(gwp_per_unit_mass)).group())
+                gwp_per_unit_volume = gwp_per_unit_mass*density
                 gwp_per_unit_volume = round(gwp_per_unit_volume,2)
             
             elif declared_unit and "t" in declared_unit and density_unit:
@@ -188,17 +190,43 @@ for igu_epd_no, igu_epd in enumerate(igu_response, start=1):
                 gwp_per_category_declared_unit_value = float(re.search(r"[-+]?\d*\.?\d+", str(gwp_per_category_declared_unit)).group())
                 gwp_per_unit_volume = (gwp_per_category_declared_unit_value / 1000) * density
                 gwp_per_unit_volume = round(gwp_per_unit_volume,2)
-                
 
-    igu_object["gwp_per_unit_volume"] = f"{gwp_per_unit_volume} kg CO2e/m3"
-    igu_object["gwp_per_unit_area"] = f"{gwp_per_unit_area} kg CO2e/m2"
-    if gwp_per_unit_mass == None:
-        igu_object["gwp_per_unit_mass"] = "Not avaialble in this EPD"
+            # Per area    
+            if declared_unit and "sf" in declared_unit:
+                gwp_per_category_declared_unit_value = float(re.search(r"[-+]?\d*\.?\d+", str(gwp_per_category_declared_unit)).group())
+                declared_unit_value = float(re.search(r"[-+]?\d*\.?\d+", str(declared_unit)).group())
+                gwp_per_unit_area = (gwp_per_category_declared_unit_value/declared_unit_value)/0.092903
+                gwp_per_unit_area = round(gwp_per_unit_area,2)
+
+    igu_object["gwp_per_unit_volume"] = f"{gwp_per_unit_volume} kg CO2 e/m3"
+    
+    if declared_unit and "m2" in declared_unit:
+        gwp_per_category_declared_unit_value = float(re.search(r"[-+]?\d*\.?\d+", str(gwp_per_category_declared_unit)).group())
+        igu_object["gwp_per_unit_area"] = f"{gwp_per_category_declared_unit_value} kg CO2 e/m2"
     else:
-        igu_object["gwp_per_unit_mass"] = f"{gwp_per_unit_mass}/kg"
+        igu_object["gwp_per_unit_area"] = f"{gwp_per_unit_area} kg CO2 e/m2"
+
+    if gwp_per_unit_mass:
+        gwp_per_unit_mass = float(re.search(r"[-+]?\d*\.?\d+", str(gwp_per_unit_mass)).group())
+        gwp_per_unit_mass = round(gwp_per_unit_mass,2)
+        igu_object["gwp_per_unit_mass"] = f"{gwp_per_unit_mass} kg CO2 e/kg"
+    else:
+        igu_object["gwp_per_unit_mass"] = "Not avaialble in this EPD"
     object_key = "object" + str(igu_epd_no)
     igu_epd_data[object_key] = igu_object
-    #pprint.pp(igu_object)
+    igu_gwp_per_volume.append(gwp_per_unit_volume)
+    igu_gwp_per_area.append(gwp_per_unit_area)
+    igu_gwp_per_mass.append(gwp_per_unit_mass)
+    pprint.pp(igu_object)
+#print all gwp per volume
+igu_gwp_per_volume = [float(item) for item in igu_gwp_per_volume if isinstance(item, (int, float)) or item.replace('.', '', 1).isdigit()]
+# Calculate the mean
+if igu_gwp_per_volume:  # Check if the list is not empty
+    mean_value = statistics.mean(igu_gwp_per_volume)
+    print("Mean of GWP per volume:", mean_value)
+else:
+    print("No numeric values to calculate mean.")
+print(igu_gwp_per_volume)
 
 for wframe_epd_no, wframe_epd in enumerate(wframe_response, start=1):
     print(f"========================================EPD No. {wframe_epd_no}:==========================================")
@@ -269,5 +297,17 @@ for wframe_epd_no, wframe_epd in enumerate(wframe_response, start=1):
         wframe_object["gwp_per_unit_mass"] = "Not avaialble in this EPD"
     object_key = "object" + str(wframe_epd_no)
     wframe_epd_data[object_key] = wframe_object
-    #print(wframe_object)
+    wframe_gwp_per_volume.append(gwp_per_unit_volume)
+    wframe_gwp_per_area.append(gwp_per_unit_area)
+    wframe_gwp_per_mass.append(gwp_per_unit_mass)
     pprint.pp(wframe_object)
+
+#print all gwp per volume
+wframe_gwp_per_volume = [float(item) for item in wframe_gwp_per_volume if isinstance(item, (int, float)) or item.replace('.', '', 1).isdigit()]
+# Calculate the mean
+if wframe_gwp_per_volume:  # Check if the list is not empty
+    mean_value = statistics.mean(wframe_gwp_per_volume)
+    print("Mean of GWP per volume:", mean_value)
+else:
+    print("No numeric values to calculate mean.")
+print(wframe_gwp_per_volume)
