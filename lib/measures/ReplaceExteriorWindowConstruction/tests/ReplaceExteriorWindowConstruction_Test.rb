@@ -10,39 +10,6 @@ require 'fileutils'
 require_relative '../measure.rb'
 require 'minitest/autorun'
 
-puts "EC3 API Call:"
-require 'net/http'
-require 'uri'
-require 'json'
-
-# Parse the URL with query parameters
-uri = URI.parse("https://api.buildingtransparency.org/api/epds?page_number=1&page_size=25&fields=id%2Copen_xpd_uuid%2Cis_failed%2Cfailures%2Cerrors%2Cwarnings%2Cdate_validity_ends%2Ccqd_sync_unlocked%2Cmy_capabilities%2Coriginal_data_format%2Ccategory%2Cdisplay_name%2Cmanufacturer%2Cplant_or_group%2Cname%2Cdescription%2Cprogram_operator%2Cprogram_operator_fkey%2Cverifier%2Cdeveloper%2Cmatched_plants_count%2Cplant_geography%2Cpcr%2Cshort_name%2Cversion%2Cdate_of_issue%2Clanguage%2Cgwp%2Cuncertainty_adjusted_gwp%2Cdeclared_unit%2Cupdated_on%2Ccorrections_count%2Cdeclaration_type%2Cbox_id%2Cis_downloadable&sort_by=-updated_on&name__like=window&description__like=window&q=windows&plant_geography=US&declaration_type=Product%20EPD")
-
-# Create a new HTTP request
-request = Net::HTTP::Get.new(uri)
-request["Accept"] = "application/json"
-request["Authorization"] = "Bearer z7z4qVkNNmKeXtBM41C2DTSj0Sta7h"
-
-# Execute the request and store the response
-response_body = nil
-Net::HTTP.start(uri.hostname, uri.port, use_ssl: uri.scheme == "https", verify_mode: OpenSSL::SSL::VERIFY_NONE) do |http|
-  response = http.request(request)
-  response_body = JSON.parse(response.body) # Parse the JSON response
-end
-
-# Store the parsed response in an object
-api_response = response_body
-puts api_response
-puts "Number of EPDs: #{api_response.size}"
-# Output the object (optional)
-api_response.each do |i|
-  puts "Product Name: #{i['name']}"
-  puts "Declared Unit: #{i['declared_unit']}"
-  puts "Plant Geography: #{i['plant_geography'].join(', ')}"
-  puts "Global Warming Potential (GWP): #{i['gwp']}"
-end
-
-
 class ReplaceExteriorWindowConstruction_Test < Minitest::Test
 
   def test_ReplaceExteriorWindowConstruction
