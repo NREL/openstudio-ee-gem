@@ -31,4 +31,4 @@ lib/test/*
 # Ignore measure tester gem local test results
 test_results/
 
-config.ini
+# /resources/config.ini # Need to uncomment after review and bugfixes
