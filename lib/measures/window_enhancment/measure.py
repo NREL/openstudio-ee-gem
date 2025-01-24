@@ -8,8 +8,7 @@ import typing
 from pathlib import Path
 import openstudio
 import jinja2
-from resources.EC3_lookup import wframe_gwp_per_volume
-
+from resources.EC3_lookup import calculate_gwp_per_volume, extract_numeric_value
 
 
 RESOURCES_DIR = Path(__file__).parent / "resources"
@@ -27,16 +26,16 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
 
     def description(self):
         """
-        Calculate embodied emissions associated with adding film,
-        storm window, or something else to an existing building.
+        Calculate embodied emissions associated with adding film or IGU/
+        storm window to an existing building.
         """
         return "Calculate embodied emissions for window enhancements."
 
     def modeler_description(self):
         """
-        Layered construction approach will be used.
+        Basic description of the measure.
         """
-        return "Layered construction approach being used."
+        return "This measure uses EC3 database lookup for calculating embodied carbon for an IGU/storm window addition."
 
     # define the arguments that the user will input
     def arguments(self, model: typing.Optional[openstudio.model.Model] = None):
@@ -72,6 +71,16 @@ def run(self, model: openstudio.model.Model, runner: openstudio.measure.OSRunner
     igu_component_name = runner.getStringArgumentValue("igu_component_name", user_arguments)
     frame_cross_section_area = runner.getDoubleArgumentValue("frame_cross_section_area", user_arguments)
     frame_perimeter_length = runner.getDoubleArgumentValue("frame_perimeter_length", user_arguments)
+    declared_unit = runner.getStringArgumentValue("declared_unit", user_arguments)  # Assuming declared unit is an input
+    gwp = runner.getDoubleArgumentValue("gwp", user_arguments)  # Assuming GWP value is an input
+
+    # Calculate GWP per volume
+    try:
+        wframe_gwp_per_volume = calculate_gwp_per_volume(gwp, declared_unit)
+        runner.registerInfo(f"Calculated GWP per volume: {wframe_gwp_per_volume:.2f} kgCO2e/m3.")
+    except Exception as e:
+        runner.registerError(f"Error calculating GWP per volume: {e}")
+        return False
 
     # Calculate embodied carbon
     embodied_carbon = wframe_gwp_per_volume * frame_cross_section_area * frame_perimeter_length
@@ -91,8 +100,6 @@ def run(self, model: openstudio.model.Model, runner: openstudio.measure.OSRunner
 
     # Return success
     return True
-
-
 
 # Register the measure
 WindowEnhancement().registerWithApplication()
