@@ -6,16 +6,64 @@ from typing import Dict, Any, List
 from pathlib import Path
 import configparser
 
-config = configparser.ConfigParser()
-config.read("config.ini")  # Ensure the correct path is provided if not in the same directory
+# Get the path to the config file in the 'resources' folder
+config_path = Path(__file__).parent / "config.ini"
+
+
+# Create config parser with interpolation turned off
+config = configparser.ConfigParser(interpolation=None)
+
+# Read the config file
+config.read(config_path)
 
 # Load API token and URLs from the config file
-API_TOKEN = config.get("EC3", "API_TOKEN")
-IGU_URL = config.get("EC3", "IGU_URL")
-WFRAME_URL = config.get("EC3", "WFRAME_URL")
+API_TOKEN = config.get("EC3", "API_TOKEN").strip()
+IGU_URL = config.get("EC3", "IGU_URL").strip()
+WFRAME_URL = config.get("EC3", "WFRAME_URL").strip()
+
+print('**************API_TOKEN*************')
+print(API_TOKEN)
+
+print('**************IGU_URL*************')
+print(IGU_URL)
+
+print('**************WFRAME_URL*************')
+print(WFRAME_URL)
+
+API_TOKEN = "5fk7wP4cJg6pcmx6ncZN0ftMdoVR8u"
+
+igu_url =  (
+    "https://api.buildingtransparency.org/api/materials"
+    "?page_number=1&page_size=100"
+    "&mf=!EC3%20search(%22InsulatingGlazingUnits%22)%20WHERE%20"
+    "%0A%20%20jurisdiction%3A%20IN(%22021%22)%20AND%0A%20%20"
+    "epd__date_validity_ends%3A%20%3E%20%222024-12-05%22%20AND%0A%20%20"
+    "epd_types%3A%20IN(%22Product%20EPDs%22)%20"
+    "!pragma%20eMF(%222.0%2F1%22)%2C%20lcia(%22TRACI%202.1%22)"
+)
+
+IGU_URL = igu_url
+
+
+wframe_url = (
+    "https://api.buildingtransparency.org/api/materials"
+    "?page_number=1&page_size=25"
+    "&mf=!EC3%20search(%22AluminiumExtrusions%22)%20WHERE%20"
+    "%0A%20%20jurisdiction%3A%20IN(%22021%22)%20AND%0A%20%20"
+    "epd__date_validity_ends%3A%20%3E%20%222024-12-09%22%20AND%0A%20%20"
+    "epd_types%3A%20IN(%22Product%20EPDs%22)%20"
+    "!pragma%20eMF(%222.0%2F1%22)%2C%20lcia(%22TRACI%202.1%22)"
+)
+
+WFRAME_URL = wframe_url
+
+
 
 # API configuration
-HEADERS = {"Accept": "application/json", "Authorization": f"Bearer {API_TOKEN}"}
+HEADERS = {"Accept": "application/json", "Authorization": "Bearer " + API_TOKEN}
+print("**********************HEADERS**************************")
+print(HEADERS)
+#HEADERS = {"Authorization": "Bearer {API_TOKEN}", "Content-Type": "application/json"}
 
 # Constants
 EXCLUDE_KEYS = [
@@ -31,20 +79,30 @@ URLS = {
     "wframe": WFRAME_URL
 }
 
-def fetch_epd_data(url: str) -> List[Dict[str, Any]]:
+def fetch_epd_data(url_key: str) -> List[Dict[str, Any]]:
     """
     Fetch EPD data from the EC3 API.
-    :param url: API endpoint URL
-    :return: Parsed JSON response or empty list on failure
+    :param url_key: The key for selecting the API endpoint from the URLS dictionary.
+    :return: Parsed JSON response or empty list on failure.
     """
-    try:
+    # Ensure the URL exists in the dictionary
+    if url_key not in URLS:
+        print(f"Error: URL key '{url_key}' not found in URLS dictionary.")
+        return []
+    
+    url = URLS[url_key]
+
+    try: #not working here!!!
         print(f"Fetching data from URL: {url}")  # Log the URL being fetched
         response = requests.get(url, headers=HEADERS, verify=False)
-        response.raise_for_status()
+        response.raise_for_status() # HTTPError if failure 
         return response.json()
     except requests.exceptions.RequestException as e:
         print(f"Error fetching data from {url}: {e}")
-        print(f"Response content: {response.text if response else 'No response content'}")  # Print response content for debugging
+        if 'response' in locals():  # Check if response was defined
+            print(f"Response content: {response.text}")
+        else:
+            print("No response content available.")
         return []
 
 def parse_gwp_data(epd: Dict[str, Any]) -> Dict[str, Any]:
@@ -152,10 +210,10 @@ def main():
     Main function to execute the script.
     """
     print("Fetching EC3 EPD data...")
-    for key, url in URLS.items():
-        print(f"\nProcessing {key.upper()} data...")
-        epd_data = fetch_epd_data(url)
-        print(f"Number of EPDs for {key}: {len(epd_data)}")
+    for url_key, url in URLS.items():
+        print(f"\nProcessing {url_key.upper()} data...")
+        epd_data = fetch_epd_data(url_key)
+        print(f"Number of EPDs for {url_key}: {len(epd_data)}")
         for idx, epd in enumerate(epd_data, start=1):
             parsed_data = parse_gwp_data(epd)
             print(f"EPD #{idx}: {json.dumps(parsed_data, indent=4)}")
