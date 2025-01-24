@@ -6,14 +6,8 @@ from typing import Dict, Any, List
 from pathlib import Path
 import configparser
 
-# Get the path to the config file in the 'resources' folder
-config_path = Path(__file__).parent / "config.ini"
-
-# Create config parser with interpolation turned off
-config = configparser.ConfigParser(interpolation=None)
-
-# Read the config file
-config.read(config_path)
+config = configparser.ConfigParser()
+config.read("config.ini")  # Ensure the correct path is provided if not in the same directory
 
 # Load API token and URLs from the config file
 API_TOKEN = config.get("EC3", "API_TOKEN")
