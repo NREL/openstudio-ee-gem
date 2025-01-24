@@ -32,3 +32,5 @@ lib/test/*
 test_results/
 
 # /resources/config.ini # Need to uncomment after review and bugfixes
+
+lib/measures/window_enhancement/__pycache__
