@@ -3,6 +3,53 @@ import requests
 import json
 import re
 import pprint
+'''
+EC3_category_array = {
+    "ConstructionMaterials": {
+        "Concrete": [
+            "ReadyMix",
+            "Shotcrete",
+            "CementGrout",
+            "FlowableFill",
+            "Precast",
+            "Rebar",
+            "WireMeshSteel",
+            "SCM",
+            "Cement",
+            "Aggregates"
+        ],
+        "Masonry": [
+            "Brick",
+            "ConcreteUnitMasonry",
+            "Mortar",
+            "Cementitious",
+            "Aggregates"
+        ],
+        "Steel": [],
+        "Aluminum": [],
+        "Wood": [],
+        "Sheathing": [],
+        "ThermalMoistureProtection": [], 
+        "Cladding": [],
+        "Openings": [], 
+        "Finishes": [],
+        "ConveyingEquipment": [],
+        "NetworkInfrastrucure": [], 
+        "Asphalt": [],
+        "Accessories": [], 
+        "ManufacturingInputs": [],
+        "BulkMaterials": [],
+        "Placeholders": []
+    },
+    "BuildingAssemblies": {
+        "NewCoustomAssembly": [],
+        "ReinforcedConcrete": [], 
+        "Walls": [],
+        "Floors": [], 
+        "GlazingFenesration": [], 
+    },
+}
+'''
 
 test_url = (
     "https://api.buildingtransparency.org/api/materials"
