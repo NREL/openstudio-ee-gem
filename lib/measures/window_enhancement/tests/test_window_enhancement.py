@@ -7,10 +7,15 @@ import openstudio
 import pytest
 
 CURRENT_DIR_PATH = Path(__file__).parent.absolute()
+MEASURE_PATH = CURRENT_DIR_PATH.parent / "measure.py"
+if not MEASURE_PATH.exists():
+    raise ImportError(f"Could not find measure.py at {MEASURE_PATH}")
+
 sys.path.insert(0, str(CURRENT_DIR_PATH.parent))
 from measure import WindowEnhancement
 sys.path.pop(0)
 del sys.modules['measure']
+
 
 
 class TestWindowEnhancement:
