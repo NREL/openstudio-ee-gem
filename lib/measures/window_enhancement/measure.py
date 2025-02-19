@@ -88,6 +88,9 @@ def run(self, model: openstudio.model.Model, runner: openstudio.measure.OSRunner
     # Log the calculation
     runner.registerInfo(f"Embodied carbon for {igu_component_name}: {embodied_carbon:.2f} kgCO2e.")
 
+    # Report the calculated embodied carbon for the enhancement
+    print(f"Embodied carbon for {igu_component_name}: {embodied_carbon:.2f} kgCO2e.")
+
     # Attach the result to the building's additional properties
     additional_properties = model.getBuilding().additionalProperties()
     additional_properties.setFeature(f"EmbodiedCarbon_{igu_component_name}", embodied_carbon)
