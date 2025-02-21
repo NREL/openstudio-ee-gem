@@ -74,13 +74,25 @@ def run(self, model: openstudio.model.Model, runner: openstudio.measure.OSRunner
     declared_unit = runner.getStringArgumentValue("declared_unit", user_arguments)  # Assuming declared unit is an input
     gwp = runner.getDoubleArgumentValue("gwp", user_arguments)  # Assuming GWP value is an input
 
-    # Calculate GWP per volume
-    try:
-        wframe_gwp_per_volume = calculate_gwp_per_volume(gwp, declared_unit)
-        runner.registerInfo(f"Calculated GWP per volume: {wframe_gwp_per_volume:.2f} kgCO2e/m3.")
-    except Exception as e:
-        runner.registerError(f"Error calculating GWP per volume: {e}")
-        return False
+    # loop through sub-surfaces
+    sub_surfaces = model.getSubSurfaces()
+
+    for sub_surface in sub_surfaces:
+        
+        # get sub_surface name and construction name
+        runner.registerInfo(f"Sub-surface name is #{sub_surface.name}")
+        runner.registerInfo(f"Sub-surface construction is #{sub_surface.construction.get.name}")
+        # check that subSurface is fixed or operable window (update to also allow OperableWindow)
+        if sub_surface.outsideBoundaryCondition() == "Outdoors" and sub_surface.surfaceType() == "FixedWindow":
+                continue
+
+        # Calculate GWP per volume (update this to use sub_surface)
+        try:
+            wframe_gwp_per_volume = calculate_gwp_per_volume(gwp, declared_unit)
+            runner.registerInfo(f"Calculated GWP per volume: {wframe_gwp_per_volume:.2f} kgCO2e/m3.")
+        except Exception as e:
+            runner.registerError(f"Error calculating GWP per volume: {e}")
+            return False
 
     # Calculate embodied carbon
     embodied_carbon = wframe_gwp_per_volume * frame_cross_section_area * frame_perimeter_length
