@@ -2,42 +2,31 @@
 # OpenStudio(R), Copyright (c) Alliance for Sustainable Energy, LLC.
 # See also https://openstudio.net/license
 # *******************************************************************************
-import typing
+
 import openstudio
 import typing
 from pathlib import Path
-import openstudio
-import jinja2
-from resources.EC3_lookup import calculate_gwp_per_volume, extract_numeric_value
-
+from resources.EC3_lookup import calculate_gwp_per_volume  # Ensure this function exists and works correctly
 
 RESOURCES_DIR = Path(__file__).parent / "resources"
 
 # Start the measure
-
 class WindowEnhancement(openstudio.measure.ModelMeasure):
-    """A ModelMeasure."""
+    """A ModelMeasure for window enhancement, calculating embodied carbon."""
 
     def name(self):
-        """
-        Embodied emissions for window enhancement.
-        """
-        return "Window Enhancment"
+        """Measure name."""
+        return "Window Enhancement"
 
     def description(self):
-        """
-        Calculate embodied emissions associated with adding film or IGU/
-        storm window to an existing building.
-        """
-        return "Calculate embodied emissions for window enhancements."
+        """Brief description of the measure."""
+        return "Calculates embodied emissions for window frame enhancements using EC3 database lookup."
 
     def modeler_description(self):
-        """
-        Basic description of the measure.
-        """
-        return "This measure uses EC3 database lookup for calculating embodied carbon for an IGU/storm window addition."
+        """Detailed description of the measure."""
+        return ("This measure evaluates the embodied carbon impact of adding an IGU or storm window "
+                "to an existing structure by analyzing frame material data from EC3.")
 
-    # define the arguments that the user will input
     def arguments(self, model: typing.Optional[openstudio.model.Model] = None):
         """Define user arguments."""
         args = openstudio.measure.OSArgumentVector()
@@ -57,64 +46,110 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
         frame_perimeter_length.setDescription("Perimeter length of the IGU frame in meters.")
         args.append(frame_perimeter_length)
 
+        declared_unit = openstudio.measure.OSArgument.makeStringArgument("declared_unit", True)
+        declared_unit.setDisplayName("Declared Unit for GWP")
+        declared_unit.setDescription("Unit in which the global warming potential (GWP) is measured (e.g., kgCO2e/m3).")
+        args.append(declared_unit)
+
+        gwp = openstudio.measure.OSArgument.makeDoubleArgument("gwp", True)
+        gwp.setDisplayName("Global Warming Potential (GWP) Value")
+        gwp.setDescription("Embodied carbon value from EC3 database in kgCO2e per declared unit.")
+        args.append(gwp)
+
         return args
 
-def run(self, model: openstudio.model.Model, runner: openstudio.measure.OSRunner, user_arguments: openstudio.measure.OSArgumentMap):
-    """Execute the measure."""
-    super().run(model, runner, user_arguments)  # Required
+    def run(self, model: openstudio.model.Model, runner: openstudio.measure.OSRunner, user_arguments: openstudio.measure.OSArgumentMap):
+        """Execute the measure."""
+        runner.registerInfo("Starting WindowEnhancement measure execution.")
 
-    # Validate user inputs
-    if not runner.validateUserArguments(self.arguments(model), user_arguments):
-        return False
+        # Check if model exists
+        if not model:
+            runner.registerError("Model is None. Exiting measure.")
+            return False
 
-    # Retrieve user inputs
-    igu_component_name = runner.getStringArgumentValue("igu_component_name", user_arguments)
-    frame_cross_section_area = runner.getDoubleArgumentValue("frame_cross_section_area", user_arguments)
-    frame_perimeter_length = runner.getDoubleArgumentValue("frame_perimeter_length", user_arguments)
-    declared_unit = runner.getStringArgumentValue("declared_unit", user_arguments)  # Assuming declared unit is an input
-    gwp = runner.getDoubleArgumentValue("gwp", user_arguments)  # Assuming GWP value is an input
+        # Debug: Print all user arguments received
+        runner.registerInfo(f"User Arguments: {user_arguments}")
 
-    # loop through sub-surfaces
-    sub_surfaces = model.getSubSurfaces()
+        for arg_name, arg_value in user_arguments.items():
+            print(f"user_argument: {arg_name} = {arg_value.valueAsString()}")
 
-    for sub_surface in sub_surfaces:
-        
-        # get sub_surface name and construction name
-        runner.registerInfo(f"Sub-surface name is #{sub_surface.name}")
-        runner.registerInfo(f"Sub-surface construction is #{sub_surface.construction.get.name}")
-        # check that subSurface is fixed or operable window (update to also allow OperableWindow)
-        if sub_surface.outsideBoundaryCondition() == "Outdoors" and sub_surface.surfaceType() == "FixedWindow":
+
+
+        # Print the number of sub-surfaces before processing
+        sub_surfaces = model.getSubSurfaces()
+        runner.registerInfo(f"Total sub-surfaces found: {len(sub_surfaces)}")
+
+        for sub_surface in sub_surfaces:
+            runner.registerInfo(f"Processing sub-surface: {sub_surface.nameString()}")
+
+        runner.registerInfo("Completed WindowEnhancement measure execution.")
+
+        if not runner.validateUserArguments(self.arguments(model), user_arguments):
+            return False
+
+        # Retrieve user inputs
+        igu_component_name = runner.getStringArgumentValue("igu_component_name", user_arguments)
+        frame_cross_section_area = runner.getDoubleArgumentValue("frame_cross_section_area", user_arguments)
+        frame_perimeter_length = runner.getDoubleArgumentValue("frame_perimeter_length", user_arguments)
+        declared_unit = runner.getStringArgumentValue("declared_unit", user_arguments)
+        gwp = runner.getDoubleArgumentValue("gwp", user_arguments)
+
+        total_window_frame_volume = 0.0
+        sub_surfaces = model.getSubSurfaces()
+        runner.registerInfo(f"Total sub-surfaces found: {len(sub_surfaces)}")
+
+
+        for sub_surface in sub_surfaces:
+            sub_surface_name = sub_surface.nameString()
+            construction = sub_surface.construction()
+
+            if construction.is_initialized:
+                construction_name = construction.get().nameString()
+                runner.registerInfo(f"Processing window: {sub_surface_name} with construction: {construction_name}")
+            else:
+                runner.registerWarning(f"Sub-surface {sub_surface_name} has no construction assigned, skipping.")
                 continue
 
-        # Calculate GWP per volume (update this to use sub_surface)
+            # Check if it's a valid window type
+            if sub_surface.outsideBoundaryCondition() != "Outdoors" or sub_surface.subSurfaceType() not in ["FixedWindow", "OperableWindow"]:
+                runner.registerInfo(f"Skipping non-window surface: {sub_surface_name}")
+                continue
+            runner.registerInfo(f"Processing sub-surface: {sub_surface.nameString()}")
+
+            # Calculate window frame volume
+            window_frame_volume = frame_cross_section_area * frame_perimeter_length
+            total_window_frame_volume += window_frame_volume
+            runner.registerInfo(f"Window {sub_surface_name} frame volume: {window_frame_volume:.3f} m3")
+
+        if total_window_frame_volume == 0:
+            runner.registerWarning("No valid windows found. Exiting measure.")
+            return False
+
+        # Compute GWP per volume
         try:
-            wframe_gwp_per_volume = calculate_gwp_per_volume(gwp, declared_unit)
-            runner.registerInfo(f"Calculated GWP per volume: {wframe_gwp_per_volume:.2f} kgCO2e/m3.")
+            gwp_per_volume = calculate_gwp_per_volume(gwp, declared_unit)
+            runner.registerInfo(f"GWP per volume: {gwp_per_volume:.2f} kgCO2e/m3.")
         except Exception as e:
             runner.registerError(f"Error calculating GWP per volume: {e}")
             return False
 
-    # Calculate embodied carbon
-    embodied_carbon = wframe_gwp_per_volume * frame_cross_section_area * frame_perimeter_length
+        # Calculate total embodied carbon
+        total_embodied_carbon = total_window_frame_volume * gwp_per_volume
+        runner.registerInfo(f"Total embodied carbon for {igu_component_name}: {total_embodied_carbon:.2f} kgCO2e.")
 
-    # Log the calculation
-    runner.registerInfo(f"Embodied carbon for {igu_component_name}: {embodied_carbon:.2f} kgCO2e.")
+        # Attach the result to the building's additional properties
+        building = model.getBuilding()
+        additional_properties = building.additionalProperties()
+        additional_properties.setFeature(f"EmbodiedCarbon_{igu_component_name}", total_embodied_carbon)
 
-    # Report the calculated embodied carbon for the enhancement
-    print(f"Embodied carbon for {igu_component_name}: {embodied_carbon:.2f} kgCO2e.")
+        # Create an output variable for reporting
+        output_var = openstudio.model.OutputVariable("WindowEnhancement:EmbodiedCarbon", model)
+        output_var.setKeyValue(igu_component_name)
+        output_var.setReportingFrequency("Monthly")
+        output_var.setName(f"Embodied Carbon for {igu_component_name}")
 
-    # Attach the result to the building's additional properties
-    additional_properties = model.getBuilding().additionalProperties()
-    additional_properties.setFeature(f"EmbodiedCarbon_{igu_component_name}", embodied_carbon)
+        return True
 
-    # Optionally add output variables for reporting
-    output_var = openstudio.model.OutputVariable("WindowEnhancement:EmbodiedCarbon", model)
-    output_var.setKeyValue(igu_component_name)
-    output_var.setReportingFrequency("Monthly")
-    output_var.setName("Embodied Carbon for Window Enhancement")
-
-    # Return success
-    return True
 
 # Register the measure
 WindowEnhancement().registerWithApplication()
