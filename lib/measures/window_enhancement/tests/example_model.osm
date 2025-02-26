@@ -1,7 +1,7 @@
 
 OS:Version,
-  {2cd9d51d-3efd-48c2-a440-92df3a988d55}, !- Handle
-  3.7.0;                                  !- Version Identifier
+  {3c2aae99-a879-428d-9818-739a53430d00}, !- Handle
+  3.8.0;                                  !- Version Identifier
 
 OS:SimulationControl,
   {47923a4b-90b4-4bca-aa34-ce084cf67c0b}, !- Handle
@@ -188,7 +188,7 @@ OS:Schedule:Day,
   {aaecb79a-519a-430a-a322-3b7fb28dd6a5}, !- Handle
   Medium Office Number of People All Other Days Schedule, !- Name
   {2599d124-517d-4e7e-848f-fb2deeba0793}, !- Schedule Type Limits Name
-  ,                                       !- Interpolate to Timestep
+  No,                                     !- Interpolate to Timestep
   24,                                     !- Hour 1
   0,                                      !- Minute 1
   0;                                      !- Value Until Time 1
@@ -197,7 +197,7 @@ OS:Schedule:Day,
   {87ea7c0c-99a0-456f-af39-cbc24acb37a1}, !- Handle
   Medium Office Number of People Summer Design Day Schedule, !- Name
   ,                                       !- Schedule Type Limits Name
-  ,                                       !- Interpolate to Timestep
+  No,                                     !- Interpolate to Timestep
   6,                                      !- Hour 1
   0,                                      !- Minute 1
   0,                                      !- Value Until Time 1
@@ -212,7 +212,7 @@ OS:Schedule:Day,
   {eef8678a-7bc5-48ef-aab6-545093ae369d}, !- Handle
   Medium Office Number of People Summer Design Day Schedule 1, !- Name
   {2599d124-517d-4e7e-848f-fb2deeba0793}, !- Schedule Type Limits Name
-  ,                                       !- Interpolate to Timestep
+  No,                                     !- Interpolate to Timestep
   6,                                      !- Hour 1
   0,                                      !- Minute 1
   0,                                      !- Value Until Time 1
@@ -240,7 +240,7 @@ OS:Schedule:Day,
   {f7d7b6f4-a379-459b-aedb-a49a8e898895}, !- Handle
   Medium Office Number of People Weekdays Schedule, !- Name
   {2599d124-517d-4e7e-848f-fb2deeba0793}, !- Schedule Type Limits Name
-  ,                                       !- Interpolate to Timestep
+  No,                                     !- Interpolate to Timestep
   6,                                      !- Hour 1
   0,                                      !- Minute 1
   0,                                      !- Value Until Time 1
@@ -290,7 +290,7 @@ OS:Schedule:Day,
   {5bd97e25-7035-4907-9aec-26eef22ebee4}, !- Handle
   Medium Office Number of People Saturday Schedule, !- Name
   {2599d124-517d-4e7e-848f-fb2deeba0793}, !- Schedule Type Limits Name
-  ,                                       !- Interpolate to Timestep
+  No,                                     !- Interpolate to Timestep
   6,                                      !- Hour 1
   0,                                      !- Minute 1
   0,                                      !- Value Until Time 1
@@ -324,7 +324,7 @@ OS:Schedule:Day,
   {6c88be94-f117-4423-9c68-73ee5bb8e34e}, !- Handle
   Medium Office People Activity Level All Days Schedule, !- Name
   {7dac81a9-8426-42fa-9780-c00fc9ae681a}, !- Schedule Type Limits Name
-  ,                                       !- Interpolate to Timestep
+  No,                                     !- Interpolate to Timestep
   24,                                     !- Hour 1
   0,                                      !- Minute 1
   120;                                    !- Value Until Time 1
@@ -349,7 +349,7 @@ OS:Schedule:Day,
   {d6ab380c-754d-47e4-a628-2ec8a5675c82}, !- Handle
   Medium Office Lighting All Other Days Schedule, !- Name
   {2599d124-517d-4e7e-848f-fb2deeba0793}, !- Schedule Type Limits Name
-  ,                                       !- Interpolate to Timestep
+  No,                                     !- Interpolate to Timestep
   24,                                     !- Hour 1
   0,                                      !- Minute 1
   0.05;                                   !- Value Until Time 1
@@ -358,7 +358,7 @@ OS:Schedule:Day,
   {2e3ec937-ff1d-456c-a270-e74ccc09e732}, !- Handle
   Medium Office Lighting Summer Design Day Schedule, !- Name
   ,                                       !- Schedule Type Limits Name
-  ,                                       !- Interpolate to Timestep
+  No,                                     !- Interpolate to Timestep
   6,                                      !- Hour 1
   0,                                      !- Minute 1
   1,                                      !- Value Until Time 1
@@ -370,7 +370,7 @@ OS:Schedule:Day,
   {7d3242bc-9702-4eea-b1e8-d02ccc2d6ed1}, !- Handle
   Medium Office Lighting Summer Design Day Schedule 1, !- Name
   {2599d124-517d-4e7e-848f-fb2deeba0793}, !- Schedule Type Limits Name
-  ,                                       !- Interpolate to Timestep
+  No,                                     !- Interpolate to Timestep
   6,                                      !- Hour 1
   0,                                      !- Minute 1
   1,                                      !- Value Until Time 1
@@ -382,7 +382,7 @@ OS:Schedule:Day,
   {3f5ef730-1a2a-4e03-bd17-0793f4011c1c}, !- Handle
   Medium Office Lighting Winter Design Day Schedule, !- Name
   ,                                       !- Schedule Type Limits Name
-  ,                                       !- Interpolate to Timestep
+  No,                                     !- Interpolate to Timestep
   24,                                     !- Hour 1
   0,                                      !- Minute 1
   0;                                      !- Value Until Time 1
@@ -391,7 +391,7 @@ OS:Schedule:Day,
   {ee5b8927-22bc-4d6f-b1ac-4aa17d2d9b4d}, !- Handle
   Medium Office Lighting Winter Design Day Schedule 1, !- Name
   {2599d124-517d-4e7e-848f-fb2deeba0793}, !- Schedule Type Limits Name
-  ,                                       !- Interpolate to Timestep
+  No,                                     !- Interpolate to Timestep
   24,                                     !- Hour 1
   0,                                      !- Minute 1
   0;                                      !- Value Until Time 1
@@ -413,7 +413,7 @@ OS:Schedule:Day,
   {cacfb581-03d3-40e5-95a8-91ebc314403a}, !- Handle
   Medium Office Lighting Weekdays Schedule, !- Name
   {2599d124-517d-4e7e-848f-fb2deeba0793}, !- Schedule Type Limits Name
-  ,                                       !- Interpolate to Timestep
+  No,                                     !- Interpolate to Timestep
   5,                                      !- Hour 1
   0,                                      !- Minute 1
   0.05,                                   !- Value Until Time 1
@@ -460,7 +460,7 @@ OS:Schedule:Day,
   {79ac40c9-ad77-461e-8179-bb87c5dd752f}, !- Handle
   Medium Office Lighting Saturday Schedule, !- Name
   {2599d124-517d-4e7e-848f-fb2deeba0793}, !- Schedule Type Limits Name
-  ,                                       !- Interpolate to Timestep
+  No,                                     !- Interpolate to Timestep
   6,                                      !- Hour 1
   0,                                      !- Minute 1
   0.05,                                   !- Value Until Time 1
@@ -489,7 +489,7 @@ OS:Schedule:Day,
   {aad069d5-8961-4a45-b4aa-6bec5ece2f2e}, !- Handle
   Medium Office Electric Equipment All Other Days Schedule, !- Name
   {2599d124-517d-4e7e-848f-fb2deeba0793}, !- Schedule Type Limits Name
-  ,                                       !- Interpolate to Timestep
+  No,                                     !- Interpolate to Timestep
   24,                                     !- Hour 1
   0,                                      !- Minute 1
   0.3;                                    !- Value Until Time 1
@@ -498,7 +498,7 @@ OS:Schedule:Day,
   {9d38dccc-c626-4593-aa2c-e6cb944b48b7}, !- Handle
   Medium Office Electric Equipment Summer Design Day Schedule, !- Name
   ,                                       !- Schedule Type Limits Name
-  ,                                       !- Interpolate to Timestep
+  No,                                     !- Interpolate to Timestep
   6,                                      !- Hour 1
   0,                                      !- Minute 1
   1,                                      !- Value Until Time 1
@@ -510,7 +510,7 @@ OS:Schedule:Day,
   {c25ac7e3-6245-4ba0-8da8-70f9f5bcc636}, !- Handle
   Medium Office Electric Equipment Summer Design Day Schedule 1, !- Name
   {2599d124-517d-4e7e-848f-fb2deeba0793}, !- Schedule Type Limits Name
-  ,                                       !- Interpolate to Timestep
+  No,                                     !- Interpolate to Timestep
   6,                                      !- Hour 1
   0,                                      !- Minute 1
   1,                                      !- Value Until Time 1
@@ -522,7 +522,7 @@ OS:Schedule:Day,
   {b1fe622a-6fe3-45ef-bc89-27c46f940550}, !- Handle
   Medium Office Electric Equipment Winter Design Day Schedule, !- Name
   ,                                       !- Schedule Type Limits Name
-  ,                                       !- Interpolate to Timestep
+  No,                                     !- Interpolate to Timestep
   24,                                     !- Hour 1
   0,                                      !- Minute 1
   0;                                      !- Value Until Time 1
@@ -531,7 +531,7 @@ OS:Schedule:Day,
   {89a386f8-3dc8-4396-b706-73b3592fc5cc}, !- Handle
   Medium Office Electric Equipment Winter Design Day Schedule 1, !- Name
   {2599d124-517d-4e7e-848f-fb2deeba0793}, !- Schedule Type Limits Name
-  ,                                       !- Interpolate to Timestep
+  No,                                     !- Interpolate to Timestep
   24,                                     !- Hour 1
   0,                                      !- Minute 1
   0;                                      !- Value Until Time 1
@@ -553,7 +553,7 @@ OS:Schedule:Day,
   {0fdeb8f8-b94c-4337-b429-962345caaac5}, !- Handle
   Medium Office Electric Equipment Weekdays Schedule, !- Name
   {2599d124-517d-4e7e-848f-fb2deeba0793}, !- Schedule Type Limits Name
-  ,                                       !- Interpolate to Timestep
+  No,                                     !- Interpolate to Timestep
   8,                                      !- Hour 1
   0,                                      !- Minute 1
   0.4,                                    !- Value Until Time 1
@@ -597,7 +597,7 @@ OS:Schedule:Day,
   {576f3ab1-2770-4f2c-8333-43010e2f0330}, !- Handle
   Medium Office Electric Equipment Saturday Schedule, !- Name
   {2599d124-517d-4e7e-848f-fb2deeba0793}, !- Schedule Type Limits Name
-  ,                                       !- Interpolate to Timestep
+  No,                                     !- Interpolate to Timestep
   6,                                      !- Hour 1
   0,                                      !- Minute 1
   0.3,                                    !- Value Until Time 1
@@ -626,7 +626,7 @@ OS:Schedule:Day,
   {fce6438a-a5f8-4ff6-a872-1be345602338}, !- Handle
   Medium Office Gas Equipment All Other Days Schedule, !- Name
   {2599d124-517d-4e7e-848f-fb2deeba0793}, !- Schedule Type Limits Name
-  ,                                       !- Interpolate to Timestep
+  No,                                     !- Interpolate to Timestep
   24,                                     !- Hour 1
   0,                                      !- Minute 1
   0.3;                                    !- Value Until Time 1
@@ -635,7 +635,7 @@ OS:Schedule:Day,
   {9b582bde-d9d6-4e71-8d14-b5820c442621}, !- Handle
   Medium Office Gas Equipment Summer Design Day Schedule, !- Name
   ,                                       !- Schedule Type Limits Name
-  ,                                       !- Interpolate to Timestep
+  No,                                     !- Interpolate to Timestep
   6,                                      !- Hour 1
   0,                                      !- Minute 1
   1,                                      !- Value Until Time 1
@@ -647,7 +647,7 @@ OS:Schedule:Day,
   {f08b0ebb-5c2e-4ac9-bb0e-f62ac032d010}, !- Handle
   Medium Office Gas Equipment Summer Design Day Schedule 1, !- Name
   {2599d124-517d-4e7e-848f-fb2deeba0793}, !- Schedule Type Limits Name
-  ,                                       !- Interpolate to Timestep
+  No,                                     !- Interpolate to Timestep
   6,                                      !- Hour 1
   0,                                      !- Minute 1
   1,                                      !- Value Until Time 1
@@ -659,7 +659,7 @@ OS:Schedule:Day,
   {bc1d1d6f-928c-436e-bd85-9439af2da5b5}, !- Handle
   Medium Office Gas Equipment Winter Design Day Schedule, !- Name
   ,                                       !- Schedule Type Limits Name
-  ,                                       !- Interpolate to Timestep
+  No,                                     !- Interpolate to Timestep
   24,                                     !- Hour 1
   0,                                      !- Minute 1
   0;                                      !- Value Until Time 1
@@ -668,7 +668,7 @@ OS:Schedule:Day,
   {3c0609fa-9a3a-4d13-b628-49c63f86ee7c}, !- Handle
   Medium Office Gas Equipment Winter Design Day Schedule 1, !- Name
   {2599d124-517d-4e7e-848f-fb2deeba0793}, !- Schedule Type Limits Name
-  ,                                       !- Interpolate to Timestep
+  No,                                     !- Interpolate to Timestep
   24,                                     !- Hour 1
   0,                                      !- Minute 1
   0;                                      !- Value Until Time 1
@@ -690,7 +690,7 @@ OS:Schedule:Day,
   {949cec9c-5e19-4c45-bab3-c0d4cd9aa773}, !- Handle
   Medium Office Gas Equipment Weekdays Schedule, !- Name
   {2599d124-517d-4e7e-848f-fb2deeba0793}, !- Schedule Type Limits Name
-  ,                                       !- Interpolate to Timestep
+  No,                                     !- Interpolate to Timestep
   8,                                      !- Hour 1
   0,                                      !- Minute 1
   0.4,                                    !- Value Until Time 1
@@ -734,7 +734,7 @@ OS:Schedule:Day,
   {d130c8de-1123-455e-b142-7906c6ae317e}, !- Handle
   Medium Office Gas Equipment Saturday Schedule, !- Name
   {2599d124-517d-4e7e-848f-fb2deeba0793}, !- Schedule Type Limits Name
-  ,                                       !- Interpolate to Timestep
+  No,                                     !- Interpolate to Timestep
   6,                                      !- Hour 1
   0,                                      !- Minute 1
   0.3,                                    !- Value Until Time 1
@@ -763,7 +763,7 @@ OS:Schedule:Day,
   {6f928282-9477-4b57-98e9-91f807d74c11}, !- Handle
   Medium Office Hot Water Equipment Default Schedule, !- Name
   {2599d124-517d-4e7e-848f-fb2deeba0793}, !- Schedule Type Limits Name
-  ,                                       !- Interpolate to Timestep
+  No,                                     !- Interpolate to Timestep
   5,                                      !- Hour 1
   0,                                      !- Minute 1
   0.04,                                   !- Value Until Time 1
@@ -796,7 +796,7 @@ OS:Schedule:Day,
   {27aa5b73-c5ac-47ba-8c01-e52517c3d410}, !- Handle
   Medium Office Hot Water Equipment Summer Design Day Schedule, !- Name
   ,                                       !- Schedule Type Limits Name
-  ,                                       !- Interpolate to Timestep
+  No,                                     !- Interpolate to Timestep
   5,                                      !- Hour 1
   0,                                      !- Minute 1
   0.05,                                   !- Value Until Time 1
@@ -859,7 +859,7 @@ OS:Schedule:Day,
   {cb1d07df-8db5-4d81-93de-854040db989b}, !- Handle
   Medium Office Hot Water Equipment Summer Design Day Schedule 1, !- Name
   {2599d124-517d-4e7e-848f-fb2deeba0793}, !- Schedule Type Limits Name
-  ,                                       !- Interpolate to Timestep
+  No,                                     !- Interpolate to Timestep
   5,                                      !- Hour 1
   0,                                      !- Minute 1
   0.05,                                   !- Value Until Time 1
@@ -935,7 +935,7 @@ OS:Schedule:Day,
   {991746c6-3b74-4c0d-899b-740ac40d2c46}, !- Handle
   Medium Office Hot Water Equipment Weekdays Schedule, !- Name
   {2599d124-517d-4e7e-848f-fb2deeba0793}, !- Schedule Type Limits Name
-  ,                                       !- Interpolate to Timestep
+  No,                                     !- Interpolate to Timestep
   5,                                      !- Hour 1
   0,                                      !- Minute 1
   0.05,                                   !- Value Until Time 1
@@ -998,7 +998,7 @@ OS:Schedule:Day,
   {3e5d35b7-d2cd-4e9e-a359-eefe0e6b872c}, !- Handle
   Medium Office Hot Water Equipment Winter Design Day Schedule, !- Name
   ,                                       !- Schedule Type Limits Name
-  ,                                       !- Interpolate to Timestep
+  No,                                     !- Interpolate to Timestep
   5,                                      !- Hour 1
   0,                                      !- Minute 1
   0.05,                                   !- Value Until Time 1
@@ -1052,7 +1052,7 @@ OS:Schedule:Day,
   {32b265f5-3446-4578-9e1c-185704dfbd63}, !- Handle
   Medium Office Hot Water Equipment Winter Design Day Schedule 1, !- Name
   {2599d124-517d-4e7e-848f-fb2deeba0793}, !- Schedule Type Limits Name
-  ,                                       !- Interpolate to Timestep
+  No,                                     !- Interpolate to Timestep
   5,                                      !- Hour 1
   0,                                      !- Minute 1
   0.05,                                   !- Value Until Time 1
@@ -1120,7 +1120,7 @@ OS:Schedule:Day,
   {cd2777d7-0e1d-42bb-b10c-2f7d88a81e2c}, !- Handle
   Medium Office Hot Water Equipment Saturday Schedule, !- Name
   {2599d124-517d-4e7e-848f-fb2deeba0793}, !- Schedule Type Limits Name
-  ,                                       !- Interpolate to Timestep
+  No,                                     !- Interpolate to Timestep
   5,                                      !- Hour 1
   0,                                      !- Minute 1
   0.05,                                   !- Value Until Time 1
@@ -1182,7 +1182,7 @@ OS:Schedule:Day,
   {e0619557-4de5-4563-9cb0-dc3be3068de9}, !- Handle
   Medium Office Infiltration Default Schedule, !- Name
   {2599d124-517d-4e7e-848f-fb2deeba0793}, !- Schedule Type Limits Name
-  ,                                       !- Interpolate to Timestep
+  No,                                     !- Interpolate to Timestep
   24,                                     !- Hour 1
   0,                                      !- Minute 1
   1;                                      !- Value Until Time 1
@@ -1191,7 +1191,7 @@ OS:Schedule:Day,
   {5eb24303-369e-4e34-9a05-037133fff59a}, !- Handle
   Medium Office Infiltration Summer Design Day Schedule, !- Name
   ,                                       !- Schedule Type Limits Name
-  ,                                       !- Interpolate to Timestep
+  No,                                     !- Interpolate to Timestep
   6,                                      !- Hour 1
   0,                                      !- Minute 1
   1,                                      !- Value Until Time 1
@@ -1206,7 +1206,7 @@ OS:Schedule:Day,
   {1e853b2c-b3e8-4bdd-9e62-ca6f51df43f7}, !- Handle
   Medium Office Infiltration Summer Design Day Schedule 1, !- Name
   {2599d124-517d-4e7e-848f-fb2deeba0793}, !- Schedule Type Limits Name
-  ,                                       !- Interpolate to Timestep
+  No,                                     !- Interpolate to Timestep
   6,                                      !- Hour 1
   0,                                      !- Minute 1
   1,                                      !- Value Until Time 1
@@ -1234,7 +1234,7 @@ OS:Schedule:Day,
   {455400c4-a7e4-4cd0-b998-7f6a71e9da88}, !- Handle
   Medium Office Infiltration Weekdays Schedule, !- Name
   {2599d124-517d-4e7e-848f-fb2deeba0793}, !- Schedule Type Limits Name
-  ,                                       !- Interpolate to Timestep
+  No,                                     !- Interpolate to Timestep
   6,                                      !- Hour 1
   0,                                      !- Minute 1
   1,                                      !- Value Until Time 1
@@ -1249,7 +1249,7 @@ OS:Schedule:Day,
   {59b8e85c-bee0-45a1-ae91-bc7c14d7febf}, !- Handle
   Medium Office Infiltration Winter Design Day Schedule, !- Name
   ,                                       !- Schedule Type Limits Name
-  ,                                       !- Interpolate to Timestep
+  No,                                     !- Interpolate to Timestep
   6,                                      !- Hour 1
   0,                                      !- Minute 1
   1,                                      !- Value Until Time 1
@@ -1264,7 +1264,7 @@ OS:Schedule:Day,
   {986ff3c0-78d3-4e81-9526-f1b54d0a46ba}, !- Handle
   Medium Office Infiltration Winter Design Day Schedule 1, !- Name
   {2599d124-517d-4e7e-848f-fb2deeba0793}, !- Schedule Type Limits Name
-  ,                                       !- Interpolate to Timestep
+  No,                                     !- Interpolate to Timestep
   6,                                      !- Hour 1
   0,                                      !- Minute 1
   1,                                      !- Value Until Time 1
@@ -1293,7 +1293,7 @@ OS:Schedule:Day,
   {904b23f8-0f80-4ee6-9c62-439bde0f5068}, !- Handle
   Medium Office Infiltration Saturday Schedule, !- Name
   {2599d124-517d-4e7e-848f-fb2deeba0793}, !- Schedule Type Limits Name
-  ,                                       !- Interpolate to Timestep
+  No,                                     !- Interpolate to Timestep
   6,                                      !- Hour 1
   0,                                      !- Minute 1
   1,                                      !- Value Until Time 1
@@ -1315,7 +1315,7 @@ OS:Schedule:Day,
   {17f67c1f-81f0-4388-82d9-32b61a5cfd1f}, !- Handle
   Medium Office Cooling Setpoint All Other Days Schedule, !- Name
   {67a065c0-22e3-420b-a098-c1929910950b}, !- Schedule Type Limits Name
-  ,                                       !- Interpolate to Timestep
+  No,                                     !- Interpolate to Timestep
   24,                                     !- Hour 1
   0,                                      !- Minute 1
   26.7;                                   !- Value Until Time 1
@@ -1324,7 +1324,7 @@ OS:Schedule:Day,
   {a108bea3-580c-416f-8db2-35d946623ed7}, !- Handle
   Medium Office Cooling Setpoint Summer Design Day Schedule, !- Name
   {67a065c0-22e3-420b-a098-c1929910950b}, !- Schedule Type Limits Name
-  ,                                       !- Interpolate to Timestep
+  No,                                     !- Interpolate to Timestep
   6,                                      !- Hour 1
   0,                                      !- Minute 1
   26.7,                                   !- Value Until Time 1
@@ -1339,7 +1339,7 @@ OS:Schedule:Day,
   {aebc615b-09d0-4c01-975b-c4e3be3aa5e6}, !- Handle
   Medium Office Cooling Setpoint Summer Design Day Schedule 1, !- Name
   {67a065c0-22e3-420b-a098-c1929910950b}, !- Schedule Type Limits Name
-  ,                                       !- Interpolate to Timestep
+  No,                                     !- Interpolate to Timestep
   6,                                      !- Hour 1
   0,                                      !- Minute 1
   26.7,                                   !- Value Until Time 1
@@ -1367,7 +1367,7 @@ OS:Schedule:Day,
   {cd29805f-ba5c-418c-a3ec-6523a0818dac}, !- Handle
   Medium Office Cooling Setpoint Weekdays Schedule, !- Name
   {67a065c0-22e3-420b-a098-c1929910950b}, !- Schedule Type Limits Name
-  ,                                       !- Interpolate to Timestep
+  No,                                     !- Interpolate to Timestep
   6,                                      !- Hour 1
   0,                                      !- Minute 1
   26.7,                                   !- Value Until Time 1
@@ -1396,7 +1396,7 @@ OS:Schedule:Day,
   {ba0c1822-0105-4215-96c0-d093b2f8e1c3}, !- Handle
   Medium Office Cooling Setpoint Saturday Schedule, !- Name
   {67a065c0-22e3-420b-a098-c1929910950b}, !- Schedule Type Limits Name
-  ,                                       !- Interpolate to Timestep
+  No,                                     !- Interpolate to Timestep
   6,                                      !- Hour 1
   0,                                      !- Minute 1
   26.7,                                   !- Value Until Time 1
@@ -1419,7 +1419,7 @@ OS:Schedule:Day,
   {99982627-1c6f-4c3d-84d8-c1717ce8edc9}, !- Handle
   Medium Office Heating Setpoint All Other Days Schedule, !- Name
   {67a065c0-22e3-420b-a098-c1929910950b}, !- Schedule Type Limits Name
-  ,                                       !- Interpolate to Timestep
+  No,                                     !- Interpolate to Timestep
   24,                                     !- Hour 1
   0,                                      !- Minute 1
   15.6;                                   !- Value Until Time 1
@@ -1428,7 +1428,7 @@ OS:Schedule:Day,
   {0735d0fc-a576-409a-8045-02d53253c695}, !- Handle
   Medium Office Heating Setpoint Winter Design Day Schedule, !- Name
   {67a065c0-22e3-420b-a098-c1929910950b}, !- Schedule Type Limits Name
-  ,                                       !- Interpolate to Timestep
+  No,                                     !- Interpolate to Timestep
   24,                                     !- Hour 1
   0,                                      !- Minute 1
   21;                                     !- Value Until Time 1
@@ -1437,7 +1437,7 @@ OS:Schedule:Day,
   {d620edaa-a5bd-45af-b3a1-1923c2bbec31}, !- Handle
   Medium Office Heating Setpoint Winter Design Day Schedule 1, !- Name
   {67a065c0-22e3-420b-a098-c1929910950b}, !- Schedule Type Limits Name
-  ,                                       !- Interpolate to Timestep
+  No,                                     !- Interpolate to Timestep
   24,                                     !- Hour 1
   0,                                      !- Minute 1
   21;                                     !- Value Until Time 1
@@ -1459,7 +1459,7 @@ OS:Schedule:Day,
   {1b1eb11f-6a46-4dab-ba23-adb7828c2415}, !- Handle
   Medium Office Heating Setpoint Weekdays Schedule, !- Name
   {67a065c0-22e3-420b-a098-c1929910950b}, !- Schedule Type Limits Name
-  ,                                       !- Interpolate to Timestep
+  No,                                     !- Interpolate to Timestep
   6,                                      !- Hour 1
   0,                                      !- Minute 1
   15.6,                                   !- Value Until Time 1
@@ -1488,7 +1488,7 @@ OS:Schedule:Day,
   {b846224e-7431-4366-840a-2f6ce8704db8}, !- Handle
   Medium Office Heating Setpoint Saturday Schedule, !- Name
   {67a065c0-22e3-420b-a098-c1929910950b}, !- Schedule Type Limits Name
-  ,                                       !- Interpolate to Timestep
+  No,                                     !- Interpolate to Timestep
   6,                                      !- Hour 1
   0,                                      !- Minute 1
   15.6,                                   !- Value Until Time 1
@@ -3222,4 +3222,137 @@ OS:Output:Meter,
   {bcfbcec3-8814-4714-b7b8-f72cec50f7e2}, !- Handle
   Propane:Facility,                       !- Name
   Hourly;                                 !- Reporting Frequency
+
+OS:YearDescription,
+  {286f9509-9f18-4b83-b4d1-6d3f1c434faa}; !- Handle
+
+OS:ClimateZones,
+  {c7a29c86-6fc2-4c5b-bb49-cc0b2e48fd08}, !- Handle
+  ASHRAE,                                 !- Climate Zone Institution Name 1
+  ANSI/ASHRAE Standard 169,               !- Climate Zone Document Name 1
+  2006,                                   !- Climate Zone Document Year 1
+  ,                                       !- Climate Zone Value 1
+  CEC,                                    !- Climate Zone Institution Name 2
+  California Climate Zone Descriptions,   !- Climate Zone Document Name 2
+  1995,                                   !- Climate Zone Document Year 2
+  ;                                       !- Climate Zone Value 2
+
+OS:Sizing:Parameters,
+  {a77e70d7-1cc7-480c-822c-4c0136b2772c}, !- Handle
+  1.25,                                   !- Heating Sizing Factor
+  1.15;                                   !- Cooling Sizing Factor
+
+OS:LifeCycleCost:Parameters,
+  {132c31ac-1abf-443e-bc4b-e5888fe218b5}, !- Handle
+  ,                                       !- Analysis Type
+  ,                                       !- Discounting Convention
+  ,                                       !- Inflation Approach
+  ,                                       !- Real Discount Rate
+  ,                                       !- Nominal Discount Rate
+  ,                                       !- Inflation
+  ,                                       !- Base Date Month
+  ,                                       !- Base Date Year
+  ,                                       !- Service Date Month
+  ,                                       !- Service Date Year
+  ;                                       !- Length of Study Period in Years
+
+OS:StandardsInformation:Material,
+  {8cc3d27f-5f97-497e-8222-a4c25af8231c}, !- Handle
+  {4cf58d4f-21e7-482f-88b6-5e80eceb4049}; !- Material Name
+
+OS:StandardsInformation:Material,
+  {76f8c31a-94f4-4bf8-88ca-a3cffef00433}, !- Handle
+  {b4f6ef24-1fd4-49cd-8c82-8b553afde2a9}; !- Material Name
+
+OS:StandardsInformation:Material,
+  {f12fd34a-b9cf-47ca-a2f1-6cc910789cff}, !- Handle
+  {86ae65d1-eb25-44de-be95-1b90fe0f1c58}; !- Material Name
+
+OS:StandardsInformation:Material,
+  {c38974cc-5fdd-4ca3-a066-431fd221faea}, !- Handle
+  {520cffc6-8fb5-4f2f-859b-1c787b6a4c1c}; !- Material Name
+
+OS:StandardsInformation:Material,
+  {7c5c852e-6863-4f99-a0ed-aefbdd6a1d0c}, !- Handle
+  {d0cb840d-6a14-4d4a-acc5-6e2c709c006d}; !- Material Name
+
+OS:StandardsInformation:Material,
+  {5938cf4e-e148-43df-915c-c1206f23ea4c}, !- Handle
+  {96622a6b-2c1d-42b4-8986-b8bd79559523}; !- Material Name
+
+OS:StandardsInformation:Material,
+  {b694c077-a387-4cb5-a77a-acf6c45a18c3}, !- Handle
+  {056eb249-5bf8-43f9-a57e-4f0380b4d125}; !- Material Name
+
+OS:StandardsInformation:Material,
+  {db5c9c21-91b7-40e3-ab4d-3d3254599cde}, !- Handle
+  {4b5f5320-5757-4192-a678-ffc0d748e4e6}; !- Material Name
+
+OS:StandardsInformation:Construction,
+  {95329ce2-9031-4bf9-b77c-cfea0575c27d}, !- Handle
+  {e4c297b6-3a99-4e2e-a09a-ba73fe200473}; !- Construction Name
+
+OS:StandardsInformation:Construction,
+  {82277bec-f4e8-4ba0-a431-201b1e0c68eb}, !- Handle
+  {cd8846fe-b309-4921-859d-b7ef6621f679}; !- Construction Name
+
+OS:StandardsInformation:Construction,
+  {c30b6b40-5c4e-432f-9e67-9a7a033fc721}, !- Handle
+  {89fec660-d918-4610-9613-55dd20334c5b}; !- Construction Name
+
+OS:StandardsInformation:Construction,
+  {d04c42f6-858c-4191-9f51-edfd5fb4dde7}, !- Handle
+  {38c1cacd-e9e3-4ac8-84a0-4c94c49b794b}; !- Construction Name
+
+OS:StandardsInformation:Material,
+  {1e0dce38-e15b-47a0-b5a2-205505c3fac4}, !- Handle
+  {62c80237-6114-44b2-ab31-95662cd7cc18}; !- Material Name
+
+OS:StandardsInformation:Material,
+  {dd1f8345-eb27-4529-939d-7680b95c7499}, !- Handle
+  {e4c63ccd-f0db-47d2-ba66-89356cbe3b0d}; !- Material Name
+
+OS:StandardsInformation:Construction,
+  {103bfe54-0fa2-4229-be4f-72830fca84ca}, !- Handle
+  {7bc4709e-786a-4797-8f77-763dad33de89}; !- Construction Name
+
+OS:StandardsInformation:Material,
+  {d949f0b2-2155-4bc9-a071-4654ac1afc0d}, !- Handle
+  {bc0400a3-0425-49b3-b6cf-bb22cd11d97f}; !- Material Name
+
+OS:StandardsInformation:Material,
+  {9348bf88-7793-41d8-bd29-8ba973cbe659}, !- Handle
+  {1ab211c6-700a-4b26-8817-5568e1ead62c}; !- Material Name
+
+OS:StandardsInformation:Material,
+  {cfaf4e50-6ee9-4303-a8d4-88e6e8a9badf}, !- Handle
+  {157e7fd6-3b51-427a-be84-4b991eb70a78}; !- Material Name
+
+OS:StandardsInformation:Construction,
+  {d65a8149-582f-4ed2-b1d5-25ea193fd77c}, !- Handle
+  {7e27ca26-5115-478b-be7c-282a93c2f243}; !- Construction Name
+
+OS:StandardsInformation:Material,
+  {9fdf5b4b-ac58-49ef-bf1f-60e3e90bc640}, !- Handle
+  {b0db5f5d-248c-42c1-8cfb-fe7b1d968152}; !- Material Name
+
+OS:StandardsInformation:Material,
+  {048b6673-c01b-40b9-ae6f-42e2789d8673}, !- Handle
+  {a3d21362-5c59-4463-abf3-62ce10cfd326}; !- Material Name
+
+OS:StandardsInformation:Construction,
+  {6e4bfe81-b0b7-4e80-bcce-2a1e33f60e2c}, !- Handle
+  {7c762dbd-ae14-4dbe-b1be-4cf027a30199}; !- Construction Name
+
+OS:StandardsInformation:Material,
+  {469c45bf-bc19-4997-b2f9-1d73ce9900e8}, !- Handle
+  {e09b2b91-f13b-4541-9ed5-8c5f62f446fd}; !- Material Name
+
+OS:StandardsInformation:Construction,
+  {b1d304e5-04fa-46f4-a7ec-b887014acabf}, !- Handle
+  {963fb0b1-9082-453d-9e10-5ba7995e22ea}; !- Construction Name
+
+OS:StandardsInformation:Construction,
+  {ac11f4ec-d41b-44b1-acb2-488913801003}, !- Handle
+  {c3e28441-358a-4764-b5ee-ac181d98e294}; !- Construction Name
 
