@@ -42,11 +42,6 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
         frame_cross_section_area.setDescription("Cross-sectional area of the IGU frame in square meters.")
         args.append(frame_cross_section_area)
 
-        frame_perimeter_length = openstudio.measure.OSArgument.makeDoubleArgument("frame_perimeter_length", True)
-        frame_perimeter_length.setDisplayName("Frame Perimeter Length (m)")
-        frame_perimeter_length.setDescription("Perimeter length of the IGU frame in meters.")
-        args.append(frame_perimeter_length)
-
         declared_unit = openstudio.measure.OSArgument.makeStringArgument("declared_unit", True)
         declared_unit.setDisplayName("Declared Unit for GWP")
         declared_unit.setDescription("Unit in which the global warming potential (GWP) is measured (e.g., kgCO2e/m3).")
@@ -58,7 +53,7 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
         args.append(gwp)
 
         return args
-    
+
     def calculate_perimeter(self, sub_surface):
         """Calculate the perimeter of the window from its vertices."""
         vertices = sub_surface.vertices()
