@@ -12,6 +12,7 @@ RESOURCES_DIR = Path(__file__).parent / "resources"
 
 # Start the measure
 class WindowEnhancement(openstudio.measure.ModelMeasure):
+
     """A ModelMeasure for window enhancement, calculating embodied carbon."""
 
     def name(self):
@@ -57,6 +58,23 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
         args.append(gwp)
 
         return args
+    
+    def calculate_perimeter(self, sub_surface):
+        """Calculate the perimeter of the window from its vertices."""
+        vertices = sub_surface.vertices()
+        if len(vertices) < 2:
+            return 0.0
+
+        perimeter = 0.0
+        num_vertices = len(vertices)
+
+        for i in range(num_vertices):
+            v1 = vertices[i]
+            v2 = vertices[(i + 1) % num_vertices]  # Wrap around to the first vertex
+            edge_length = v1.distance(v2)
+            perimeter += edge_length
+
+        return perimeter
 
     def run(self, model: openstudio.model.Model, runner: openstudio.measure.OSRunner, user_arguments: openstudio.measure.OSArgumentMap):
         """Execute the measure."""
@@ -67,6 +85,9 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
             runner.registerError("Model is None. Exiting measure.")
             return False
 
+        if not runner.validateUserArguments(self.arguments(model), user_arguments):
+            return False
+        
         # Debug: Print all user arguments received
         runner.registerInfo(f"User Arguments: {user_arguments}")
 
@@ -79,25 +100,19 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
         sub_surfaces = model.getSubSurfaces()
         runner.registerInfo(f"Total sub-surfaces found: {len(sub_surfaces)}")
 
-        for sub_surface in sub_surfaces:
-            runner.registerInfo(f"Processing sub-surface: {sub_surface.nameString()}")
-
-        runner.registerInfo("Completed WindowEnhancement measure execution.")
-
         if not runner.validateUserArguments(self.arguments(model), user_arguments):
             return False
 
         # Retrieve user inputs
         igu_component_name = runner.getStringArgumentValue("igu_component_name", user_arguments)
         frame_cross_section_area = runner.getDoubleArgumentValue("frame_cross_section_area", user_arguments)
-        frame_perimeter_length = runner.getDoubleArgumentValue("frame_perimeter_length", user_arguments)
+        # frame_perimeter_length = runner.getDoubleArgumentValue("frame_perimeter_length", user_arguments)
         declared_unit = runner.getStringArgumentValue("declared_unit", user_arguments)
         gwp = runner.getDoubleArgumentValue("gwp", user_arguments)
 
         total_window_frame_volume = 0.0
         sub_surfaces = model.getSubSurfaces()
         runner.registerInfo(f"Total sub-surfaces found: {len(sub_surfaces)}")
-
 
         for sub_surface in sub_surfaces:
             sub_surface_name = sub_surface.nameString()
@@ -110,15 +125,15 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
                 runner.registerWarning(f"Sub-surface {sub_surface_name} has no construction assigned, skipping.")
                 continue
 
-            # Check if it's a valid window type
+            # Check if it's a valid window type (Only process windows that are "Outdoors" and of specific types)
             if sub_surface.outsideBoundaryCondition() != "Outdoors" or sub_surface.subSurfaceType() not in ["FixedWindow", "OperableWindow"]:
                 runner.registerInfo(f"Skipping non-window surface: {sub_surface_name}")
                 continue
             runner.registerInfo(f"Processing sub-surface: {sub_surface.nameString()}")
-
-            # Calculate window frame volume
-            window_frame_volume = frame_cross_section_area * frame_perimeter_length
+            perimeter = self.calculate_perimeter(sub_surface)
+            window_frame_volume = frame_cross_section_area * perimeter
             total_window_frame_volume += window_frame_volume
+            # runner.registerInfo(f"Window {sub_surface_name} perimeter: {perimeter:.3f} m")
             runner.registerInfo(f"Window {sub_surface_name} frame volume: {window_frame_volume:.3f} m3")
 
         if total_window_frame_volume == 0:
