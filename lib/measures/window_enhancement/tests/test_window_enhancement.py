@@ -72,12 +72,11 @@ class TestWindowEnhancement:
         model = openstudio.model.Model()
         arguments = measure.arguments(model)
 
-        assert arguments.size() == 5  # Adjust the expected size if necessary
+        assert arguments.size() == 4  # Adjust the expected size if necessary
         assert arguments[0].name() == "igu_component_name"
         assert arguments[1].name() == "frame_cross_section_area"
-        assert arguments[2].name() == "frame_perimeter_length"
-        assert arguments[3].name() == "declared_unit"
-        assert arguments[4].name() == "gwp"
+        assert arguments[2].name() == "declared_unit"
+        assert arguments[3].name() == "gwp"
 
         # Type Check
         assert arguments[0].type() == openstudio.measure.OSArgument.makeStringArgument("test", True).type()
