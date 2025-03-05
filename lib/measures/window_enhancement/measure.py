@@ -71,11 +71,12 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
         for i in range(num_vertices):
             v1 = vertices[i]
             v2 = vertices[(i + 1) % num_vertices]  # Wrap around to the first vertex
-            edge_length = v1.distance(v2)
+            edge_vector = v2 - v1  # Subtract two Point3d objects to get Vector3d
+            edge_length = edge_vector.length()  # Use length() to get the magnitude of the vector
             perimeter += edge_length
 
-        return perimeter
-
+            return perimeter
+        
     def run(self, model: openstudio.model.Model, runner: openstudio.measure.OSRunner, user_arguments: openstudio.measure.OSArgumentMap):
         """Execute the measure."""
         runner.registerInfo("Starting WindowEnhancement measure execution.")
@@ -93,8 +94,6 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
 
         for arg_name, arg_value in user_arguments.items():
             print(f"user_argument: {arg_name} = {arg_value.valueAsString()}")
-
-
 
         # Print the number of sub-surfaces before processing
         sub_surfaces = model.getSubSurfaces()
@@ -130,10 +129,9 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
                 runner.registerInfo(f"Skipping non-window surface: {sub_surface_name}")
                 continue
             runner.registerInfo(f"Processing sub-surface: {sub_surface.nameString()}")
-            perimeter = self.calculate_perimeter(sub_surface)
+            perimeter = self.calculate_perimeter(sub_surface) # Calculating perimeter out of sub_surface
             window_frame_volume = frame_cross_section_area * perimeter
             total_window_frame_volume += window_frame_volume
-            # runner.registerInfo(f"Window {sub_surface_name} perimeter: {perimeter:.3f} m")
             runner.registerInfo(f"Window {sub_surface_name} frame volume: {window_frame_volume:.3f} m3")
 
         if total_window_frame_volume == 0:

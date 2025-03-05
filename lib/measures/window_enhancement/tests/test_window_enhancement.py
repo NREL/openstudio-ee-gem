@@ -1,5 +1,3 @@
-"""Test file for WindowEnhancement measure."""
-
 import sys
 from pathlib import Path
 import openstudio
@@ -19,140 +17,115 @@ del sys.modules['measure']
 @pytest.fixture
 def model():
     translator = openstudio.osversion.VersionTranslator()
-    path = Path(__file__).parent / "example_model.osm"
+    path = CURRENT_DIR_PATH / "example_model.osm"
     model = translator.loadModel(path)
     assert model.is_initialized()
     return model.get()
 
+@pytest.fixture
+def measure():
+    return WindowEnhancement()
+
+@pytest.fixture
+def argument_map(model, measure):
+    arguments = measure.arguments(model)
+    argument_map = openstudio.measure.convertOSArgumentVectorToMap(arguments)
+
+    args_dict = {
+        "igu_component_name": "TestIGU",
+        "frame_cross_section_area": 0.02,
+        "declared_unit": "m2",
+        "gwp": 0.0
+    }
+
+    # Calculate the perimeter of all the sub-surfaces in the model
+    perimeter = 0.0
+    if model.getSubSurfaces():
+        for sub_surface in model.getSubSurfaces():
+            # Ensure the sub_surface has length and width attributes
+            length = sub_surface.length() if hasattr(sub_surface, 'length') else 0
+            width = sub_surface.width() if hasattr(sub_surface, 'width') else 0
+            perimeter += 2 * (length + width)
+    
+    print(f"Calculated frame perimeter length: {perimeter}")
+
+    # Set values for arguments, including the calculated perimeter
+    for arg in arguments:
+        temp_arg_var = arg.clone()
+        if arg.name() in args_dict:
+            assert temp_arg_var.setValue(args_dict[arg.name()])
+            argument_map[arg.name()] = temp_arg_var
+        elif arg.name() == "frame_perimeter_length":
+            assert temp_arg_var.setValue(perimeter)
+            argument_map[arg.name()] = temp_arg_var
+
+    return argument_map
+
 class TestWindowEnhancement:
     """Py.test module for WindowEnhancement."""
 
-    def test_number_of_arguments_and_argument_names(self):
-        print("test_number_of_arguments_and_argument_names() method level...")
+    def test_number_of_arguments_and_argument_names(self, measure, model):
         """Test that the arguments are what we expect."""
-        # create an instance of the measure
+        print("Running test_number_of_arguments_and_argument_names()...")
+
         measure = WindowEnhancement()
-
-        # make an empty model
         model = openstudio.model.Model()
-
-        # get arguments and test that they are what we are expecting
         arguments = measure.arguments(model)
-        expected_args = ["igu_component_name", "frame_cross_section_area", "frame_perimeter_length", "declared_unit", "gwp"]
-        assert len(arguments) == len(expected_args)
-        assert all(arg.name() in expected_args for arg in arguments)
 
+        assert arguments.size() == 5  # Adjust the expected size if necessary
         assert arguments[0].name() == "igu_component_name"
         assert arguments[1].name() == "frame_cross_section_area"
         assert arguments[2].name() == "frame_perimeter_length"
         assert arguments[3].name() == "declared_unit"
         assert arguments[4].name() == "gwp"
+
+        # Type Check
         assert arguments[0].type() == openstudio.measure.OSArgument.makeStringArgument("test", True).type()
 
-        del model  # Remove reference to OpenStudio Model
-        gc.collect()  # Force garbage collection
+        del model
+        gc.collect()
 
+    def test_good_argument_values(self, model, measure, argument_map):
+        """Test running the measure with appropriate arguments."""
+        print("Running test_good_argument_values()...")
 
-
-
-    def test_good_argument_values(self, model):
-        print("test_good_argument_values() method level...")
-        """Test running the measure with appropriate arguments.
-
-        Asserts that the measure runs fine and with expected results.
-        """
-        # create an instance of the measure
-        measure = WindowEnhancement()
-
-        # create runner with empty OSW
         osw = openstudio.WorkflowJSON()
         runner = openstudio.measure.OSRunner(osw)
 
-        # get arguments
-        arguments = measure.arguments(model)
-        argument_map = openstudio.measure.convertOSArgumentVectorToMap(arguments)
-
-        # set arguments for the measure
-        args_dict = {
-            "igu_component_name": "TestIGU",
-            "frame_cross_section_area": 0.02,
-            # "frame_perimeter_length": 10.0,
-            "declared_unit": "m2",  # Add an appropriate default value
-            "gwp": 0.0  # Example default value
-        }
-
-        # populate argument map
-        for arg in arguments:
-            print("user_arguments: ", arg)  # arg is the argument name (string)
-            temp_arg_var = arg.clone()
-            if arg.name() in args_dict:
-                assert temp_arg_var.setValue(args_dict[arg.name()])
-                argument_map[arg.name()] = temp_arg_var
-
-        # run the measure
+        # Run measure
         measure.run(model, runner, argument_map)
         result = runner.result()
 
-        if result.value().valueName() != "Success":
-            print(f"Error in running measure: {result.value().valueName()}")
-            assert result.value().valueName() == "Success"  # Fail the test if it didn't succeed
+        print(f"Measure result: {result.value().valueName()}")
 
-        # print results for debugging
-        print(f"results: {result}")
-
-        # assert that it ran successfully
         assert result.value().valueName() == "Success"
 
-        # save the modified model to a new file
-        output_file_path = Path(__file__).parent / "output" / "example_model_with_enhancements.osm"
-        output_file_path.parent.mkdir(parents=True, exist_ok=True)
-        model.save(output_file_path, True)
+        # Save model
+        output_file = CURRENT_DIR_PATH / "output" / "example_model_with_enhancements.osm"
+        output_file.parent.mkdir(parents=True, exist_ok=True)
+        model.save(output_file, True)
+        print(f"Model saved to {output_file}")
 
-        print(f"Modified model saved to: {output_file_path}")
+        del model
+        gc.collect()
 
-        del model  # Remove reference to OpenStudio Model
-        del runner
-        gc.collect()  # Force garbage collection
+    def test_measure_changes_building(self, model, measure, argument_map):
+        """Test if the measure changes the building object."""
+        print("Running test_measure_changes_building()...")
 
-    def test_measure_changes_building(self, model):
         osw = openstudio.WorkflowJSON()
-        osw.setSeedFile(str(Path(__file__).parent / "example_model.osm"))
         runner = openstudio.measure.OSRunner(osw)
 
-        building = model.getBuilding()
-        measure = WindowEnhancement()
-        user_arguments = measure.arguments(model)  # Retrieve the measure's argument structure
-        argument_map = openstudio.measure.convertOSArgumentVectorToMap(user_arguments)
-
-        # Run the measure
-        try:
-            measure.run(model, runner, argument_map)
-        except Exception as e:
-            pytest.fail(f"Measure crashed with exception: {str(e)}")
-
-
-        # Retrieve and check results
+        # Run measure
+        measure.run(model, runner, argument_map)
         result = runner.result()
-        # assert result.value().valueName() == "Success", f"Measure failed with status: {result.value().valueName()}"
-        # assert building.is_initialized(), "Building object was not initialized."
-        # assert building.lifeCycleCosts().size() > 0, "No lifecycle costs added by measure."
-        
-        if result.value().valueName() != "Success":
-            print("Runner Errors: ", [e.logMessage() for e in runner.result().errors()])
 
+        print(f"Detailed Result: {result.toJSON()}")
 
+        assert result.value().valueName() == "Success", f"Measure failed with status: {result.value().valueName()}"
 
-        # Cleanup
-        del model  # Remove reference to OpenStudio Model
-        del runner
-        gc.collect()  # Force garbage collection
+        del model
+        gc.collect()
 
-
-
-# Run tests when this script is executed
 if __name__ == "__main__":
-    import sys
-    if len(sys.argv) > 1:
-        pytest.main([__file__] + sys.argv[1:])
-    else:
-        pytest.main()
+    pytest.main()
