@@ -70,8 +70,8 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
             edge_length = edge_vector.length()  # Use length() to get the magnitude of the vector
             perimeter += edge_length
 
-            return perimeter
-        
+        return perimeter
+
     def run(self, model: openstudio.model.Model, runner: openstudio.measure.OSRunner, user_arguments: openstudio.measure.OSArgumentMap):
         """Execute the measure."""
         runner.registerInfo("Starting WindowEnhancement measure execution.")
@@ -83,7 +83,7 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
 
         if not runner.validateUserArguments(self.arguments(model), user_arguments):
             return False
-        
+
         # Debug: Print all user arguments received
         runner.registerInfo(f"User Arguments: {user_arguments}")
 
@@ -94,19 +94,13 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
         sub_surfaces = model.getSubSurfaces()
         runner.registerInfo(f"Total sub-surfaces found: {len(sub_surfaces)}")
 
-        if not runner.validateUserArguments(self.arguments(model), user_arguments):
-            return False
-
         # Retrieve user inputs
         igu_component_name = runner.getStringArgumentValue("igu_component_name", user_arguments)
         frame_cross_section_area = runner.getDoubleArgumentValue("frame_cross_section_area", user_arguments)
-        # frame_perimeter_length = runner.getDoubleArgumentValue("frame_perimeter_length", user_arguments)
         declared_unit = runner.getStringArgumentValue("declared_unit", user_arguments)
         gwp = runner.getDoubleArgumentValue("gwp", user_arguments)
 
         total_window_frame_volume = 0.0
-        sub_surfaces = model.getSubSurfaces()
-        runner.registerInfo(f"Total sub-surfaces found: {len(sub_surfaces)}")
 
         for sub_surface in sub_surfaces:
             sub_surface_name = sub_surface.nameString()
@@ -114,17 +108,33 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
 
             if construction.is_initialized:
                 construction_name = construction.get().nameString()
+                if isinstance(construction.get(), openstudio.model.LayeredConstruction):
+                    layered_construction = construction.get().to_LayeredConstruction().get()
+                else:
+                    runner.registerWarning(f"Sub-surface '{sub_surface_name}' does not have a layered construction.")
+                    continue
+
+                if layered_construction.is_initialized():
+                    layers = layered_construction.get().layers()
+                    for layer in layers:
+                        runner.registerInfo(f"Layer name: {layer.nameString()} - Class: {layer.iddObject().name()}")
+                else:
+                    runner.registerWarning(f"Construction {construction.get().nameString()} is not a LayeredConstruction.")
+
                 runner.registerInfo(f"Processing window: {sub_surface_name} with construction: {construction_name}")
             else:
                 runner.registerWarning(f"Sub-surface {sub_surface_name} has no construction assigned, skipping.")
                 continue
 
-            # Check if it's a valid window type (Only process windows that are "Outdoors" and of specific types)
             if sub_surface.outsideBoundaryCondition() != "Outdoors" or sub_surface.subSurfaceType() not in ["FixedWindow", "OperableWindow"]:
                 runner.registerInfo(f"Skipping non-window surface: {sub_surface_name}")
                 continue
-            runner.registerInfo(f"Processing sub-surface: {sub_surface.nameString()}")
-            perimeter = self.calculate_perimeter(sub_surface) # Calculating perimeter out of sub_surface
+            
+            # for layer in layered_construction:
+            #     runner.registerInfo(f"Layer name: {layer.name()}")
+            #     runner.registerInfo(f"Layer class: {layer.class()}")
+
+            perimeter = self.calculate_perimeter(sub_surface)
             window_frame_volume = frame_cross_section_area * perimeter
             total_window_frame_volume += window_frame_volume
             runner.registerInfo(f"Window {sub_surface_name} frame volume: {window_frame_volume:.3f} m3")
@@ -133,7 +143,6 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
             runner.registerWarning("No valid windows found. Exiting measure.")
             return False
 
-        # Compute GWP per volume
         try:
             gwp_per_volume = calculate_gwp_per_volume(gwp, declared_unit)
             runner.registerInfo(f"GWP per volume: {gwp_per_volume:.2f} kgCO2e/m3.")
@@ -141,23 +150,19 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
             runner.registerError(f"Error calculating GWP per volume: {e}")
             return False
 
-        # Calculate total embodied carbon
         total_embodied_carbon = total_window_frame_volume * gwp_per_volume
         runner.registerInfo(f"Total embodied carbon for {igu_component_name}: {total_embodied_carbon:.2f} kgCO2e.")
 
-        # Attach the result to the building's additional properties
         building = model.getBuilding()
         additional_properties = building.additionalProperties()
         additional_properties.setFeature(f"EmbodiedCarbon_{igu_component_name}", total_embodied_carbon)
 
-        # Create an output variable for reporting
         output_var = openstudio.model.OutputVariable("WindowEnhancement:EmbodiedCarbon", model)
         output_var.setKeyValue(igu_component_name)
         output_var.setReportingFrequency("Monthly")
         output_var.setName(f"Embodied Carbon for {igu_component_name}")
 
         return True
-
 
 # Register the measure
 WindowEnhancement().registerWithApplication()
