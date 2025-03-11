@@ -17,8 +17,9 @@ config = configparser.ConfigParser(interpolation=None)
 config.read(config_path)
 
 # Load API token and URLs from the config file
-API_TOKEN = config.get("EC3", "API_TOKEN").strip()
-#url address extracted using configparser is causing error, can only extract API_TOKEN from config.ini
+# API token and url address extracted using configparser is causing error, can only extract API_TOKEN from config.ini
+API_TOKEN = "5fk7wP4cJg6pcmx6ncZN0ftMdoVR8u"
+#API_TOKEN = config.get("EC3", "API_TOKEN").strip()
 #IGU_URL = config.get("EC3", "IGU_URL").strip() 
 #WFRAME_URL = config.get("EC3", "WFRAME_URL").strip()
 
