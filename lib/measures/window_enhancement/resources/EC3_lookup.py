@@ -18,21 +18,11 @@ config.read(config_path)
 
 # Load API token and URLs from the config file
 API_TOKEN = config.get("EC3", "API_TOKEN").strip()
-IGU_URL = config.get("EC3", "IGU_URL").strip()
-WFRAME_URL = config.get("EC3", "WFRAME_URL").strip()
+#url address extracted using configparser is causing error, can only extract API_TOKEN from config.ini
+#IGU_URL = config.get("EC3", "IGU_URL").strip() 
+#WFRAME_URL = config.get("EC3", "WFRAME_URL").strip()
 
-print('**************API_TOKEN*************')
-print(API_TOKEN)
-
-print('**************IGU_URL*************')
-print(IGU_URL)
-
-print('**************WFRAME_URL*************')
-print(WFRAME_URL)
-
-API_TOKEN = "5fk7wP4cJg6pcmx6ncZN0ftMdoVR8u"
-
-igu_url =  (
+IGU_URL =  (
     "https://api.buildingtransparency.org/api/materials"
     "?page_number=1&page_size=100"
     "&mf=!EC3%20search(%22InsulatingGlazingUnits%22)%20WHERE%20"
@@ -42,10 +32,7 @@ igu_url =  (
     "!pragma%20eMF(%222.0%2F1%22)%2C%20lcia(%22TRACI%202.1%22)"
 )
 
-IGU_URL = igu_url
-
-
-wframe_url = (
+WFRAME_URL = (
     "https://api.buildingtransparency.org/api/materials"
     "?page_number=1&page_size=25"
     "&mf=!EC3%20search(%22AluminiumExtrusions%22)%20WHERE%20"
@@ -54,10 +41,6 @@ wframe_url = (
     "epd_types%3A%20IN(%22Product%20EPDs%22)%20"
     "!pragma%20eMF(%222.0%2F1%22)%2C%20lcia(%22TRACI%202.1%22)"
 )
-
-WFRAME_URL = wframe_url
-
-
 
 # API configuration
 HEADERS = {"Accept": "application/json", "Authorization": "Bearer " + API_TOKEN}
