@@ -76,7 +76,7 @@ def fetch_epd_data(url_key: str) -> List[Dict[str, Any]]:
     
     url = URLS[url_key]
 
-    try: #not working here!!!
+    try: 
         print(f"Fetching data from URL: {url}")  # Log the URL being fetched
         response = requests.get(url, headers=HEADERS, verify=False)
         response.raise_for_status() # HTTPError if failure 
@@ -95,6 +95,7 @@ def parse_gwp_data(epd: Dict[str, Any]) -> Dict[str, Any]:
     :param epd: EPD dictionary
     :return: Parsed GWP data
     """
+
     parsed_data = {}
     gwp_per_unit_volume = "Not specified"
     gwp_per_unit_area = "Not specified"
@@ -122,9 +123,9 @@ def parse_gwp_data(epd: Dict[str, Any]) -> Dict[str, Any]:
     if gwp_per_unit_mass:
         gwp_per_unit_mass = extract_numeric_value(gwp_per_unit_mass)
 
-    parsed_data["gwp_per_unit_volume"] = f"{gwp_per_unit_volume} kg CO2 e/m3"
-    parsed_data["gwp_per_unit_area"] = f"{gwp_per_unit_area} kg CO2 e/m2"
-    parsed_data["gwp_per_unit_mass"] = f"{gwp_per_unit_mass} kg CO2 e/kg" if gwp_per_unit_mass else "Not specified"
+    parsed_data["gwp_per_unit_volume (kg CO2 eq/m3)"] = gwp_per_unit_volume
+    parsed_data["gwp_per_unit_area (kg CO2 eq/m2)"] = gwp_per_unit_area
+    parsed_data["gwp_per_unit_mass (kg CO2 eq/kg)"] = gwp_per_unit_mass if gwp_per_unit_mass else "Not specified"
     return parsed_data
 
 def extract_numeric_value(value: Any) -> float:

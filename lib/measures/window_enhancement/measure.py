@@ -7,6 +7,10 @@ import openstudio
 import typing
 from pathlib import Path
 from resources.EC3_lookup import calculate_gwp_per_volume  # Ensure this function exists and works correctly
+from resources.EC3_lookup import fetch_epd_data
+from resources.EC3_lookup import parse_gwp_data
+from resources.EC3_lookup import URLS
+import numpy as np
 
 RESOURCES_DIR = Path(__file__).parent / "resources"
 
@@ -144,13 +148,34 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
             return False
 
         try:
-            gwp_per_volume = calculate_gwp_per_volume(gwp, declared_unit)
-            runner.registerInfo(f"GWP per volume: {gwp_per_volume:.2f} kgCO2e/m3.")
+            ### revision starts ###
+            wframe_data = fetch_epd_data(URLS["wframe"])
+            igu_data = fetch_epd_data(URLS["igu"])
+            runner.registerInfo(f"Number of EPDs for window frame: {len(wframe_data)}")
+            runner.registerInfo(f"Number of EPDs for insulated glass unit: {len(igu_data)}")
+            wframe_gwp_per_volume = []
+            igu_gwp_per_volume = []
+            for idx, epd in enumerate(wframe_data, start=1):
+                parsed_wframe_data = parse_gwp_data(epd)
+                wframe_gwp_per_volume.append(parsed_wframe_data["gwp_per_unit_volume"])
+            for idx, epd in enumerate(igu_data, start=1):
+                parsed_igu_data = parse_gwp_data(epd)
+                igu_gwp_per_volume.append(parsed_igu_data["gwp_per_unit_volume"])
+
+            #this individual line of code will not generate GWP values
+            #gwp_per_volume = calculate_gwp_per_volume(gwp, declared_unit)
+            #Temporarily, we use mean value for calculation; in the future, we allow user to pick which EPD to use
+            wframe_mean_gwp_per_volume = np.mean(wframe_gwp_per_volume)
+            igu_mean_gwp_per_volume = np.mean(igu_gwp_per_volume)
+            runner.registerInfo(f"Mean GWP of window frame per volume: {wframe_mean_gwp_per_volume:.2f} kgCO2e/m3.")
+            runner.registerInfo(f"Mean GWP of insulated glass unit per volume: {igu_mean_gwp_per_volume:.2f} kgCO2e/m3.")
+
         except Exception as e:
             runner.registerError(f"Error calculating GWP per volume: {e}")
             return False
 
-        total_embodied_carbon = total_window_frame_volume * gwp_per_volume
+        total_embodied_carbon = total_window_frame_volume * wframe_mean_gwp_per_volume
+        ### revision ends above ### After Prateek reviews the revisions here, we will then modify other sections accordingly
         runner.registerInfo(f"Total embodied carbon for {igu_component_name}: {total_embodied_carbon:.2f} kgCO2e.")
 
         building = model.getBuilding()
