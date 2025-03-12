@@ -130,11 +130,8 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
             if sub_surface.outsideBoundaryCondition() != "Outdoors" or sub_surface.subSurfaceType() not in ["FixedWindow", "OperableWindow"]:
                 runner.registerInfo(f"Skipping non-window surface: {sub_surface_name}")
                 continue
-            
-            # for layer in layered_construction:
-            #     runner.registerInfo(f"Layer name: {layer.name()}")
-            #     runner.registerInfo(f"Layer class: {layer.class()}")
 
+            # Frame calculations: 
             perimeter = self.calculate_perimeter(sub_surface)
             window_frame_volume = frame_cross_section_area * perimeter
             total_window_frame_volume += window_frame_volume
@@ -145,7 +142,6 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
             return False
 
         try:
-            ### revision starts ###
             wframe_data = fetch_epd_data(URLS["wframe"])
             igu_data = fetch_epd_data(URLS["igu"])
             runner.registerInfo(f"Number of EPDs for window frame: {len(wframe_data)}")
@@ -159,11 +155,11 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
                 parsed_igu_data = parse_gwp_data(epd)
                 igu_gwp_per_volume.append(parsed_igu_data["gwp_per_unit_volume"])
 
-            #this individual line of code will not generate GWP values
-            #gwp_per_volume = calculate_gwp_per_volume(gwp, declared_unit)
-            #Temporarily, we use mean value for calculation; in the future, we allow user to pick which EPD to use
+
+            # Temporarily, we use mean value for calculation; in the future, we allow user to pick which EPD to use
             wframe_mean_gwp_per_volume = np.mean(wframe_gwp_per_volume)
             igu_mean_gwp_per_volume = np.mean(igu_gwp_per_volume)
+            # TBD: need to report the min and max to give a sense of the gwp range.
             runner.registerInfo(f"Mean GWP of window frame per volume: {wframe_mean_gwp_per_volume:.2f} kgCO2e/m3.")
             runner.registerInfo(f"Mean GWP of insulated glass unit per volume: {igu_mean_gwp_per_volume:.2f} kgCO2e/m3.")
 
@@ -171,13 +167,15 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
             runner.registerError(f"Error calculating GWP per volume: {e}")
             return False
 
-        total_embodied_carbon = total_window_frame_volume * wframe_mean_gwp_per_volume
-        ### revision ends above ### After Prateek reviews the revisions here, we will then modify other sections accordingly
-        runner.registerInfo(f"Total embodied carbon for {igu_component_name}: {total_embodied_carbon:.2f} kgCO2e.")
+        # Frame embodied carbon totals
+        frame_embodied_carbon = total_window_frame_volume * wframe_mean_gwp_per_volume
+        runner.registerInfo(f"Total embodied carbon for {igu_component_name}: {frame_embodied_carbon:.2f} kgCO2e.")
 
+        # TBD: IGU Calculations: need to extract IGU thicknesses, multiply by area, and lookup associated GWP
+        
         building = model.getBuilding()
         additional_properties = building.additionalProperties()
-        additional_properties.setFeature(f"EmbodiedCarbon_{igu_component_name}", total_embodied_carbon)
+        additional_properties.setFeature(f"EmbodiedCarbon_{igu_component_name}", frame_embodied_carbon)
 
         output_var = openstudio.model.OutputVariable("WindowEnhancement:EmbodiedCarbon", model)
         output_var.setKeyValue(igu_component_name)
