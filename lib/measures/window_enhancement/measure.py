@@ -6,7 +6,6 @@
 import openstudio
 import typing
 from pathlib import Path
-from resources.EC3_lookup import calculate_gwp_per_volume  # Ensure this function exists and works correctly
 from resources.EC3_lookup import fetch_epd_data
 from resources.EC3_lookup import parse_gwp_data
 from resources.EC3_lookup import URLS
@@ -101,8 +100,6 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
         # Retrieve user inputs
         igu_component_name = runner.getStringArgumentValue("igu_component_name", user_arguments)
         frame_cross_section_area = runner.getDoubleArgumentValue("frame_cross_section_area", user_arguments)
-        declared_unit = runner.getStringArgumentValue("declared_unit", user_arguments)
-        gwp = runner.getDoubleArgumentValue("gwp", user_arguments)
 
         total_window_frame_volume = 0.0
 
