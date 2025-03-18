@@ -30,7 +30,15 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
         """Detailed description of the measure."""
         return ("This measure evaluates the embodied carbon impact of adding an IGU or storm window "
                 "to an existing structure by analyzing frame material data from EC3.")
-
+    ###new edits###
+    def gwp_statistics():
+        gwp_statistics = ["minimum","maximum","mean"]
+        return gwp_statistics
+    
+    def gwp_units():
+        gwp_units = ["per area (m^2)","per mass (kg)","per volume (m^3)"]
+        return gwp_units
+    ###end###
     def arguments(self, model: typing.Optional[openstudio.model.Model] = None):
         """Define user arguments."""
         args = openstudio.measure.OSArgumentVector()
@@ -45,14 +53,40 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
         frame_cross_section_area.setDescription("Cross-sectional area of the IGU frame in square meters.")
         args.append(frame_cross_section_area)
 
+        # we can replace this argument with the choice argument gwp_unit
         declared_unit = openstudio.measure.OSArgument.makeStringArgument("declared_unit", True)
         declared_unit.setDisplayName("Declared Unit for GWP")
         declared_unit.setDescription("Unit in which the global warming potential (GWP) is measured (e.g., kgCO2e/m3).")
         args.append(declared_unit)
 
+        ### new edits ###
+        # make an argument for selcting which gwp statistic to use for embodied carbon calculation
+        gwp_statistics_chs = openstudio.StringVector.new()
+        gwp_statistics = gwp_statistics()
+        for gwp_statistic in gwp_statistics:
+            gwp_statistics_chs.append(gwp_statistic)
+        gwp_statistics_chs.append("single_value")
+        gwp_statistic = openstudio.measure.OSArgument.makeChoiceArgument("gwp_statistic",gwp_statistics_chs, True)
+        gwp_statistic.setDisplayName("GWP Statistic") 
+        gwp_statistic.setDescription("Statistic type (minimum or maximum or mean or single value) of returned GWP value")
+        gwp_statistic.setDefaultValue("single_value")
+        args.append(gwp_statistic)
+
+        #make an argument for selecting which gwp unit to use for embodied carbon calculation
+        gwp_units_chs = openstudio.StringVector.new()
+        gwp_units = gwp_units()
+        for gwp_unit in gwp_units:
+            gwp_units_chs.append(gwp_unit)
+        gwp_unit = openstudio.measure.OSArgument.makeChoiceArgument("gwp_unit",gwp_units_chs, True)
+        gwp_unit.setDisplayName("GWP Unit") 
+        gwp_unit.setDescription("Unit type (per volume or area or mass) of returned GWP value")
+        gwp_unit.setDefaultValue("per volume")
+        args.append(gwp_statistic)
+        ### end ###
+
         gwp = openstudio.measure.OSArgument.makeDoubleArgument("gwp", True)
         gwp.setDisplayName("Global Warming Potential (GWP) Value")
-        gwp.setDescription("Embodied carbon value from EC3 database in kgCO2e per declared unit.")
+        gwp.setDescription("GWP or embodied carbon intensity of the building material in kgCO2e per functional unit.")
         args.append(gwp)
 
         return args
@@ -102,7 +136,9 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
         frame_cross_section_area = runner.getDoubleArgumentValue("frame_cross_section_area", user_arguments)
 
         total_window_frame_volume = 0.0
-
+        ###new edits###
+        total_igu_volume = 0.0
+        ###end###
         for sub_surface in sub_surfaces:
             sub_surface_name = sub_surface.nameString()
             construction = sub_surface.construction()
@@ -140,8 +176,73 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
         if total_window_frame_volume == 0:
             runner.registerWarning("No valid windows found. Exiting measure.")
             return False
-
+        
+        ###new edits###
+        # dictionary storing total volume of building materials
+        material_volume = {
+            "insulating glazing unit":total_igu_volume,
+            "window frame":total_window_frame_volume
+        }
+        #two placeholders
+        material_area = {
+            "insulating glazing unit":None,
+            "window frame":None
+        }
+        material_mass = {
+            "insulating glazing unit":None,
+            "window frame":None
+        }
+        gwp_statistic = runner.getChoiceArgumentValue("gwp_statistic",user_arguments)
+        gwp_unit = runner.getChoiceArgumentValue("gwp_unit",user_arguments)
+        
+        # dictionary storing embodied carbon intensity of different building materials
+        embodied_carbon_intensity = {}
+        # dictionary storing embodied carbon intensity of different building materials
+        embodied_carbon = {}
+        # double object storing total embodied carbon in kg CO2 eq
+        total_embodied_carbon = 0.0
         try:
+            for key, value in URLS:
+                epd_data = fetch_epd_data(URLS[value])
+                runner.registerInfo(f"Number of EPDs: {len(epd_data)}")
+                if len(epd_data) == 0:
+                    runner.registerWarning("No EPD available for this material category")
+                if len(epd_data) == 1:
+                    gwp_statistic = "single_value"
+                elif gwp_statistic == "single_value":
+                    runner.registerWarning("Since multiple EPD returned, use a single value is not recommended.")
+                
+                gwp_values = []
+                for idx, epd in enumerate(epd_data,start = 1):
+                    parsed_data = parse_gwp_data(epd)
+                    if gwp_unit == "per area (m^2)" and material_area[key] != None:
+                        gwp_values.append(parse_gwp_data["gwp_per_unit_area"])
+                    if gwp_unit == "per mass (kg)" and material_mass[key] != None:
+                        gwp_values.append(parse_gwp_data["gwp_per_unit_mass"])
+                    if gwp_unit == "per volume (m^3)" and material_volume[key] != None:
+                        gwp_values.append(parse_gwp_data["gwp_per_unit_volume"])
+
+                if gwp_statistic == "minimum":
+                    gwp = np.min(gwp_values)
+                if gwp_statistic == "maximum":
+                    gwp = np.max(gwp_values)
+                if gwp_statistic == "mean":
+                    gwp = np.mean(gwp_values)
+                else:
+                    gwp = gwp_values[0]
+
+                embodied_carbon_intensity[key] = gwp
+                runner.registerInfo(f"{gwp_statistic} GWP of {key} {gwp_unit}: {gwp:.2f} kg CO2 eq.")
+                embodied_carbon[key] = gwp * material_volume[key]
+                runner.registerInfo(f"total GWP of {key}: {embodied_carbon[key]:.2f} kg CO2 eq.")
+                #total embodied carbon to be reported eventually
+                total_embodied_carbon += embodied_carbon[key]
+        except Exception as e:
+            runner.registerError(f"Error fetching GWP value: {e}")
+            return False
+        ###end###
+            '''
+            # the following can be deleted if new edits run successfully    
             wframe_data = fetch_epd_data(URLS["wframe"])
             igu_data = fetch_epd_data(URLS["igu"])
             runner.registerInfo(f"Number of EPDs for window frame: {len(wframe_data)}")
@@ -155,22 +256,22 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
                 parsed_igu_data = parse_gwp_data(epd)
                 igu_gwp_per_volume.append(parsed_igu_data["gwp_per_unit_volume"])
 
-
             # Temporarily, we use mean value for calculation; in the future, we allow user to pick which EPD to use
             wframe_mean_gwp_per_volume = np.mean(wframe_gwp_per_volume)
             igu_mean_gwp_per_volume = np.mean(igu_gwp_per_volume)
             # TBD: need to report the min and max to give a sense of the gwp range.
             runner.registerInfo(f"Mean GWP of window frame per volume: {wframe_mean_gwp_per_volume:.2f} kgCO2e/m3.")
             runner.registerInfo(f"Mean GWP of insulated glass unit per volume: {igu_mean_gwp_per_volume:.2f} kgCO2e/m3.")
-
+            
         except Exception as e:
             runner.registerError(f"Error calculating GWP per volume: {e}")
             return False
+            
 
         # Frame embodied carbon totals
-        frame_embodied_carbon = total_window_frame_volume * wframe_mean_gwp_per_volume
+        # frame_embodied_carbon = total_window_frame_volume * wframe_mean_gwp_per_volume
         runner.registerInfo(f"Total embodied carbon for {igu_component_name}: {frame_embodied_carbon:.2f} kgCO2e.")
-
+        '''
         # TBD: IGU Calculations: need to extract IGU thicknesses, multiply by area, and lookup associated GWP
         
         building = model.getBuilding()
