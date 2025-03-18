@@ -5,6 +5,7 @@ import re
 from typing import Dict, Any, List
 from pathlib import Path
 import configparser
+from datetime import datetime
 
 # Get the path to the config file in the 'resources' folder
 config_path = Path(__file__).parent / "config.ini"
@@ -23,25 +24,44 @@ API_TOKEN = "5fk7wP4cJg6pcmx6ncZN0ftMdoVR8u" # Need to add a placeholder for use
 #IGU_URL = config.get("EC3", "IGU_URL").strip() 
 #WFRAME_URL = config.get("EC3", "WFRAME_URL").strip()
 
-IGU_URL =  (
-    "https://api.buildingtransparency.org/api/materials"
-    "?page_number=1&page_size=100"
-    "&mf=!EC3%20search(%22InsulatingGlazingUnits%22)%20WHERE%20"
-    "%0A%20%20jurisdiction%3A%20IN(%22021%22)%20AND%0A%20%20"
-    "epd__date_validity_ends%3A%20%3E%20%222024-12-05%22%20AND%0A%20%20"
-    "epd_types%3A%20IN(%22Product%20EPDs%22)%20"
-    "!pragma%20eMF(%222.0%2F1%22)%2C%20lcia(%22TRACI%202.1%22)"
-)
+### new edits ###
+def generate_url(material_name, page_number=1, page_size=250, jurisdiction="021", date=None, option=None, boolean=None, glass_panes=None):
+    '''
+    jurisdiction = "021" means Northern America region
+    '''
+    if date is None:
+        date = datetime.today().strftime("%Y-%m-%d")  # use today's date as default
+    url = (
+        f"https://api.buildingtransparency.org/api/materials"
+        f"?page_number={page_number}&page_size={page_size}"
+        f"&mf=!EC3%20search(%22{material_name}%22)%20WHERE%20"
+        f"%0A%20%20jurisdiction%3A%20IN(%22{jurisdiction}%22)%20AND%0A%20%20"
+        f"epd__date_validity_ends%3A%20%3E%20%22{date}%22%20AND%0A%20%20"
+        f"epd_types%3A%20IN(%22Product%20EPDs%22)%20"
+    )
+    conditions = []
+    if option and boolean:
+        conditions.append(f"{option}%3A%20{boolean}")
 
-WFRAME_URL = (
-    "https://api.buildingtransparency.org/api/materials"
-    "?page_number=1&page_size=25"
-    "&mf=!EC3%20search(%22AluminiumExtrusions%22)%20WHERE%20"
-    "%0A%20%20jurisdiction%3A%20IN(%22021%22)%20AND%0A%20%20"
-    "epd__date_validity_ends%3A%20%3E%20%222024-12-09%22%20AND%0A%20%20"
-    "epd_types%3A%20IN(%22Product%20EPDs%22)%20"
-    "!pragma%20eMF(%222.0%2F1%22)%2C%20lcia(%22TRACI%202.1%22)"
+    if glass_panes:
+        conditions.append(f"glass_panes%3A%20%3E~%20{glass_panes}")
+
+    if conditions:
+        url += "AND%0A%20%20" + "%20AND%0A%20%20".join(conditions) + "%20%0A"
+
+    url += "!pragma%20eMF(%222.0%2F1%22)%2C%20lcia(%22TRACI%202.1%22)"
+    
+    return url
+
+IGU_URL = generate_url(
+    material_name="InsulatingGlazingUnits",
+    option="low_emissivity",
+    boolean="yes"
 )
+WFRAME_URL = generate_url(
+    material_name="AluminiumExtrusions"
+)
+### end ###
 
 # API configuration
 HEADERS = {"Accept": "application/json", "Authorization": "Bearer " + API_TOKEN}
@@ -59,8 +79,8 @@ EXCLUDE_KEYS = [
 
 # API URLs
 URLS = {
-    "igu": IGU_URL,
-    "wframe": WFRAME_URL
+    "insulating glazing unit": IGU_URL,
+    "window frame": WFRAME_URL
 }
 
 def fetch_epd_data(url_key: str) -> List[Dict[str, Any]]:
