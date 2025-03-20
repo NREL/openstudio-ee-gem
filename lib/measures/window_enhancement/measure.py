@@ -8,6 +8,7 @@ import typing
 from pathlib import Path
 from resources.EC3_lookup import fetch_epd_data
 from resources.EC3_lookup import parse_gwp_data
+from resources.EC3_lookup import generate_url
 from resources.EC3_lookup import URLS
 import numpy as np
 
@@ -30,15 +31,24 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
         """Detailed description of the measure."""
         return ("This measure evaluates the embodied carbon impact of adding an IGU or storm window "
                 "to an existing structure by analyzing frame material data from EC3.")
+    
     ###new edits###
     def gwp_statistics():
-        gwp_statistics = ["minimum","maximum","mean"]
+        gwp_statistics = ["minimum","maximum","mean","median"]
         return gwp_statistics
     
     def gwp_units():
         gwp_units = ["per area (m^2)","per mass (kg)","per volume (m^3)"]
         return gwp_units
+    
+    def igu_options():
+        igu_options = ["electrochromic","fire_resistant","laminated","low_emissivity","tempered"]
+        return igu_options
+    
+    def wf_options():
+        wf_options = ["anodized","painted","thermally_improved"]
     ###end###
+
     def arguments(self, model: typing.Optional[openstudio.model.Model] = None):
         """Define user arguments."""
         args = openstudio.measure.OSArgumentVector()
@@ -82,6 +92,28 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
         gwp_unit.setDescription("Unit type (per volume or area or mass) of returned GWP value")
         gwp_unit.setDefaultValue("per volume")
         args.append(gwp_statistic)
+
+        #make an argument for igu options for filtering EPDs of igu
+        igu_options_chs = openstudio.StringVector.new()
+        igu_options = igu_options()
+        for igu_option in igu_options:
+            igu_options_chs.append(igu_option)
+        igu_option = openstudio.measure.OSArgument.makeChoiceArgument("igu_option",igu_options_chs, True)
+        igu_option.setDisplayName("IGU option") 
+        igu_option.setDescription("Type of insulating glazing unit")
+        igu_option.setDefaultValue(None)
+        args.append(igu_option)
+
+        #make an argument for window frame options for filtering EPDs 
+        wf_options_chs = openstudio.StringVector.new()
+        wf_options = wf_options()
+        for wf_option in wf_options:
+            wf_options_chs.append(wf_option)
+        wf_option = openstudio.measure.OSArgument.makeChoiceArgument("wf_option",wf_options_chs, True)
+        wf_option.setDisplayName("Window frame option") 
+        wf_option.setDescription("Type of aluminum extrusion")
+        wf_option.setDefaultValue(None)
+        args.append(wf_option)
         ### end ###
 
         gwp = openstudio.measure.OSArgument.makeDoubleArgument("gwp", True)
@@ -134,6 +166,10 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
         # Retrieve user inputs
         igu_component_name = runner.getStringArgumentValue("igu_component_name", user_arguments)
         frame_cross_section_area = runner.getDoubleArgumentValue("frame_cross_section_area", user_arguments)
+        gwp_statistic = runner.getChoiceArgumentValue("gwp_statistic", user_arguments)
+        gwp_unit = runner.getChoiceArgumentValue("gwp_unit", user_arguments)
+        igu_option = runner.getChoiceArgumentValue("igu_option", user_arguments)
+        wf_option = runner.getChoiceArgumentValue("wf_option", user_arguments)
 
         total_window_frame_volume = 0.0
         ###new edits###
@@ -178,6 +214,10 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
             return False
         
         ###new edits###
+        building_elements = {
+            "insulating glazing unit":"InsulatingGlazingUnits",
+            "window frame":"AluminiumExtrusions"
+        }
         # dictionary storing total volume of building materials
         material_volume = {
             "insulating glazing unit":total_igu_volume,
@@ -192,8 +232,6 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
             "insulating glazing unit":None,
             "window frame":None
         }
-        gwp_statistic = runner.getChoiceArgumentValue("gwp_statistic",user_arguments)
-        gwp_unit = runner.getChoiceArgumentValue("gwp_unit",user_arguments)
         
         # dictionary storing embodied carbon intensity of different building materials
         embodied_carbon_intensity = {}
@@ -202,12 +240,22 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
         # double object storing total embodied carbon in kg CO2 eq
         total_embodied_carbon = 0.0
         try:
-            for key, value in URLS:
-                epd_data = fetch_epd_data(URLS[value])
+            for key,value in building_elements.items():
+                
+                if igu_option & value == "InsulatingGlazingUnits":
+                    product_url = generate_url(value,igu_option)
+                if wf_option & value == "AluminiumExtrusions":
+                    product_url = generate_url(value,wf_option)
+                else:
+                    product_url = generate_url(value)
+                epd_data = fetch_epd_data(product_url)
+                
                 runner.registerInfo(f"Number of EPDs: {len(epd_data)}")
                 if len(epd_data) == 0:
                     runner.registerWarning("No EPD available for this material category")
+                    #let user fill in the number then
                 if len(epd_data) == 1:
+                    runner.registerInfo("Only one EPD available for this material category")
                     gwp_statistic = "single_value"
                 elif gwp_statistic == "single_value":
                     runner.registerWarning("Since multiple EPD returned, use a single value is not recommended.")
@@ -228,6 +276,8 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
                     gwp = np.max(gwp_values)
                 if gwp_statistic == "mean":
                     gwp = np.mean(gwp_values)
+                if gwp_statistic == "median":
+                    gwp = np.median(gwp_values)
                 else:
                     gwp = gwp_values[0]
 
