@@ -6,16 +6,16 @@ from typing import Dict, Any, List
 from pathlib import Path
 import configparser
 from datetime import datetime
+import sys
 
 # Get the path to the config file in the 'resources' folder
-config_path = Path(__file__).parent / "config.ini"
-
+#config_path = Path(__file__).parent / "config.ini"
 
 # Create config parser with interpolation turned off
-config = configparser.ConfigParser(interpolation=None)
+#config = configparser.ConfigParser(interpolation=None)
 
 # Read the config file
-config.read(config_path)
+#config.read(config_path)
 
 # Load API token and URLs from the config file
 # API token and url address extracted using configparser is causing error, can only extract API_TOKEN from config.ini
@@ -25,19 +25,26 @@ API_TOKEN = "5fk7wP4cJg6pcmx6ncZN0ftMdoVR8u" # Need to add a placeholder for use
 #WFRAME_URL = config.get("EC3", "WFRAME_URL").strip()
 
 ### new edits ###
-def generate_url(material_name, page_number=1, page_size=250, jurisdiction="021", date=None, option=None, boolean=None, glass_panes=None):
+#find material_name by category
+material_category = {"concrete":["ReadyMix","Precast"],
+                     "glazing":["InsulatingGlazingUnits","FlatGlassPanes","ProcessedNonInsulatingGlassPanes"],
+                     "extrusions":["AluminiumExtrusions"],
+                     "steel":["Rebar","WireMeshSteel","ColdFormedFraming","DeckingSteel","HotRolledSections","HollowSections","PlateSteel","RoofPanels","WallPanels","CoilSteel"]
+                     }
+
+def generate_url(material_name, endpoint ="materials", page_number=1, page_size=250, jurisdiction="021", date=None, option=None, boolean="yes", glass_panes=None, epd_type="Product"):
     '''
     jurisdiction = "021" means Northern America region
     '''
     if date is None:
         date = datetime.today().strftime("%Y-%m-%d")  # use today's date as default
     url = (
-        f"https://api.buildingtransparency.org/api/materials"
+        f"https://api.buildingtransparency.org/api/{endpoint}"
         f"?page_number={page_number}&page_size={page_size}"
         f"&mf=!EC3%20search(%22{material_name}%22)%20WHERE%20"
         f"%0A%20%20jurisdiction%3A%20IN(%22{jurisdiction}%22)%20AND%0A%20%20"
         f"epd__date_validity_ends%3A%20%3E%20%22{date}%22%20AND%0A%20%20"
-        f"epd_types%3A%20IN(%22Product%20EPDs%22)%20"
+        f"epd_types%3A%20IN(%22{epd_type}%20EPDs%22)%20"
     )
     conditions = []
     if option and boolean:
@@ -53,14 +60,6 @@ def generate_url(material_name, page_number=1, page_size=250, jurisdiction="021"
     
     return url
 
-IGU_URL = generate_url(
-    material_name="InsulatingGlazingUnits",
-    option="low_emissivity",
-    boolean="yes"
-)
-WFRAME_URL = generate_url(
-    material_name="AluminiumExtrusions"
-)
 ### end ###
 
 # API configuration
@@ -77,25 +76,12 @@ EXCLUDE_KEYS = [
     'uncertainty_adjusted_gwp', 'lowest_plausible_gwp'
 ]
 
-# API URLs
-URLS = {
-    "insulating glazing unit": IGU_URL,
-    "window frame": WFRAME_URL
-}
-
-def fetch_epd_data(url_key: str) -> List[Dict[str, Any]]:
+def fetch_epd_data(url):
     """
+    input url address generted by generate_url()
     Fetch EPD data from the EC3 API.
-    :param url_key: The key for selecting the API endpoint from the URLS dictionary.
-    :return: Parsed JSON response or empty list on failure.
+    return: Parsed JSON response or empty list on failure.
     """
-    # Ensure the URL exists in the dictionary
-    if url_key not in URLS:
-        print(f"Error: URL key '{url_key}' not found in URLS dictionary.")
-        return []
-    
-    url = URLS[url_key]
-
     try: 
         print(f"Fetching data from URL: {url}")  # Log the URL being fetched
         response = requests.get(url, headers=HEADERS, verify=False)
@@ -126,6 +112,8 @@ def parse_gwp_data(epd: Dict[str, Any]) -> Dict[str, Any]:
     gwp_per_category_declared_unit = epd.get("gwp_per_category_declared_unit")
     density_unit = epd.get("density")
     gwp_per_unit_mass = epd.get("gwp_per_kg")
+    original_ec3_link = epd['plant_or_group']['owned_by']['original_ec3_link']
+    description = epd['category']['description']
 
     # Per volume
     if declared_unit and "m3" in declared_unit:
@@ -146,6 +134,8 @@ def parse_gwp_data(epd: Dict[str, Any]) -> Dict[str, Any]:
     parsed_data["gwp_per_unit_volume (kg CO2 eq/m3)"] = gwp_per_unit_volume
     parsed_data["gwp_per_unit_area (kg CO2 eq/m2)"] = gwp_per_unit_area
     parsed_data["gwp_per_unit_mass (kg CO2 eq/kg)"] = gwp_per_unit_mass if gwp_per_unit_mass else "Not specified"
+    parsed_data["original_ec3_link"] = original_ec3_link
+    parsed_data["description"] = description
     return parsed_data
 
 def extract_numeric_value(value: Any) -> float:
@@ -215,13 +205,20 @@ def main():
     Main function to execute the script.
     """
     print("Fetching EC3 EPD data...")
-    for url_key, url in URLS.items():
-        print(f"\nProcessing {url_key.upper()} data...")
-        epd_data = fetch_epd_data(url_key)
-        print(f"Number of EPDs for {url_key}: {len(epd_data)}")
-        for idx, epd in enumerate(epd_data, start=1):
-            parsed_data = parse_gwp_data(epd)
-            print(f"EPD #{idx}: {json.dumps(parsed_data, indent=4)}")
+
+    for category, list in material_category.items():
+        print(material_category[category])
+        for name in list:
+            print(name)
+            product_url = generate_url(name)
+            industry_url = generate_url(name, endpoint="industry_epds", epd_type="Indsutry")
+            epd_data = fetch_epd_data(product_url) + fetch_epd_data(industry_url)
+            print(f"Number of  EPDs for {name}: {len(epd_data)}")
+            if len(epd_data) == 0:
+                sys.exit
+            for idx, epd in enumerate(epd_data, start=1):
+                parsed_data = parse_gwp_data(epd)
+                print(f"EPD #{idx}: {json.dumps(parsed_data, indent=4)}")
 
 if __name__ == "__main__":
     main()
