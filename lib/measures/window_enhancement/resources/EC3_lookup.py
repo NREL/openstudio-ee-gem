@@ -8,23 +8,11 @@ import configparser
 from datetime import datetime
 import sys
 
-# Get the path to the config file in the 'resources' folder
-#config_path = Path(__file__).parent / "config.ini"
+file_dir = r"C:\Users\jhu1\OneDrive - NREL\6 - SCOPE by LDRD\General - SCOPE"
+sys.path.append(file_dir)
 
-# Create config parser with interpolation turned off
-#config = configparser.ConfigParser(interpolation=None)
+from EC3_API_TOKEN import API_TOKEN 
 
-# Read the config file
-#config.read(config_path)
-
-# Load API token and URLs from the config file
-# API token and url address extracted using configparser is causing error, can only extract API_TOKEN from config.ini
-API_TOKEN = "5fk7wP4cJg6pcmx6ncZN0ftMdoVR8u" # Need to add a placeholder for user to fill this
-#API_TOKEN = config.get("EC3", "API_TOKEN").strip()
-#IGU_URL = config.get("EC3", "IGU_URL").strip() 
-#WFRAME_URL = config.get("EC3", "WFRAME_URL").strip()
-
-### new edits ###
 #find material_name by category
 material_category = {"concrete":["ReadyMix","Precast"],
                      "glazing":["InsulatingGlazingUnits","FlatGlassPanes","ProcessedNonInsulatingGlassPanes"],
@@ -60,13 +48,8 @@ def generate_url(material_name, endpoint ="materials", page_number=1, page_size=
     
     return url
 
-### end ###
-
 # API configuration
 HEADERS = {"Accept": "application/json", "Authorization": "Bearer " + API_TOKEN}
-print("**********************HEADERS**************************")
-print(HEADERS)
-#HEADERS = {"Authorization": "Bearer {API_TOKEN}", "Content-Type": "application/json"}
 
 # Constants
 EXCLUDE_KEYS = [
