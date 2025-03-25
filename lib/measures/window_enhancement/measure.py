@@ -53,11 +53,33 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
         """Define the arguments that user will input."""
         args = openstudio.measure.OSArgumentVector()
 
+        #make an argument for analysis period
+        analysis_period = openstudio.measure.OSArgument.makeIntegerArgument("analysis_period",True)
+        analysis_period.setDisplayName("Analysis Period")
+        analysis_period.setDescription("Analysis period of embodied carbon of building/building assembly")
+        analysis_period.setDefaultValue(30)
+        args.append(analysis_period)
+
         igu_component_name = openstudio.measure.OSArgument.makeStringArgument("igu_component_name", True)
         igu_component_name.setDisplayName("IGU Component Name")
         igu_component_name.setDescription("Name of the IGU component to add.")
         args.append(igu_component_name)
 
+        # make an argument for product life time of igu
+        igu_lifetime = openstudio.measure.OSArgument.makeIntegerArgument("igu_lifetime",True)
+        igu_lifetime.setDisplayName("Product Lifetime of IGU")
+        igu_lifetime.setDescription("Life expectancy of insulating glazing unit")
+        igu_lifetime.setDefaultValue(15)
+        args.append(igu_lifetime)
+
+        # make an argument for product life time of window frame
+        wf_lifetime = openstudio.measure.OSArgument.makeIntegerArgument("wf_lifetime",True)
+        wf_lifetime.setDisplayName("Product Lifetime of Window Frame")
+        wf_lifetime.setDescription("Life expectancy of window frame")
+        wf_lifetime.setDefaultValue(15)
+        args.append(wf_lifetime)
+
+        # make an argument for cross-sectional area of window frame
         frame_cross_section_area = openstudio.measure.OSArgument.makeDoubleArgument("frame_cross_section_area", True)
         frame_cross_section_area.setDisplayName("Frame Cross Section Area (m²)")
         frame_cross_section_area.setDescription("Cross-sectional area of the IGU frame in square meters.")
@@ -122,10 +144,12 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
         args.append(wf_option)
         ### end ###
 
-        gwp = openstudio.measure.OSArgument.makeDoubleArgument("gwp", True)
-        gwp.setDisplayName("Global Warming Potential (GWP) Value")
-        gwp.setDescription("GWP or embodied carbon intensity of the building material in kgCO2e per functional unit.")
-        args.append(gwp)
+        #make an argument for total embodied carbon (TEC)
+        total_embodied_carbon = openstudio.measure.OSArgument.makeDoubleArgument("total_embodied_carbon", True)
+        total_embodied_carbon.setDisplayName("Total Embodeid Carbon of Building/Building Assembly")
+        total_embodied_carbon.setDescription("Total GWP or embodied carbon intensity of the building (assembly) in kg CO2 eq.")
+        total_embodied_carbon.setDefaultValue(0.0)
+        args.append(total_embodied_carbon)
 
         return args
 
@@ -167,6 +191,10 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
         gwp_unit = runner.getChoiceArgumentValue("gwp_unit", user_arguments)
         igu_option = runner.getChoiceArgumentValue("igu_option", user_arguments)
         wf_option = runner.getChoiceArgumentValue("wf_option", user_arguments)
+        analysis_period = runner.getIntegerArgument("analysis_period",user_arguments)
+        igu_lifetime = runner.getIntegerArgument("igu_lifetime",user_arguments)
+        wf_lifetime = runner.getIntegerArgument("wf_lifetime",user_arguments)
+        total_embodied_carbon=runner.getDoubleArgument("total_embodied_carbon",user_arguments)
 
         # Debug: Print all user arguments received
         runner.registerInfo(f"User Arguments: {user_arguments}")
@@ -176,6 +204,12 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
         # Check if numeric values are reasonable
         if num_panes == 0 or num_panes > 2:
             runner.registerError("Choose an integer from {1,2,3} for the number of panes of IGU.")
+        if analysis_period <= 0:
+            runner.registerError("Choose an integer larger than 0 for analysis period of embodeid carbon calcualtion.")
+        if igu_lifetime <= 0:
+            runner.registerError("Choose an integer larger than 0 for product lifetime of insulating glazing unit.")
+        if wf_lifetime <= 0:
+            runner.registerError("Choose an integer larger than 0 for product lifetime of window frame.")
 
         # Print the number of sub-surfaces before processing
         sub_surfaces = model.getSubSurfaces()
@@ -226,37 +260,35 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
         
         ###new edits###
         # Embodied carbon calculations
-        building_elements = ["InsulatingGlazingUnits","AluminiumExtrusions"]
+        building_materials = ["InsulatingGlazingUnits","AluminiumExtrusions"]
         # dictionary storing total volume of building materials
-        material_volume = {
-            "InsulatingGlazingUnits":total_igu_volume,
-            "AluminiumExtrusions":total_window_frame_volume
+        material_properties = {
+        "InsulatingGlazingUnits": {
+            "volume": total_igu_volume,
+            "area": None,
+            "mass": None,
+            "ECI":None,
+            "lifetime": igu_lifetime,
+            "EC":None},
+        "AluminiumExtrusions":{
+            "volume": total_window_frame_volume,
+            "area": None,
+            "mass": None,
+            "ECI":None,
+            "lifetime":wf_lifetime,
+            "EC":None},
         }
-        #two placeholders
-        material_area = {
-            "InsulatingGlazingUnits":None,
-            "AluminiumExtrusions":None
-        }
-        material_mass = {
-            "InsulatingGlazingUnits":None,
-            "AluminiumExtrusions":None
-        }
-        
-        # dictionary storing embodied carbon intensity of different building materials
-        embodied_carbon_intensity = {}
-        # dictionary storing embodied carbon intensity of different building materials
-        embodied_carbon = {}
         # double object storing total embodied carbon in kg CO2 eq
         total_embodied_carbon = 0.0
         try:
-            for element in building_elements:
+            for material in building_materials:
                 
-                if igu_option & element == "InsulatingGlazingUnits":
-                    product_url = generate_url(material_name=element,option=igu_option,glass_panes=num_panes)
-                if wf_option & element == "AluminiumExtrusions":
-                    product_url = generate_url(material_name=element,option=wf_option)
+                if igu_option & material == "InsulatingGlazingUnits":
+                    product_url = generate_url(material_name=material,option=igu_option,glass_panes=num_panes)
+                if wf_option & material == "AluminiumExtrusions":
+                    product_url = generate_url(material_name=material,option=wf_option)
                 else:
-                    product_url = generate_url(material_name=element)
+                    product_url = generate_url(material_name=material)
                 epd_data = fetch_epd_data(product_url)
                 
                 runner.registerInfo(f"Number of EPDs: {len(epd_data)}")
@@ -272,11 +304,11 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
                 gwp_values = []
                 for idx, epd in enumerate(epd_data,start = 1):
                     parsed_data = parse_gwp_data(epd)
-                    if gwp_unit == "per area (m^2)" and material_area[element] != None:
+                    if gwp_unit == "per area (m^2)" and material_properties[material]["area"] != None:
                         gwp_values.append(parsed_data["gwp_per_unit_area (kg CO2 eq/m2)"])
-                    if gwp_unit == "per mass (kg)" and material_mass[element] != None:
+                    if gwp_unit == "per mass (kg)" and material_properties[material]["mass"] != None:
                         gwp_values.append(parsed_data["gwp_per_unit_mass (kg CO2 eq/kg)"])
-                    if gwp_unit == "per volume (m^3)" and material_volume[element] != None:
+                    if gwp_unit == "per volume (m^3)" and material_properties[material]["volume"] != None:
                         gwp_values.append(parsed_data["gwp_per_unit_volume (kg CO2 eq/m3)"])
 
                 if gwp_statistic == "minimum":
@@ -289,13 +321,18 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
                     gwp = np.median(gwp_values)
                 else:
                     gwp = gwp_values[0]
+                #store embodied carbon intensity of the material
+                material_properties[material]["ECI"] = gwp
+                runner.registerInfo(f"{gwp_statistic} GWP of {material} {gwp_unit}: {gwp:.2f} kg CO2 eq.")
+                #calculate total embodied carbon from the material and its product lifetime
+                if analysis_period <= material_properties[material]["lifetime"]:
+                    material_properties[material]["EC"] = gwp * material_properties[material]["volume"]
+                else:
+                    material_properties[material]["EC"] = gwp * material_properties[material]["volume"] * np.ceil(analysis_period/material_properties[material]["lifetime"])
+                runner.registerInfo(f"total GWP of {material}: {material_properties[material]["EC"]:.2f} kg CO2 eq.")
 
-                embodied_carbon_intensity[element] = gwp
-                runner.registerInfo(f"{gwp_statistic} GWP of {element} {gwp_unit}: {gwp:.2f} kg CO2 eq.")
-                embodied_carbon[element] = gwp * material_volume[element]
-                runner.registerInfo(f"total GWP of {element}: {embodied_carbon[element]:.2f} kg CO2 eq.")
-                #total embodied carbon to be reported eventually
-                total_embodied_carbon += embodied_carbon[element]
+                #total embodied carbon calcualted by adding up embodeid carbon from each material flow
+                total_embodied_carbon += material_properties[material]["EC"]
             
         except Exception as e:
             runner.registerError(f"Error fetching GWP value: {e}")
@@ -327,7 +364,6 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
             runner.registerError(f"Error calculating GWP per volume: {e}")
             return False
             
-
         # Frame embodied carbon totals
         # frame_embodied_carbon = total_window_frame_volume * wframe_mean_gwp_per_volume
         runner.registerInfo(f"Total embodied carbon for {igu_component_name}: {frame_embodied_carbon:.2f} kgCO2e.")
