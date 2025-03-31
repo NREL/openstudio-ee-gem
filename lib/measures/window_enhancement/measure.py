@@ -283,8 +283,8 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
         runner.registerInfo(f"Window frame volume: {total_window_frame_volume:.3f} m3")
         
         ###new edits###
-        # # Embodied carbon calculations
-        # building_materials = ["InsulatingGlazingUnits","AluminiumExtrusions"]
+        # Embodied carbon calculations
+        building_materials = ["InsulatingGlazingUnits","AluminiumExtrusions"]
         # # dictionary storing total volume of building materials
         # material_properties = {
         # "InsulatingGlazingUnits": {

@@ -7,18 +7,25 @@ from pathlib import Path
 import configparser
 from datetime import datetime
 import sys
+import os
 
-file_dir = r"C:\Users\jhu1\OneDrive - NREL\6 - SCOPE by LDRD\General - SCOPE"
-sys.path.append(file_dir)
+script_dir = os.path.dirname(os.path.abspath(__file__))
+repo_root = os.path.abspath(os.path.join(script_dir, "../../../.."))
+config_path = os.path.join(repo_root, "config.ini")
 
-from EC3_API_TOKEN import API_TOKEN 
+if not os.path.exists(config_path):
+    raise FileNotFoundError(f"Config file not found: {config_path}")
 
-#find material_name by category
-# material_category = {"concrete":["ReadyMix","Precast"],
-#                      "glazing":["InsulatingGlazingUnits","FlatGlassPanes","ProcessedNonInsulatingGlassPanes"],
-#                      "extrusions":["AluminiumExtrusions"],
-#                      "steel":["Rebar","WireMeshSteel","ColdFormedFraming","DeckingSteel","HotRolledSections","HollowSections","PlateSteel","RoofPanels","WallPanels","CoilSteel"]
-#                      }
+config = configparser.ConfigParser()
+config.read(config_path)
+API_TOKEN= config["EC3_API_TOKEN"]["API_TOKEN"]
+
+# #find material_name by category
+material_category = {"concrete":["ReadyMix","Precast"],
+                     "glazing":["InsulatingGlazingUnits","FlatGlassPanes","ProcessedNonInsulatingGlassPanes"],
+                     "extrusions":["AluminiumExtrusions"],
+                     "steel":["Rebar","WireMeshSteel","ColdFormedFraming","DeckingSteel","HotRolledSections","HollowSections","PlateSteel","RoofPanels","WallPanels","CoilSteel"]
+                     }
 material_category = {
                      "glazing":["InsulatingGlazingUnits"],
                      "extrusions":["AluminiumExtrusions"]

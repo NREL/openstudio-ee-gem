@@ -2,7 +2,7 @@ import openstudio
 from pathlib import Path
 from measure import WindowEnhancement
 
-model_path = Path("C:/All repos/openstudio-ee-gem/lib/measures/window_enhancement/tests/example_model.osm")  # <- change to your actual model path
+model_path = Path("C:/All_repos/openstudio-ee-gem/lib/measures/window_enhancement/tests/example_model.osm")  # <- change to your actual model path
 translator = openstudio.osversion.VersionTranslator()
 model = translator.loadModel(openstudio.toPath(str(model_path))).get()
 
