@@ -31,6 +31,7 @@ set_arg("frame_cross_section_area", 0.025)
 set_arg("gwp_statistic", "mean")
 set_arg("gwp_unit", "per volume (m^3)")
 set_arg("total_embodied_carbon", 0.0)
+set_arg("igu_thickness",0.003)
 
 # Run the measure
 result = measure.run(model, runner, arg_map)
