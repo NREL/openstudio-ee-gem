@@ -110,6 +110,12 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
         frame_cross_section_area.setDefaultValue(0.0025)
         args.append(frame_cross_section_area)
 
+        igu_thickness = openstudio.measure.OSArgument.makeDoubleArgument("igu_thickness", True)
+        igu_thickness.setDisplayName("Thickness of Insulating Glazing Unit (m)")
+        igu_thickness.setDescription("Thickness of Insulating Glazing Unit (m).")
+        igu_thickness.setDefaultValue(0.0)
+        args.append(igu_thickness)
+
         # # we can replace this argument with the choice argument gwp_unit
         # declared_unit = openstudio.measure.OSArgument.makeStringArgument("declared_unit", True)
         # declared_unit.setDisplayName("Declared Unit for GWP")
@@ -179,6 +185,7 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
         # Retrieve user inputs
         #igu_component_name = runner.getStringArgumentValue("igu_component_name", user_arguments)
         frame_cross_section_area = runner.getDoubleArgumentValue("frame_cross_section_area", user_arguments)
+        igu_thickness = runner.getDoubleArgumentValue("igu_thickness",user_arguments)
         num_panes = runner.getIntegerArgumentValue("number_of_panes", user_arguments)
         gwp_statistic = runner.getStringArgumentValue("gwp_statistic", user_arguments)
         gwp_unit = runner.getStringArgumentValue("gwp_unit", user_arguments)
@@ -187,7 +194,7 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
         analysis_period = runner.getIntegerArgumentValue("analysis_period",user_arguments)
         igu_lifetime = runner.getIntegerArgumentValue("igu_lifetime",user_arguments)
         wf_lifetime = runner.getIntegerArgumentValue("wf_lifetime",user_arguments)
-        total_embodied_carbon=runner.getDoubleArgumentValue("total_embodied_carbon",user_arguments)
+        total_embodied_carbon = runner.getDoubleArgumentValue("total_embodied_carbon",user_arguments)
 
         # Debug: Print all user arguments received
         runner.registerInfo(f"User Arguments: {user_arguments}")
@@ -257,110 +264,120 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
             if construction.isFenestration():
             #window_area = openstudio.convert(openstudio.Quantity(construction.getNetArea(), openstudio.createUnit('m^2').get())).get().value()
                 window_area = subsurface.netArea()
-                print(window_area)
+                runner.registerInfo(f"window area: {window_area}")
             else:
-                print("not a fenestration")
+                runner.registerInfo("not a fenestration")
             window_perimeter = self.calculate_perimeter(subsurface)
             runner.registerInfo(f"Calculated surface perimeter: {window_perimeter}")
         
         runner.registerInfo(f"number of layers for window construction:{len(window_materials)}")
-        igu_thickness = 0.0
+
         for material in window_materials:
             if material.to_OpaqueMaterial().is_initialized():
                 opaque_material = material.to_OpaqueMaterial().get()
                 runner.registerInfo(f"Material: {opaque_material.nameString()}, Thickness: {opaque_material.thickness()} m")
                 igu_thickness += opaque_material.thickness()
             else:
+                igu_thickness = 0.003 # assign a value if the window construction has no thickness
                 runner.registerInfo(f"Material: {material.nameString()} is not an opaque material and has no thickness.")
-        runner.registerInfo(f"Total Subsurface Thickness: {igu_thickness} m")
 
-        if igu_thickness == 0.0:
-            igu_thickness = 0.003 #assign a value if the window construction has no thickness
         #caculate total igu volume
         total_igu_volume = igu_thickness * window_area
         total_window_frame_volume = frame_cross_section_area * window_perimeter
-        runner.registerInfo(f"IGU volume: {total_igu_volume:.3f} m3")
-        runner.registerInfo(f"Window frame volume: {total_window_frame_volume:.3f} m3")
         
         ###new edits###
         # Embodied carbon calculations
         building_materials = ["InsulatingGlazingUnits","AluminiumExtrusions"]
-        # # dictionary storing total volume of building materials
-        # material_properties = {
-        # "InsulatingGlazingUnits": {
-        #     "volume": total_igu_volume,
-        #     "area": None,
-        #     "mass": None,
-        #     "ECI":None,
-        #     "lifetime": igu_lifetime,
-        #     "EC":None},
-        # "AluminiumExtrusions":{
-        #     "volume": total_window_frame_volume,
-        #     "area": None,
-        #     "mass": None,
-        #     "ECI":None,
-        #     "lifetime":wf_lifetime,
-        #     "EC":None},
-        # }
-        # # double object storing total embodied carbon in kg CO2 eq
-        # total_embodied_carbon = 0.0
-        # try:
-        #     for material in building_materials:
-                
-        #         if igu_option & material == "InsulatingGlazingUnits":
-        #             product_url = generate_url(material_name=material,option=igu_option,glass_panes=num_panes)
-        #         if wf_option & material == "AluminiumExtrusions":
-        #             product_url = generate_url(material_name=material,option=wf_option)
-        #         else:
-        #             product_url = generate_url(material_name=material)
-        #         epd_data = fetch_epd_data(product_url)
-                
-        #         runner.registerInfo(f"Number of EPDs: {len(epd_data)}")
-        #         if len(epd_data) == 0:
-        #             runner.registerError("No EPD returned from this API call")
-        #             #let user fill in the number then
-        #         if len(epd_data) == 1:
-        #             runner.registerInfo("Only one EPD available for this material category")
-        #             gwp_statistic = "single_value"
-        #         elif gwp_statistic == "single_value":
-        #             runner.registerWarning("Since multiple EPD returned, use a single value is not recommended.")
-                
-        #         gwp_values = []
-        #         for idx, epd in enumerate(epd_data,start = 1):
-        #             parsed_data = parse_gwp_data(epd)
-        #             if gwp_unit == "per area (m^2)" and material_properties[material]["area"] != None:
-        #                 gwp_values.append(parsed_data["gwp_per_unit_area (kg CO2 eq/m2)"])
-        #             if gwp_unit == "per mass (kg)" and material_properties[material]["mass"] != None:
-        #                 gwp_values.append(parsed_data["gwp_per_unit_mass (kg CO2 eq/kg)"])
-        #             if gwp_unit == "per volume (m^3)" and material_properties[material]["volume"] != None:
-        #                 gwp_values.append(parsed_data["gwp_per_unit_volume (kg CO2 eq/m3)"])
+        # dictionary storing total volume of building materials
+        material_properties = {
+        "InsulatingGlazingUnits": {
+            "volume": total_igu_volume,
+            "area": None,
+            "mass": None,
+            "ECI":None,
+            "lifetime": igu_lifetime,
+            "EC":None},
+        "AluminiumExtrusions":{
+            "volume": total_window_frame_volume,
+            "area": None,
+            "mass": None,
+            "ECI":None,
+            "lifetime":wf_lifetime,
+            "EC":None},
+        }
+        # double object storing total embodied carbon in kg CO2 eq
+        total_embodied_carbon = 0.0
+        try:
+            for material in building_materials:
+                runner.registerInfo(f"Processing {material}")
+                if igu_option and material == "InsulatingGlazingUnits":
+                    product_url = generate_url(material_name=material,option=igu_option,glass_panes=num_panes)
+                if wf_option and material == "AluminiumExtrusions":
+                    product_url = generate_url(material_name=material)
+                else:
+                    product_url = generate_url(material_name=material)
+                epd_data = fetch_epd_data(product_url)
+                runner.registerInfo(f"Number of EPDs: {len(epd_data)}")
 
-        #         if gwp_statistic == "minimum":
-        #             gwp = np.min(gwp_values)
-        #         if gwp_statistic == "maximum":
-        #             gwp = np.max(gwp_values)
-        #         if gwp_statistic == "mean":
-        #             gwp = np.mean(gwp_values)
-        #         if gwp_statistic == "median":
-        #             gwp = np.median(gwp_values)
-        #         else:
-        #             gwp = gwp_values[0]
-        #         #store embodied carbon intensity of the material
-        #         material_properties[material]["ECI"] = gwp
-        #         runner.registerInfo(f"{gwp_statistic} GWP of {material} {gwp_unit}: {gwp:.2f} kg CO2 eq.")
-        #         #calculate total embodied carbon from the material and its product lifetime
-        #         if analysis_period <= material_properties[material]["lifetime"]:
-        #             material_properties[material]["EC"] = gwp * material_properties[material]["volume"]
-        #         else:
-        #             material_properties[material]["EC"] = gwp * material_properties[material]["volume"] * np.ceil(analysis_period/material_properties[material]["lifetime"])
-        #         runner.registerInfo(f"total GWP of {material}: {material_properties[material]["EC"]:.2f} kg CO2 eq.")
+                if len(epd_data) == 0:
+                    runner.registerError("No EPD returned from this API call")
+                    #let user fill in the number then
+                if len(epd_data) == 1:
+                    runner.registerInfo("Only one EPD available for this material category")
+                    gwp_statistic = "single_value"
+                elif gwp_statistic == "single_value":
+                    runner.registerWarning("Since multiple EPD returned, use a single value is not recommended.")
+                
+                gwp_values = []
+                for idx, epd in enumerate(epd_data,start = 1):
+                    parsed_data = parse_gwp_data(epd)
+                    if gwp_unit == "per area (m^2)" and parsed_data["gwp_per_unit_area (kg CO2 eq/m2)"] != 0.0:
+                        gwp_value = parsed_data["gwp_per_unit_area (kg CO2 eq/m2)"]
+                        gwp_values.append(float(gwp_value))
+                        runner.registerInfo(f"gwp_per_unit_area (kg CO2 eq/m2):{gwp_value}")
+                    elif gwp_unit == "per mass (kg)" and parsed_data["gwp_per_unit_mass (kg CO2 eq/kg)"] != 0.0:
+                        gwp_value = parsed_data["gwp_per_unit_mass (kg CO2 eq/kg)"]
+                        gwp_values.append(float(gwp_value))
+                        runner.registerInfo(f"gwp_per_unit_mass (kg CO2 eq/kg):{gwp_value}")
+                    elif gwp_unit == "per volume (m^3)" and parsed_data["gwp_per_unit_volume (kg CO2 eq/m3)"] != 0.0:
+                        gwp_value = parsed_data["gwp_per_unit_volume (kg CO2 eq/m3)"]
+                        gwp_values.append(float(gwp_value))
+                        runner.registerInfo(f"gwp_per_unit_volume (kg CO2 eq/m3):{gwp_value}")
+                if len(gwp_values) == 0:
+                    runner.registerInfo("No non-zero values returned from selected functional unit")
+                runner.registerInfo(f"Number of non-zero values returned from selected functional unit:{len(gwp_values)}")
 
-        #         #total embodied carbon calcualted by adding up embodeid carbon from each material flow
-        #         total_embodied_carbon += material_properties[material]["EC"]
-            
-        # except Exception as e:
-        #     runner.registerError(f"Error fetching GWP value: {e}")
-        #     return False
+                if gwp_statistic == "minimum":
+                    gwp = np.min(gwp_values)
+                elif gwp_statistic == "maximum":
+                    gwp = np.max(gwp_values)
+                elif gwp_statistic == "mean":
+                    gwp = np.mean(gwp_values)
+                elif gwp_statistic == "median":
+                    gwp = np.median(gwp_values)
+                else:
+                    gwp = gwp_values[0]
+                #store embodied carbon intensity of the material
+                material_properties[material]["ECI"] = gwp
+                runner.registerInfo(f"{gwp_statistic} GWP of {material} {gwp_unit}: {gwp:.2f} kg CO2 eq.")
+                #calculate total embodied carbon from the material and its product lifetime
+                if analysis_period <= material_properties[material]["lifetime"]:
+                    material_properties[material]["EC"] = gwp * material_properties[material]["volume"]
+                else:
+                    material_properties[material]["EC"] = gwp * material_properties[material]["volume"] * np.ceil(analysis_period/material_properties[material]["lifetime"])
+                runner.registerInfo(f"total GWP of {material}: {material_properties[material]["EC"]:.2f} kg CO2 eq.")
+
+                #total embodied carbon calcualted by adding up embodeid carbon from each material flow
+                total_embodied_carbon += material_properties[material]["EC"]
+            runner.registerInfo(f"-------------------------------------------------------------------------")    
+            runner.registerInfo(f"Frame cross-sectional area: {frame_cross_section_area} m")
+            runner.registerInfo(f"IGU Thickness: {igu_thickness} m")
+            runner.registerInfo(f"IGU volume: {total_igu_volume:.3f} m3")
+            runner.registerInfo(f"Window frame volume: {total_window_frame_volume:.3f} m3")
+            runner.registerInfo(f"total GWP of window construction: {total_embodied_carbon} kg CO2 eq.")
+        except Exception as e:
+            runner.registerError(f"Error fetching GWP value: {e}")
+            return False
         ###end###
         '''
             # the following can be deleted if new edits run successfully    

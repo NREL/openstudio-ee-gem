@@ -97,9 +97,9 @@ def parse_gwp_data(epd: Dict[str, Any]) -> Dict[str, Any]:
     """
 
     parsed_data = {}
-    gwp_per_unit_volume = "Not specified"
-    gwp_per_unit_area = "Not specified"
-    gwp_per_unit_mass = "Not specified"
+    gwp_per_unit_volume = 0.0
+    gwp_per_unit_area = 0.0
+    gwp_per_unit_mass = 0.0
 
     declared_unit = epd.get("declared_unit")
     thickness_unit = epd.get("thickness")
@@ -127,7 +127,7 @@ def parse_gwp_data(epd: Dict[str, Any]) -> Dict[str, Any]:
 
     parsed_data["gwp_per_unit_volume (kg CO2 eq/m3)"] = gwp_per_unit_volume
     parsed_data["gwp_per_unit_area (kg CO2 eq/m2)"] = gwp_per_unit_area
-    parsed_data["gwp_per_unit_mass (kg CO2 eq/kg)"] = gwp_per_unit_mass if gwp_per_unit_mass else "Not specified"
+    parsed_data["gwp_per_unit_mass (kg CO2 eq/kg)"] = gwp_per_unit_mass 
     parsed_data["original_ec3_link"] = original_ec3_link
     parsed_data["description"] = description
     return parsed_data
