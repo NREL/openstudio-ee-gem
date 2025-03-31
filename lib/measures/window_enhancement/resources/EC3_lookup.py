@@ -14,10 +14,14 @@ sys.path.append(file_dir)
 from EC3_API_TOKEN import API_TOKEN 
 
 #find material_name by category
-material_category = {"concrete":["ReadyMix","Precast"],
-                     "glazing":["InsulatingGlazingUnits","FlatGlassPanes","ProcessedNonInsulatingGlassPanes"],
-                     "extrusions":["AluminiumExtrusions"],
-                     "steel":["Rebar","WireMeshSteel","ColdFormedFraming","DeckingSteel","HotRolledSections","HollowSections","PlateSteel","RoofPanels","WallPanels","CoilSteel"]
+# material_category = {"concrete":["ReadyMix","Precast"],
+#                      "glazing":["InsulatingGlazingUnits","FlatGlassPanes","ProcessedNonInsulatingGlassPanes"],
+#                      "extrusions":["AluminiumExtrusions"],
+#                      "steel":["Rebar","WireMeshSteel","ColdFormedFraming","DeckingSteel","HotRolledSections","HollowSections","PlateSteel","RoofPanels","WallPanels","CoilSteel"]
+#                      }
+material_category = {
+                     "glazing":["InsulatingGlazingUnits"],
+                     "extrusions":["AluminiumExtrusions"]
                      }
 
 def generate_url(material_name, endpoint ="materials", page_number=1, page_size=250, jurisdiction="021", date=None, option=None, boolean="yes", glass_panes=None, epd_type="Product"):
