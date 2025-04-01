@@ -1,8 +1,12 @@
+import sys
 import openstudio
 from pathlib import Path
 from measure import WindowEnhancement
 
-model_path = Path("C:/All_repos/openstudio-ee-gem/lib/measures/window_enhancement/tests/example_model.osm")  # <- change to your actual model path
+CURRENT_DIR_PATH = Path(__file__).parent.absolute()
+model_path = Path(CURRENT_DIR_PATH / "tests/example_model.osm")
+
+
 translator = openstudio.osversion.VersionTranslator()
 model = translator.loadModel(openstudio.toPath(str(model_path))).get()
 
@@ -44,5 +48,9 @@ for warning in runner.result().warnings():
     print("WARNING:", warning.logMessage())
 for error in runner.result().errors():
     print("ERROR:", error.logMessage())
+
+# Save the modified model
+save_path = Path(CURRENT_DIR_PATH/"tests/output/example_model_with_enhancements.osm")
+model.save(openstudio.toPath(str(save_path)), True)
 
 del model
