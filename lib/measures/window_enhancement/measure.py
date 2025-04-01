@@ -413,7 +413,12 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
         
         building = model.getBuilding()
         additional_properties = building.additionalProperties()
+        additional_properties.setName("Dummy AdditionalProperties")
         additional_properties.setFeature("Embodied Carbon [kg]:", "10")
+
+        # additional_props = model.AdditionalProperties(model)
+        # additional_props.setName("Dummy AdditionalProperties")
+        # additional_props.setFeature("Embodied Carbon [kg]", "10")
 
         # output_var = openstudio.model.OutputVariable("WindowEnhancement:EmbodiedCarbon", model)
         # output_var.setKeyValue(igu_component_name)
