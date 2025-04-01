@@ -44,3 +44,5 @@ for warning in runner.result().warnings():
     print("WARNING:", warning.logMessage())
 for error in runner.result().errors():
     print("ERROR:", error.logMessage())
+
+del model
