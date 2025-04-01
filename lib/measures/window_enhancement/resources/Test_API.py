@@ -51,20 +51,12 @@ EC3_category_array = {
 }
 '''
 
-test_url = (
-    "https://api.buildingtransparency.org/api/materials"
-    "?page_number=1&page_size=25"
-    "&mf=!EC3%20search(%22StructuralPrecast%22)%20WHERE%20"
-    "%0A%20%20jurisdiction%3A%20IN(%22US%22%2C%20%22CA%22)%20AND%0A%20%20"
-    "epd__date_validity_ends%3A%20%3E%20%222024-12-30%22%20AND%0A%20%20"
-    "epd_types%3A%20IN(%22Product%20EPDs%22)%20"
-    "!pragma%20eMF(%222.0%2F1%22)%2C%20lcia(%22TRACI%202.1%22)"
-)
+test_url = ("https://api.buildingtransparency.org/api/industry_epds?page_number=1&page_size=250&mf=!EC3%20search(%22WallPanels%22)%20WHERE%20%0A%20%20jurisdiction%3A%20IN(%22021%22)%20AND%0A%20%20epd__date_validity_ends%3A%20%3E%20%222025-03-20%22%20AND%0A%20%20epd_types%3A%20IN(%22Indsutry%20EPDs%22)%20!pragma%20eMF(%222.0%2F1%22)%2C%20lcia(%22TRACI%202.1%22)")
 
 # Headers for the request
 headers = {
     "Accept": "application/json",
-    "Authorization": "Bearer z7z4qVkNNmKeXtBM41C2DTSj0Sta7h"
+    "Authorization": "Bearer 5fk7wP4cJg6pcmx6ncZN0ftMdoVR8u"
 }
 
 # Execute the GET request
