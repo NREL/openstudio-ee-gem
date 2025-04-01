@@ -365,7 +365,7 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
                     material_properties[material]["EC"] = gwp * material_properties[material]["volume"]
                 else:
                     material_properties[material]["EC"] = gwp * material_properties[material]["volume"] * np.ceil(analysis_period/material_properties[material]["lifetime"])
-                runner.registerInfo(f"total GWP of {material}: {material_properties[material]["EC"]:.2f} kg CO2 eq.")
+                runner.registerInfo(f"total GWP of {material}: {material_properties[material]['EC']:.2f} kg CO2 eq.")
 
                 #total embodied carbon calcualted by adding up embodeid carbon from each material flow
                 total_embodied_carbon += material_properties[material]["EC"]

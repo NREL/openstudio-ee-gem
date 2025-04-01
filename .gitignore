@@ -31,11 +31,10 @@ lib/test/*
 # Ignore measure tester gem local test results
 test_results/
 
-# /resources/config.ini # Need to uncomment after review and bugfixes
-
 lib/measures/window_enhancement/__pycache__
 lib/measures/window_enhancement/tests/__pycache__
 lib/measures/window_enhancement/resources/__pycache__
 lib/measures/window_enhancement/tests/.pytest_cache
 lib/measures/window_enhancement/tests/example_model/run
 **/__pycache__/
+config.ini
