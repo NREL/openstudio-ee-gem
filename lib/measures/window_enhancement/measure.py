@@ -411,9 +411,9 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
         '''
         # TBD: IGU Calculations: need to extract IGU thicknesses, multiply by area, and lookup associated GWP
         
-        # building = model.getBuilding()
-        # additional_properties = building.additionalProperties()
-        # additional_properties.setFeature(f"EmbodiedCarbon_{igu_component_name}", frame_embodied_carbon)
+        building = model.getBuilding()
+        additional_properties = building.additionalProperties()
+        additional_properties.setFeature("Embodied Carbon [kg]:", "10")
 
         # output_var = openstudio.model.OutputVariable("WindowEnhancement:EmbodiedCarbon", model)
         # output_var.setKeyValue(igu_component_name)
