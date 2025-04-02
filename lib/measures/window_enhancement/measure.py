@@ -225,7 +225,7 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
             # we already checked the exmaple model and identified the surface type: FixedWinodow
             if subsurface.outsideBoundaryCondition() == "Outdoors" and subsurface.subSurfaceType() in ["FixedWindow","OperableWindow"]:
                 # append the subsurface object into list
-                sub_surfaces_to_change.append(subsurface) 
+                sub_surfaces_to_change.append(subsurface)
                 # examine if this subsurface construction exist
                 if subsurface.construction().is_initialized():
                     # get the construction of the subsurface object
