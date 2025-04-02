@@ -4,12 +4,12 @@ from pathlib import Path
 from measure import ReportAdditionalProperties
 
 CURRENT_DIR_PATH = Path(__file__).parent.absolute()
-model_path = Path(CURRENT_DIR_PATH / "tests/example_model_with_enhancements.osm")
+model_path = CURRENT_DIR_PATH / "tests/example_model_with_enhancements.osm"
 
 translator = openstudio.osversion.VersionTranslator()
 model_opt = translator.loadModel(openstudio.toPath(str(model_path)))
 
-if not model_opt.is_initialized():  # Use is_initialized instead of isEmpty
+if not model_opt.is_initialized():
     print(f"ERROR: Failed to load model from {model_path}")
     sys.exit(1)
 
@@ -22,8 +22,14 @@ runner = openstudio.measure.OSRunner(osw)
 
 measure = ReportAdditionalProperties()
 
-# Run the measure
-result = measure.run(runner)
+# Run the measure and pass the model
+result = measure.run(runner, model)
+
+# Extract AdditionalProperties directly for verification
+additional_properties_objects = model.getObjectsByType(openstudio.IddObjectType("OS_AdditionalProperties"))
+
+for obj in additional_properties_objects:
+    print(f"Found AdditionalProperties: {obj}")
 
 # Print stdout logs
 print("RESULT:", runner.result().value().valueName())
@@ -33,7 +39,5 @@ for warning in runner.result().warnings():
     print("WARNING:", warning.logMessage())
 for error in runner.result().errors():
     print("ERROR:", error.logMessage())
-
-
 
 del model

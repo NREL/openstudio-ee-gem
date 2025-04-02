@@ -11,7 +11,7 @@ logger.standardOutLogger().enable()  # Enables standard output logging
 
 class ReportAdditionalProperties(openstudio.measure.ReportingMeasure):
     def name(self):
-        return "Report AdditionalProperties"
+        return "ReportAdditionalProperties"
 
     def description(self):
         return "Reports all AdditionalProperties objects and their key-value pairs in the model."
@@ -19,7 +19,7 @@ class ReportAdditionalProperties(openstudio.measure.ReportingMeasure):
     def modeler_description(self):
         return "Traverses the model and extracts data from AdditionalProperties objects."
 
-    def run(self, runner):
+    def run(self, runner, model):
         model = runner.lastOpenStudioModel().get()
 
         runner.registerInitialCondition("Starting to collect additional properties.")
