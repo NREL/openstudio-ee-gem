@@ -1,6 +1,6 @@
 
 OS:Version,
-  {c13fdcb7-ce6a-45cc-a0dc-cbd1dd5ccee0}, !- Handle
+  {ac140ae4-8820-48ce-8964-09fca533be39}, !- Handle
   3.9.0;                                  !- Version Identifier
 
 OS:SimulationControl,
@@ -3364,10 +3364,16 @@ OS:StandardsInformation:Construction,
   {c3e28441-358a-4764-b5ee-ac181d98e294}; !- Construction Name
 
 OS:AdditionalProperties,
-  {41dd4bca-a191-4a8c-966d-f631170cbe82}, !- Handle
-  {a09e3747-baf7-4d1c-af15-64e45abea83e}, !- Object Name
+  {efb8182e-6346-455f-8d0c-b4323ef32a8e}, !- Handle
+  {ca797f30-9a7d-4aae-95dd-b923bbc2eb73}, !- Object Name
   Embodied Carbon [kg]:,                  !- Feature Name 1
-  String,                                 !- Feature Data Type 1
+  Integer,                                !- Feature Data Type 1
   10;                                     !- Feature Value 1
 
+OS:AdditionalProperties,
+  {8a1be349-5f2c-4bfe-be13-2460a45b9419}, !- Handle
+  {e81f7e4b-c692-42c0-aa60-59d77f692e9b}, !- Object Name
+  Embodied Carbon [kg]:,                  !- Feature Name 1
+  Integer,                                !- Feature Data Type 1
+  10;                                     !- Feature Value 1
 

@@ -5,10 +5,6 @@
 
 import openstudio
 
-logger = openstudio.Logger.instance()
-logger.standardOutLogger().enable()  # Enables standard output logging
-
-
 class ReportAdditionalProperties(openstudio.measure.ReportingMeasure):
     def name(self):
         return "ReportAdditionalProperties"
@@ -20,28 +16,25 @@ class ReportAdditionalProperties(openstudio.measure.ReportingMeasure):
         return "Traverses the model and extracts data from AdditionalProperties objects."
 
     def run(self, runner, model):
-        model = runner.lastOpenStudioModel().get()
+        
+        # Check if model exists
+        if not model:
+            runner.registerError("Model is None. Exiting measure.")
+            return False
 
+        
         runner.registerInitialCondition("Starting to collect additional properties.")
 
         additional_properties_objects = []
 
         # Iterate through all model objects
         for obj in model.objects():
-            if obj.additionalProperties().size() > 0:  # Check if object has additional properties
-                additional_properties_objects.append(obj)
+            print(obj)
+            additional_properties_objects.append(obj)
+           
 
-        runner.registerInfo(f"Found {len(additional_properties_objects)} objects with additional properties.")
+        runner.registerInfo(f"Found {len(additional_properties_objects)} objects.")
 
-        for obj in additional_properties_objects:
-            obj_name = obj.nameString()
-            runner.registerInfo(f"AdditionalProperties for: {obj_name}")
-
-            for key in obj.additionalProperties().keys():
-                value = obj.additionalProperties().get(key)
-                runner.registerInfo(f"  {key}: {value}")
-
-        runner.registerFinalCondition("All AdditionalProperties have been reported.")
         return True
 
 
