@@ -15,29 +15,42 @@ if not model_opt.is_initialized():
 
 model = model_opt.get()
 
-# Search for all OS:AdditionalProperties objects directly using the string type
+# Dictionary to store material name and corresponding numeric value
+material_data = {}
+
+def parse_workspace_object(obj):
+    """Extracts Material Name and its corresponding numeric value from an OS:AdditionalProperties object."""
+    if not isinstance(obj, openstudio.openstudioutilitiesidf.WorkspaceObject):
+        return
+
+    num_fields = obj.numFields()
+    if num_fields < 5:
+        return  # Skip objects with insufficient fields
+
+    # Assume material name is always at Field 1 and the numeric value is at the last field
+    material_name = obj.getString(1, True)  # Field 1: Material Name
+    numeric_value = obj.getString(num_fields - 1, True)  # Last field: Numeric Value
+
+    if material_name.is_initialized() and numeric_value.is_initialized():
+        try:
+            # Convert numeric value from string to float
+            material_data[material_name.get()] = float(numeric_value.get())
+        except ValueError:
+            print(f"Warning: Could not convert {numeric_value.get()} to float for {material_name.get()}")
+
+# Search for all OS:AdditionalProperties objects
 additional_properties_objects = model.getObjectsByType("OS:AdditionalProperties")
 
-# Check if there are any objects of type OS:AdditionalProperties
+# Process each object
 if len(additional_properties_objects) > 0:
-    print(f"Found {len(additional_properties_objects)} AdditionalProperties objects.")
-    
     for obj in additional_properties_objects:
-        # Ensure obj is an instance of openstudio.model.AdditionalProperties
-        if isinstance(obj, openstudio.model.AdditionalProperties):
-            # Print object information
-            print(f"AdditionalProperties Object: {obj}")
-            
-            # Access the feature names and values
-            feature_names = obj.featureNames()
-            feature_values = obj.featureValues()
+        parse_workspace_object(obj)
 
-            # Check if there are feature names and values
-            if len(feature_names) > 0:
-                print(f"Feature Name 1: {feature_names[0]}")
-            if len(feature_values) > 0:
-                print(f"Feature Value 1: {feature_values[0]}")
-        else:
-            print(f"Object is not of type AdditionalProperties: {obj}")
-else:
-    print("No AdditionalProperties objects found.")
+# Print the collected material data
+print("Extracted Material Data:")
+print(material_data)
+
+# Explicitly delete references to prevent SWIG memory leaks
+del model
+del model_opt
+del translator
