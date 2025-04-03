@@ -14,68 +14,46 @@ class ReportAdditionalProperties(openstudio.measure.ReportingMeasure):
 
     def modeler_description(self):
         return "Traverses the model and extracts data from AdditionalProperties objects."
+    
+    def __init__(self):
+        super().__init__()
+        self.material_data = {}  # Dictionary to store extracted key-value pairs
+
+    def parse_workspace_object(self, obj):
+        """Extracts Material Name and its corresponding numeric value from an OS:AdditionalProperties object."""
+        num_fields = obj.numFields()
+        if num_fields < 5:
+            return  # Skip objects with insufficient fields
+
+        # Assume material name is always at Field 1 and the numeric value is at the last field
+        material_name = obj.getString(1, True)  # Field 1: Material Name
+        numeric_value = obj.getString(num_fields - 1, True)  # Last field: Numeric Value
+
+        if material_name.is_initialized() and numeric_value.is_initialized():
+            try:
+                # Convert numeric value from string to float
+                self.material_data[material_name.get()] = float(numeric_value.get())
+            except ValueError:
+                print(f"Warning: Could not convert {numeric_value.get()} to float for {material_name.get()}")
 
     def run(self, runner, model):
-        # Create an empty dictionary to store relevant data
-        additional_properties_data = {}
+        """Main function that searches for AdditionalProperties objects and extracts data."""
+        self.material_data.clear()  # Reset dictionary before collecting data
 
         # Search for all OS:AdditionalProperties objects in the model
-        additional_properties_objects = model.getObjectsByType("OS:AdditionalProperties")
+        additional_properties_objects = model.getObjectsByType(openstudio.IddObjectType("OS_AdditionalProperties"))
 
-        # Check if there are any objects of type OS:AdditionalProperties
         if len(additional_properties_objects) > 0:
-            print(f"Found {len(additional_properties_objects)} AdditionalProperties objects.")
+            runner.registerInfo(f"Found {len(additional_properties_objects)} AdditionalProperties objects.")
             
             for obj in additional_properties_objects:
-                # Assuming we are dealing with a WorkspaceObject (which is a superclass)
-                if isinstance(obj, openstudio.openstudioutilitiesidf.WorkspaceObject):
-                    # Debug: Print the object type to check if it's what we expect
-                    print(f"Object type: {type(obj)}")
-                    
-                    # Check if the object has relevant attributes for Handle and Object Name
-                    if hasattr(obj, 'handle') and hasattr(obj, 'objectName'):
-                        # Get the Handle and Object Name of the object
-                        handle = obj.handle()
-                        object_name = obj.objectName()
+                self.parse_workspace_object(obj)  # Call method properly using self
 
-                        # Initialize a dictionary for this object if it's not already initialized
-                        if handle not in additional_properties_data:
-                            additional_properties_data[handle] = {
-                                'Object Name': object_name,
-                                'Features': []
-                            }
-
-                        # If the object has features (like 'Feature Name' and 'Feature Value')
-                        if hasattr(obj, 'getFeatureNames') and hasattr(obj, 'getFeatureValues'):
-                            feature_names = obj.getFeatureNames()
-                            feature_values = obj.getFeatureValues()
-
-                            # Store the feature names and values in the dictionary under 'Features'
-                            for name, value in zip(feature_names, feature_values):
-                                additional_properties_data[handle]['Features'].append({
-                                    'Feature Name': name,
-                                    'Feature Value': value
-                                })
-
-                        else:
-                            print(f"Object does not have expected feature methods or attributes: {obj}")
-
-        else:
-            print("No AdditionalProperties objects found.")
-        
-        # Print out the collected data for debugging purposes
-        print("Collected AdditionalProperties Data:")
-        for handle, data in additional_properties_data.items():
-            print(f"Handle: {handle}, Object Name: {data['Object Name']}")
-            for feature in data['Features']:
-                print(f"  Feature Name: {feature['Feature Name']}, Feature Value: {feature['Feature Value']}")
-        
-        runner.registerInfo(f"Found {len(additional_properties_objects)} AdditionalProperties objects.")
+        # Print the collected material data
+        runner.registerInfo("Extracted Material Data:")
+        runner.registerInfo(str(self.material_data))
 
         return True
 
-
-
 # This registers the measure to be usable
 measure = ReportAdditionalProperties()
-
