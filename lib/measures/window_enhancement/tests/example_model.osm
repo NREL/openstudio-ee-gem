@@ -1602,7 +1602,7 @@ OS:Material,
 OS:Construction,
   {711df98d-713b-42d9-a14c-97c75511cf1c}, !- Handle
   Exterior Wall,                          !- Name
-  ,                                       !- Surface Rendering Name
+  {a55745ef-d1a6-45de-8439-7ce7d9c28483}, !- Surface Rendering Name
   {b4f6ef24-1fd4-49cd-8c82-8b553afde2a9}, !- Layer 1
   {86ae65d1-eb25-44de-be95-1b90fe0f1c58}, !- Layer 2
   {520cffc6-8fb5-4f2f-859b-1c787b6a4c1c}, !- Layer 3
@@ -1644,7 +1644,7 @@ OS:Material,
 OS:Construction,
   {e4c297b6-3a99-4e2e-a09a-ba73fe200473}, !- Handle
   Exterior Roof,                          !- Name
-  ,                                       !- Surface Rendering Name
+  {916dcce0-9552-4414-8a40-5d90b0ebc82d}, !- Surface Rendering Name
   {056eb249-5bf8-43f9-a57e-4f0380b4d125}, !- Layer 1
   {4cf58d4f-21e7-482f-88b6-5e80eceb4049}, !- Layer 2
   {4b5f5320-5757-4192-a678-ffc0d748e4e6}; !- Layer 3
@@ -1652,7 +1652,7 @@ OS:Construction,
 OS:Construction,
   {cd8846fe-b309-4921-859d-b7ef6621f679}, !- Handle
   Interior Floor,                         !- Name
-  ,                                       !- Surface Rendering Name
+  {e7738559-a005-4090-bf30-f870a82bbb9a}, !- Surface Rendering Name
   {4b5f5320-5757-4192-a678-ffc0d748e4e6}, !- Layer 1
   {4cf58d4f-21e7-482f-88b6-5e80eceb4049}, !- Layer 2
   {056eb249-5bf8-43f9-a57e-4f0380b4d125}; !- Layer 3
@@ -1666,7 +1666,7 @@ OS:Construction:AirBoundary,
 OS:Construction,
   {38c1cacd-e9e3-4ac8-84a0-4c94c49b794b}, !- Handle
   Interior Ceiling,                       !- Name
-  ,                                       !- Surface Rendering Name
+  {1b5018e1-ffd3-43db-92da-81596fda06ab}, !- Surface Rendering Name
   {056eb249-5bf8-43f9-a57e-4f0380b4d125}, !- Layer 1
   {4cf58d4f-21e7-482f-88b6-5e80eceb4049}, !- Layer 2
   {4b5f5320-5757-4192-a678-ffc0d748e4e6}; !- Layer 3
@@ -1695,7 +1695,7 @@ OS:Material:NoMass,
 OS:Construction,
   {7bc4709e-786a-4797-8f77-763dad33de89}, !- Handle
   Slab,                                   !- Name
-  ,                                       !- Surface Rendering Name
+  {8125fdd4-8faa-461a-908f-acf29f8e8c6f}, !- Surface Rendering Name
   {62c80237-6114-44b2-ab31-95662cd7cc18}, !- Layer 1
   {e4c63ccd-f0db-47d2-ba66-89356cbe3b0d}; !- Layer 2
 
@@ -1732,7 +1732,7 @@ OS:WindowMaterial:Gas,
 OS:Construction,
   {7e27ca26-5115-478b-be7c-282a93c2f243}, !- Handle
   Exterior Window,                        !- Name
-  ,                                       !- Surface Rendering Name
+  {40e6db00-5842-403f-aff5-4818cf340c08}, !- Surface Rendering Name
   {bc0400a3-0425-49b3-b6cf-bb22cd11d97f}; !- Layer 1
 
 OS:Material,
@@ -1756,7 +1756,7 @@ OS:Material,
 OS:Construction,
   {e8c06423-835d-4d7a-bf60-44ab7e433add}, !- Handle
   Exterior Door,                          !- Name
-  ,                                       !- Surface Rendering Name
+  {ac9eca6c-0e2d-48b1-b623-b28ad8ed131e}, !- Surface Rendering Name
   {b0db5f5d-248c-42c1-8cfb-fe7b1d968152}, !- Layer 1
   {a3d21362-5c59-4463-abf3-62ce10cfd326}; !- Layer 2
 
@@ -1772,7 +1772,7 @@ OS:StandardsInformation:Construction,
 OS:Construction,
   {7c762dbd-ae14-4dbe-b1be-4cf027a30199}, !- Handle
   Interior Window,                        !- Name
-  ,                                       !- Surface Rendering Name
+  {ce0e269b-46d7-403d-9e95-bd39fbf34677}, !- Surface Rendering Name
   {bc0400a3-0425-49b3-b6cf-bb22cd11d97f}; !- Layer 1
 
 OS:Material,
@@ -1787,18 +1787,21 @@ OS:Material,
 OS:Construction,
   {963fb0b1-9082-453d-9e10-5ba7995e22ea}, !- Handle
   Interior Door,                          !- Name
-  ,                                       !- Surface Rendering Name
+  {b906d7b0-398a-4dcb-832b-7d2d7df328b7}, !- Surface Rendering Name
   {e09b2b91-f13b-4541-9ed5-8c5f62f446fd}; !- Layer 1
 
 OS:Construction,
   {c3e28441-358a-4764-b5ee-ac181d98e294}, !- Handle
   Interior Partition,                     !- Name
-  ,                                       !- Surface Rendering Name
+  {c90b1369-3e7d-4cb6-a91e-cd1b6ada1935}, !- Surface Rendering Name
   {e09b2b91-f13b-4541-9ed5-8c5f62f446fd}; !- Layer 1
 
 OS:SpaceType,
   {93a7ab25-10e4-4c0d-b56a-d7319e18651d}, !- Handle
-  Space Type 1;                           !- Name
+  Space Type 1,                           !- Name
+  ,                                       !- Default Construction Set Name
+  ,                                       !- Default Schedule Set Name
+  {db1fd15b-6b4b-4ba5-969b-a5397457e551}; !- Group Rendering Name
 
 OS:Lights:Definition,
   {166a8100-fb3d-40f3-919e-925748d95a43}, !- Handle
@@ -1889,7 +1892,7 @@ OS:ThermalZone,
   ,                                       !- Secondary Daylighting Control Name
   ,                                       !- Fraction of Zone Controlled by Secondary Daylighting Control
   {d3e63294-0dfa-44d4-adc1-1611b1f3077c}, !- Illuminance Map Name
-  ,                                       !- Group Rendering Name
+  {247b979c-db2d-4f90-a9ee-46941d62de53}, !- Group Rendering Name
   {cf936510-33bd-4695-8697-3060cafb2b71}, !- Thermostat Name
   No;                                     !- Use Ideal Air Loads
 
@@ -1979,7 +1982,7 @@ OS:BuildingStory,
   3,                                      !- Nominal Floor to Floor Height {m}
   ,                                       !- Default Construction Set Name
   ,                                       !- Default Schedule Set Name
-  ;                                       !- Group Rendering Name
+  {563dd672-576f-455b-ad55-13f71ee3a57b}; !- Group Rendering Name
 
 OS:Space,
   {74bc3e52-5058-49f7-9130-ff957c236d15}, !- Handle
@@ -2465,7 +2468,7 @@ OS:SubSurface,
   {d2d77a3e-41ec-42c2-b840-5bbf3a2e1f07}, !- Surface Name
   ,                                       !- Outside Boundary Condition Object
   ,                                       !- View Factor to Ground
-  ,                                       !- Frame and Divider Name
+  {82131f2e-6deb-4368-8027-440ed254dae7}, !- Frame and Divider Name
   ,                                       !- Multiplier
   ,                                       !- Number of Vertices
   10, 2, 2,                               !- X,Y,Z Vertex 1 {m}
@@ -3355,4 +3358,145 @@ OS:StandardsInformation:Construction,
 OS:StandardsInformation:Construction,
   {ac11f4ec-d41b-44b1-acb2-488913801003}, !- Handle
   {c3e28441-358a-4764-b5ee-ac181d98e294}; !- Construction Name
+
+OS:Rendering:Color,
+  {db1fd15b-6b4b-4ba5-969b-a5397457e551}, !- Handle
+  Rendering Color 1,                      !- Name
+  205,                                    !- Rendering Red Value
+  92,                                     !- Rendering Green Value
+  92;                                     !- Rendering Blue Value
+
+OS:Rendering:Color,
+  {a55745ef-d1a6-45de-8439-7ce7d9c28483}, !- Handle
+  Rendering Color 2,                      !- Name
+  189,                                    !- Rendering Red Value
+  107,                                    !- Rendering Green Value
+  183;                                    !- Rendering Blue Value
+
+OS:Rendering:Color,
+  {916dcce0-9552-4414-8a40-5d90b0ebc82d}, !- Handle
+  Rendering Color 3,                      !- Name
+  119,                                    !- Rendering Red Value
+  153,                                    !- Rendering Green Value
+  136;                                    !- Rendering Blue Value
+
+OS:Rendering:Color,
+  {e7738559-a005-4090-bf30-f870a82bbb9a}, !- Handle
+  Rendering Color 4,                      !- Name
+  139,                                    !- Rendering Red Value
+  0,                                      !- Rendering Green Value
+  0;                                      !- Rendering Blue Value
+
+OS:Rendering:Color,
+  {1b5018e1-ffd3-43db-92da-81596fda06ab}, !- Handle
+  Rendering Color 5,                      !- Name
+  250,                                    !- Rendering Red Value
+  210,                                    !- Rendering Green Value
+  250;                                    !- Rendering Blue Value
+
+OS:Rendering:Color,
+  {8125fdd4-8faa-461a-908f-acf29f8e8c6f}, !- Handle
+  Rendering Color 6,                      !- Name
+  124,                                    !- Rendering Red Value
+  0,                                      !- Rendering Green Value
+  252;                                    !- Rendering Blue Value
+
+OS:Rendering:Color,
+  {40e6db00-5842-403f-aff5-4818cf340c08}, !- Handle
+  Rendering Color 7,                      !- Name
+  0,                                      !- Rendering Red Value
+  0,                                      !- Rendering Green Value
+  100;                                    !- Rendering Blue Value
+
+OS:Rendering:Color,
+  {ac9eca6c-0e2d-48b1-b623-b28ad8ed131e}, !- Handle
+  Rendering Color 8,                      !- Name
+  210,                                    !- Rendering Red Value
+  140,                                    !- Rendering Green Value
+  180;                                    !- Rendering Blue Value
+
+OS:Rendering:Color,
+  {ce0e269b-46d7-403d-9e95-bd39fbf34677}, !- Handle
+  Rendering Color 9,                      !- Name
+  255,                                    !- Rendering Red Value
+  224,                                    !- Rendering Green Value
+  255;                                    !- Rendering Blue Value
+
+OS:Rendering:Color,
+  {b906d7b0-398a-4dcb-832b-7d2d7df328b7}, !- Handle
+  Rendering Color 10,                     !- Name
+  222,                                    !- Rendering Red Value
+  135,                                    !- Rendering Green Value
+  184;                                    !- Rendering Blue Value
+
+OS:Rendering:Color,
+  {c90b1369-3e7d-4cb6-a91e-cd1b6ada1935}, !- Handle
+  Rendering Color 11,                     !- Name
+  255,                                    !- Rendering Red Value
+  250,                                    !- Rendering Green Value
+  250;                                    !- Rendering Blue Value
+
+OS:Rendering:Color,
+  {247b979c-db2d-4f90-a9ee-46941d62de53}, !- Handle
+  Rendering Color 12,                     !- Name
+  230,                                    !- Rendering Red Value
+  250,                                    !- Rendering Green Value
+  230;                                    !- Rendering Blue Value
+
+OS:Rendering:Color,
+  {563dd672-576f-455b-ad55-13f71ee3a57b}, !- Handle
+  Rendering Color 13,                     !- Name
+  102,                                    !- Rendering Red Value
+  170,                                    !- Rendering Green Value
+  205;                                    !- Rendering Blue Value
+
+OS:Rendering:Color,
+  {5cce7e44-42fe-4d1e-a34e-7982ebbac6c4}, !- Handle
+  Rendering Color 14,                     !- Name
+  85,                                     !- Rendering Red Value
+  47,                                     !- Rendering Green Value
+  107;                                    !- Rendering Blue Value
+
+OS:WindowProperty:FrameAndDivider,
+  {82131f2e-6deb-4368-8027-440ed254dae7}, !- Handle
+  Window Property Frame And Divider 1,    !- Name
+  0.05081016,                             !- Frame Width {m}
+  0.05081016,                             !- Frame Outside Projection {m}
+  0.05081016,                             !- Frame Inside Projection {m}
+  ,                                       !- Frame Conductance {W/m2-K}
+  ,                                       !- Ratio of Frame-Edge Glass Conductance to Center-Of-Glass Conductance
+  ,                                       !- Frame Solar Absorptance
+  ,                                       !- Frame Visible Absorptance
+  ,                                       !- Frame Thermal Hemispherical Emissivity
+  ,                                       !- Divider Type
+  0,                                      !- Divider Width {m}
+  0,                                      !- Number of Horizontal Dividers
+  ,                                       !- Number of Vertical Dividers
+  ,                                       !- Divider Outside Projection {m}
+  ,                                       !- Divider Inside Projection {m}
+  ,                                       !- Divider Conductance {W/m2-K}
+  ,                                       !- Ratio of Divider-Edge Glass Conductance to Center-Of-Glass Conductance
+  ,                                       !- Divider Solar Absorptance
+  ,                                       !- Divider Visible Absorptance
+  ,                                       !- Divider Thermal Hemispherical Emissivity
+  ,                                       !- Outside Reveal Depth {m}
+  ,                                       !- Outside Reveal Solar Absorptance
+  ,                                       !- Inside Sill Depth {m}
+  ,                                       !- Inside Sill Solar Absorptance
+  ,                                       !- Inside Reveal Depth {m}
+  ;                                       !- Inside Reveal Solar Absorptance
+
+OS:Rendering:Color,
+  {b0f15abb-5f04-4511-be7b-535f1078a276}, !- Handle
+  Rendering Color 15,                     !- Name
+  255,                                    !- Rendering Red Value
+  147,                                    !- Rendering Green Value
+  20;                                     !- Rendering Blue Value
+
+OS:Rendering:Color,
+  {65065db9-e6a0-454c-80bb-643ae5c3154e}, !- Handle
+  Rendering Color 16,                     !- Name
+  139,                                    !- Rendering Red Value
+  19,                                     !- Rendering Green Value
+  69;                                     !- Rendering Blue Value
 
