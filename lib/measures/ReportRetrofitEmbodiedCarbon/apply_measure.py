@@ -25,11 +25,6 @@ measure = ReportAdditionalProperties()
 # Run the measure and pass the model
 result = measure.run(runner, model)
 
-# Extract AdditionalProperties directly for verification
-additional_properties_objects = model.getObjectsByType(openstudio.IddObjectType("OS_AdditionalProperties"))
-
-for obj in additional_properties_objects:
-    print(f"Found AdditionalProperties: {obj}")
 
 # Print stdout logs
 print("RESULT:", runner.result().value().valueName())
