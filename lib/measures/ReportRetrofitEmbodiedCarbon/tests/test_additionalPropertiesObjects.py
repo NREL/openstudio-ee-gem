@@ -18,37 +18,39 @@ model = model_opt.get()
 # Dictionary to store material name and corresponding numeric value
 material_data = {}
 
-def parse_workspace_object(obj):
-    """Extracts Material Name and its corresponding numeric value from an OS:AdditionalProperties object."""
-    if not isinstance(obj, openstudio.openstudioutilitiesidf.WorkspaceObject):
-        return
+def parse_workspace_objects(objects):
+    """Processes a list of OS:AdditionalProperties objects and returns the total numeric value."""
+    total = 0.0  # Initialize total
 
-    num_fields = obj.numFields()
-    if num_fields < 5:
-        return  # Skip objects with insufficient fields
+    for obj in objects:
+        num_fields = obj.numFields()
+        if num_fields < 5:
+            continue  # Skip objects with insufficient fields
 
-    # Assume material name is always at Field 1 and the numeric value is at the last field
-    material_name = obj.getString(1, True)  # Field 1: Material Name
-    numeric_value = obj.getString(num_fields - 1, True)  # Last field: Numeric Value
+        material_name = obj.getString(1, True)  # Field 1: Material Name
+        numeric_value = obj.getString(num_fields - 1, True)  # Last field: Numeric Value
 
-    if material_name.is_initialized() and numeric_value.is_initialized():
-        try:
-            # Convert numeric value from string to float
-            material_data[material_name.get()] = float(numeric_value.get())
-        except ValueError:
-            print(f"Warning: Could not convert {numeric_value.get()} to float for {material_name.get()}")
+        if material_name.is_initialized() and numeric_value.is_initialized():
+            try:
+                value = float(numeric_value.get())
+                material_data[material_name.get()] = value
+                total += value  # Add to total
+            except ValueError:
+                print(f"Warning: Could not convert {numeric_value.get()} to float for {material_name.get()}")
+
+    return round(total, 2)
+
 
 # Search for all OS:AdditionalProperties objects
-additional_properties_objects = model.getObjectsByType("OS:AdditionalProperties")
+additional_properties_objects = model.getObjectsByType(openstudio.IddObjectType("OS:AdditionalProperties"))
 
-# Process each object
-if len(additional_properties_objects) > 0:
-    for obj in additional_properties_objects:
-        parse_workspace_object(obj)
+# Process all objects and get the total
+total_gwp = parse_workspace_objects(additional_properties_objects)
 
 # Print the collected material data
 print("Extracted Material Data:")
 print(material_data)
+print(f"\nTotal GWP: {total_gwp}")
 
 # Explicitly delete references to prevent SWIG memory leaks
 del model

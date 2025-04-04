@@ -1,7 +1,7 @@
 import sys
 import openstudio
 from pathlib import Path
-from measure import ReportAdditionalProperties
+from measure import WindowEnhancementECReport
 
 # Set the current directory path and model path
 CURRENT_DIR_PATH = Path(__file__).parent.absolute()
@@ -26,7 +26,7 @@ osw = openstudio.WorkflowJSON()
 runner = openstudio.measure.OSRunner(osw)
 
 # Create and run the measure
-measure = ReportAdditionalProperties()
+measure = WindowEnhancementECReport()
 result = measure.run(runner, model)
 
 # Print the result logs
