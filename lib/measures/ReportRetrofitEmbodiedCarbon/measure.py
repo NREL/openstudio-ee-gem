@@ -7,12 +7,16 @@ import openstudio
 import pandas as pd
 from pathlib import Path
 from openpyxl import load_workbook
+import pandas as pd
+import plotly.graph_objects as go
+from openpyxl import load_workbook
 
 CURRENT_DIR_PATH = Path(__file__).absolute()
 optimization_excel_path = CURRENT_DIR_PATH.parent / 'resources' / 'optimization.xlsx'
 new_optimization_excel_output_path = CURRENT_DIR_PATH.parent / 'resources' / 'optimization_updated.xlsx'
 
 def modify_optimization_sheet(replacement_value):
+
     """Reads and modifies Excel spreadsheet for optimization visualizations"""
     wb = load_workbook(optimization_excel_path, data_only=False, keep_links=True)
 
@@ -44,6 +48,27 @@ def modify_optimization_sheet(replacement_value):
 
     # Save updated workbook
     wb.save(new_optimization_excel_output_path)
+
+def optimization(self):
+
+    optimization_weights = pd.read_excel(optimization_excel_path, sheet_name = "weights") # Not being currently used
+    factor_values = pd.read_excel(optimization_excel_path, sheet_name = "values")
+    n_scenarios = 3
+
+    for scenario in range(1,n_scenarios+1):
+        #print(scenario)
+        factor_values["Normalized_Scenario_" + str(scenario)] = factor_values["Scenario_" + str(scenario)]/factor_values["Basis"]
+
+    fig = go.Figure()
+
+    for scenario in range(1, n_scenarios+1):
+        fig.add_trace(
+            go.Scatterpolar(
+                theta = factor_values["Factor"],
+                r = factor_values["Normalized_Scenario_" + str (scenario)], name = "Scenario_" + str(scenario) 
+            ))
+
+    fig.show()
 
 class WindowEnhancementECReport(openstudio.measure.ReportingMeasure):
     def name(self):
@@ -96,6 +121,10 @@ class WindowEnhancementECReport(openstudio.measure.ReportingMeasure):
 
         # Write result to Excel
         modify_optimization_sheet(total_gwp)
+        optimization(self)
+
+        runner.registerInfo("Cleaning up model from memory.")
+        del additional_properties_objects
 
         return True
 
