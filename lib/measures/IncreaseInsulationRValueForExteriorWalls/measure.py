@@ -1,34 +1,47 @@
+# *******************************************************************************
+# OpenStudio(R), Copyright (c) Alliance for Sustainable Energy, LLC.
+# See also https://openstudio.net/license
+# *******************************************************************************
+
 import openstudio
 
-class IncreaseInsulationRValueForExteriorWalls:
+
+class IncreaseInsulationRValueForExteriorWalls(openstudio.measure.ModelMeasure):
     def name(self):
         return "Increase R-value of Insulation for Exterior Walls to a Specific Value"
 
-    def arguments(self, model):
-        args = openstudio.OSArgumentVector()
+    def description(self):
+        return "Increases the R-value of insulation layers in exterior walls to meet a specified target."
 
-        r_value = openstudio.OSArgument.makeDoubleArgument("r_value", True)
-        r_value.setDisplayName("Insulation R-value (ft^2*h*R/Btu).")
+    def modeler_description(self):
+        return ("This measure modifies insulation materials in exterior wall constructions to reach "
+                "a user-defined R-value, adjusting thermal resistance and optionally accounting for costs.")
+
+    def arguments(self, model):
+        args = openstudio.measure.OSArgumentVector()
+
+        r_value = openstudio.measure.OSArgument.makeDoubleArgument("r_value", True)
+        r_value.setDisplayName("Target Insulation R-value (ft²·h·°F/Btu)")
         r_value.setDefaultValue(13.0)
         args.append(r_value)
 
-        allow_reduction = openstudio.OSArgument.makeBoolArgument("allow_reduction", True)
-        allow_reduction.setDisplayName("Allow both increase and decrease in R-value to reach requested target?")
+        allow_reduction = openstudio.measure.OSArgument.makeBoolArgument("allow_reduction", True)
+        allow_reduction.setDisplayName("Allow reduction in R-value if current value is higher?")
         allow_reduction.setDefaultValue(False)
         args.append(allow_reduction)
 
-        material_cost = openstudio.OSArgument.makeDoubleArgument("material_cost_increase_ip", True)
-        material_cost.setDisplayName("Increase in Material and Installation Costs ($/ft^2).")
+        material_cost = openstudio.measure.OSArgument.makeDoubleArgument("material_cost_increase_ip", True)
+        material_cost.setDisplayName("Material and Installation Cost Increase ($/ft²)")
         material_cost.setDefaultValue(0.0)
         args.append(material_cost)
 
-        one_time_cost = openstudio.OSArgument.makeDoubleArgument("one_time_retrofit_cost_ip", True)
-        one_time_cost.setDisplayName("One Time Retrofit Cost ($/ft^2).")
+        one_time_cost = openstudio.measure.OSArgument.makeDoubleArgument("one_time_retrofit_cost_ip", True)
+        one_time_cost.setDisplayName("One-Time Retrofit Cost ($/ft²)")
         one_time_cost.setDefaultValue(0.0)
         args.append(one_time_cost)
 
-        years_until_cost = openstudio.OSArgument.makeIntegerArgument("years_until_retrofit_cost", True)
-        years_until_cost.setDisplayName("Year to Incur One Time Retrofit Cost")
+        years_until_cost = openstudio.measure.OSArgument.makeIntegerArgument("years_until_retrofit_cost", True)
+        years_until_cost.setDisplayName("Year to Incur One-Time Retrofit Cost")
         years_until_cost.setDefaultValue(0)
         args.append(years_until_cost)
 
@@ -45,7 +58,7 @@ class IncreaseInsulationRValueForExteriorWalls:
         years_until_cost = runner.getIntegerArgumentValue("years_until_retrofit_cost", user_arguments)
 
         if r_value_ip < 0 or r_value_ip > 500:
-            runner.registerError("R-value out of bounds.")
+            runner.registerError("R-value must be between 0 and 500 ft²·h·°F/Btu.")
             return False
 
         r_value_si = openstudio.convert(r_value_ip, "ft^2*h*R/Btu", "m^2*K/W").get()
@@ -54,14 +67,16 @@ class IncreaseInsulationRValueForExteriorWalls:
 
         ext_surfaces = []
         constructions = {}
+
         for surface in model.getSurfaces():
             if surface.surfaceType() == "Wall" and surface.outsideBoundaryCondition() == "Outdoors":
                 ext_surfaces.append(surface)
-                construction = surface.construction().get()
-                constructions[construction.nameString()] = construction
+                if surface.construction().is_initialized():
+                    construction = surface.construction().get()
+                    constructions[construction.nameString()] = construction
 
         if not ext_surfaces:
-            runner.registerAsNotApplicable("No exterior walls found.")
+            runner.registerAsNotApplicable("No exterior wall surfaces found.")
             return True
 
         modified_constructions = []
@@ -79,11 +94,11 @@ class IncreaseInsulationRValueForExteriorWalls:
                         insul_index = i
 
             if insul_index == -1:
-                runner.registerInfo(f"No valid insulation found in {name}")
+                runner.registerInfo(f"No insulation material found in construction: {name}")
                 continue
 
             if max_r_value >= r_value_si and not allow_reduction:
-                runner.registerInfo(f"{name} already meets/exceeds R-value.")
+                runner.registerInfo(f"Construction '{name}' already meets or exceeds the target R-value.")
                 continue
 
             new_construction = construction.clone(model).to_Construction().get()
@@ -93,14 +108,26 @@ class IncreaseInsulationRValueForExteriorWalls:
             modified_constructions.append(new_construction)
 
             if material_cost_ip > 0:
-                openstudio.LifeCycleCost.createLifeCycleCost("LCC_Material", new_construction, material_cost_si, "CostPerArea", "Construction", 20, 0)
+                openstudio.model.LifeCycleCost.createLifeCycleCost(
+                    "LCC_Material", new_construction, material_cost_si,
+                    "CostPerArea", "Construction", 20, 0
+                )
 
             if one_time_cost_ip > 0:
-                openstudio.LifeCycleCost.createLifeCycleCost("LCC_OneTime", new_construction, one_time_cost_si, "CostPerArea", "Construction", 0, years_until_cost)
+                openstudio.model.LifeCycleCost.createLifeCycleCost(
+                    "LCC_OneTime", new_construction, one_time_cost_si,
+                    "CostPerArea", "Construction", 0, years_until_cost
+                )
 
             for surface in ext_surfaces:
                 if surface.construction().is_initialized() and surface.construction().get().nameString() == name:
                     surface.setConstruction(new_construction)
 
-        runner.registerFinalCondition(f"Modified {len(modified_constructions)} constructions with target R-value of {r_value_ip}.")
+        runner.registerFinalCondition(
+            f"Modified {len(modified_constructions)} construction(s) to meet target R-value of {r_value_ip} ft²·h·°F/Btu."
+        )
         return True
+
+
+# Register the measure
+IncreaseInsulationRValueForExteriorWalls().registerWithApplication()
