@@ -1,5 +1,8 @@
 # OpenStudio(R) EE Gem
 
+## Version 0.11.1
+* Update additional dependencies for OpenStudio 3.9
+
 ## Version 0.11.0
 * Support for OpenStudio 3.9 (upgrade to standards gem 0.7.0, extension gem 0.8.1)
 
