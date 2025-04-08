@@ -7,12 +7,31 @@ import openstudio
 import typing
 from pathlib import Path
 from resources.EC3_lookup import fetch_epd_data
-from resources.EC3_lookup import parse_gwp_data
+from resources.EC3_lookup import parse_product_epd
+from resources.EC3_lookup import parse_industrial_epd
 from resources.EC3_lookup import generate_url
 # from resources.EC3_lookup import material_category
+import configparser
+import os
 import numpy as np
 
-RESOURCES_DIR = Path(__file__).parent / "resources"
+# # reading API key from config.ini
+# # path of the measure
+# script_dir = os.path.dirname(os.path.abspath(__file__))
+# # path of resources folder
+# resources_dir = Path(__file__).parent / "resources"
+# # path of config.ini
+# config_path = resources_dir / "config.ini"
+# # check if confif.ini exists
+# if not os.path.exists(config_path):
+#     raise FileNotFoundError(f"Config file not found: {config_path}")
+
+# # repo_root = os.path.abspath(os.path.join(script_dir, "../../../.."))
+# # config_path = os.path.join(repo_root, "config.ini")
+
+# config = configparser.ConfigParser()
+# config.read(config_path)
+# API_TOKEN= config["EC3_API_TOKEN"]["API_TOKEN"]
 
 # Start the measure
 class WindowEnhancement(openstudio.measure.ModelMeasure):
@@ -46,6 +65,10 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
     @staticmethod
     def wf_options():
         return ["anodized","painted","thermally_improved"]
+    
+    @staticmethod
+    def epd_types():
+        return ["Product","Industry"]
 
     def arguments(self, model: typing.Optional[openstudio.model.Model] = None):
         """Define the arguments that user will input."""
@@ -65,7 +88,6 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
         igu_option = openstudio.measure.OSArgument.makeChoiceArgument("igu_option",igu_options_chs, True)
         igu_option.setDisplayName("IGU option") 
         igu_option.setDescription("Type of insulating glazing unit")
-        #igu_option.setDefaultValue(None)
         args.append(igu_option)
 
         #make an argument for numebr of panes
@@ -95,7 +117,6 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
         wf_option = openstudio.measure.OSArgument.makeChoiceArgument("wf_option",wf_options_chs, True)
         wf_option.setDisplayName("Window frame option") 
         wf_option.setDescription("Type of aluminum extrusion")
-        #wf_option.setDefaultValue(None)
         args.append(wf_option)
 
         # make an argument for cross-sectional area of window frame
@@ -110,6 +131,15 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
         igu_thickness.setDescription("Thickness of Insulating Glazing Unit (m).")
         igu_thickness.setDefaultValue(0.0)
         args.append(igu_thickness)
+
+        # make an argument for selecting EPD type
+        edp_type_chs = openstudio.StringVector()
+        for type in self.epd_types():
+            edp_type_chs.append(type)
+        epd_type = openstudio.measure.OSArgument.makeChoiceArgument("epd_type",edp_type_chs, True)
+        epd_type.setDisplayName("EPD Type") 
+        epd_type.setDescription("Type of EPD for searching GWP values, Product EPDs refer to specific products from a manufacturer, while industrial EPDs represent average data across an entire industry sector.")
+        args.append(epd_type)
 
         # make an argument for selcting which gwp statistic to use for embodied carbon calculation
         gwp_statistics_chs = openstudio.StringVector()
@@ -139,25 +169,14 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
         total_embodied_carbon.setDefaultValue(0.0)
         args.append(total_embodied_carbon)
 
+        # make an argument for api_token
+        api_key = openstudio.measure.OSArgument.makeStringArgument("api_key",True)
+        api_key.setDisplayName("API Token")
+        api_key.setDescription("API Token for sending API call to EC3 EPD Database")
+        api_key.setDefaultValue("Obtain the key from EC3 website")
+        args.append(api_key)
+
         return args
-    
-    # def calculate_perimeter(self, sub_surface):
-    #     """Calculate the perimeter of the window from its vertices."""
-    #     vertices = sub_surface.vertices()
-    #     if len(vertices) < 2:
-    #         return 0.0
-
-    #     perimeter = 0.0
-    #     num_vertices = len(vertices)
-
-    #     for i in range(num_vertices):
-    #         v1 = vertices[i]
-    #         v2 = vertices[(i + 1) % num_vertices]  # Wrap around to the first vertex
-    #         edge_vector = v2 - v1  # Subtract two Point3d objects to get Vector3d
-    #         edge_length = edge_vector.length()  # Use length() to get the magnitude of the vector
-    #         perimeter += edge_length
-
-    #     return perimeter
 
     def run(self, model: openstudio.model.Model, runner: openstudio.measure.OSRunner, user_arguments: openstudio.measure.OSArgumentMap):
         """Define what happens when the measure is run. Execute the measure."""
@@ -184,11 +203,18 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
         igu_lifetime = runner.getIntegerArgumentValue("igu_lifetime",user_arguments)
         wf_lifetime = runner.getIntegerArgumentValue("wf_lifetime",user_arguments)
         total_embodied_carbon = runner.getDoubleArgumentValue("total_embodied_carbon",user_arguments)
+        api_key = runner.getStringArgumentValue("api_key", user_arguments)
+        epd_type = runner.getStringArgumentValue("epd_type", user_arguments)
 
         # Debug: Print all user arguments received
         runner.registerInfo(f"User Arguments: {user_arguments}")
         for arg_name, arg_value in user_arguments.items():
-            print(f"user_argument: {arg_name} = {arg_value.valueAsString()}")
+            try:
+                # Ensure that arg_value is valid and that the valueAsString() method can be called
+                value_str = arg_value.valueAsString() if arg_value is not None else "None"
+                runner.registerInfo(f"user_argument: {arg_name} = {value_str}")
+            except Exception as e:
+                runner.registerInfo(f"Error processing argument: {arg_name} - {str(e)}")
         
         # Check if numeric values are reasonable
         if num_panes == 0 or num_panes > 2:
@@ -304,28 +330,31 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
                     material_dict[name]['perimeter'] = frame_perimeter
 
             for name in building_material_names:
-                if igu_option and material_dict[name]['api_term'] == "InsulatingGlazingUnits":
-                    product_url = generate_url(material_name = material_dict[name]['api_term'], option = igu_option, glass_panes = num_panes)
-                elif wf_option and material_dict[name]['api_term'] == "AluminiumExtrusions":
-                    product_url = generate_url(material_name = material_dict[name]['api_term']) # only 2 EPD available, stop using wf_option 
-                else:
-                    product_url = generate_url(material_name = material_dict[name]['api_term'])
+                if material_dict[name]['api_term'] == "InsulatingGlazingUnits" and epd_type == "Product":
+                    generated_url = generate_url(material_name = material_dict[name]['api_term'], option = igu_option, glass_panes = num_panes, epd_type= "Product", endpoint = "materials")
+                elif material_dict[name]['api_term'] == "InsulatingGlazingUnits" and epd_type == "Industry":
+                    generated_url = generate_url(material_name = material_dict[name]['api_term'], option = igu_option, glass_panes = num_panes, epd_type= "Industry", endpoint = "industry_epds")
+                elif material_dict[name]['api_term'] == "AluminiumExtrusions" and epd_type == "Product":
+                    generated_url = generate_url(material_name = material_dict[name]['api_term'], epd_type= "Product", endpoint = "materials") # only 2 EPD available, stop using wf_option 
+                elif material_dict[name]['api_term'] == "AluminiumExtrusions" and epd_type == "Industry":
+                    generated_url = generate_url(material_name = material_dict[name]['api_term'], epd_type= "Industry", endpoint = "industry_epds")  
 
-                epd_data = fetch_epd_data(product_url)
+                epd_data = fetch_epd_data(url = generated_url, api_token = api_key)
                 runner.registerInfo(f"Number of EPDs: {len(epd_data)}")
-
                 if len(epd_data) == 0:
                     runner.registerError("No EPD returned from this API call")
-                    #let user fill in the number then
                 elif len(epd_data) == 1:
                     runner.registerInfo("Only one EPD available for this material category")
                     gwp_statistic = "single_value"
                 elif gwp_statistic == "single_value":
-                    runner.registerWarning("Since multiple EPD returned, use a single value is not recommended.")
+                    runner.registerWarning("Since multiple EPD returned, using a single value is not recommended.")
                 
                 gwp_values = []
                 for idx, epd in enumerate(epd_data,start = 1):
-                    parsed_data = parse_gwp_data(epd)
+                    if epd_type == "Industry":
+                        parsed_data = parse_industrial_epd(epd)
+                    elif epd_type == "Product":
+                        parsed_data = parse_product_epd(epd)
                     if gwp_unit == "per area (m^2)" and parsed_data["gwp_per_unit_area (kg CO2 eq/m2)"] != 0.0:
                         gwp_value = parsed_data["gwp_per_unit_area (kg CO2 eq/m2)"]
                         gwp_values.append(float(gwp_value))
