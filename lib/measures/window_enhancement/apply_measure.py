@@ -1,11 +1,26 @@
-import sys
+# import sys
+import os
 import openstudio
 from pathlib import Path
 from measure import WindowEnhancement
+import configparser
+
+# # reading API key from config.ini
+# # path of the measure
+script_dir = Path(__file__).resolve().parent
+# # path of resources folder
+resources_dir = script_dir / "resources"
+# # path of config.ini
+config_path = resources_dir / "config.ini"
+# # check if confif.ini exists
+if not config_path.exists():
+    raise FileNotFoundError(f"Config file not found: {config_path}")
+config = configparser.ConfigParser()
+config.read(config_path)
+API_TOKEN = config["EC3_API_TOKEN"]["API_TOKEN"]
 
 CURRENT_DIR_PATH = Path(__file__).parent.absolute()
 model_path = Path(CURRENT_DIR_PATH / "tests/example_model.osm")
-
 
 translator = openstudio.osversion.VersionTranslator()
 model = translator.loadModel(openstudio.toPath(str(model_path))).get()
@@ -24,18 +39,18 @@ def set_arg(name, value):
     arg_map[name] = arg
 
 set_arg("analysis_period", 30)
-#set_arg("igu_component_name", "TestIGU")
 set_arg("igu_option", "low_emissivity")
 set_arg("number_of_panes", 1)
 set_arg("igu_lifetime", 15)
 set_arg("wf_lifetime", 15)
 set_arg("wf_option", "anodized")
 set_arg("frame_cross_section_area", 0.025)
-#set_arg("declared_unit", "m2")
 set_arg("gwp_statistic", "median")
 set_arg("gwp_unit", "per volume (m^3)")
 set_arg("total_embodied_carbon", 0.0)
 set_arg("igu_thickness",0.003)
+set_arg("api_key", API_TOKEN)
+set_arg("epd_type","Product")
 
 # Run the measure
 result = measure.run(model, runner, arg_map)
