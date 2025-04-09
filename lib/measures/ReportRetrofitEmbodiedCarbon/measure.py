@@ -126,6 +126,8 @@ class WindowEnhancementECReport(openstudio.measure.ReportingMeasure):
         runner.registerInfo("Cleaning up model from memory.")
         del additional_properties_objects
 
+        del model
+
         return True
 
 # Register the measure
