@@ -70,7 +70,7 @@ def optimization(self):
 
     fig.show()
 
-class WindowEnhancementECReport(openstudio.measure.ReportingMeasure):
+class ECReport(openstudio.measure.ReportingMeasure):
     def name(self):
         return "ReportAdditionalProperties"
 
@@ -113,7 +113,7 @@ class WindowEnhancementECReport(openstudio.measure.ReportingMeasure):
 
         if additional_properties_objects:
             runner.registerInfo(f"Found {len(additional_properties_objects)} AdditionalProperties objects.")
-            total_gwp = self.parse_workspace_objects(additional_properties_objects)  # FIXED HERE
+            total_gwp = self.parse_workspace_objects(additional_properties_objects)
         else:
             total_gwp = 0.0
         print(f"Total GWP value = {total_gwp}")
@@ -131,4 +131,4 @@ class WindowEnhancementECReport(openstudio.measure.ReportingMeasure):
         return True
 
 # Register the measure
-measure = WindowEnhancementECReport()
+measure = ECReport()
