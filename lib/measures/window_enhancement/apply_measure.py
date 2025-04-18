@@ -5,19 +5,17 @@ from pathlib import Path
 from measure import WindowEnhancement
 import configparser
 
-# # reading API key from config.ini
-# # path of the measure
-script_dir = Path(__file__).resolve().parent
-# # path of resources folder
-resources_dir = script_dir / "resources"
-# # path of config.ini
-config_path = resources_dir / "config.ini"
-# # check if confif.ini exists
-if not config_path.exists():
+# read API Token from local
+script_dir = os.path.dirname(os.path.abspath(__file__))
+repo_root = os.path.abspath(os.path.join(script_dir, "../../.."))
+config_path = os.path.join(repo_root, "config.ini")
+
+if not os.path.exists(config_path):
     raise FileNotFoundError(f"Config file not found: {config_path}")
+
 config = configparser.ConfigParser()
 config.read(config_path)
-API_TOKEN = config["EC3_API_TOKEN"]["API_TOKEN"]
+API_TOKEN= config["EC3_API_TOKEN"]["API_TOKEN"]
 
 CURRENT_DIR_PATH = Path(__file__).parent.absolute()
 model_path = Path(CURRENT_DIR_PATH / "tests/example_model.osm")
@@ -40,15 +38,12 @@ def set_arg(name, value):
 
 set_arg("analysis_period", 30)
 set_arg("igu_option", "low_emissivity")
-set_arg("number_of_panes", 1)
 set_arg("igu_lifetime", 15)
 set_arg("wf_lifetime", 15)
 set_arg("wf_option", "anodized")
 set_arg("frame_cross_section_area", 0.025)
 set_arg("gwp_statistic", "median")
-set_arg("gwp_unit", "per volume (m^3)")
 set_arg("total_embodied_carbon", 0.0)
-set_arg("igu_thickness",0.003)
 set_arg("api_key", API_TOKEN)
 set_arg("epd_type","Product")
 

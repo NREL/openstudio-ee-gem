@@ -21,21 +21,25 @@ config.read(config_path)
 API_TOKEN= config["EC3_API_TOKEN"]["API_TOKEN"]
 
 # #find material_name by category
-material_category = {"concrete":["ReadyMix","Precast"],
-                     "glazing":["InsulatingGlazingUnits","FlatGlassPanes","ProcessedNonInsulatingGlassPanes"],
-                     "extrusions":["AluminiumExtrusions"],
-                     "steel":["Rebar","WireMeshSteel","ColdFormedFraming","DeckingSteel","HotRolledSections","HollowSections","PlateSteel","RoofPanels","WallPanels","CoilSteel"]
-                     }
-# for testing use, do not delete
-# material_category = {
-#                      "glazing":["InsulatingGlazingUnits"],
-#                      "extrusions":["AluminiumExtrusions"]
+# material_category = {"concrete":{"ReadyMix","Precast","CementGrout","FlowableFill"},
+#                      "masonry":{"Brick", "CMU"},
+#                      "steel":{"RebarSteel","WireMeshSteel","ColdFormedSteel","StructuralSteel"},
+#                      "aluminum":{"AluminiumExtrusions"},
+#                      "wood":{"PrefabricatedWood","DimensionLumbe","SheathingPanels","CompositeLumber","MassTimber","NonStructuralWood"},
+#                      "sheathing":{"GypsumSheathingBoard","CementitiousSheathingBoard"},
+#                      "thermal_moisture_protection":{"Insulation","MembraneRoofing"},
+#                      "cladding":{"RoofPanels","InsulatedRoofPanels","WallPanels","InsulatedWallPanels"},
+#                      "openings":{"glazing":["InsulatingGlazingUnits","FlatGlassPanes","ProcessedNonInsulatingGlassPanes"],
+#                                  "extrusions":["AluminiumExtrusions"]},
+#                      "finishes":{"CementBoard","Gypsum","Tiling","CeilingPanel","Flooring","PaintingAndCoating"}
 #                      }
+# for testing use, do not delete
 material_category = {
-                     "extrusions":["AluminiumExtrusions"]
+                     "test":["InsulatingGlazingUnits"]
                      }
 
-def generate_url(material_name, endpoint ="materials", page_number=1, page_size=250, jurisdiction="021", date=None, option=None, boolean="yes", glass_panes=None, epd_type="Product"):
+def generate_url(material_name, endpoint ="materials", page_number=1, page_size=250, jurisdiction="021", date=None, option=None, boolean="yes",
+                  glass_panes=None, epd_type="Product"):
     '''
     jurisdiction = "021" means Northern America region
     '''
@@ -62,17 +66,6 @@ def generate_url(material_name, endpoint ="materials", page_number=1, page_size=
     url += "!pragma%20eMF(%222.0%2F1%22)%2C%20lcia(%22TRACI%202.1%22)"
     
     return url
-
-# # API configuration
-# HEADERS = {"Accept": "application/json", "Authorization": "Bearer " + API_TOKEN}
-
-# Constants
-EXCLUDE_KEYS = [
-    'manufacturer', 'plant_or_group', 'category', 'created_on', 'updated_on',
-    'gwp', 'gwp_z', 'pct80_gwp_per_category_declared_unit', 'conservative_estimate',
-    'best_practice', 'standard_deviation', 'uncertainty_factor',
-    'uncertainty_adjusted_gwp', 'lowest_plausible_gwp'
-]
 
 def fetch_epd_data(url,api_token):
     """
@@ -101,60 +94,73 @@ def parse_product_epd(epd: Dict[str, Any]) -> Dict[str, Any]:
     :param epd: EPD dictionary
     :return: Parsed GWP data
     """
-
+    # initialize parameters and dictionary
     parsed_data = {}
-    gwp_per_unit_volume = 0.0
-    gwp_per_unit_area = 0.0
-    gwp_per_unit_mass = 0.0
+    gwp_per_m3 = 0.0
+    gwp_per_m2 = 0.0
+    gwp_per_kg = 0.0
 
+    # extract information from EPD's json repsonse
     declared_unit = epd.get("declared_unit")
-    thickness = epd.get("thickness_per_declared_unit")
+    thickness = epd.get("thickness")
     gwp_per_declared_unit = epd.get("gwp")
     mass_per_declared_unit = epd.get("mass_per_declared_unit")
     density = epd.get("density")
-    gwp_per_unit_mass = epd.get("gwp_per_kg")
+    gwp_per_kg = epd.get("gwp_per_kg")
     epd_name = epd.get('name')
     description = epd.get('description')
     original_ec3_link = epd['manufacturer']['original_ec3_link']
 
+    # Per mass
+    if gwp_per_kg != None:
+        gwp_per_kg = extract_numeric_value(gwp_per_kg)
+
+    elif gwp_per_kg == None and "t" in declared_unit:
+        gwp_per_kg = divide(gwp_per_declared_unit, declared_unit)
+        gwp_per_kg = gwp_per_kg/1000 # convert from t to kg
+
+    elif gwp_per_kg == None and "kg" in declared_unit:
+        gwp_per_kg = divide(gwp_per_declared_unit, declared_unit)
+
+    elif mass_per_declared_unit != None and gwp_per_kg == None and not any(unit in declared_unit for unit in ["kg", "t"]):
+        gwp_per_kg = divide(gwp_per_declared_unit, mass_per_declared_unit)
+
     # Per volume
     if "m3" in declared_unit:
-        gwp_per_unit_volume = extract_numeric_value(gwp_per_declared_unit)
+        gwp_per_m3 = divide(gwp_per_declared_unit, declared_unit)
+
     elif "cf" in declared_unit:
-        gwp_per_unit_volume = extract_numeric_value(gwp_per_declared_unit) * 35.3147 #convert per cf to per m3
+        gwp_per_m3 = divide(gwp_per_declared_unit, declared_unit)
+        gwp_per_m3 = gwp_per_m3 * 35.3147 # convert from cubic feet to m3
+
     elif "m2" in declared_unit and thickness and "mm" in thickness:
-        gwp_per_unit_volume = calculate_gwp_per_volume_from_area(gwp_per_declared_unit, thickness)
-    elif density and gwp_per_unit_mass:
-        gwp_per_unit_volume = calculate_gwp_from_density_and_mass(gwp_per_unit_mass, density)
+        gwp_per_m2 = divide(gwp_per_declared_unit, declared_unit)
+        gwp_per_m3 = gwp_per_m2/(extract_numeric_value(thickness)/1000)
+
+    elif density and "kg / m^3" in density and gwp_per_kg:
+        gwp_per_m3 = multiply(gwp_per_kg, density)
 
     # Per area
     if "m2" in declared_unit:
-        gwp_per_unit_area = extract_numeric_value(gwp_per_declared_unit)
+        gwp_per_m2 = divide(gwp_per_declared_unit, declared_unit)
+
     elif "sf" in declared_unit:
-        gwp_per_unit_area = calculate_gwp_per_area(gwp_per_declared_unit, declared_unit)
+        gwp_per_m2 = divide(gwp_per_declared_unit, declared_unit)
+        gwp_per_m2 = gwp_per_m2 * 10.7639 # convert from square feet to m2
+
     elif "m3" in declared_unit and thickness and "mm" in thickness:
-        gwp_per_unit_area = gwp_per_declared_unit * (extract_numeric_value(thickness)/1000)
-
-    # Per mass
-    if gwp_per_unit_mass and "kg" in gwp_per_unit_mass:
-        gwp_per_unit_mass = extract_numeric_value(gwp_per_unit_mass)
-    elif "kg" in declared_unit:
-        gwp_per_unit_mass = extract_numeric_value(gwp_per_declared_unit)
-    elif "t" in declared_unit:
-        gwp_per_unit_mass = extract_numeric_value(gwp_per_declared_unit)/1000
-    elif mass_per_declared_unit and "kg" in mass_per_declared_unit:
-        gwp_per_unit_mass = gwp_per_declared_unit/mass_per_declared_unit
+        gwp_per_m3 = divide(gwp_per_declared_unit, declared_unit)
+        gwp_per_m2 = gwp_per_m3 * (extract_numeric_value(thickness)/1000)
     
-
     parsed_data["epd_name"] = epd_name
     parsed_data["declared_unit"] = declared_unit
     parsed_data["gwp_per_declared_unit"] = gwp_per_declared_unit
     parsed_data["mass_per_declared_unit"] = mass_per_declared_unit
     parsed_data["thickness"] = thickness
     parsed_data["density"] = density
-    parsed_data["gwp_per_unit_volume (kg CO2 eq/m3)"] = gwp_per_unit_volume
-    parsed_data["gwp_per_unit_area (kg CO2 eq/m2)"] = gwp_per_unit_area
-    parsed_data["gwp_per_unit_mass (kg CO2 eq/kg)"] = gwp_per_unit_mass 
+    parsed_data["gwp_per_m3 (kg CO2 eq/m3)"] = gwp_per_m3
+    parsed_data["gwp_per_m2 (kg CO2 eq/m2)"] = gwp_per_m2
+    parsed_data["gwp_per_kg (kg CO2 eq/kg)"] = gwp_per_kg 
     parsed_data["original_ec3_link"] = original_ec3_link
     parsed_data["description"] = description
 
@@ -168,12 +174,12 @@ def parse_industrial_epd(epd: Dict[str, Any]) -> Dict[str, Any]:
     """
 
     parsed_data = {}
-    gwp_per_unit_volume = 0.0
-    gwp_per_unit_area = 0.0
-    gwp_per_unit_mass = 0.0
+    gwp_per_m3 = 0.0
+    gwp_per_m2 = 0.0
+    gwp_per_kg = 0.0
 
     declared_unit = epd.get("declared_unit")
-    gwp_per_unit_mass = epd.get("gwp_per_kg")
+    gwp_per_kg = epd.get("gwp_per_kg")
     gwp_per_declared_unit = epd.get("gwp")
     epd_name = epd.get('name')
     original_ec3_link = epd.get('original_ec3_link')
@@ -182,31 +188,29 @@ def parse_industrial_epd(epd: Dict[str, Any]) -> Dict[str, Any]:
     density_max = epd.get('density_max')
     area = epd.get('area')
 
-    # Per volume
-    if "t" in declared_unit and density_max and density_min:
+    if density_min is not None and density_max is not None:
         density_avg = (extract_numeric_value(density_max) + extract_numeric_value(density_min))/2
-        gwp_per_unit_volume = (extract_numeric_value(gwp_per_declared_unit)/1000) * density_avg
-    elif "kg" in declared_unit and density_max and density_min:
-        density_avg = (extract_numeric_value(density_max) + extract_numeric_value(density_min))/2
-        gwp_per_unit_volume = (extract_numeric_value(gwp_per_declared_unit)) * density_avg
-    elif "t" in declared_unit and density_max and density_min == None:
-        gwp_per_unit_volume = (extract_numeric_value(gwp_per_declared_unit)/1000) * extract_numeric_value(density_max)
-    elif "t" in declared_unit and density_max == None and density_min:
-        gwp_per_unit_volume = (extract_numeric_value(gwp_per_declared_unit)/1000) * extract_numeric_value(density_min)   
-    elif "kg" in declared_unit and density_max and density_min == None:
-        gwp_per_unit_volume = (extract_numeric_value(gwp_per_declared_unit)) * extract_numeric_value(density_max)
-    elif "kg" in declared_unit and density_max == None and density_min:
-        gwp_per_unit_volume = (extract_numeric_value(gwp_per_declared_unit)) * extract_numeric_value(density_min)
+    elif density_min is not None:
+        density_avg = extract_numeric_value(density_min)
+    elif density_max is not None:
+        density_avg = extract_numeric_value(density_max)
+    else:
+        density_avg = None
 
-    # Per area
-    if "m^2" in area:
-        gwp_per_unit_area = extract_numeric_value(gwp_per_declared_unit)/extract_numeric_value(area)
+    # Per area (stop using this becasue the area value is not sensible)
+    # if "m^2" in area:
+    #     gwp_per_m2 = extract_numeric_value(gwp_per_declared_unit)/extract_numeric_value(area)
 
     # Per mass
     if "t" in declared_unit:
-        gwp_per_unit_mass = extract_numeric_value(gwp_per_declared_unit)/1000
+        gwp_per_kg = divide(gwp_per_declared_unit, declared_unit)
+        gwp_per_kg = gwp_per_kg / 1000 # convert to kg
     elif "kg" in declared_unit:
-        gwp_per_unit_mass = extract_numeric_value(gwp_per_declared_unit)
+        gwp_per_kg = divide(gwp_per_declared_unit, declared_unit)
+
+    # Per volume
+    if gwp_per_kg != None and density_avg != None:
+        gwp_per_m3 = gwp_per_kg * density_avg
         
     parsed_data["epd_name"] = epd_name
     parsed_data["declared_unit"] = declared_unit
@@ -214,9 +218,9 @@ def parse_industrial_epd(epd: Dict[str, Any]) -> Dict[str, Any]:
     parsed_data["density_min"] = density_min
     parsed_data["density_max"] = density_max
     parsed_data["area"] = area
-    parsed_data["gwp_per_unit_volume (kg CO2 eq/m3)"] = gwp_per_unit_volume
-    parsed_data["gwp_per_unit_area (kg CO2 eq/m2)"] = gwp_per_unit_area
-    parsed_data["gwp_per_unit_mass (kg CO2 eq/kg)"] = gwp_per_unit_mass 
+    parsed_data["gwp_per_m3 (kg CO2 eq/m3)"] = gwp_per_m3
+    parsed_data["gwp_per_m2 (kg CO2 eq/m2)"] = gwp_per_m2
+    parsed_data["gwp_per_kg (kg CO2 eq/kg)"] = gwp_per_kg 
     parsed_data["original_ec3_link"] = original_ec3_link
     parsed_data["description"] = description
 
@@ -231,58 +235,60 @@ def extract_numeric_value(value: Any) -> float:
     match = re.search(r"[-+]?\d*\.?\d+", str(value))
     return float(match.group()) if match else 0.0
 
-def calculate_gwp_per_volume(gwp: Any, declared_unit: Any) -> float:
-    """
-    Calculate GWP per volume.
-    :param gwp: GWP per category declared unit
-    :param declared_unit: Declared unit
-    :return: GWP per volume
-    """
+# extract numeric values then divide
+def divide(member: Any, denominator: Any) -> float:
     try:
-        gwp_value = extract_numeric_value(gwp)
-        declared_value = extract_numeric_value(declared_unit)
-        return gwp_value / declared_value
+        member_value = extract_numeric_value(member)
+        denominator_value = extract_numeric_value(denominator)
+        return round(member_value/denominator_value, 2)
     except ZeroDivisionError:
         return 0.0
 
-def calculate_gwp_per_volume_from_area(gwp: Any, thickness: Any) -> float:
-    """
-    Calculate GWP per volume from area and thickness.
-    :param gwp: GWP per category declared unit
-    :param thickness: Thickness per declared unit, in mm
-    :return: GWP per volume
-    """
-    try:
-        thickness = extract_numeric_value(thickness) * 1e-3  # Convert mm to meters
-        gwp_value = extract_numeric_value(gwp)
-        return gwp_value / thickness
-    except ZeroDivisionError:
-        return 0.0
+# extract numeric values then multiply
+def multiply(multiplicand: Any, multiplier: Any) -> float:
 
-def calculate_gwp_from_density_and_mass(gwp_mass: Any, density_unit: Any) -> float:
-    """
-    Calculate GWP per volume using density and mass.
-    :param gwp_mass: GWP per mass
-    :param density_unit: Density unit
-    :return: GWP per volume
-    """
-    density = extract_numeric_value(density_unit)
-    gwp_mass = extract_numeric_value(gwp_mass)
-    return round(gwp_mass * density, 2)
+    multiplicand_value = extract_numeric_value(multiplicand)
+    multiplier_value = extract_numeric_value(multiplier)
+    return round(multiplicand_value * multiplier_value, 2)
 
-def calculate_gwp_per_area(gwp: Any, declared_unit: Any) -> float:
+def calculate_geometry(self, sub_surface):
     """
-    Calculate GWP per area.
-    :param gwp: GWP per category declared unit
-    :param declared_unit: Declared unit
-    :return: GWP per area
+    Calculate the length, width, perimeter, and area of the window from its vertices.
+    Assumes the window is a quadrilateral (typically a rectangle).
     """
-    try:
-        gwp_value = extract_numeric_value(gwp)
-        declared_value = extract_numeric_value(declared_unit)
-        return round((gwp_value / declared_value) / 0.092903, 2)  # Convert m2 to ft2
-    except ZeroDivisionError:
-        return 0.0
+    vertices = sub_surface.vertices()
+    if len(vertices) != 4:
+        return {
+            "length": 0.0,
+            "width": 0.0,
+            "perimeter": 0.0,
+            "area": 0.0
+        }
+
+    # Calculate all edge lengths
+    edge_lengths = []
+    perimeter = 0.0
+    for i in range(4):
+        v1 = vertices[i]
+        v2 = vertices[(i + 1) % 4]
+        edge = v2 - v1
+        length = edge.length()
+        edge_lengths.append(length)
+        perimeter += length
+
+    # Assume opposite edges are equal, so we can group into two unique lengths
+    length = max(edge_lengths)
+    width = min(edge_lengths)
+
+    # Area = length × width
+    area = length * width
+
+    return {
+        "length": length,
+        "width": width,
+        "perimeter": perimeter,
+        "area": area
+    }
 
 def main():
     """
