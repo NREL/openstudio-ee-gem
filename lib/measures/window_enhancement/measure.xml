@@ -1,11 +1,11 @@
 <?xml version="1.0"?>
 <measure>
   <schema_version>3.1</schema_version>
-  <error>Failed to infer measure name from '/Users/dgoldwas/Documents/github/nrel/openstudio-ee-gem/lib/measures/window_enhancement/measure.py'</error>
+  <error>Failed to infer measure name from 'C:/All repos/openstudio-ee-gem/lib/measures/window_enhancement/measure.py'</error>
   <name>window_enhancment</name>
   <uid>0ad8e761-8624-4d9d-a7d6-ebf30cce243b</uid>
-  <version_id>72ccf7a0-02a6-4c6c-a3d4-b9faecd99311</version_id>
-  <version_modified>2025-02-21T22:34:53Z</version_modified>
+  <version_id>883b6ea6-1c91-4785-98ca-fd42944ae1c0</version_id>
+  <version_modified>2025-04-17T16:27:52Z</version_modified>
   <xml_checksum>7DADF7C5</xml_checksum>
   <class_name>WindowEnhancment</class_name>
   <display_name>Window Enhancment</display_name>
@@ -86,25 +86,31 @@
       <filename>measure.py</filename>
       <filetype>py</filetype>
       <usage_type>script</usage_type>
-      <checksum>11506F43</checksum>
+      <checksum>CA670757</checksum>
     </file>
     <file>
       <filename>EC3_lookup.py</filename>
       <filetype>py</filetype>
       <usage_type>resource</usage_type>
-      <checksum>FD6BFA7C</checksum>
+      <checksum>DAD45298</checksum>
     </file>
     <file>
       <filename>Test_API.py</filename>
       <filetype>py</filetype>
       <usage_type>resource</usage_type>
-      <checksum>FA626FAF</checksum>
+      <checksum>41078C2A</checksum>
+    </file>
+    <file>
+      <filename>__pycache__/EC3_lookup.cpython-313.pyc</filename>
+      <filetype>pyc</filetype>
+      <usage_type>resource</usage_type>
+      <checksum>F1150BC3</checksum>
     </file>
     <file>
       <filename>__pycache__/EC3_lookup.cpython-39.pyc</filename>
       <filetype>pyc</filetype>
       <usage_type>resource</usage_type>
-      <checksum>D35F8A82</checksum>
+      <checksum>AD24744A</checksum>
     </file>
     <file>
       <filename>__pycache__/Original_EC3_lookup.py</filename>
@@ -119,22 +125,160 @@
       <checksum>817EE4CA</checksum>
     </file>
     <file>
-      <filename>config.ini</filename>
-      <filetype>ini</filetype>
+      <filename>calculate_perimeter.py</filename>
+      <filetype>py</filetype>
       <usage_type>resource</usage_type>
-      <checksum>F7FD8C46</checksum>
+      <checksum>CED4720F</checksum>
+    </file>
+    <file>
+      <filename>.pytest_cache/CACHEDIR.TAG</filename>
+      <filetype>TAG</filetype>
+      <usage_type>test</usage_type>
+      <checksum>6DC4EC48</checksum>
+    </file>
+    <file>
+      <filename>.pytest_cache/README.md</filename>
+      <filetype>md</filetype>
+      <usage_type>test</usage_type>
+      <checksum>2EF77971</checksum>
+    </file>
+    <file>
+      <filename>.pytest_cache/v/cache/nodeids</filename>
+      <filetype></filetype>
+      <usage_type>test</usage_type>
+      <checksum>A007C1BE</checksum>
+    </file>
+    <file>
+      <filename>.pytest_cache/v/cache/stepwise</filename>
+      <filetype></filetype>
+      <usage_type>test</usage_type>
+      <checksum>0D4CBB29</checksum>
+    </file>
+    <file>
+      <filename>complex_example_model/workflow.osw</filename>
+      <filetype>osw</filetype>
+      <usage_type>test</usage_type>
+      <checksum>8D75ED36</checksum>
+    </file>
+    <file>
+      <filename>complex_example_model.osm</filename>
+      <filetype>osm</filetype>
+      <usage_type>test</usage_type>
+      <checksum>0C7F4BB9</checksum>
+    </file>
+    <file>
+      <filename>example_model/files/USA_CO_Denver.Intl.AP.725650_TMY3.epw</filename>
+      <filetype>epw</filetype>
+      <usage_type>test</usage_type>
+      <checksum>E23378AA</checksum>
+    </file>
+    <file>
+      <filename>example_model/out.osw</filename>
+      <filetype>osw</filetype>
+      <usage_type>test</usage_type>
+      <checksum>87D96F28</checksum>
+    </file>
+    <file>
+      <filename>example_model/reports/eplustbl.html</filename>
+      <filetype>html</filetype>
+      <usage_type>test</usage_type>
+      <checksum>325D3A17</checksum>
+    </file>
+    <file>
+      <filename>example_model/workflow.osw</filename>
+      <filetype>osw</filetype>
+      <usage_type>test</usage_type>
+      <checksum>0C86EC97</checksum>
     </file>
     <file>
       <filename>example_model.osm</filename>
       <filetype>osm</filetype>
       <usage_type>test</usage_type>
-      <checksum>D6BD40D0</checksum>
+      <checksum>94F69031</checksum>
+    </file>
+    <file>
+      <filename>test_results/pytest/junit.xml</filename>
+      <filetype>xml</filetype>
+      <usage_type>test</usage_type>
+      <checksum>314F4526</checksum>
+    </file>
+    <file>
+      <filename>test_results/pytest/python_coverage.json</filename>
+      <filetype>json</filetype>
+      <usage_type>test</usage_type>
+      <checksum>07E72A34</checksum>
+    </file>
+    <file>
+      <filename>test_results/pytest/python_coverage.lcov</filename>
+      <filetype>lcov</filetype>
+      <usage_type>test</usage_type>
+      <checksum>02386FB0</checksum>
+    </file>
+    <file>
+      <filename>test_results/pytest/python_coverage.xml</filename>
+      <filetype>xml</filetype>
+      <usage_type>test</usage_type>
+      <checksum>200DF337</checksum>
+    </file>
+    <file>
+      <filename>test_results/pytest/python_coverage_html/class_index.html</filename>
+      <filetype>html</filetype>
+      <usage_type>test</usage_type>
+      <checksum>3659E069</checksum>
+    </file>
+    <file>
+      <filename>test_results/pytest/python_coverage_html/coverage_html_cb_497bf287.js</filename>
+      <filetype>js</filetype>
+      <usage_type>test</usage_type>
+      <checksum>7F5366F7</checksum>
+    </file>
+    <file>
+      <filename>test_results/pytest/python_coverage_html/favicon_32_cb_58284776.png</filename>
+      <filetype>png</filetype>
+      <usage_type>test</usage_type>
+      <checksum>98D44845</checksum>
+    </file>
+    <file>
+      <filename>test_results/pytest/python_coverage_html/function_index.html</filename>
+      <filetype>html</filetype>
+      <usage_type>test</usage_type>
+      <checksum>AAC10316</checksum>
+    </file>
+    <file>
+      <filename>test_results/pytest/python_coverage_html/index.html</filename>
+      <filetype>html</filetype>
+      <usage_type>test</usage_type>
+      <checksum>6F47A85A</checksum>
+    </file>
+    <file>
+      <filename>test_results/pytest/python_coverage_html/keybd_closed_cb_ce680311.png</filename>
+      <filetype>png</filetype>
+      <usage_type>test</usage_type>
+      <checksum>A24012EE</checksum>
+    </file>
+    <file>
+      <filename>test_results/pytest/python_coverage_html/status.json</filename>
+      <filetype>json</filetype>
+      <usage_type>test</usage_type>
+      <checksum>2BC6BB13</checksum>
+    </file>
+    <file>
+      <filename>test_results/pytest/python_coverage_html/style_cb_718ce007.css</filename>
+      <filetype>css</filetype>
+      <usage_type>test</usage_type>
+      <checksum>B4EE85DF</checksum>
+    </file>
+    <file>
+      <filename>test_results/pytest/python_coverage_html/z_1d16a5c0da9a8485_test_window_enhancement_py.html</filename>
+      <filetype>html</filetype>
+      <usage_type>test</usage_type>
+      <checksum>FAF9FD66</checksum>
     </file>
     <file>
       <filename>test_window_enhancement.py</filename>
       <filetype>py</filetype>
       <usage_type>test</usage_type>
-      <checksum>56E9086E</checksum>
+      <checksum>D96B37F0</checksum>
     </file>
   </files>
 </measure>
