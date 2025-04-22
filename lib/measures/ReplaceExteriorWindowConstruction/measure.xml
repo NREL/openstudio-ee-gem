@@ -3,9 +3,9 @@
   <schema_version>3.1</schema_version>
   <name>replace_exterior_window_construction</name>
   <uid>95116deb-0716-4cdc-af27-09c463befc7c</uid>
-  <version_id>2effc12a-e8a0-4755-bb94-a1af2fff1581</version_id>
-  <version_modified>2024-11-21T01:40:34Z</version_modified>
-  <xml_checksum>6DE831F7</xml_checksum>
+  <version_id>7bff51fe-a83e-449c-954a-25a4bca3b23b</version_id>
+  <version_modified>2025-04-17T16:27:51Z</version_modified>
+  <xml_checksum>680C4655</xml_checksum>
   <class_name>ReplaceExteriorWindowConstruction</class_name>
   <display_name>Replace Exterior Window Constructions with a Different Construction from the Model.</display_name>
   <description>Replace existing windows with different windows to change thermal or lighting performance.  Window technology has improved drastically over the years, and double or triple-pane high performance windows currently on the market can cut down on envelope loads greatly.  Window frames with thermal breaks reduce the considerable energy that can transfer through thermally unbroken frames.  High performance windows typically also come with low-emissivity (low?e) glass to keep radiant heat on the same side of the glass from where the heat originated. This means that during the cooling months a low-e glass would tend to keep radiant heat from the sun on the outside of the window, which would keep the inside of a building cooler. Conversely, during heating months low-e glass helps keep radiant heat from inside the building on the inside, which would keep the inside of a building warmer.  Life cycle cost values may be added for the new window applied by the measure.</description>
@@ -165,6 +165,11 @@
       <value>false</value>
       <datatype>boolean</datatype>
     </attribute>
+    <attribute>
+      <name>Measure Language</name>
+      <value>Ruby</value>
+      <datatype>string</datatype>
+    </attribute>
   </attributes>
   <files>
     <file>
@@ -194,7 +199,7 @@
       <filename>measure.rb</filename>
       <filetype>rb</filetype>
       <usage_type>script</usage_type>
-      <checksum>567D24F4</checksum>
+      <checksum>DE7556EA</checksum>
     </file>
     <file>
       <filename>EnvelopeAndLoadTestModel_01.osm</filename>
@@ -209,6 +214,12 @@
       <checksum>40BB59D1</checksum>
     </file>
     <file>
+      <filename>ReplaceExteriorWindowConstruction_Test.py</filename>
+      <filetype>py</filetype>
+      <usage_type>test</usage_type>
+      <checksum>ABA92ACD</checksum>
+    </file>
+    <file>
       <filename>ReplaceExteriorWindowConstruction_Test.rb</filename>
       <filetype>rb</filetype>
       <usage_type>test</usage_type>
@@ -219,6 +230,84 @@
       <filetype>osm</filetype>
       <usage_type>test</usage_type>
       <checksum>0B94403D</checksum>
+    </file>
+    <file>
+      <filename>test_results/pytest/junit.xml</filename>
+      <filetype>xml</filetype>
+      <usage_type>test</usage_type>
+      <checksum>F7F82501</checksum>
+    </file>
+    <file>
+      <filename>test_results/pytest/python_coverage.json</filename>
+      <filetype>json</filetype>
+      <usage_type>test</usage_type>
+      <checksum>4787D221</checksum>
+    </file>
+    <file>
+      <filename>test_results/pytest/python_coverage.lcov</filename>
+      <filetype>lcov</filetype>
+      <usage_type>test</usage_type>
+      <checksum>71A3924D</checksum>
+    </file>
+    <file>
+      <filename>test_results/pytest/python_coverage.xml</filename>
+      <filetype>xml</filetype>
+      <usage_type>test</usage_type>
+      <checksum>E243C169</checksum>
+    </file>
+    <file>
+      <filename>test_results/pytest/python_coverage_html/class_index.html</filename>
+      <filetype>html</filetype>
+      <usage_type>test</usage_type>
+      <checksum>2BF28E54</checksum>
+    </file>
+    <file>
+      <filename>test_results/pytest/python_coverage_html/coverage_html_cb_497bf287.js</filename>
+      <filetype>js</filetype>
+      <usage_type>test</usage_type>
+      <checksum>7F5366F7</checksum>
+    </file>
+    <file>
+      <filename>test_results/pytest/python_coverage_html/favicon_32_cb_58284776.png</filename>
+      <filetype>png</filetype>
+      <usage_type>test</usage_type>
+      <checksum>98D44845</checksum>
+    </file>
+    <file>
+      <filename>test_results/pytest/python_coverage_html/function_index.html</filename>
+      <filetype>html</filetype>
+      <usage_type>test</usage_type>
+      <checksum>9804EDED</checksum>
+    </file>
+    <file>
+      <filename>test_results/pytest/python_coverage_html/index.html</filename>
+      <filetype>html</filetype>
+      <usage_type>test</usage_type>
+      <checksum>6C8BB906</checksum>
+    </file>
+    <file>
+      <filename>test_results/pytest/python_coverage_html/keybd_closed_cb_ce680311.png</filename>
+      <filetype>png</filetype>
+      <usage_type>test</usage_type>
+      <checksum>A24012EE</checksum>
+    </file>
+    <file>
+      <filename>test_results/pytest/python_coverage_html/status.json</filename>
+      <filetype>json</filetype>
+      <usage_type>test</usage_type>
+      <checksum>7C5BF34A</checksum>
+    </file>
+    <file>
+      <filename>test_results/pytest/python_coverage_html/style_cb_718ce007.css</filename>
+      <filetype>css</filetype>
+      <usage_type>test</usage_type>
+      <checksum>B4EE85DF</checksum>
+    </file>
+    <file>
+      <filename>test_results/pytest/python_coverage_html/z_413dd5d1309c11cf_ReplaceExteriorWindowConstruction_Test_py.html</filename>
+      <filetype>html</filetype>
+      <usage_type>test</usage_type>
+      <checksum>DEE20B66</checksum>
     </file>
   </files>
 </measure>
