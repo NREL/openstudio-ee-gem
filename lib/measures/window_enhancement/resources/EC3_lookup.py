@@ -35,7 +35,7 @@ API_TOKEN= config["EC3_API_TOKEN"]["API_TOKEN"]
 #                      }
 # for testing use, do not delete
 material_category = {
-                     "test":["InsulatingGlazingUnits"]
+                     "test":["AluminiumExtrusions"]
                      }
 
 def generate_url(material_name, endpoint ="materials", page_number=1, page_size=250, jurisdiction="021", date=None, option=None, boolean="yes",
@@ -137,7 +137,7 @@ def parse_product_epd(epd: Dict[str, Any]) -> Dict[str, Any]:
         gwp_per_m2 = divide(gwp_per_declared_unit, declared_unit)
         gwp_per_m3 = gwp_per_m2/(extract_numeric_value(thickness)/1000)
 
-    elif density and "kg / m^3" in density and gwp_per_kg:
+    elif density and "kg / m3" in density and gwp_per_kg:
         gwp_per_m3 = multiply(gwp_per_kg, density)
 
     # Per area
