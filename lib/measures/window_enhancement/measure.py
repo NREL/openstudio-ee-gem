@@ -61,7 +61,7 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
         igu_options_chs = openstudio.StringVector()
         for option in self.igu_options():
             igu_options_chs.append(option)
-        igu_option = openstudio.measure.OSArgument.makeChoiceArgument("igu_option",igu_options_chs, True)
+        igu_option = openstudio.measure.OSArgument.makeChoiceArgument("igu_option", igu_options_chs, True)
         igu_option.setDisplayName("IGU option") 
         igu_option.setDescription("Type of insulating glazing unit")
         args.append(igu_option)
@@ -190,7 +190,7 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
                 runner.registerInfo(f"Skipping non-window surface: {subsurface.nameString()}")
                 continue
 
-            # dictionary storing properties of subsurfaces containing window construcitons 
+        # dictionary storing properties of subsurfaces containing window construcitons 
         subsurface_dict = {}
         # loop through layered window construciton to collect glazing materials
         for subsurface in sub_surfaces_to_change:
@@ -207,7 +207,7 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
             subsurface_dict[subsurface_name]["Glazing"]["Object"] = layered_construction
             subsurface_dict[subsurface_name]["Glazing"]["Lifetime"] = igu_lifetime
             subsurface_dict[subsurface_name]["Frame"]["Lifetime"] = wf_lifetime
-            subsurface_dict[subsurface_name]["window_embodied_carbon_per_m3"] = 0.0
+            subsurface_dict[subsurface_name]["window_embodied_carbon"] = 0.0
             subsurface_dict[subsurface_name]["Dimension"] = calculate_geometry(self, subsurface)
 
             # determine number of panes of window
@@ -225,9 +225,7 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
             for i in range(layered_construction.numLayers()):
                 material = layered_construction.getLayer(i)
                 runner.registerInfo(f"Layer {i+1}: {material.nameString()}") 
-                #if material.to_OpaqueMaterial().is_initialized():
                 if material.thickness() and "Air" not in material.nameString():
-                    #opaque_material = material.to_OpaqueMaterial().get()
                     glazing_thickness = material.thickness()
                     runner.registerInfo(f"In {subsurface_name}: Material: {material.nameString()}, Thickness: {glazing_thickness} m")
                     total_glazing_thickness += glazing_thickness
@@ -280,7 +278,7 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
             epd_datalist = {}
 
             glazing_product_url = generate_url(material_name = "InsulatingGlazingUnits", option = igu_option, glass_panes = num_panes, epd_type= "Product", endpoint = "materials")
-            frame_product_url = generate_url(material_name = "AluminiumExtrusions", epd_type= "Product", endpoint = "materials")
+            frame_product_url = generate_url(material_name = "AluminiumExtrusions", epd_type= "Product", endpoint = "materials") # EC3 only has aluminum option, revisit later
             glazing_industry_url = generate_url(material_name = "InsulatingGlazingUnits", option = igu_option, glass_panes = num_panes, epd_type= "Industry", endpoint = "industry_epds")
             frame_industry_url = generate_url(material_name = "AluminiumExtrusions", epd_type= "Industry", endpoint = "industry_epds")
             glazing_product_epd = fetch_epd_data(url = glazing_product_url, api_token = api_key)
@@ -368,22 +366,21 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
                     subsurface_dict[subsurface_name][material_name][functional_unit] = gwp
 
                 if analysis_period <= subsurface_dict[subsurface_name][material_name]["Lifetime"]:
-                    
                     embodied_carbon = float(subsurface_dict[subsurface_name][material_name]["gwp_per_m3"] * subsurface_dict[subsurface_name][material_name]["Volume (m3)"])
-                    subsurface_dict[subsurface_name][material_name]["Embodied_carbon_per_m3"] = embodied_carbon
+                    subsurface_dict[subsurface_name][material_name]["embodied_carbon"] = embodied_carbon
                 else:
                     multiplier = np.ceil(analysis_period/subsurface_dict[subsurface_name][material_name]["Lifetime"])
                     embodied_carbon = float(subsurface_dict[subsurface_name][material_name]["gwp_per_m3"] * subsurface_dict[subsurface_name][material_name]["Volume (m3)"] * multiplier)
-                    subsurface_dict[subsurface_name][material_name]["Embodied_carbon_per_m3"] = embodied_carbon
+                    subsurface_dict[subsurface_name][material_name]["embodied_carbon"] = embodied_carbon
 
-                subsurface_dict[subsurface_name]["window_embodied_carbon_per_m3"] +=  subsurface_dict[subsurface_name][material_name]["Embodied_carbon_per_m3"]
+                subsurface_dict[subsurface_name]["window_embodied_carbon"] +=  subsurface_dict[subsurface_name][material_name]["embodied_carbon"]
 
-            runner.registerInfo(f"window's embodied carbon in this subsurface: {subsurface_dict[subsurface_name]["window_embodied_carbon_per_m3"]}")
+            runner.registerInfo(f"window's embodied carbon in this subsurface: {subsurface_dict[subsurface_name]["window_embodied_carbon"]}")
 
             # attach additional properties to openstudio material
-            additional_properties = subsurface_dict[subsurface_name]["Subsurface object"] .additionalProperties()
+            additional_properties = subsurface_dict[subsurface_name]["Subsurface object"].additionalProperties()
             additional_properties.setFeature("Subsurface name", subsurface_name)
-            additional_properties.setFeature("Embodied carbon", subsurface_dict[subsurface_name]["window_embodied_carbon_per_m3"])
+            additional_properties.setFeature("Embodied carbon", subsurface_dict[subsurface_name]["window_embodied_carbon"])
    
         pp.pprint(subsurface_dict)
 
