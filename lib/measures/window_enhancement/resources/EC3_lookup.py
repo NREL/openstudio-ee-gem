@@ -35,7 +35,7 @@ API_TOKEN= config["EC3_API_TOKEN"]["API_TOKEN"]
 #                      }
 # for testing use, do not delete
 material_category = {
-                     "test":["AluminiumExtrusions"]
+                     "test":["InsulatingGlazingUnits"]
                      }
 
 def generate_url(material_name, endpoint ="materials", page_number=1, page_size=250, jurisdiction="021", date=None, option=None, boolean="yes",

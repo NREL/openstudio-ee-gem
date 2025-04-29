@@ -211,11 +211,16 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
             subsurface_dict[subsurface_name]["Dimension"] = calculate_geometry(self, subsurface)
 
             # determine number of panes of window
+            # EC3 handle num_panes use ">=" operator instead of "="
+            # If use unprocessed single pane EPD, underestimate emission associated with product manufacturing
+            # if use multiple pane EPD, thickness of each pane in EPD might be different from the model (adopt this option, smaller error than single pane option)
             print(layered_construction.numLayers())
             if layered_construction.numLayers() == 1:
                 num_panes = 1 
             elif layered_construction.numLayers() == 3:
                 num_panes = 2
+            elif layered_construction.numLayers() == 5:
+                num_panes = 3 
             else:
                 runner.registerInfo("currently unable to handle more complex scenarios.")
             subsurface_dict[subsurface_name]["Number of panes"] = num_panes
@@ -225,11 +230,11 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
             for i in range(layered_construction.numLayers()):
                 material = layered_construction.getLayer(i)
                 runner.registerInfo(f"Layer {i+1}: {material.nameString()}") 
-                if material.thickness() and "Air" not in material.nameString():
+                if material.thickness(): # count air layer thickness (delete: and "Air" not in material.nameString():)
                     glazing_thickness = material.thickness()
                     runner.registerInfo(f"In {subsurface_name}: Material: {material.nameString()}, Thickness: {glazing_thickness} m")
                     total_glazing_thickness += glazing_thickness
-                elif "Air" not in material.nameString(): 
+                else: # handle the case when no thickness is prodvied by the model 
                     glazing_thickness = 0.003
                     total_glazing_thickness += glazing_thickness
                     runner.registerInfo(f"In {subsurface_name}: Material: {material.nameString()} doesn't have thickness attribute and a default thickness of 3 mm assigned.")
