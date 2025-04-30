@@ -371,7 +371,7 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
 
                 subsurface_dict[subsurface_name]["window_embodied_carbon"] +=  subsurface_dict[subsurface_name][material_name]["embodied_carbon"]
 
-            runner.registerInfo(f"window's embodied carbon in this subsurface: {subsurface_dict[subsurface_name]["window_embodied_carbon"]}")
+            runner.registerInfo(f"window's embodied carbon in this subsurface: {subsurface_dict[subsurface_name]['window_embodied_carbon']}")
 
             # attach additional properties to openstudio material
             additional_properties = subsurface_dict[subsurface_name]["Subsurface object"].additionalProperties()
