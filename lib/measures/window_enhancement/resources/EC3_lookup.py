@@ -21,7 +21,7 @@ config.read(config_path)
 API_TOKEN= config["EC3_API_TOKEN"]["API_TOKEN"]
 
 # #find material_name by category
-# material_category = {"concrete":{"ReadyMix","Precast","CementGrout","FlowableFill"},
+# material_category = {"concrete":{"ReadyMix","PrecastConcrete","CementGrout","FlowableFill"},
 #                      "masonry":{"Brick", "CMU"},
 #                      "steel":{"RebarSteel","WireMeshSteel","ColdFormedSteel","StructuralSteel"},
 #                      "aluminum":{"AluminiumExtrusions"},
@@ -289,6 +289,14 @@ def calculate_geometry(self, sub_surface):
         "perimeter": perimeter,
         "area": area
     }
+
+def test_empty_epd(primary, fallback):
+    if primary:
+        return True
+    elif fallback:
+        return False
+    else:
+        return None
 
 def main():
     """
