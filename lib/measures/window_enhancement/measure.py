@@ -109,11 +109,9 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
         gwp_statistics_chs = openstudio.StringVector()
         for gwp_statistic in self.gwp_statistics():
             gwp_statistics_chs.append(gwp_statistic)
-        gwp_statistics_chs.append("single_value")
         gwp_statistic = openstudio.measure.OSArgument.makeChoiceArgument("gwp_statistic",gwp_statistics_chs, True)
         gwp_statistic.setDisplayName("GWP Statistic") 
-        gwp_statistic.setDescription("Statistic type (minimum or maximum or mean or single value) of returned GWP value")
-        gwp_statistic.setDefaultValue("single_value")
+        gwp_statistic.setDescription("Statistic type (minimum or maximum or mean or median) of returned GWP value")
         args.append(gwp_statistic)
 
         # make an argument for total embodied carbon (TEC) of whole construction/building
@@ -320,13 +318,6 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
                 epd_datalist["Frame"] = frame_epd
 
             for material_name, epd_data in epd_datalist.items():
-                # EPD check 
-                if len(epd_data) == 1:
-                    runner.registerInfo("Only one EPD available")
-                    gwp_statistic = "single_value"
-                elif len(epd_data) > 1 and gwp_statistic == "single_value":
-                    runner.registerWarning("Since multiple EPD returned, using a single value is not recommended.")
-
                 # collect  GWP values per functional unit
                 gwp_values = {}
                 gwp_values["gwp_per_m2"] = []
