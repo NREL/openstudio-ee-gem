@@ -57,8 +57,8 @@ set_arg('analysis_period',60)
 set_arg("api_key", API_TOKEN)
 set_arg('epd_type',"Product")
 # I02 50mm insulation board
-set_arg('insulation_material_type','Cellulose')
-set_arg('insulation_application_type','Wall')
+set_arg('insulation_material_type', 'Polyisocyanurate')
+#set_arg('insulation_application_type','Exterior')
 set_arg('insulation_material_lifetime',30)
 # M15 200mm heavyweight concrete
 set_arg('precast_concrete_type','lightweight')

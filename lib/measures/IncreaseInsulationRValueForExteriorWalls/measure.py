@@ -16,6 +16,7 @@ from lib.measures.window_enhancement.resources.EC3_lookup import fetch_epd_data
 from lib.measures.window_enhancement.resources.EC3_lookup import parse_product_epd
 from lib.measures.window_enhancement.resources.EC3_lookup import parse_industrial_epd
 from lib.measures.window_enhancement.resources.EC3_lookup import test_empty_epd
+from lib.measures.window_enhancement.resources.EC3_lookup import compute_gwp_data
 
 class IncreaseInsulationRValueForExteriorWalls(openstudio.measure.ModelMeasure):
     def name(self):
@@ -130,6 +131,7 @@ class IncreaseInsulationRValueForExteriorWalls(openstudio.measure.ModelMeasure):
             insulation_application_chs.append(option)
         insulation_application_type = openstudio.measure.OSArgument.makeChoiceArgument("insulation_application_type", insulation_application_chs, True)
         insulation_application_type.setDisplayName("Application Type of Insulation for Exterior Wall")
+        insulation_application_type.setDefaultValue("Exterior%20Wall")
         args.append(insulation_application_type)
 
         insulation_material_lifetime = openstudio.measure.OSArgument.makeIntegerArgument("insulation_material_lifetime",True)
@@ -275,12 +277,13 @@ class IncreaseInsulationRValueForExteriorWalls(openstudio.measure.ModelMeasure):
         industrial_epds = []
         brick_product_url = generate_url(material_name = "Brick", epd_type= "Product", endpoint = "materials")
         concrete_product_url = generate_url(material_name = "PrecastConcrete", epd_type= "Product", endpoint = "materials")
-        insulation_product_url = generate_url(material_name = "Insulation", epd_type= "Product", endpoint = "materials")
+        insulation_product_url = generate_url(material_name = "Insulation", epd_type= "Product", endpoint = "materials", insulation_material = insulation_material_type, insulation_application = insulation_application_type)
         gypsum_board_product_url = generate_url(material_name = "Gypsum", epd_type= "Product", endpoint = "materials")
         brick_industry_url = generate_url(material_name = "Brick", epd_type= "Industry", endpoint = "industry_epds")
         concrete_industry_url = generate_url(material_name = "PrecastConcrete", epd_type= "Industry", endpoint = "industry_epds")
-        insulation_industry_url = generate_url(material_name = "Insulation", epd_type= "Industry", endpoint = "industry_epds")
+        insulation_industry_url = generate_url(material_name = "Insulation", epd_type= "Industry", endpoint = "industry_epds", insulation_material = insulation_material_type, insulation_application = insulation_application_type)
         gypsum_board_industry_url = generate_url(material_name = "Gypsum", epd_type= "Industry", endpoint = "industry_epds")
+        
         # fetch both product and industrial EPDs from url 
         product_epds.append(fetch_epd_data(url = brick_product_url, api_token = api_key))
         product_epds.append(fetch_epd_data(url = concrete_product_url, api_token = api_key))
@@ -291,93 +294,44 @@ class IncreaseInsulationRValueForExteriorWalls(openstudio.measure.ModelMeasure):
         industrial_epds.append(fetch_epd_data(url = insulation_industry_url, api_token = api_key))
         industrial_epds.append(fetch_epd_data(url = gypsum_board_industry_url, api_token = api_key))
 
-        epd_datalist = {} # store non-empty epd ensembles with corresponding epd type
         keys = ["brick", "precast concrete", "insulation", "gypsum board"] # following the appending order above
-        for key, prod_epd, ind_epd in zip(keys, product_epds, industrial_epds):
-            # initialize dict for each key
-            if key not in epd_datalist:
-                epd_datalist[key] = {}
-            if epd_type == "Product": # if user select to use product epds, handle the scenario when product epds are not available
-                if test_empty_epd(prod_epd, ind_epd):
-                    epd_datalist[key]["EPDs"] = prod_epd
-                    epd_datalist[key]["epd_type"] = "Product"
-                elif test_empty_epd(prod_epd, ind_epd) == False:
-                    epd_datalist[key]["EPDs"] = ind_epd
-                    epd_datalist[key]["epd_type"] = "Industrial"
-                    runner.registerInfo(f"Product EPDs are not available, industrial EPDs will be used as replacement.")
-                else:
-                    runner.registerError(f"Both product and industrial EPDs are not available for {key}")
-            elif epd_type == "Industrial":
-                if test_empty_epd(ind_epd, prod_epd):
-                    epd_datalist[key]["EPDs"] = ind_epd
-                    epd_datalist[key]["epd_type"] = "Industrial"
-                elif test_empty_epd(ind_epd, prod_epd) == False:
-                    epd_datalist[key]["EPDs"] = prod_epd
-                    epd_datalist[key]["epd_type"] = "Product"
-                    runner.registerInfo(f"Industrial EPDs are not available, Product EPDs will be used as replacement.")
-                else:
-                    runner.registerError(f"Both product and industrial EPDs are not available for {key}")
+        gwp_data_product = compute_gwp_data(keys, product_epds, "Product", gwp_statistic)
+        gwp_data_industrial = compute_gwp_data(keys, industrial_epds, "Industrial", gwp_statistic)
 
-        # store gwp values per user selected gwp statistics
-        gwp_data = {"brick":{
-                "gwp_per_m2": 0.0,
-                "gwp_per_kg": 0.0,
-                "gwp_per_m3": 0.0}, "precast concrete":{
-                "gwp_per_m2": 0.0,
-                "gwp_per_kg": 0.0,
-                "gwp_per_m3": 0.0}, "insulation":{
-                "gwp_per_m2": 0.0,
-                "gwp_per_kg": 0.0,
-                "gwp_per_m3": 0.0}, "gypsum board":{
-                "gwp_per_m2": 0.0,
-                "gwp_per_kg": 0.0,
-                "gwp_per_m3": 0.0}}
-        for key in keys: # loop through epd_datalist to get gwp values per different functional units
-            epds = epd_datalist.get(key, {}).get("EPDs", [])
-            epd_type = epd_datalist.get(key, {}).get("epd_type", None)
-            # collect GWP values per functional unit from all EPDs
-            gwp_values = {key:{
-                "gwp_per_m2": [],
-                "gwp_per_kg": [],
-                "gwp_per_m3": []}}
-            # loop through epds and parse each EPD 
-            for epd in epds:
-                # parse json repsonse based on epd_eype
-                if epd_type == "Industry":
-                    parsed_data = parse_industrial_epd(epd)
-                elif epd_type == "Product":
-                    parsed_data = parse_product_epd(epd)
+        # dictionary holder for non-zero gwp values
+        final_gwp_data = {}
+        # recording EPD type actually used
+        final_epd_type = {}
+        for key in keys:
+            prod_val = gwp_data_product[key]["gwp_per_m3"]
+            ind_val = gwp_data_industrial[key]["gwp_per_m3"]
+            # if user choose product epds
+            if epd_type == "Product":
+                if prod_val != 0.0:
+                    final_gwp_data[key] = gwp_data_product[key]
+                    final_epd_type[key] = "Product"
+                elif ind_val != 0.0:
+                    final_gwp_data[key] = gwp_data_industrial[key]
+                    final_epd_type[key] = "Industrial"
+                    runner.registerInfo(f"{key}: Product gwp_per_m3 is 0.0. Using Industrial EPD instead.")
                 else:
-                    runner.registerWarning(f"Unknown epd_type '{epd_type}' for {key}")
-                    continue
-                # extract values by unit, map keys in gwp_values wiht keys in parsed_data
-                mapping = {
-                    "gwp_per_m2": "gwp_per_m2 (kg CO2 eq/m2)",
-                    "gwp_per_kg": "gwp_per_kg (kg CO2 eq/kg)",
-                    "gwp_per_m3": "gwp_per_m3 (kg CO2 eq/m3)"
-                }
-                for unit_key, json_key in mapping.items():
-                    value = parsed_data.get(json_key)
-                    if value is not None:
-                        gwp_values[key][unit_key].append(float(value))
-                # extract gwp statistics  
-                for unit_key, list in gwp_values[key].items():
-                    if len(list) == 0:
-                        runner.registerInfo(f"No GWP values returned from {unit_key}")
-                    elif len(list) == 1:
-                        gwp_data[key][unit_key] = list[0]
-                    elif gwp_statistic == "minimum":
-                        gwp_data[key][unit_key] = float(np.min(list))
-                    elif gwp_statistic == "maximum":
-                        gwp_data[key][unit_key] = float(np.max(list))
-                    elif gwp_statistic == "mean":
-                        gwp_data[key][unit_key] = float(np.mean(list))
-                    elif gwp_statistic == "median":
-                        gwp_data[key][unit_key] = float(np.median(list))
-                    else:
-                        runner.registerError(f"Unsupported gwp_statistic: {gwp_statistic}")
-                    
-        # assign gwp values to each layer in wall construction based on each layer's material name
+                    final_gwp_data[key] = gwp_data_product[key]  # fallback, both are 0
+                    final_epd_type[key] = "Product"
+                    runner.registerWarning(f"{key}: Both Product and Industrial gwp_per_m3 are 0.0.")
+            # if user choose industrial epds
+            elif epd_type == "Industrial":
+                if ind_val != 0.0:
+                    final_gwp_data[key] = gwp_data_industrial[key]
+                    final_epd_type[key] = "Industrial"
+                elif prod_val != 0.0:
+                    final_gwp_data[key] = gwp_data_product[key]
+                    final_epd_type[key] = "Product"
+                    runner.registerInfo(f"{key}: Industrial gwp_per_m3 is 0.0. Using Product EPD instead.")
+                else:
+                    final_gwp_data[key] = gwp_data_industrial[key]  # fallback, both are 0
+                    final_epd_type[key] = "Industrial"
+                    runner.registerWarning(f"{key}: Both Industrial and Product gwp_per_m3 are 0.0.")
+
         for surface_name, surface_data in surface_dict.items():
             total_embodied_carbon = 0.0
             for layer_key, layer_data in surface_data.items():
@@ -388,8 +342,8 @@ class IncreaseInsulationRValueForExteriorWalls(openstudio.measure.ModelMeasure):
                         match_key = matched[0]
                         print(f"{surface_name} - {layer_key}: {material_name} → matched: {matched[0]}")
                         surface_dict[surface_name][layer_key]["GWP values"] = {} 
-                        surface_dict[surface_name][layer_key]["GWP values"] = gwp_data[match_key]
-                    # calcualte embodied carbon of each wall construction (surface)
+                        surface_dict[surface_name][layer_key]["GWP values"] = final_gwp_data[match_key]
+                    # calcualte embodied carbon of each wall construction (surface) (product lifetime is not counted here)
                     volume = layer_data.get("Volume (m3)", 0.0)
                     gwp_per_m3 = layer_data.get("GWP values", {}).get("gwp_per_m3", 0.0)
                     embodied_carbon = volume * gwp_per_m3
@@ -401,18 +355,7 @@ class IncreaseInsulationRValueForExteriorWalls(openstudio.measure.ModelMeasure):
             additional_properties = surface_data["Surface object"].additionalProperties()
             additional_properties.setFeature("Subsurface name", surface_name)
             additional_properties.setFeature("Embodied carbon", surface_data["Wall embodied carbon"])
-
-            # if "brick" in key and surface
-            #     surface_dict[surface_name]
-
-            #         if analysis_period <= surface_dict[surface_name][f"layer {i+1}"]["Lifetime"]:
-            #             embodied_carbon = float(surface_dict[surface_name][material_name]["gwp_per_m3"] * subsurface_dict[subsurface_name][material_name]["Volume (m3)"])
-            #             subsurface_dict[subsurface_name][material_name]["embodied_carbon"] = embodied_carbon
-            #         else:
-            #             multiplier = np.ceil(analysis_period/subsurface_dict[subsurface_name][material_name]["Lifetime"])
-            #             embodied_carbon = float(subsurface_dict[subsurface_name][material_name]["gwp_per_m3"] * subsurface_dict[subsurface_name][material_name]["Volume (m3)"] * multiplier)
-            #             subsurface_dict[subsurface_name][material_name]["embodied_carbon"] = embodied_carbon
-                        
+                
         pp.pprint(surface_dict)
         # save the following for future, do baseline calculation first
         # for name, construction in constructions.items():
