@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<measure>
+  <name>Increase R-value of Insulation for Exterior Walls to a Specific Value</name>
+  <description>This measure adjusts the R-value of the insulation layer in all exterior wall constructions to a specified target value.</description>
+  <modeler_description>
+    This measure searches for all exterior wall constructions in the model, identifies the insulation layer (based on the highest R-value), and updates or replaces it to achieve the specified R-value. Optionally, it can also add lifecycle costs.
+  </modeler_description>
+  <arguments>
+    <argument>
+      <name>r_value</name>
+      <display_name>Insulation R-value (ft²·h·°F/Btu)</display_name>
+      <type>Double</type>
+      <required>true</required>
+      <default_value>13.0</default_value>
+    </argument>
+    <argument>
+      <name>allow_reduction</name>
+      <display_name>Allow both increase and decrease in R-value to reach requested target?</display_name>
+      <type>Boolean</type>
+      <required>true</required>
+      <default_value>false</default_value>
+    </argument>
+    <argument>
+      <name>material_cost_increase_ip</name>
+      <display_name>Increase in Material and Installation Costs ($/ft²)</display_name>
+      <type>Double</type>
+      <required>true</required>
+      <default_value>0.0</default_value>
+    </argument>
+    <argument>
+      <name>one_time_retrofit_cost_ip</name>
+      <display_name>One Time Retrofit Cost ($/ft²)</display_name>
+      <type>Double</type>
+      <required>true</required>
+      <default_value>0.0</default_value>
+    </argument>
+    <argument>
+      <name>years_until_retrofit_cost</name>
+      <display_name>Year to Incur One Time Retrofit Cost</display_name>
+      <type>Integer</type>
+      <required>true</required>
+      <default_value>0</default_value>
+    </argument>
+  </arguments>
+  <outputs>
+  </outputs>
+</measure>

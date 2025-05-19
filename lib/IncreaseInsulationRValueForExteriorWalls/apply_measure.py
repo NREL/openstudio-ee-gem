@@ -23,13 +23,16 @@ def run_measure():
     arg_map = openstudio.measure.convertOSArgumentVectorToMap(args)
 
     def set_arg(name, value):
-        if name in arg_map:
-            arg = arg_map[name]
-            arg.setValue(value)
-            arg_map[name] = arg
+        arg = arg_map[name]
+        arg.setValue(value)
+        arg_map[name] = arg
 
-    # Set required and optional inputs (only those defined in your measure)
-    set_arg("r_value", 60.0)
+    # Set required and optional inputs
+    set_arg("r_value", 20.0)
+    set_arg("allow_reduction", False)
+    set_arg("material_cost_increase_ip", 1.25)
+    set_arg("one_time_retrofit_cost_ip", 3.0)
+    set_arg("years_until_retrofit_cost", 5)
     set_arg("api_key", "Obtain the key from EC3 website")  # Example placeholder
     set_arg("epd_type", "Product")
     set_arg("insulation_material_type", "Fiberglass batt")
@@ -59,6 +62,7 @@ def run_measure():
     # Clean up
     del model
 
-# Uncomment the following to run as a script
+Uncomment the following to run as a script
 if __name__ == "__main__":
     run_measure()
+
