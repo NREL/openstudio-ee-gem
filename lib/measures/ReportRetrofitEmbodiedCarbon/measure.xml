@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<measure>
+  <name>Report AdditionalProperties (Python)</name>
+  <description>Reports all AdditionalProperties and their key-value pairs in the model.</description>
+  <modeler_description>Traverse model and extract AdditionalProperties content using Python.</modeler_description>
+  <arguments/>
+  <outputs/>
+</measure>
