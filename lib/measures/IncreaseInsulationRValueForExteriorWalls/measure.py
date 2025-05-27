@@ -383,7 +383,8 @@ class IncreaseInsulationRValueForExteriorWalls(openstudio.measure.ModelMeasure):
             props.setFeature("modified material", "wall insulation")      #  <------   Modify this to hook it up to  embodied_carbon_per_modified_construction
 
 
-            
+
+        # model.getAdditionalPropertiess()
 
 
 
