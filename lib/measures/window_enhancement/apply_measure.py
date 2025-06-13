@@ -18,7 +18,7 @@ config.read(config_path)
 API_TOKEN= config["EC3_API_TOKEN"]["API_TOKEN"]
 
 CURRENT_DIR_PATH = Path(__file__).parent.absolute()
-model_path = Path(CURRENT_DIR_PATH / "tests/example_model.osm")
+model_path = Path(CURRENT_DIR_PATH / "tests/example_model_2.osm")
 
 translator = openstudio.osversion.VersionTranslator()
 model = translator.loadModel(openstudio.toPath(str(model_path))).get()
@@ -34,7 +34,7 @@ arg_map = openstudio.measure.convertOSArgumentVectorToMap(args)
 def set_arg(name, value):
     arg = arg_map[name]
     arg.setValue(value)
-    arg_map[name] = arg
+    arg_map[name] = arg  
 
 set_arg("analysis_period", 30)
 set_arg("igu_option", "low_emissivity")
@@ -60,7 +60,7 @@ for error in runner.result().errors():
     print("ERROR:", error.logMessage())
 
 # Save the modified model
-save_path = Path(CURRENT_DIR_PATH/"tests/output/example_model_with_enhancements.osm")
+save_path = Path(CURRENT_DIR_PATH/"tests/output/example_model_2_with_AdditionalProperties.osm")
 model.save(openstudio.toPath(str(save_path)), True)
 
 del model

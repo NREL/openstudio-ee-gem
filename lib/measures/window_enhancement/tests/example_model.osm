@@ -14150,7 +14150,7 @@ OS:Rendering:Color,
 OS:YearDescription,
   {9edde416-cc06-40ec-b197-a6baebcd21f7}, !- Handle
   ,                                       !- Calendar Year
-  UseWeatherFile;                         !- Day of Week for Start Day
+  Sunday;                                 !- Day of Week for Start Day
 
 OS:RadianceParameters,
   {8325ffff-8685-4965-807a-36931c7ec34d}, !- Handle
@@ -14458,11 +14458,11 @@ OS:Building,
 
 OS:Site,
   {69e0c157-1761-45d4-8f89-01835c1d1cd1}, !- Handle
-  Site 1,                                 !- Name
-  ,                                       !- Latitude {deg}
-  ,                                       !- Longitude {deg}
-  ,                                       !- Time Zone {hr}
-  ,                                       !- Elevation {m}
+  Denver Intl Ap,                         !- Name
+  39.83,                                  !- Latitude {deg}
+  -104.65,                                !- Longitude {deg}
+  -7,                                     !- Time Zone {hr}
+  1650,                                   !- Elevation {m}
   ;                                       !- Terrain
 
 OS:ClimateZones,
@@ -14470,7 +14470,7 @@ OS:ClimateZones,
   ASHRAE,                                 !- Climate Zone Institution Name 1
   ANSI/ASHRAE Standard 169,               !- Climate Zone Document Name 1
   2006,                                   !- Climate Zone Document Year 1
-  ,                                       !- Climate Zone Value 1
+  5B,                                     !- Climate Zone Value 1
   CEC,                                    !- Climate Zone Institution Name 2
   California Climate Zone Descriptions,   !- Climate Zone Document Name 2
   1995,                                   !- Climate Zone Document Year 2
@@ -14478,7 +14478,7 @@ OS:ClimateZones,
 
 OS:LifeCycleCost:Parameters,
   {cc86f072-3361-49ca-abb6-787141d5ed6c}, !- Handle
-  ,                                       !- Analysis Type
+  FEMP,                                   !- Analysis Type
   ,                                       !- Discounting Convention
   ,                                       !- Inflation Approach
   ,                                       !- Real Discount Rate
@@ -14488,7 +14488,10 @@ OS:LifeCycleCost:Parameters,
   ,                                       !- Base Date Year
   ,                                       !- Service Date Month
   ,                                       !- Service Date Year
-  ;                                       !- Length of Study Period in Years
+  ,                                       !- Length of Study Period in Years
+  ,                                       !- Tax Rate
+  ,                                       !- Depreciation Method
+  Yes;                                    !- Use NIST Fuel Escalation Rates
 
 OS:StandardsInformation:Construction,
   {ab6a789c-f474-415e-9fd2-c0aca93db49a}, !- Handle
@@ -14525,10 +14528,6 @@ OS:StandardsInformation:Construction,
 OS:StandardsInformation:Construction,
   {6e053cdb-6d06-41e0-b4ea-b1e160f977cb}, !- Handle
   {0963de92-4b23-49d3-a415-68cb0a85069a}; !- Construction Name
-
-OS:StandardsInformation:Construction,
-  {368fc409-cba0-4022-a682-0ccd0b3e94c7}, !- Handle
-  {a618bef4-afe5-4dde-bcf5-8057338cba27}; !- Construction Name
 
 OS:StandardsInformation:Construction,
   {3f9e5316-18c8-4b56-8db5-d8c1709371bc}, !- Handle
@@ -16724,4 +16723,38 @@ OS:WindowProperty:FrameAndDivider,
   ,                                       !- Inside Sill Solar Absorptance
   ,                                       !- Inside Reveal Depth {m}
   ;                                       !- Inside Reveal Solar Absorptance
+
+OS:WeatherFile,
+  {5637dacf-72c8-4fed-8525-45638ed5ffcc}, !- Handle
+  Denver Intl Ap,                         !- City
+  CO,                                     !- State Province Region
+  USA,                                    !- Country
+  TMY3,                                   !- Data Source
+  725650,                                 !- WMO Number
+  39.83,                                  !- Latitude {deg}
+  -104.65,                                !- Longitude {deg}
+  -7,                                     !- Time Zone {hr}
+  1650,                                   !- Elevation {m}
+  USA_CO_Denver.Intl.AP.725650_TMY3.epw,  !- Url
+  E23378AA,                               !- Checksum
+  ,                                       !- Start Date Actual Year
+  Sunday;                                 !- Start Day of Week
+
+OS:Output:JSON,
+  {cc128c64-aff2-494a-bb7d-ce1d5fe25aef}, !- Handle
+  TimeSeriesAndTabular,                   !- Option Type
+  No,                                     !- Output JSON
+  No,                                     !- Output CBOR
+  No;                                     !- Output MessagePack
+
+OS:Output:Table:SummaryReports,
+  {3b6a6790-36ed-492e-8e1b-06fc9c2100e1}, !- Handle
+  AllSummary;                             !- Report Name 1
+
+OS:Output:Diagnostics,
+  {6a79fb3e-3411-4ce0-9492-923cbbe13c1f}; !- Handle
+
+OS:StandardsInformation:Construction,
+  {80d833bf-b869-4172-9595-ee888a4002f3}, !- Handle
+  {a618bef4-afe5-4dde-bcf5-8057338cba27}; !- Construction Name
 

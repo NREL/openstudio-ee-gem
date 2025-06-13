@@ -1,11 +1,11 @@
 <?xml version="1.0"?>
 <measure>
   <schema_version>3.1</schema_version>
-  <error>Failed to infer measure name from 'C:/All repos/openstudio-ee-gem/lib/measures/window_enhancement/measure.py'</error>
+  <error>Failed to infer measure name from 'C:/All_repos/openstudio-ee-gem/lib/measures/window_enhancement/measure.py'</error>
   <name>window_enhancment</name>
   <uid>0ad8e761-8624-4d9d-a7d6-ebf30cce243b</uid>
-  <version_id>883b6ea6-1c91-4785-98ca-fd42944ae1c0</version_id>
-  <version_modified>2025-04-17T16:27:52Z</version_modified>
+  <version_id>11d7a651-3e4f-4cc4-907e-ae36d0c36b1e</version_id>
+  <version_modified>2025-06-13T00:10:56Z</version_modified>
   <xml_checksum>7DADF7C5</xml_checksum>
   <class_name>WindowEnhancment</class_name>
   <display_name>Window Enhancment</display_name>
@@ -86,31 +86,25 @@
       <filename>measure.py</filename>
       <filetype>py</filetype>
       <usage_type>script</usage_type>
-      <checksum>CA670757</checksum>
+      <checksum>44745C8A</checksum>
     </file>
     <file>
       <filename>EC3_lookup.py</filename>
       <filetype>py</filetype>
       <usage_type>resource</usage_type>
-      <checksum>DAD45298</checksum>
+      <checksum>CD4CC2E1</checksum>
     </file>
     <file>
       <filename>Test_API.py</filename>
       <filetype>py</filetype>
       <usage_type>resource</usage_type>
-      <checksum>41078C2A</checksum>
-    </file>
-    <file>
-      <filename>__pycache__/EC3_lookup.cpython-313.pyc</filename>
-      <filetype>pyc</filetype>
-      <usage_type>resource</usage_type>
-      <checksum>F1150BC3</checksum>
+      <checksum>26458C20</checksum>
     </file>
     <file>
       <filename>__pycache__/EC3_lookup.cpython-39.pyc</filename>
       <filetype>pyc</filetype>
       <usage_type>resource</usage_type>
-      <checksum>AD24744A</checksum>
+      <checksum>75A86FF8</checksum>
     </file>
     <file>
       <filename>__pycache__/Original_EC3_lookup.py</filename>
@@ -128,7 +122,7 @@
       <filename>calculate_perimeter.py</filename>
       <filetype>py</filetype>
       <usage_type>resource</usage_type>
-      <checksum>CED4720F</checksum>
+      <checksum>D7980CA8</checksum>
     </file>
     <file>
       <filename>.pytest_cache/CACHEDIR.TAG</filename>
@@ -143,10 +137,16 @@
       <checksum>2EF77971</checksum>
     </file>
     <file>
+      <filename>.pytest_cache/v/cache/lastfailed</filename>
+      <filetype></filetype>
+      <usage_type>test</usage_type>
+      <checksum>01500AF0</checksum>
+    </file>
+    <file>
       <filename>.pytest_cache/v/cache/nodeids</filename>
       <filetype></filetype>
       <usage_type>test</usage_type>
-      <checksum>A007C1BE</checksum>
+      <checksum>472D15B9</checksum>
     </file>
     <file>
       <filename>.pytest_cache/v/cache/stepwise</filename>
@@ -161,12 +161,6 @@
       <checksum>8D75ED36</checksum>
     </file>
     <file>
-      <filename>complex_example_model.osm</filename>
-      <filetype>osm</filetype>
-      <usage_type>test</usage_type>
-      <checksum>0C7F4BB9</checksum>
-    </file>
-    <file>
       <filename>example_model/files/USA_CO_Denver.Intl.AP.725650_TMY3.epw</filename>
       <filetype>epw</filetype>
       <usage_type>test</usage_type>
@@ -176,103 +170,367 @@
       <filename>example_model/out.osw</filename>
       <filetype>osw</filetype>
       <usage_type>test</usage_type>
-      <checksum>87D96F28</checksum>
+      <checksum>7DD257B8</checksum>
     </file>
     <file>
       <filename>example_model/reports/eplustbl.html</filename>
       <filetype>html</filetype>
       <usage_type>test</usage_type>
-      <checksum>325D3A17</checksum>
+      <checksum>D79B854E</checksum>
+    </file>
+    <file>
+      <filename>example_model/run/data_point.zip</filename>
+      <filetype>zip</filetype>
+      <usage_type>test</usage_type>
+      <checksum>963C204E</checksum>
+    </file>
+    <file>
+      <filename>example_model/run/data_point_out.json</filename>
+      <filetype>json</filetype>
+      <usage_type>test</usage_type>
+      <checksum>A3A6BF43</checksum>
+    </file>
+    <file>
+      <filename>example_model/run/eplusout.audit</filename>
+      <filetype>audit</filetype>
+      <usage_type>test</usage_type>
+      <checksum>C423610E</checksum>
+    </file>
+    <file>
+      <filename>example_model/run/eplusout.bnd</filename>
+      <filetype>bnd</filetype>
+      <usage_type>test</usage_type>
+      <checksum>8FF56ACE</checksum>
+    </file>
+    <file>
+      <filename>example_model/run/eplusout.eio</filename>
+      <filetype>eio</filetype>
+      <usage_type>test</usage_type>
+      <checksum>D8D7C449</checksum>
+    </file>
+    <file>
+      <filename>example_model/run/eplusout.end</filename>
+      <filetype>end</filetype>
+      <usage_type>test</usage_type>
+      <checksum>4F7E3024</checksum>
+    </file>
+    <file>
+      <filename>example_model/run/eplusout.err</filename>
+      <filetype>err</filetype>
+      <usage_type>test</usage_type>
+      <checksum>4B577222</checksum>
+    </file>
+    <file>
+      <filename>example_model/run/eplusout.eso</filename>
+      <filetype>eso</filetype>
+      <usage_type>test</usage_type>
+      <checksum>02B3B8F1</checksum>
+    </file>
+    <file>
+      <filename>example_model/run/eplusout.mdd</filename>
+      <filetype>mdd</filetype>
+      <usage_type>test</usage_type>
+      <checksum>17062D38</checksum>
+    </file>
+    <file>
+      <filename>example_model/run/eplusout.mtd</filename>
+      <filetype>mtd</filetype>
+      <usage_type>test</usage_type>
+      <checksum>60B8B136</checksum>
+    </file>
+    <file>
+      <filename>example_model/run/eplusout.rdd</filename>
+      <filetype>rdd</filetype>
+      <usage_type>test</usage_type>
+      <checksum>902D66F4</checksum>
+    </file>
+    <file>
+      <filename>example_model/run/eplusout.shd</filename>
+      <filetype>shd</filetype>
+      <usage_type>test</usage_type>
+      <checksum>1735B316</checksum>
+    </file>
+    <file>
+      <filename>example_model/run/eplusout.sql</filename>
+      <filetype>sql</filetype>
+      <usage_type>test</usage_type>
+      <checksum>37A76FD7</checksum>
+    </file>
+    <file>
+      <filename>example_model/run/eplustbl.htm</filename>
+      <filetype>htm</filetype>
+      <usage_type>test</usage_type>
+      <checksum>D79B854E</checksum>
+    </file>
+    <file>
+      <filename>example_model/run/finished.job</filename>
+      <filetype>job</filetype>
+      <usage_type>test</usage_type>
+      <checksum>F551BB58</checksum>
+    </file>
+    <file>
+      <filename>example_model/run/in.idf</filename>
+      <filetype>idf</filetype>
+      <usage_type>test</usage_type>
+      <checksum>701E610E</checksum>
+    </file>
+    <file>
+      <filename>example_model/run/in.osm</filename>
+      <filetype>osm</filetype>
+      <usage_type>test</usage_type>
+      <checksum>357F34E4</checksum>
+    </file>
+    <file>
+      <filename>example_model/run/measure_attributes.json</filename>
+      <filetype>json</filetype>
+      <usage_type>test</usage_type>
+      <checksum>A3A6BF43</checksum>
+    </file>
+    <file>
+      <filename>example_model/run/pre-preprocess.idf</filename>
+      <filetype>idf</filetype>
+      <usage_type>test</usage_type>
+      <checksum>F5069FB2</checksum>
+    </file>
+    <file>
+      <filename>example_model/run/results.json</filename>
+      <filetype>json</filetype>
+      <usage_type>test</usage_type>
+      <checksum>A3A6BF43</checksum>
+    </file>
+    <file>
+      <filename>example_model/run/run.log</filename>
+      <filetype>log</filetype>
+      <usage_type>test</usage_type>
+      <checksum>E74DC8A7</checksum>
+    </file>
+    <file>
+      <filename>example_model/run/sqlite.err</filename>
+      <filetype>err</filetype>
+      <usage_type>test</usage_type>
+      <checksum>D834FBC1</checksum>
+    </file>
+    <file>
+      <filename>example_model/run/started.job</filename>
+      <filetype>job</filetype>
+      <usage_type>test</usage_type>
+      <checksum>033F8C89</checksum>
+    </file>
+    <file>
+      <filename>example_model/run/stdout-energyplus</filename>
+      <filetype></filetype>
+      <usage_type>test</usage_type>
+      <checksum>B6F101EF</checksum>
+    </file>
+    <file>
+      <filename>example_model/stderr</filename>
+      <filetype></filetype>
+      <usage_type>test</usage_type>
+      <checksum>00000000</checksum>
+    </file>
+    <file>
+      <filename>example_model/stdout</filename>
+      <filetype></filetype>
+      <usage_type>test</usage_type>
+      <checksum>9F4DC53E</checksum>
     </file>
     <file>
       <filename>example_model/workflow.osw</filename>
       <filetype>osw</filetype>
       <usage_type>test</usage_type>
-      <checksum>0C86EC97</checksum>
+      <checksum>E41E6BA3</checksum>
     </file>
     <file>
       <filename>example_model.osm</filename>
       <filetype>osm</filetype>
       <usage_type>test</usage_type>
-      <checksum>94F69031</checksum>
+      <checksum>AD804701</checksum>
     </file>
     <file>
-      <filename>test_results/pytest/junit.xml</filename>
-      <filetype>xml</filetype>
+      <filename>example_model_2/files/USA_CO_Denver.Intl.AP.725650_TMY3.epw</filename>
+      <filetype>epw</filetype>
       <usage_type>test</usage_type>
-      <checksum>314F4526</checksum>
+      <checksum>E23378AA</checksum>
     </file>
     <file>
-      <filename>test_results/pytest/python_coverage.json</filename>
+      <filename>example_model_2/out.osw</filename>
+      <filetype>osw</filetype>
+      <usage_type>test</usage_type>
+      <checksum>39114D8B</checksum>
+    </file>
+    <file>
+      <filename>example_model_2/reports/eplustbl.html</filename>
+      <filetype>html</filetype>
+      <usage_type>test</usage_type>
+      <checksum>CF9D2EA9</checksum>
+    </file>
+    <file>
+      <filename>example_model_2/run/data_point.zip</filename>
+      <filetype>zip</filetype>
+      <usage_type>test</usage_type>
+      <checksum>AC56D9BB</checksum>
+    </file>
+    <file>
+      <filename>example_model_2/run/data_point_out.json</filename>
       <filetype>json</filetype>
       <usage_type>test</usage_type>
-      <checksum>07E72A34</checksum>
+      <checksum>A3A6BF43</checksum>
     </file>
     <file>
-      <filename>test_results/pytest/python_coverage.lcov</filename>
-      <filetype>lcov</filetype>
+      <filename>example_model_2/run/eplusout.audit</filename>
+      <filetype>audit</filetype>
       <usage_type>test</usage_type>
-      <checksum>02386FB0</checksum>
+      <checksum>C423610E</checksum>
     </file>
     <file>
-      <filename>test_results/pytest/python_coverage.xml</filename>
-      <filetype>xml</filetype>
+      <filename>example_model_2/run/eplusout.bnd</filename>
+      <filetype>bnd</filetype>
       <usage_type>test</usage_type>
-      <checksum>200DF337</checksum>
+      <checksum>2BAAE8A5</checksum>
     </file>
     <file>
-      <filename>test_results/pytest/python_coverage_html/class_index.html</filename>
-      <filetype>html</filetype>
+      <filename>example_model_2/run/eplusout.eio</filename>
+      <filetype>eio</filetype>
       <usage_type>test</usage_type>
-      <checksum>3659E069</checksum>
+      <checksum>16F681D9</checksum>
     </file>
     <file>
-      <filename>test_results/pytest/python_coverage_html/coverage_html_cb_497bf287.js</filename>
-      <filetype>js</filetype>
+      <filename>example_model_2/run/eplusout.end</filename>
+      <filetype>end</filetype>
       <usage_type>test</usage_type>
-      <checksum>7F5366F7</checksum>
+      <checksum>BD0845DF</checksum>
     </file>
     <file>
-      <filename>test_results/pytest/python_coverage_html/favicon_32_cb_58284776.png</filename>
-      <filetype>png</filetype>
+      <filename>example_model_2/run/eplusout.err</filename>
+      <filetype>err</filetype>
       <usage_type>test</usage_type>
-      <checksum>98D44845</checksum>
+      <checksum>18351637</checksum>
     </file>
     <file>
-      <filename>test_results/pytest/python_coverage_html/function_index.html</filename>
-      <filetype>html</filetype>
+      <filename>example_model_2/run/eplusout.eso</filename>
+      <filetype>eso</filetype>
       <usage_type>test</usage_type>
-      <checksum>AAC10316</checksum>
+      <checksum>146BDCFB</checksum>
     </file>
     <file>
-      <filename>test_results/pytest/python_coverage_html/index.html</filename>
-      <filetype>html</filetype>
+      <filename>example_model_2/run/eplusout.mdd</filename>
+      <filetype>mdd</filetype>
       <usage_type>test</usage_type>
-      <checksum>6F47A85A</checksum>
+      <checksum>D2FD358E</checksum>
     </file>
     <file>
-      <filename>test_results/pytest/python_coverage_html/keybd_closed_cb_ce680311.png</filename>
-      <filetype>png</filetype>
+      <filename>example_model_2/run/eplusout.mtd</filename>
+      <filetype>mtd</filetype>
       <usage_type>test</usage_type>
-      <checksum>A24012EE</checksum>
+      <checksum>60B8B136</checksum>
     </file>
     <file>
-      <filename>test_results/pytest/python_coverage_html/status.json</filename>
+      <filename>example_model_2/run/eplusout.rdd</filename>
+      <filetype>rdd</filetype>
+      <usage_type>test</usage_type>
+      <checksum>F3A2B11B</checksum>
+    </file>
+    <file>
+      <filename>example_model_2/run/eplusout.shd</filename>
+      <filetype>shd</filetype>
+      <usage_type>test</usage_type>
+      <checksum>1735B316</checksum>
+    </file>
+    <file>
+      <filename>example_model_2/run/eplusout.sql</filename>
+      <filetype>sql</filetype>
+      <usage_type>test</usage_type>
+      <checksum>208B29EB</checksum>
+    </file>
+    <file>
+      <filename>example_model_2/run/eplustbl.htm</filename>
+      <filetype>htm</filetype>
+      <usage_type>test</usage_type>
+      <checksum>CF9D2EA9</checksum>
+    </file>
+    <file>
+      <filename>example_model_2/run/finished.job</filename>
+      <filetype>job</filetype>
+      <usage_type>test</usage_type>
+      <checksum>E26033FF</checksum>
+    </file>
+    <file>
+      <filename>example_model_2/run/in.idf</filename>
+      <filetype>idf</filetype>
+      <usage_type>test</usage_type>
+      <checksum>701E610E</checksum>
+    </file>
+    <file>
+      <filename>example_model_2/run/in.osm</filename>
+      <filetype>osm</filetype>
+      <usage_type>test</usage_type>
+      <checksum>740AC496</checksum>
+    </file>
+    <file>
+      <filename>example_model_2/run/measure_attributes.json</filename>
       <filetype>json</filetype>
       <usage_type>test</usage_type>
-      <checksum>2BC6BB13</checksum>
+      <checksum>A3A6BF43</checksum>
     </file>
     <file>
-      <filename>test_results/pytest/python_coverage_html/style_cb_718ce007.css</filename>
-      <filetype>css</filetype>
+      <filename>example_model_2/run/pre-preprocess.idf</filename>
+      <filetype>idf</filetype>
       <usage_type>test</usage_type>
-      <checksum>B4EE85DF</checksum>
+      <checksum>F5069FB2</checksum>
     </file>
     <file>
-      <filename>test_results/pytest/python_coverage_html/z_1d16a5c0da9a8485_test_window_enhancement_py.html</filename>
-      <filetype>html</filetype>
+      <filename>example_model_2/run/results.json</filename>
+      <filetype>json</filetype>
       <usage_type>test</usage_type>
-      <checksum>FAF9FD66</checksum>
+      <checksum>A3A6BF43</checksum>
+    </file>
+    <file>
+      <filename>example_model_2/run/run.log</filename>
+      <filetype>log</filetype>
+      <usage_type>test</usage_type>
+      <checksum>57AE4C11</checksum>
+    </file>
+    <file>
+      <filename>example_model_2/run/sqlite.err</filename>
+      <filetype>err</filetype>
+      <usage_type>test</usage_type>
+      <checksum>D834FBC1</checksum>
+    </file>
+    <file>
+      <filename>example_model_2/run/started.job</filename>
+      <filetype>job</filetype>
+      <usage_type>test</usage_type>
+      <checksum>8A8D29A0</checksum>
+    </file>
+    <file>
+      <filename>example_model_2/run/stdout-energyplus</filename>
+      <filetype></filetype>
+      <usage_type>test</usage_type>
+      <checksum>E30157A3</checksum>
+    </file>
+    <file>
+      <filename>example_model_2/stderr</filename>
+      <filetype></filetype>
+      <usage_type>test</usage_type>
+      <checksum>00000000</checksum>
+    </file>
+    <file>
+      <filename>example_model_2/stdout</filename>
+      <filetype></filetype>
+      <usage_type>test</usage_type>
+      <checksum>8A39EB29</checksum>
+    </file>
+    <file>
+      <filename>example_model_2/workflow_2.osw</filename>
+      <filetype>osw</filetype>
+      <usage_type>test</usage_type>
+      <checksum>85C320E0</checksum>
+    </file>
+    <file>
+      <filename>example_model_2.osm</filename>
+      <filetype>osm</filetype>
+      <usage_type>test</usage_type>
+      <checksum>F18AA810</checksum>
     </file>
     <file>
       <filename>test_window_enhancement.py</filename>

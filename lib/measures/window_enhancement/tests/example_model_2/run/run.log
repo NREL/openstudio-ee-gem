@@ -1,0 +1,2 @@
+[18:37:15.832789 WARN] [openstudio.energyplus.ForwardTranslator] Space Space with no Geometry Assigned to SpaceType with non is not associated with a ThermalZone, it will not be translated.
+[18:37:15.930065 WARN] [openstudio.energyplus.ForwardTranslator] OS_ProgramControl is not currently translated

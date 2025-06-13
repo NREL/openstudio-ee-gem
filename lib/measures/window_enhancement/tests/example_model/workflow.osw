@@ -4,9 +4,10 @@
    [
       {
          "arguments" : {},
-         "measure_dir_name" : "window_enhancement"
+         "measure_dir_name" : "window_enhancement",
+         "name" : "Window Enhancement"
       }
    ],
-   "updated_at" : "20250402T232234Z",
-   "weather_file" : "C:/All_repos/openstudio-ee-gem/lib/measures/window_enhancement/tests/example_model/files/USA_CO_Denver.Intl.AP.725650_TMY3.epw"
+   "updated_at" : "20250612T223729Z",
+   "weather_file" : "USA_CO_Denver.Intl.AP.725650_TMY3.epw"
 }

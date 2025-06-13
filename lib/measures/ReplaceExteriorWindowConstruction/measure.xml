@@ -3,8 +3,8 @@
   <schema_version>3.1</schema_version>
   <name>replace_exterior_window_construction</name>
   <uid>95116deb-0716-4cdc-af27-09c463befc7c</uid>
-  <version_id>7bff51fe-a83e-449c-954a-25a4bca3b23b</version_id>
-  <version_modified>2025-04-17T16:27:51Z</version_modified>
+  <version_id>9049d224-1adb-4f87-9b82-4c4f75a1bd44</version_id>
+  <version_modified>2025-06-13T00:10:56Z</version_modified>
   <xml_checksum>680C4655</xml_checksum>
   <class_name>ReplaceExteriorWindowConstruction</class_name>
   <display_name>Replace Exterior Window Constructions with a Different Construction from the Model.</display_name>
@@ -230,84 +230,6 @@
       <filetype>osm</filetype>
       <usage_type>test</usage_type>
       <checksum>0B94403D</checksum>
-    </file>
-    <file>
-      <filename>test_results/pytest/junit.xml</filename>
-      <filetype>xml</filetype>
-      <usage_type>test</usage_type>
-      <checksum>F7F82501</checksum>
-    </file>
-    <file>
-      <filename>test_results/pytest/python_coverage.json</filename>
-      <filetype>json</filetype>
-      <usage_type>test</usage_type>
-      <checksum>4787D221</checksum>
-    </file>
-    <file>
-      <filename>test_results/pytest/python_coverage.lcov</filename>
-      <filetype>lcov</filetype>
-      <usage_type>test</usage_type>
-      <checksum>71A3924D</checksum>
-    </file>
-    <file>
-      <filename>test_results/pytest/python_coverage.xml</filename>
-      <filetype>xml</filetype>
-      <usage_type>test</usage_type>
-      <checksum>E243C169</checksum>
-    </file>
-    <file>
-      <filename>test_results/pytest/python_coverage_html/class_index.html</filename>
-      <filetype>html</filetype>
-      <usage_type>test</usage_type>
-      <checksum>2BF28E54</checksum>
-    </file>
-    <file>
-      <filename>test_results/pytest/python_coverage_html/coverage_html_cb_497bf287.js</filename>
-      <filetype>js</filetype>
-      <usage_type>test</usage_type>
-      <checksum>7F5366F7</checksum>
-    </file>
-    <file>
-      <filename>test_results/pytest/python_coverage_html/favicon_32_cb_58284776.png</filename>
-      <filetype>png</filetype>
-      <usage_type>test</usage_type>
-      <checksum>98D44845</checksum>
-    </file>
-    <file>
-      <filename>test_results/pytest/python_coverage_html/function_index.html</filename>
-      <filetype>html</filetype>
-      <usage_type>test</usage_type>
-      <checksum>9804EDED</checksum>
-    </file>
-    <file>
-      <filename>test_results/pytest/python_coverage_html/index.html</filename>
-      <filetype>html</filetype>
-      <usage_type>test</usage_type>
-      <checksum>6C8BB906</checksum>
-    </file>
-    <file>
-      <filename>test_results/pytest/python_coverage_html/keybd_closed_cb_ce680311.png</filename>
-      <filetype>png</filetype>
-      <usage_type>test</usage_type>
-      <checksum>A24012EE</checksum>
-    </file>
-    <file>
-      <filename>test_results/pytest/python_coverage_html/status.json</filename>
-      <filetype>json</filetype>
-      <usage_type>test</usage_type>
-      <checksum>7C5BF34A</checksum>
-    </file>
-    <file>
-      <filename>test_results/pytest/python_coverage_html/style_cb_718ce007.css</filename>
-      <filetype>css</filetype>
-      <usage_type>test</usage_type>
-      <checksum>B4EE85DF</checksum>
-    </file>
-    <file>
-      <filename>test_results/pytest/python_coverage_html/z_413dd5d1309c11cf_ReplaceExteriorWindowConstruction_Test_py.html</filename>
-      <filetype>html</filetype>
-      <usage_type>test</usage_type>
-      <checksum>DEE20B66</checksum>
     </file>
   </files>
 </measure>

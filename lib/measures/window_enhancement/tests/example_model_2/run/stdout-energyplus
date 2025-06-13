@@ -1,0 +1,124 @@
+ExpandObjects Started.
+No expanded file generated.
+ExpandObjects Finished. Time:     0.047
+EnergyPlus Starting
+EnergyPlus, Version 24.1.0-9d7789a3ac, YMD=2025.06.12 18:37
+Adjusting Air System Sizing
+Adjusting Standard 62.1 Ventilation Sizing
+Initializing Simulation
+Reporting Surfaces
+Beginning Primary Simulation
+Initializing New Environment Parameters
+Warming up {1}
+Warming up {2}
+Warming up {3}
+Warming up {4}
+Starting Simulation at 01/01/2006 for RUN PERIOD 1
+Updating Shadowing Calculations, Start Date=01/08/2006
+Continuing Simulation at 01/08/2006 for RUN PERIOD 1
+Updating Shadowing Calculations, Start Date=01/15/2006
+Continuing Simulation at 01/15/2006 for RUN PERIOD 1
+Updating Shadowing Calculations, Start Date=01/22/2006
+Continuing Simulation at 01/22/2006 for RUN PERIOD 1
+Updating Shadowing Calculations, Start Date=01/29/2006
+Continuing Simulation at 01/29/2006 for RUN PERIOD 1
+Updating Shadowing Calculations, Start Date=02/05/2006
+Continuing Simulation at 02/05/2006 for RUN PERIOD 1
+Updating Shadowing Calculations, Start Date=02/12/2006
+Continuing Simulation at 02/12/2006 for RUN PERIOD 1
+Updating Shadowing Calculations, Start Date=02/19/2006
+Continuing Simulation at 02/19/2006 for RUN PERIOD 1
+Updating Shadowing Calculations, Start Date=02/26/2006
+Continuing Simulation at 02/26/2006 for RUN PERIOD 1
+Updating Shadowing Calculations, Start Date=03/05/2006
+Continuing Simulation at 03/05/2006 for RUN PERIOD 1
+Updating Shadowing Calculations, Start Date=03/12/2006
+Continuing Simulation at 03/12/2006 for RUN PERIOD 1
+Updating Shadowing Calculations, Start Date=03/19/2006
+Continuing Simulation at 03/19/2006 for RUN PERIOD 1
+Updating Shadowing Calculations, Start Date=03/26/2006
+Continuing Simulation at 03/26/2006 for RUN PERIOD 1
+Updating Shadowing Calculations, Start Date=04/02/2006
+Continuing Simulation at 04/02/2006 for RUN PERIOD 1
+Updating Shadowing Calculations, Start Date=04/09/2006
+Continuing Simulation at 04/09/2006 for RUN PERIOD 1
+Updating Shadowing Calculations, Start Date=04/16/2006
+Continuing Simulation at 04/16/2006 for RUN PERIOD 1
+Updating Shadowing Calculations, Start Date=04/23/2006
+Continuing Simulation at 04/23/2006 for RUN PERIOD 1
+Updating Shadowing Calculations, Start Date=04/30/2006
+Continuing Simulation at 04/30/2006 for RUN PERIOD 1
+Updating Shadowing Calculations, Start Date=05/07/2006
+Continuing Simulation at 05/07/2006 for RUN PERIOD 1
+Updating Shadowing Calculations, Start Date=05/14/2006
+Continuing Simulation at 05/14/2006 for RUN PERIOD 1
+Updating Shadowing Calculations, Start Date=05/21/2006
+Continuing Simulation at 05/21/2006 for RUN PERIOD 1
+Updating Shadowing Calculations, Start Date=05/28/2006
+Continuing Simulation at 05/28/2006 for RUN PERIOD 1
+Updating Shadowing Calculations, Start Date=06/04/2006
+Continuing Simulation at 06/04/2006 for RUN PERIOD 1
+Updating Shadowing Calculations, Start Date=06/11/2006
+Continuing Simulation at 06/11/2006 for RUN PERIOD 1
+Updating Shadowing Calculations, Start Date=06/18/2006
+Continuing Simulation at 06/18/2006 for RUN PERIOD 1
+Updating Shadowing Calculations, Start Date=06/25/2006
+Continuing Simulation at 06/25/2006 for RUN PERIOD 1
+Updating Shadowing Calculations, Start Date=07/02/2006
+Continuing Simulation at 07/02/2006 for RUN PERIOD 1
+Updating Shadowing Calculations, Start Date=07/09/2006
+Continuing Simulation at 07/09/2006 for RUN PERIOD 1
+Updating Shadowing Calculations, Start Date=07/16/2006
+Continuing Simulation at 07/16/2006 for RUN PERIOD 1
+Updating Shadowing Calculations, Start Date=07/23/2006
+Continuing Simulation at 07/23/2006 for RUN PERIOD 1
+Updating Shadowing Calculations, Start Date=07/30/2006
+Continuing Simulation at 07/30/2006 for RUN PERIOD 1
+Updating Shadowing Calculations, Start Date=08/06/2006
+Continuing Simulation at 08/06/2006 for RUN PERIOD 1
+Updating Shadowing Calculations, Start Date=08/13/2006
+Continuing Simulation at 08/13/2006 for RUN PERIOD 1
+Updating Shadowing Calculations, Start Date=08/20/2006
+Continuing Simulation at 08/20/2006 for RUN PERIOD 1
+Updating Shadowing Calculations, Start Date=08/27/2006
+Continuing Simulation at 08/27/2006 for RUN PERIOD 1
+Updating Shadowing Calculations, Start Date=09/03/2006
+Continuing Simulation at 09/03/2006 for RUN PERIOD 1
+Updating Shadowing Calculations, Start Date=09/10/2006
+Continuing Simulation at 09/10/2006 for RUN PERIOD 1
+Updating Shadowing Calculations, Start Date=09/17/2006
+Continuing Simulation at 09/17/2006 for RUN PERIOD 1
+Updating Shadowing Calculations, Start Date=09/24/2006
+Continuing Simulation at 09/24/2006 for RUN PERIOD 1
+Updating Shadowing Calculations, Start Date=10/01/2006
+Continuing Simulation at 10/01/2006 for RUN PERIOD 1
+Updating Shadowing Calculations, Start Date=10/08/2006
+Continuing Simulation at 10/08/2006 for RUN PERIOD 1
+Updating Shadowing Calculations, Start Date=10/15/2006
+Continuing Simulation at 10/15/2006 for RUN PERIOD 1
+Updating Shadowing Calculations, Start Date=10/22/2006
+Continuing Simulation at 10/22/2006 for RUN PERIOD 1
+Updating Shadowing Calculations, Start Date=10/29/2006
+Continuing Simulation at 10/29/2006 for RUN PERIOD 1
+Updating Shadowing Calculations, Start Date=11/05/2006
+Continuing Simulation at 11/05/2006 for RUN PERIOD 1
+Updating Shadowing Calculations, Start Date=11/12/2006
+Continuing Simulation at 11/12/2006 for RUN PERIOD 1
+Updating Shadowing Calculations, Start Date=11/19/2006
+Continuing Simulation at 11/19/2006 for RUN PERIOD 1
+Updating Shadowing Calculations, Start Date=11/26/2006
+Continuing Simulation at 11/26/2006 for RUN PERIOD 1
+Updating Shadowing Calculations, Start Date=12/03/2006
+Continuing Simulation at 12/03/2006 for RUN PERIOD 1
+Updating Shadowing Calculations, Start Date=12/10/2006
+Continuing Simulation at 12/10/2006 for RUN PERIOD 1
+Updating Shadowing Calculations, Start Date=12/17/2006
+Continuing Simulation at 12/17/2006 for RUN PERIOD 1
+Updating Shadowing Calculations, Start Date=12/24/2006
+Continuing Simulation at 12/24/2006 for RUN PERIOD 1
+Updating Shadowing Calculations, Start Date=12/31/2006
+Writing tabular output file results using HTML format.
+Computing Life Cycle Costs and Reporting
+Writing final SQL reports
+EnergyPlus Run Time=00hr 00min  2.72sec
+EnergyPlus Completed Successfully.
