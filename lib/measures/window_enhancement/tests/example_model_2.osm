@@ -10211,7 +10211,7 @@ OS:WindowMaterial:Glazing,
   000_Clear 3mm,                          ! Name
   SpectralAverage,                        ! Optical Data Type
   ,                                       ! Window Glass Spectral Data Set Name
-  0.005,                                  ! Thickness
+  0.0030000000000000001,                  ! Thickness
   0.83699999999999997,                    ! Solar Transmittance at Normal Incidence
   0.074999999999999997,                   ! Front Side Solar Reflectance at Normal Incidence
   0.074999999999999997,                   ! Back Side Solar Reflectance at Normal Incidence

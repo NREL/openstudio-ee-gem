@@ -10211,7 +10211,7 @@ OS:WindowMaterial:Glazing,
   000_Clear 3mm,                          ! Name
   SpectralAverage,                        ! Optical Data Type
   ,                                       ! Window Glass Spectral Data Set Name
-  0.005,                                  ! Thickness
+  0.0030000000000000001,                  ! Thickness
   0.83699999999999997,                    ! Solar Transmittance at Normal Incidence
   0.074999999999999997,                   ! Front Side Solar Reflectance at Normal Incidence
   0.074999999999999997,                   ! Back Side Solar Reflectance at Normal Incidence
@@ -16735,7 +16735,7 @@ OS:WeatherFile,
   -104.65,                                !- Longitude {deg}
   -7,                                     !- Time Zone {hr}
   1650,                                   !- Elevation {m}
-  C:/All_repos/openstudio-ee-gem/lib/measures/window_enhancement/tests/example_model_2/files/USA_CO_Denver.Intl.AP.725650_TMY3.epw, !- Url
+  USA_CO_Denver.Intl.AP.725650_TMY3.epw,  !- Url
   E23378AA,                               !- Checksum
   ,                                       !- Start Date Actual Year
   Sunday;                                 !- Start Day of Week
