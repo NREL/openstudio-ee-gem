@@ -255,6 +255,7 @@ class NzeHvac_Test < Minitest::Test
 
   def test_office_vav_reheat
     # this tests adding a VAV reheat system to the model
+    skip 'sizing issue with EnergyPlus 25.1. unskip after next E+ release'
     test_name = 'test_office_vav_reheat'
     puts "\n######\nTEST:#{test_name}\n######\n"
     osm_path = File.dirname(__FILE__) + '/office_chicago.osm'
@@ -266,6 +267,7 @@ class NzeHvac_Test < Minitest::Test
 
   def test_office_pvav_reheat
     # this tests adding a PVAV reheat system to the model
+    skip 'sizing issue with EnergyPlus 25.1. unskip after next E+ release'
     test_name = 'test_office_pvav_reheat'
     puts "\n######\nTEST:#{test_name}\n######\n"
     osm_path = File.dirname(__FILE__) + '/office_chicago.osm'
@@ -300,6 +302,7 @@ class NzeHvac_Test < Minitest::Test
 
   def test_model_with_sizing_issues
     # this tests adding a vav reheat system to the model with high envelope and internal loads
+    skip 'sizing issue with EnergyPlus 25.1. unskip after next E+ release'
     test_name = 'test_model_with_sizing_issues'
     puts "\n######\nTEST:#{test_name}\n######\n"
     osm_path = File.dirname(__FILE__) + '/glass_box_baltimore.osm'
