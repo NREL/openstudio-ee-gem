@@ -1,7 +1,7 @@
 
 OS:Version,
-  {1c9e9b4a-b84d-4347-bfbc-1adb124ee156}, !- Handle
-  3.8.0;                                  !- Version Identifier
+  {f60f2fd5-3204-4521-9eec-2d95a3b6e022}, !- Handle
+  3.9.0;                                  !- Version Identifier
 
 OS:Schedule:Constant,
   {5cf5dbf5-2a36-4a19-8fee-8c4ff95f7763}, !- Handle
@@ -13845,7 +13845,14 @@ OS:Sizing:Zone,
   0.005,                                  !- Zone Cooling Design Supply Air Humidity Ratio Difference {kgWater/kgDryAir}
   HumidityRatioDifference,                !- Zone Latent Heating Design Supply Air Humidity Ratio Input Method
   ,                                       !- Zone Humidification Design Supply Air Humidity Ratio {kgWater/kgDryAir}
-  0.005;                                  !- Zone Humidification Design Supply Air Humidity Ratio Difference {kgWater/kgDryAir}
+  0.005,                                  !- Zone Humidification Design Supply Air Humidity Ratio Difference {kgWater/kgDryAir}
+  ,                                       !- Zone Humidistat Dehumidification Set Point Schedule Name
+  ,                                       !- Zone Humidistat Humidification Set Point Schedule Name
+  ,                                       !- Design Zone Air Distribution Effectiveness in Cooling Mode
+  ,                                       !- Design Zone Air Distribution Effectiveness in Heating Mode
+  ,                                       !- Design Zone Secondary Recirculation Fraction {dimensionless}
+  ,                                       !- Design Minimum Zone Ventilation Efficiency {dimensionless}
+  Coincident;                             !- Sizing Option
 
 OS:ZoneHVAC:EquipmentList,
   {0995ae80-e138-4527-b0fb-3b510a82d5d1}, !- Handle
@@ -13934,7 +13941,14 @@ OS:Sizing:Zone,
   0.005,                                  !- Zone Cooling Design Supply Air Humidity Ratio Difference {kgWater/kgDryAir}
   HumidityRatioDifference,                !- Zone Latent Heating Design Supply Air Humidity Ratio Input Method
   ,                                       !- Zone Humidification Design Supply Air Humidity Ratio {kgWater/kgDryAir}
-  0.005;                                  !- Zone Humidification Design Supply Air Humidity Ratio Difference {kgWater/kgDryAir}
+  0.005,                                  !- Zone Humidification Design Supply Air Humidity Ratio Difference {kgWater/kgDryAir}
+  ,                                       !- Zone Humidistat Dehumidification Set Point Schedule Name
+  ,                                       !- Zone Humidistat Humidification Set Point Schedule Name
+  ,                                       !- Design Zone Air Distribution Effectiveness in Cooling Mode
+  ,                                       !- Design Zone Air Distribution Effectiveness in Heating Mode
+  ,                                       !- Design Zone Secondary Recirculation Fraction {dimensionless}
+  ,                                       !- Design Minimum Zone Ventilation Efficiency {dimensionless}
+  Coincident;                             !- Sizing Option
 
 OS:ZoneHVAC:EquipmentList,
   {0facef9e-3404-4a0a-ad50-b07c8088a044}, !- Handle
@@ -14023,7 +14037,14 @@ OS:Sizing:Zone,
   0.005,                                  !- Zone Cooling Design Supply Air Humidity Ratio Difference {kgWater/kgDryAir}
   HumidityRatioDifference,                !- Zone Latent Heating Design Supply Air Humidity Ratio Input Method
   ,                                       !- Zone Humidification Design Supply Air Humidity Ratio {kgWater/kgDryAir}
-  0.005;                                  !- Zone Humidification Design Supply Air Humidity Ratio Difference {kgWater/kgDryAir}
+  0.005,                                  !- Zone Humidification Design Supply Air Humidity Ratio Difference {kgWater/kgDryAir}
+  ,                                       !- Zone Humidistat Dehumidification Set Point Schedule Name
+  ,                                       !- Zone Humidistat Humidification Set Point Schedule Name
+  ,                                       !- Design Zone Air Distribution Effectiveness in Cooling Mode
+  ,                                       !- Design Zone Air Distribution Effectiveness in Heating Mode
+  ,                                       !- Design Zone Secondary Recirculation Fraction {dimensionless}
+  ,                                       !- Design Minimum Zone Ventilation Efficiency {dimensionless}
+  Coincident;                             !- Sizing Option
 
 OS:ZoneHVAC:EquipmentList,
   {2e30fe7d-8176-4d43-bab9-ef1cbc09dcd4}, !- Handle
@@ -14112,7 +14133,14 @@ OS:Sizing:Zone,
   0.005,                                  !- Zone Cooling Design Supply Air Humidity Ratio Difference {kgWater/kgDryAir}
   HumidityRatioDifference,                !- Zone Latent Heating Design Supply Air Humidity Ratio Input Method
   ,                                       !- Zone Humidification Design Supply Air Humidity Ratio {kgWater/kgDryAir}
-  0.005;                                  !- Zone Humidification Design Supply Air Humidity Ratio Difference {kgWater/kgDryAir}
+  0.005,                                  !- Zone Humidification Design Supply Air Humidity Ratio Difference {kgWater/kgDryAir}
+  ,                                       !- Zone Humidistat Dehumidification Set Point Schedule Name
+  ,                                       !- Zone Humidistat Humidification Set Point Schedule Name
+  ,                                       !- Design Zone Air Distribution Effectiveness in Cooling Mode
+  ,                                       !- Design Zone Air Distribution Effectiveness in Heating Mode
+  ,                                       !- Design Zone Secondary Recirculation Fraction {dimensionless}
+  ,                                       !- Design Minimum Zone Ventilation Efficiency {dimensionless}
+  Coincident;                             !- Sizing Option
 
 OS:ZoneHVAC:EquipmentList,
   {75d200a3-3564-4c8d-bf3e-f5f8db217152}, !- Handle
@@ -14470,7 +14498,7 @@ OS:ClimateZones,
   ASHRAE,                                 !- Climate Zone Institution Name 1
   ANSI/ASHRAE Standard 169,               !- Climate Zone Document Name 1
   2006,                                   !- Climate Zone Document Year 1
-  ,                                       !- Climate Zone Value 1
+  5B,                                     !- Climate Zone Value 1
   CEC,                                    !- Climate Zone Institution Name 2
   California Climate Zone Descriptions,   !- Climate Zone Document Name 2
   1995,                                   !- Climate Zone Document Year 2
@@ -14478,7 +14506,7 @@ OS:ClimateZones,
 
 OS:LifeCycleCost:Parameters,
   {cc86f072-3361-49ca-abb6-787141d5ed6c}, !- Handle
-  ,                                       !- Analysis Type
+  FEMP,                                   !- Analysis Type
   ,                                       !- Discounting Convention
   ,                                       !- Inflation Approach
   ,                                       !- Real Discount Rate
@@ -14488,7 +14516,10 @@ OS:LifeCycleCost:Parameters,
   ,                                       !- Base Date Year
   ,                                       !- Service Date Month
   ,                                       !- Service Date Year
-  ;                                       !- Length of Study Period in Years
+  ,                                       !- Length of Study Period in Years
+  ,                                       !- Tax Rate
+  ,                                       !- Depreciation Method
+  Yes;                                    !- Use NIST Fuel Escalation Rates
 
 OS:StandardsInformation:Construction,
   {ab6a789c-f474-415e-9fd2-c0aca93db49a}, !- Handle
@@ -14525,10 +14556,6 @@ OS:StandardsInformation:Construction,
 OS:StandardsInformation:Construction,
   {6e053cdb-6d06-41e0-b4ea-b1e160f977cb}, !- Handle
   {0963de92-4b23-49d3-a415-68cb0a85069a}; !- Construction Name
-
-OS:StandardsInformation:Construction,
-  {368fc409-cba0-4022-a682-0ccd0b3e94c7}, !- Handle
-  {a618bef4-afe5-4dde-bcf5-8057338cba27}; !- Construction Name
 
 OS:StandardsInformation:Construction,
   {3f9e5316-18c8-4b56-8db5-d8c1709371bc}, !- Handle
@@ -16726,7 +16753,7 @@ OS:WindowProperty:FrameAndDivider,
   ;                                       !- Inside Reveal Solar Absorptance
 
 OS:WeatherFile,
-  {e6b9b084-7b0a-446b-8e68-f47fb339cdee}, !- Handle
+  {5637dacf-72c8-4fed-8525-45638ed5ffcc}, !- Handle
   Denver Intl Ap,                         !- City
   CO,                                     !- State Province Region
   USA,                                    !- Country
@@ -16740,4 +16767,62 @@ OS:WeatherFile,
   E23378AA,                               !- Checksum
   ,                                       !- Start Date Actual Year
   Sunday;                                 !- Start Day of Week
+
+OS:Output:JSON,
+  {cc128c64-aff2-494a-bb7d-ce1d5fe25aef}, !- Handle
+  TimeSeriesAndTabular,                   !- Option Type
+  No,                                     !- Output JSON
+  No,                                     !- Output CBOR
+  No;                                     !- Output MessagePack
+
+OS:Output:Table:SummaryReports,
+  {3b6a6790-36ed-492e-8e1b-06fc9c2100e1}, !- Handle
+  AllSummary;                             !- Report Name 1
+
+OS:Output:Diagnostics,
+  {6a79fb3e-3411-4ce0-9492-923cbbe13c1f}; !- Handle
+
+OS:StandardsInformation:Construction,
+  {80d833bf-b869-4172-9595-ee888a4002f3}, !- Handle
+  {a618bef4-afe5-4dde-bcf5-8057338cba27}; !- Construction Name
+
+OS:AdditionalProperties,
+  {ab8239d4-396f-4881-9064-514f61c1bbd1}, !- Handle
+  {92286139-e776-43b2-8e87-a7d8d086b0b1}, !- Object Name
+  Subsurface name,                        !- Feature Name 1
+  String,                                 !- Feature Data Type 1
+  Sub Surface 5,                          !- Feature Value 1
+  Embodied carbon,                        !- Feature Name 2
+  Double,                                 !- Feature Data Type 2
+  1344.2172926546946;                     !- Feature Value 2
+
+OS:AdditionalProperties,
+  {80acdee3-aa55-4d3a-9921-63bd705a4c40}, !- Handle
+  {f0240b10-b10b-405d-b40f-baa8e72b2d9b}, !- Object Name
+  Subsurface name,                        !- Feature Name 1
+  String,                                 !- Feature Data Type 1
+  Sub Surface 1,                          !- Feature Value 1
+  Embodied carbon,                        !- Feature Name 2
+  Double,                                 !- Feature Data Type 2
+  1683.3299085707811;                     !- Feature Value 2
+
+OS:AdditionalProperties,
+  {3c5cc2f7-f983-4a15-bb1b-22033b2a0a85}, !- Handle
+  {79b7f9a9-235d-43ef-9002-60ab5487953e}, !- Object Name
+  Subsurface name,                        !- Feature Name 1
+  String,                                 !- Feature Data Type 1
+  Sub Surface 3,                          !- Feature Value 1
+  Embodied carbon,                        !- Feature Name 2
+  Double,                                 !- Feature Data Type 2
+  1364.8641989616569;                     !- Feature Value 2
+
+OS:AdditionalProperties,
+  {ad0a7511-3c26-4cfc-83a1-1de063736351}, !- Handle
+  {c7c7f7f0-ab31-4413-b812-8a2b6a373a3c}, !- Object Name
+  Subsurface name,                        !- Feature Name 1
+  String,                                 !- Feature Data Type 1
+  Sub Surface 4,                          !- Feature Value 1
+  Embodied carbon,                        !- Feature Name 2
+  Double,                                 !- Feature Data Type 2
+  1032.9919948811387;                     !- Feature Value 2
 
