@@ -5,7 +5,7 @@ from measure import ECReport
 
 # Set the current directory path and model path
 CURRENT_DIR_PATH = Path(__file__).parent.absolute()
-model_path = CURRENT_DIR_PATH / "tests/example_model_with_enhancements.osm"
+model_path = CURRENT_DIR_PATH / "tests/example_model_2_with_AdditionalProperties.osm"
 
 # Load the model
 translator = openstudio.osversion.VersionTranslator()
