@@ -85,7 +85,7 @@ def fetch_epd_data(url,api_token):
     return: Parsed JSON response or empty list on failure.
     """
     try: 
-        print(f"Fetching data from URL: {url}")  # Log the URL being fetched
+        # print(f"Fetching data from URL: {url}")  # Log the URL being fetched
         # API configuration
         HEADERS = {"Accept": "application/json", "Authorization": "Bearer " + api_token}
         response = requests.get(url, headers=HEADERS, verify=False)
@@ -339,7 +339,7 @@ def compute_gwp_data(keys, epd_list_by_material, epd_type, gwp_statistic):
         "gwp_per_m3": "gwp_per_m3 (kg CO2 eq/m3)"
     }
     for key, epds in zip(keys, epd_list_by_material):
-        print(key)
+        # print(key)
         gwp_data[key] = {
             "gwp_per_m2": 0.0,
             "gwp_per_kg": 0.0,
@@ -401,22 +401,22 @@ def main():
     print("Fetching EC3 EPD data...")
 
     for category, list in material_category.items():
-        print(material_category[category])
+        # print(material_category[category])
         for name in list:
-            print(name)
+            # print(name)
             product_url = generate_url(name, endpoint="materials", epd_type="Product",insulation_application='Exterior%20Wall')
             industry_url = generate_url(name, endpoint="industry_epds", epd_type="Industry")
 
             product_epd_data = fetch_epd_data(product_url,API_TOKEN) 
             industrial_epd_data = fetch_epd_data(industry_url,API_TOKEN)
-            print(f"Number of  product EPDs for {name}: {len(product_epd_data)}")
-            print(f"Number of  industrial EPDs for {name}: {len(industrial_epd_data)}")
+            # print(f"Number of  product EPDs for {name}: {len(product_epd_data)}")
+            # print(f"Number of  industrial EPDs for {name}: {len(industrial_epd_data)}")
             for idx, epd in enumerate(product_epd_data, start=1):
                 parsed_data = parse_product_epd(epd)
-                print(f"Product EPD #{idx}: {json.dumps(parsed_data, indent=4)}")
+                # print(f"Product EPD #{idx}: {json.dumps(parsed_data, indent=4)}")
             for idx, epd in enumerate(industrial_epd_data, start=1):
                 parsed_data = parse_industrial_epd(epd)
-                print(f"Industrial EPD #{idx}: {json.dumps(parsed_data, indent=4)}")
+                # print(f"Industrial EPD #{idx}: {json.dumps(parsed_data, indent=4)}")
 
 if __name__ == "__main__":
     main()

@@ -8,6 +8,13 @@ import numpy as np
 import pprint as pp
 import sys
 import os
+from resources.EC3_lookup import *
+import urllib3
+import pprint as pp
+import pandas as pd
+
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+
 # current_dir = os.path.dirname(__file__)
 # root_dir = os.path.abspath(os.path.join(current_dir, '..', '..', '..'))
 # sys.path.insert(0, root_dir)
@@ -37,8 +44,17 @@ class IncreaseInsulationRValueForExteriorWalls(openstudio.measure.ModelMeasure):
     # for insulation layer
     @staticmethod
     def insulation_material_options():
-        return ["Mineral%20Wool","Cellulose","Fiberglass","EPS","XPS","GPS","Polyisocyanurate","Polyethylene"]
-    
+        return [
+            "Mineral Wool",
+            "Cellulose",
+            "Fiberglass",
+            "Expanded Polystyrene (EPS)",
+            "Extruded Polystyrene (XPS)",
+            "Graphite Polystyrene (GPS)",
+            "Polyiso (ISO)",
+            "Expanded Polyethylene",
+            "Other"]  
+
     @staticmethod
     def insulation_application_options():
         return ["Wall","Exterior%20Wall","Roof","Below%20Grade","Duct"]
@@ -114,7 +130,7 @@ class IncreaseInsulationRValueForExteriorWalls(openstudio.measure.ModelMeasure):
         args.append(epd_type)
 
         # Dropdown list of available insulation materials
-        material_choices = ["Fiberglass batt", "Blown-in cellulose", "Blown-in fiberglass", "Spray foam", "Mineral wool"]
+        material_choices = ["Mineral Wool", "Cellulose", "Fiberglass", "Expanded Polystyrene (EPS)", "Extruded Polystyrene (XPS)", "Graphite Polystyrene (GPS)", "Polyiso (ISO)", "Expanded Polyethylene", "Other"]
         insulation_material_type = openstudio.measure.OSArgument.makeChoiceArgument("insulation_material_type", material_choices, True)
         insulation_material_type.setDisplayName("Chosen Retrofit Material")
         insulation_material_type.setDefaultValue("Fiberglass batt")
@@ -174,6 +190,105 @@ class IncreaseInsulationRValueForExteriorWalls(openstudio.measure.ModelMeasure):
 
         return args
 
+    def calculate_total_gwp_with_density_fallback(self, epd_data, insulated_surface_area_m2, insulated_surface_thickness_m, material_name=None):
+        """
+        Calculates total embodied carbon (kg CO2 eq) for insulation surface.
+        Tries:
+          1) Mass-based using EPD density if available
+          2) Mass-based using typical density by material if EPD data is missing
+          3) Falls back to area × gwp_per_m2 assuming it's for installed thickness
+        """
+
+        # Define typical density (ρ) values in kg/m³ for each material
+        material_density_dict = {
+            "Mineral Wool": 90,                   # range: 60–100 kg/m³ (batts) :https://www.engineeringtoolbox.com/thermal-insulation-d_922.html
+            "Cellulose": 50,                      # loose fill: 45–60 kg/m³ :https://www.cellulose.org/HomeOwners/Technical-Information
+            "Fiberglass": 30,                     # loose fill: 10–30 kg/m³, batts ~30–40 :https://www.engineeringtoolbox.com/thermal-insulation-d_922.html
+            "Expanded Polystyrene (EPS)": 20,     # 15–30 kg/m³ :https://www.epsindustry.org/insulation/eps-insulation-properties
+            "Extruded Polystyrene (XPS)": 35,     # 30–45 kg/m³ :https://www.foam-tech.com/theory/foam_properties.htm
+            "Graphite Polystyrene (GPS)": 20,     # similar to EPS with graphite ~15–30 kg/m³ :https://www.neopor.basf.com/global/en/performance.html
+            "Polyiso (ISO)": 35,                  # polyiso rigid foam board: ~30–40 kg/m³ :https://www.rdh.com/wp-content/uploads/2018/04/Polyisocyanurate-Insulation.pdf
+            "Expanded Polyethylene": 25,          # ~25–35 kg/m³ :https://pmc.ncbi.nlm.nih.gov/articles/PMC9658328/
+            "Other": 30                           # placeholder generic (phenolic ~35 kg/m³, aerogel 3–100) :https://www.ashrae.org/technical-resources/ashrae-handbook
+        }
+
+
+        gwp_per_m2 = float(epd_data.get("gwp_per_m2", 0) or 0)
+        gwp_per_kg = float(epd_data.get("gwp_per_kg", 0) or 0)
+
+        # Try mass-based from EPD density
+        density_str = epd_data.get("density")
+        if density_str and density_str.lower() != 'none':
+            density_kgm3 = float(density_str.split()[0])
+            volume_m3 = insulated_surface_area_m2 * insulated_surface_thickness_m
+            mass_kg = volume_m3 * density_kgm3
+            return mass_kg * gwp_per_kg
+        else:
+            density_kgm3 = material_density_dict.get(material_name, material_density_dict["Other"])
+            volume_m3 = insulated_surface_area_m2 * insulated_surface_thickness_m
+            mass_kg = volume_m3 * density_kgm3
+            return mass_kg * gwp_per_kg
+
+
+    def pull_EC3_data(self, insulation_material_type):
+        insulation_application_type = "Exterior%20Wall"
+        material_name = "Insulation"
+
+        # Collecting parsed industrial & product EPDs
+        epd_summary = []
+
+        # Generate URLs
+        product_url = generate_url(
+            material_name=material_name,
+            endpoint="materials",
+            epd_type="Product",
+            insulation_application=insulation_application_type,
+            insulation_material=insulation_material_type,
+            page_size=100
+        )
+        industry_url = generate_url(
+            material_name=material_name,
+            endpoint="industry_epds",
+            epd_type="Industry",
+            insulation_application=insulation_application_type,
+            insulation_material=insulation_material_type,
+            page_size=100
+        )
+
+        # Fetch data
+        product_epd_data = fetch_epd_data(product_url, API_TOKEN)
+        industrial_epd_data = fetch_epd_data(industry_url, API_TOKEN)
+
+        # Parse product EPDs
+        for idx, epd in enumerate(product_epd_data, start=1):
+            parsed_data = parse_product_epd(epd)
+            # print(f"Product EPD #{idx}: {json.dumps(parsed_data, indent=4)}")
+
+            epd_summary.append({
+                "epd_name": parsed_data.get("epd_name"),
+                "mass_per_declared_unit": parsed_data.get("mass_per_declared_unit"),
+                "gwp_per_m2 (kg CO2 eq/m2)": parsed_data.get("gwp_per_m2 (kg CO2 eq/m2)"),
+                "gwp_per_m3 (kg CO2 eq/m3)": parsed_data.get("gwp_per_m3 (kg CO2 eq/m3)"),
+                "gwp_per_kg (kg CO2 eq/kg)": parsed_data.get("gwp_per_kg (kg CO2 eq/kg)"),
+                "density (kg/m3)": parsed_data.get("density")
+            })
+
+        # Parse industrial EPDs
+        for idx, epd in enumerate(industrial_epd_data, start=1):
+            parsed_data = parse_industrial_epd(epd)
+            epd_summary.append({
+                "epd_name": parsed_data.get("epd_name"),
+                "mass_per_declared_unit": parsed_data.get("mass_per_declared_unit"),
+                "gwp_per_m2 (kg CO2 eq/m2)": parsed_data.get("gwp_per_m2 (kg CO2 eq/m2)"),
+                "gwp_per_m3 (kg CO2 eq/m3)": parsed_data.get("gwp_per_m3 (kg CO2 eq/m3)"),
+                "gwp_per_kg (kg CO2 eq/kg)": parsed_data.get("gwp_per_kg (kg CO2 eq/kg)"),
+                "density (kg/m3)": parsed_data.get("density")
+            })
+
+        # Create and return DataFrame
+        df_epd_summary = pd.DataFrame(epd_summary)
+        return df_epd_summary
+
     def run(self, model, runner, user_arguments):
         if not runner.validateUserArguments(self.arguments(model), user_arguments):
             return False
@@ -219,11 +334,15 @@ class IncreaseInsulationRValueForExteriorWalls(openstudio.measure.ModelMeasure):
 
         # Define typical thermal conductivity (k) values in W/m-K for each material
         material_k_dict = {
-            "Fiberglass batt": 0.045,
-            "Blown-in cellulose": 0.042,
-            "Blown-in fiberglass": 0.053,
-            "Spray foam": 0.025,
-            "Mineral wool": 0.040
+            "Mineral Wool": 0.032,                     # range: 0.032–0.044 W/m·K :https://www.buyinsulationonline.co.uk/blog/the-ultimate-guide-to-insulation-values
+            "Cellulose": 0.040,                        # range: 0.036–0.042 W/m·K :https://www.engineeringtoolbox.com/thermal-conductivity-d_429.html
+            "Fiberglass": 0.033,                       # range: 0.032–0.044 W/m·K :https://www.buyinsulationonline.co.uk/blog/pir-vs-mineral-wool-insulation
+            "Expanded Polystyrene (EPS)": 0.034,       # 0.032–0.038 (up to ~0.046) :https://www.engineeringtoolbox.com/thermal-conductivity-d_429.html
+            "Extruded Polystyrene (XPS)": 0.033,       # 0.029–0.039 W/m·K :https://en.wikipedia.org/wiki/List_of_thermal_conductivities
+            "Graphite Polystyrene (GPS)": 0.030,       # enhanced EPS: ~0.029–0.034 W/m·K :https://www.neopor.basf.com/global/en/performance.html
+            "Polyiso (ISO)": 0.025,                    # polyiso/PIR: 0.022–0.028 W/m·K :https://www.buyinsulationonline.co.uk/blog/the-ultimate-guide-to-insulation-values
+            "Expanded Polyethylene": 0.032,           # PE foam: 0.032–0.034 W/m·K :https://pmc.ncbi.nlm.nih.gov/articles/PMC9658328/
+            "Other": 0.030                             # placeholder (e.g., phenolic, aerogel; 0.018–0.060+ W/m·K) :https://www.ashrae.org/technical-resources/ashrae-handbook
         }
 
         # Lookup selected material's thermal conductivity
@@ -289,12 +408,12 @@ class IncreaseInsulationRValueForExteriorWalls(openstudio.measure.ModelMeasure):
         for surface in model.getSurfaces():
             # Filter to exterior walls only
             if surface.surfaceType() == "Wall" and surface.outsideBoundaryCondition() == "Outdoors":
-                print(surface.nameString())         
+                # print(surface.nameString())         
                 ext_surfaces.append(surface)
                 # Get associated construction, if present
                 if surface.construction().is_initialized():
                     construction = surface.construction().get()
-                    print(construction)
+                    # print(construction)
                     if construction.nameString() not in constructions:
                         constructions[construction.nameString()] = construction
 
@@ -304,8 +423,6 @@ class IncreaseInsulationRValueForExteriorWalls(openstudio.measure.ModelMeasure):
             return True
 
         modified_constructions = []
-
-        print(constructions)
 
         # Loop through unique constructions found on exterior walls
         for name, construction in constructions.items():
@@ -331,7 +448,7 @@ class IncreaseInsulationRValueForExteriorWalls(openstudio.measure.ModelMeasure):
                 runner.registerInfo(f"No suitable insulation found in construction: {name}")
                 continue
 
-            # Skip update if construction already meets or exceeds target R-value (and no reduction is allowed)
+            # Skip update if construction already meets or exceeds target R-value
             if max_r >= r_value_si and not allow_reduction:
                 runner.registerInfo(f"'{name}' already meets or exceeds the R-value target.")
                 continue
@@ -343,187 +460,131 @@ class IncreaseInsulationRValueForExteriorWalls(openstudio.measure.ModelMeasure):
             required_thickness = delta_r * selected_k
 
             # Calculate total area of walls using this construction
-            area_m2 = sum([s.grossArea() for s in ext_surfaces if s.construction().get().nameString() == name])
+            area_m2 = sum(
+                s.grossArea()
+                for s in ext_surfaces
+                if s.construction().get().nameString() == name
+            )
 
             # Volume = thickness * area
             volume_m3 = area_m2 * required_thickness
 
             # Report to user
-            runner.registerInfo(f"'{insulation_material_type}' selected. Required added thickness: {required_thickness:.4f} m. Total volume needed: {volume_m3:.2f} m³.")
+            runner.registerInfo(
+                f"'{insulation_material_type}' selected. "
+                f"Required added thickness: {required_thickness:.4f} m. "
+                f"Total volume needed: {volume_m3:.2f} m³."
+            )
 
             # Clone the original construction for modification
             new_construction = construction.clone(model).to_Construction().get()
 
-            # Create new insulation material with the needed R-value
+            # Create new insulation material
             new_insul = openstudio.model.MasslessOpaqueMaterial(model)
             new_insul.setName(f"{insulation_material_type}_Added")
             new_insul.setThermalResistance(delta_r)
 
-            # Insert new insulation layer after the existing insulation
+            # Insert after existing insulation layer
             layer_list = list(new_construction.layers())
             layer_list.insert(insul_index + 1, new_insul)
             new_construction.setLayers(layer_list)
 
-            # Replace the construction on each surface using the original one
+            # Replace on each surface
             for surface in ext_surfaces:
                 if surface.construction().is_initialized() and surface.construction().get().nameString() == name:
                     surface.setConstruction(new_construction)
 
-            modified_constructions.append(new_construction)
+            # Store info
+            modified_constructions.append({
+                "construction": new_construction,
+                "total_area_m2": area_m2,
+                "added_thickness_m": required_thickness
+            })
 
-            # print(new_construction)
+        print("====== Modified Constructions Summary ======")
+        for item in modified_constructions:
+            print("+++++++++++++++++")
+            print(f"Construction: {item['construction'].nameString()}")
+            print(f"Total Area: {item['total_area_m2']:.2f} m²")
+            print(f"Added Thickness: {item['added_thickness_m']:.4f} m")
 
         #######################  EC3 stuff ###################
 
-        embodied_carbon_per_modified_construction = []
+        # Pull EC3 data for the chosen insulation type once
+        ec3_data = self.pull_EC3_data(insulation_material_type)
 
-        for modified_construction in modified_constructions:
-            props = modified_construction.additionalProperties()
-            props.setFeature("embodied carbon", 5.0)      #  <------   Modify this to hook it up to  embodied_carbon_per_modified_construction
-            props.setFeature("modified material", "wall insulation")      #  <------   Modify this to hook it up to  embodied_carbon_per_modified_construction
+        # Create list to store summary rows
+        gwp_summary = []
+
+        # Iterate through all modified constructions to compute embodied carbon
+        for item in modified_constructions:
+            total_area_m2 = item["total_area_m2"]
+            added_thickness_m = item["added_thickness_m"]
+
+            # Use the first EPD from your pull_EC3_data dataframe for simplicity
+            # (you could also apply median or your own filtering)
+            epd_row = ec3_data.iloc[0]
+            epd_data = {
+                "mass_per_declared_unit": epd_row.get("mass_per_declared_unit"),
+                "density": epd_row.get("density (kg/m3)"),
+                "gwp_per_m2": epd_row.get("gwp_per_m2 (kg CO2 eq/m2)"),
+                "gwp_per_kg": epd_row.get("gwp_per_kg (kg CO2 eq/kg)")
+            }
+
+            # Calculate total GWP for this added insulation
+            total_gwp_kgco2 = self.calculate_total_gwp_with_density_fallback(
+                epd_data,
+                insulated_surface_area_m2=total_area_m2,
+                insulated_surface_thickness_m=added_thickness_m,
+                material_name=insulation_material_type
+            )
+
+
+            # Store result in summary table
+            gwp_summary.append({
+                "construction_name": item["construction"].nameString(),
+                "total_area_m2": total_area_m2,
+                "added_thickness_m": added_thickness_m,
+                "total_gwp_kgCO2eq": total_gwp_kgco2
+            })
+
+
+        # Convert to DataFrame for reporting
+        df_gwp_summary = pd.DataFrame(gwp_summary)
+
+        # Pretty print or save
+        print("\n==== GWP Summary for Modified Constructions ====")
+        print(df_gwp_summary)
+
+        ##########################################
+
+        for idx, item in enumerate(modified_constructions):
+            construction = item["construction"]
+            total_area_m2 = item["total_area_m2"]
+            added_thickness_m = item["added_thickness_m"]
+            total_gwp_kgco2 = gwp_summary[idx]["total_gwp_kgCO2eq"]
+
+            props = construction.additionalProperties()
+            props.setFeature("embodied_carbon_kgCO2eq", total_gwp_kgco2)
+            props.setFeature("modified_material", insulation_material_type)
+            props.setFeature("total_area_m2", total_area_m2)
+            props.setFeature("added_thickness_m", added_thickness_m)
+
+            runner.registerInfo(
+                f"Tagged '{construction.nameString()}' with embodied carbon: "
+                f"{total_gwp_kgco2:.2f} kg CO₂ eq over {total_area_m2:.2f} m²"
+            )
 
 
 
-        # model.getAdditionalPropertiess()
+        for prop in model.getAdditionalPropertiess():
+            print(prop)
 
 
 
-
-
-
-
-        # # get EPD data
-        # product_epds = []
-        # industrial_epds = []
-        # brick_product_url = generate_url(material_name = "Brick", epd_type= "Product", endpoint = "materials")
-        # concrete_product_url = generate_url(material_name = "PrecastConcrete", epd_type= "Product", endpoint = "materials")
-        # insulation_product_url = generate_url(material_name = "Insulation", epd_type= "Product", endpoint = "materials", insulation_material = insulation_material_type, insulation_application = insulation_application_type)
-        # gypsum_board_product_url = generate_url(material_name = "Gypsum", epd_type= "Product", endpoint = "materials")
-        # brick_industry_url = generate_url(material_name = "Brick", epd_type= "Industry", endpoint = "industry_epds")
-        # concrete_industry_url = generate_url(material_name = "PrecastConcrete", epd_type= "Industry", endpoint = "industry_epds")
-        # insulation_industry_url = generate_url(material_name = "Insulation", epd_type= "Industry", endpoint = "industry_epds", insulation_material = insulation_material_type, insulation_application = insulation_application_type)
-        # gypsum_board_industry_url = generate_url(material_name = "Gypsum", epd_type= "Industry", endpoint = "industry_epds")
-        
-        # # fetch both product and industrial EPDs from url 
-        # product_epds.append(fetch_epd_data(url = brick_product_url, api_token = api_key))
-        # product_epds.append(fetch_epd_data(url = concrete_product_url, api_token = api_key))
-        # product_epds.append(fetch_epd_data(url = insulation_product_url, api_token = api_key))
-        # product_epds.append(fetch_epd_data(url = gypsum_board_product_url, api_token = api_key))
-        # industrial_epds.append(fetch_epd_data(url = brick_industry_url, api_token = api_key))
-        # industrial_epds.append(fetch_epd_data(url = concrete_industry_url, api_token = api_key))
-        # industrial_epds.append(fetch_epd_data(url = insulation_industry_url, api_token = api_key))
-        # industrial_epds.append(fetch_epd_data(url = gypsum_board_industry_url, api_token = api_key))
-
-        # keys = ["brick", "precast concrete", "insulation", "gypsum board"] # following the appending order above
-        # gwp_data_product = compute_gwp_data(keys, product_epds, "Product", gwp_statistic)
-        # gwp_data_industrial = compute_gwp_data(keys, industrial_epds, "Industrial", gwp_statistic)
-
-        # # dictionary holder for non-zero gwp values
-        # final_gwp_data = {}
-        # # recording EPD type actually used
-        # final_epd_type = {}
-        # for key in keys:
-        #     prod_val = gwp_data_product[key]["gwp_per_m3"]
-        #     ind_val = gwp_data_industrial[key]["gwp_per_m3"]
-        #     # if user choose product epds
-        #     if epd_type == "Product":
-        #         if prod_val != 0.0:
-        #             final_gwp_data[key] = gwp_data_product[key]
-        #             final_epd_type[key] = "Product"
-        #         elif ind_val != 0.0:
-        #             final_gwp_data[key] = gwp_data_industrial[key]
-        #             final_epd_type[key] = "Industrial"
-        #             runner.registerInfo(f"{key}: Product gwp_per_m3 is 0.0. Using Industrial EPD instead.")
-        #         else:
-        #             final_gwp_data[key] = gwp_data_product[key]  # fallback, both are 0
-        #             final_epd_type[key] = "Product"
-        #             runner.registerWarning(f"{key}: Both Product and Industrial gwp_per_m3 are 0.0.")
-        #     # if user choose industrial epds
-        #     elif epd_type == "Industrial":
-        #         if ind_val != 0.0:
-        #             final_gwp_data[key] = gwp_data_industrial[key]
-        #             final_epd_type[key] = "Industrial"
-        #         elif prod_val != 0.0:
-        #             final_gwp_data[key] = gwp_data_product[key]
-        #             final_epd_type[key] = "Product"
-        #             runner.registerInfo(f"{key}: Industrial gwp_per_m3 is 0.0. Using Product EPD instead.")
-        #         else:
-        #             final_gwp_data[key] = gwp_data_industrial[key]  # fallback, both are 0
-        #             final_epd_type[key] = "Industrial"
-        #             runner.registerWarning(f"{key}: Both Industrial and Product gwp_per_m3 are 0.0.")
-
-        # for surface_name, surface_data in surface_dict.items():
-        #     total_embodied_carbon = 0.0
-        #     for layer_key, layer_data in surface_data.items():
-        #         if layer_key.startswith("layer") and isinstance(layer_data, dict):
-        #             material_name = layer_data.get("material name", "").lower()
-        #             matched = [k for k in keys if k in material_name]
-        #             if matched:
-        #                 match_key = matched[0]
-        #                 print(f"{surface_name} - {layer_key}: {material_name} → matched: {matched[0]}")
-        #                 surface_dict[surface_name][layer_key]["GWP values"] = {} 
-        #                 surface_dict[surface_name][layer_key]["GWP values"] = final_gwp_data[match_key]
-        #             # calcualte embodied carbon of each wall construction (surface) (product lifetime is not counted here)
-        #             volume = layer_data.get("Volume (m3)", 0.0)
-        #             gwp_per_m3 = layer_data.get("GWP values", {}).get("gwp_per_m3", 0.0)
-        #             embodied_carbon = volume * gwp_per_m3
-        #             layer_data["embodied carbon"] = embodied_carbon 
-        #             total_embodied_carbon += embodied_carbon
-        #     surface_data["Wall embodied carbon"] = total_embodied_carbon
-
-        #     # attach additional properties to openstudio material
-        #     additional_properties = surface_data["Surface object"].additionalProperties()
-        #     additional_properties.setFeature("Subsurface name", surface_name)
-        #     additional_properties.setFeature("Embodied carbon", surface_data["Wall embodied carbon"])
-                
-        # pp.pprint(surface_dict)
-        # save the following for future, do baseline calculation first
-        # for name, construction in constructions.items():
-        #     layers = construction.layers()
-        #     #max_r_value = 0
-        #     insul_index = -1
-
-        #     for i, mat in enumerate(layers):
-        #         opaque_mat = mat.to_OpaqueMaterial()
-        #         if opaque_mat.is_initialized():
-        #             r_val = opaque_mat.get().thermalResistance()
-        #             if r_val > max_r_value:
-        #                 max_r_value = r_val
-        #                 insul_index = i
-
-        #     if insul_index == -1:
-        #         runner.registerInfo(f"No insulation material found in construction: {name}")
-        #         continue
-
-        #     if max_r_value >= r_value_si and not allow_reduction:
-        #         runner.registerInfo(f"Construction '{name}' already meets or exceeds the target R-value.")
-        #         continue
-
-        #     new_construction = construction.clone(model).to_Construction().get()
-        #     new_mat = layers[insul_index].clone(model).to_OpaqueMaterial().get()
-        #     new_mat.setThermalResistance(r_value_si)
-        #     new_construction.setLayer(insul_index, new_mat)
-        #     #modified_constructions.append(new_construction)
-
-        #     if material_cost_ip > 0:
-        #         openstudio.model.LifeCycleCost.createLifeCycleCost(
-        #             "LCC_Material", new_construction, material_cost_si,
-        #             "CostPerArea", "Construction", 20, 0
-        #         )
-
-        #     if one_time_cost_ip > 0:
-        #         openstudio.model.LifeCycleCost.createLifeCycleCost(
-        #             "LCC_OneTime", new_construction, one_time_cost_si,
-        #             "CostPerArea", "Construction", 0, years_until_cost
-        #         )
-
-        #     for surface in ext_surfaces:
-        #         if surface.construction().is_initialized() and surface.construction().get().nameString() == name:
-        #             surface.setConstruction(new_construction)
-
-        # runner.registerFinalCondition(
-        #     f"Modified {len(modified_constructions)} construction(s) to meet target R-value of {r_value_ip} ft²·h·°F/Btu."
-        # )
+        runner.registerFinalCondition(
+            f"Modified {len(modified_constructions)} construction(s) to meet target R-value of {r_value_ip} ft²·h·°F/Btu."
+        )
         return True
 
 # Register the measure
