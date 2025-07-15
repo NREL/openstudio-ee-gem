@@ -1,3 +1,7 @@
+# dfg to run this test with `openstudio measure my_test.py` need to install libraries used on E+ python with this command line
+# python -m pip install --target=/Applications/OpenStudio-3.10.0/EnergyPlus/python_lib requests
+# python -m pip install --target=/Applications/OpenStudio-3.10.0/EnergyPlus/python_lib http (this fails looking for module named request)
+
 import sys
 from pathlib import Path
 import openstudio
@@ -73,14 +77,17 @@ class TestWindowEnhancement:
         model = openstudio.model.Model()
         arguments = measure.arguments(model)
 
-        # assert arguments.size() == 10  # Adjust the expected size if necessary
-        # assert arguments[0].name() == "igu_component_name"
-        # assert arguments[1].name() == "frame_cross_section_area"
-        # assert arguments[2].name() == "declared_unit"
-        # assert arguments[3].name() == "gwp"
-
-        # Type Check
-        # assert arguments[0].type() == openstudio.measure.OSArgument.makeStringArgument("test", True).type()
+        assert arguments.size() == 10  # Adjust the expected size if necessary
+        assert arguments[0].name() == "analysis_period"
+        assert arguments[1].name() == "igu_option"
+        assert arguments[2].name() == "igu_lifetime"
+        assert arguments[3].name() == "wf_lifetime"
+        assert arguments[4].name() == "wf_option"
+        assert arguments[5].name() == "frame_cross_section_area"
+        assert arguments[6].name() == "epd_type"
+        assert arguments[7].name() == "gwp_statistic"
+        assert arguments[8].name() == "total_embodied_carbon"
+        assert arguments[9].name() == "api_key"
 
         del model
         gc.collect()
@@ -98,13 +105,13 @@ class TestWindowEnhancement:
 
         print(f"Measure result: {result.value().valueName()}")
 
-        # assert result.value().valueName() == "Success"
+        assert result.value().valueName() == "Success"
 
         # Save model
-        # output_file = CURRENT_DIR_PATH / "output" / "example_model_with_enhancements.osm"
-        # output_file.parent.mkdir(parents=True, exist_ok=True)
-        # model.save(output_file, True)
-        # print(f"Model saved to {output_file}")
+        output_file = CURRENT_DIR_PATH / "output" / "example_model_with_enhancements.osm"
+        output_file.parent.mkdir(parents=True, exist_ok=True)
+        model.save(output_file, True)
+        print(f"Model saved to {output_file}")
 
         del model
         gc.collect()
@@ -122,7 +129,7 @@ class TestWindowEnhancement:
 
         print(f"Detailed Result: {result.toJSON()}")
 
-        # assert result.value().valueName() == "Success", f"Measure failed with status: {result.value().valueName()}"
+        assert result.value().valueName() == "Success", f"Measure passed with status: {result.value().valueName()}"
 
 
         del model
@@ -151,18 +158,21 @@ class TestWindowEnhancement:
         set_arg("analysis_period", 30)
         #set_arg("igu_component_name", "TestIGU")
         set_arg("igu_option", "low_emissivity")
-        set_arg("number_of_panes", 1)
+        #set_arg("number_of_panes", 1)
         set_arg("igu_lifetime", 15)
         set_arg("wf_lifetime", 15)
         set_arg("wf_option", "anodized")
         set_arg("frame_cross_section_area", 0.025)
         #set_arg("declared_unit", "m2")
         set_arg("gwp_statistic", "mean")
-        set_arg("gwp_unit", "per volume (m^3)")
+        #set_arg("gwp_unit", "per volume (m^3)")
         set_arg("total_embodied_carbon", 0.0)
 
-        # Run the measure
-        # result = measure.run(model, runner, arg_map)
+    
+
+        print(f"Detailed Result: {result.toJSON()}")
+
+        assert result.value().valueName() == "Success", f"Measure passed with status: {result.value().valueName()}"
 
 
         # Print stdout logs

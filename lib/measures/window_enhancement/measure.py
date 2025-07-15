@@ -24,7 +24,7 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
 
     def description(self):
         """Brief description of the measure."""
-        return "Calculates embodied emissions for window frame enhancements using EC3 database lookup."
+        return "Calculates embodied emissions for window frame enhancements using EC3 database lookup. This measure only functions if you have an EC3 key and the required Python libraries installed. In addition to getting embodied car value it does also alter the thermal performance of the windows based on the selections made"
 
     def modeler_description(self):
         """Detailed description of the measure."""
@@ -105,7 +105,7 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
         epd_type.setDescription("Type of EPD for searching GWP values, Product EPDs refer to specific products from a manufacturer, while industrial EPDs represent average data across an entire industry sector.")
         args.append(epd_type)
 
-        # make an argument for selcting which gwp statistic to use for embodied carbon calculation
+        # make an argument for selecting which gwp statistic to use for embodied carbon calculation
         gwp_statistics_chs = openstudio.StringVector()
         for gwp_statistic in self.gwp_statistics():
             gwp_statistics_chs.append(gwp_statistic)
@@ -116,7 +116,7 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
 
         # make an argument for total embodied carbon (TEC) of whole construction/building
         total_embodied_carbon = openstudio.measure.OSArgument.makeDoubleArgument("total_embodied_carbon", True)
-        total_embodied_carbon.setDisplayName("Total Embodeid Carbon of Building/Building Assembly")
+        total_embodied_carbon.setDisplayName("Total Embodied Carbon of Building/Building Assembly")
         total_embodied_carbon.setDescription("Total GWP or embodied carbon intensity of the building (assembly) in kg CO2 eq.")
         total_embodied_carbon.setDefaultValue(0.0)
         args.append(total_embodied_carbon)

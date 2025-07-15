@@ -1,20 +1,23 @@
 # EC3 API Lookup Script
-import requests
 import json
 import re
 from typing import Dict, Any, List
 from pathlib import Path
 import configparser
 from datetime import datetime
-import os
 import numpy as np
+import os
 
 script_dir = os.path.dirname(os.path.abspath(__file__))
 repo_root = os.path.abspath(os.path.join(script_dir, "../../../.."))
 config_path = os.path.join(repo_root, "config.ini")
 
+# this measure doesn't function without EC3 token and required Python libraries installed
 if not os.path.exists(config_path):
-    raise FileNotFoundError(f"Config file not found: {config_path}")
+    raise FileNotFoundError(f"Config file not found: {config_path}. Please setup your EC3 token before attempting to run this measure.")
+
+# load custom libraries after confirming if config.ini 
+import requests
 
 config = configparser.ConfigParser()
 config.read(config_path)
