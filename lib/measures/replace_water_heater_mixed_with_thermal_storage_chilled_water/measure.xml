@@ -3,8 +3,8 @@
   <schema_version>3.1</schema_version>
   <name>replace_water_heater_mixed_with_thermal_storage_chilled_water</name>
   <uid>f219279a-96b6-4636-b663-467d554e42a5</uid>
-  <version_id>7f553fb6-8a67-4bb0-9ff9-3767354732ea</version_id>
-  <version_modified>2024-11-16T23:47:44Z</version_modified>
+  <version_id>ed018469-1529-4245-a3d6-10b6a2e18d42</version_id>
+  <version_modified>2025-07-31T19:25:29Z</version_modified>
   <xml_checksum>D48F381B</xml_checksum>
   <class_name>ReplaceWaterHeaterMixedWithThermalStorageChilledWater</class_name>
   <display_name>Replace Water Heater Mixed with Thermal Storage Chilled Water</display_name>
@@ -53,7 +53,7 @@
       <filename>LICENSE.md</filename>
       <filetype>md</filetype>
       <usage_type>license</usage_type>
-      <checksum>8C5A8023</checksum>
+      <checksum>FFCBFF29</checksum>
     </file>
     <file>
       <filename>README.md</filename>

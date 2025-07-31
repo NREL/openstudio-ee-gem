@@ -3,8 +3,8 @@
   <schema_version>3.1</schema_version>
   <name>reduce_night_time_electric_equipment_loads</name>
   <uid>7bde0d05-3714-43e2-91b4-aa1e12e714bf</uid>
-  <version_id>c28de9fd-3c8d-41ed-b1a9-27f510c660bb</version_id>
-  <version_modified>2024-11-16T23:47:44Z</version_modified>
+  <version_id>c1c36102-a2f9-400e-9a14-9408192fb785</version_id>
+  <version_modified>2025-07-31T19:25:29Z</version_modified>
   <xml_checksum>F4EB279D</xml_checksum>
   <class_name>ReduceNightTimeElectricEquipmentLoads</class_name>
   <display_name>Reduce Night Time Electric Equipment Loads</display_name>
@@ -201,7 +201,7 @@
       <filename>LICENSE.md</filename>
       <filetype>md</filetype>
       <usage_type>license</usage_type>
-      <checksum>8C5A8023</checksum>
+      <checksum>FFCBFF29</checksum>
     </file>
     <file>
       <filename>README.md</filename>

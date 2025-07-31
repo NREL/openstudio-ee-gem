@@ -3,8 +3,8 @@
   <schema_version>3.1</schema_version>
   <name>reduce_lighting_loads_by_percentage</name>
   <uid>791f3404-a28b-4a80-ba3f-e15b339e39ea</uid>
-  <version_id>17f42249-7e76-4832-bbb4-a32ad5396fa0</version_id>
-  <version_modified>2024-11-16T23:47:46Z</version_modified>
+  <version_id>1f878175-b08b-439e-8e02-5389f181a29b</version_id>
+  <version_modified>2025-07-31T19:25:30Z</version_modified>
   <xml_checksum>293730A7</xml_checksum>
   <class_name>ReduceLightingLoadsByPercentage</class_name>
   <display_name>Reduce Lighting Loads by Percentage</display_name>
@@ -17,10 +17,10 @@
       <type>Choice</type>
       <required>true</required>
       <model_dependent>false</model_dependent>
-      <default_value>{8eb56c19-e760-4201-b515-9c4fc169c97a}</default_value>
+      <default_value>{4a3c0b87-6e86-4ef5-9994-3596335f7432}</default_value>
       <choices>
         <choice>
-          <value>{8eb56c19-e760-4201-b515-9c4fc169c97a}</value>
+          <value>{4a3c0b87-6e86-4ef5-9994-3596335f7432}</value>
           <display_name>*Entire Building*</display_name>
         </choice>
       </choices>
@@ -139,7 +139,7 @@
       <filename>LICENSE.md</filename>
       <filetype>md</filetype>
       <usage_type>license</usage_type>
-      <checksum>8C5A8023</checksum>
+      <checksum>FFCBFF29</checksum>
     </file>
     <file>
       <filename>README.md</filename>

@@ -1,5 +1,8 @@
 # OpenStudio(R) EE Gem
 
+## Version 0.12.2
+* Updated licenses and measure files
+
 ## Version 0.12.0
 * Support for OpenStudio 3.10 (upgrade to standards gem 0.8.2, extension gem 0.9.1)
 * todo add log after finalize bug fixes for this release

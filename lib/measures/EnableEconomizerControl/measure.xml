@@ -3,8 +3,8 @@
   <schema_version>3.1</schema_version>
   <name>enable_economizer_control</name>
   <uid>f8cc920d-8ae3-411a-922f-e6fed3223c4d</uid>
-  <version_id>33d2f7e1-fa07-4e3d-86af-b7ef4b9532f5</version_id>
-  <version_modified>2024-11-16T23:47:44Z</version_modified>
+  <version_id>a1889de8-ab49-4db6-98f0-3c65b0ef7cba</version_id>
+  <version_modified>2025-07-31T19:25:29Z</version_modified>
   <xml_checksum>ECE70A70</xml_checksum>
   <class_name>EnableEconomizerControl</class_name>
   <display_name>Enable Economizer Control</display_name>
@@ -136,7 +136,7 @@ The cost arguments are user arguments that start with a default of $0.
       <filename>LICENSE.md</filename>
       <filetype>md</filetype>
       <usage_type>license</usage_type>
-      <checksum>8C5A8023</checksum>
+      <checksum>FFCBFF29</checksum>
     </file>
     <file>
       <filename>README.md</filename>
