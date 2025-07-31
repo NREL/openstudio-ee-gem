@@ -8,7 +8,7 @@
 require 'openstudio'
 require 'openstudio/ruleset/ShowRunnerOutput'
 require 'minitest/autorun'
-require_relative '../measure.rb'
+require_relative '../measure'
 require 'fileutils'
 
 class CreateVariableSpeedRTUTest < Minitest::Test
@@ -21,7 +21,7 @@ class CreateVariableSpeedRTUTest < Minitest::Test
 
     # load the test model
     translator = OpenStudio::OSVersion::VersionTranslator.new
-    path = OpenStudio::Path.new(File.dirname(__FILE__) + '/example_model.osm')
+    path = OpenStudio::Path.new("#{File.dirname(__FILE__)}/example_model.osm")
     model = translator.loadModel(path)
     assert(!model.empty?)
     model = model.get
@@ -69,7 +69,7 @@ class CreateVariableSpeedRTUTest < Minitest::Test
     assert(result.warnings.empty?)
 
     # save the model to test output directory
-    output_file_path = OpenStudio::Path.new(File.dirname(__FILE__) + '/output/test_output.osm')
+    output_file_path = OpenStudio::Path.new("#{File.dirname(__FILE__)}/output/test_output.osm")
     model.save(output_file_path, true)
   end
 
@@ -82,7 +82,7 @@ class CreateVariableSpeedRTUTest < Minitest::Test
 
     # load the test model
     translator = OpenStudio::OSVersion::VersionTranslator.new
-    path = OpenStudio::Path.new(File.dirname(__FILE__) + '/example_model.osm')
+    path = OpenStudio::Path.new("#{File.dirname(__FILE__)}/example_model.osm")
     model = translator.loadModel(path)
     assert(!model.empty?)
     model = model.get
@@ -130,7 +130,7 @@ class CreateVariableSpeedRTUTest < Minitest::Test
     assert(result.warnings.empty?)
 
     # save the model to test output directory
-    output_file_path = OpenStudio::Path.new(File.dirname(__FILE__) + '/output/test_all_loops.osm')
+    output_file_path = OpenStudio::Path.new("#{File.dirname(__FILE__)}/output/test_all_loops.osm")
     model.save(output_file_path, true)
   end
 end

@@ -1,0 +1,6 @@
+{
+  "dependencies": {
+    "vscode-langservers-extracted": "^4.10.0",
+    "yaml-language-server": "^1.18.0"
+  }
+}

@@ -193,7 +193,8 @@ class ReduceSpaceInfiltrationByPercentage < OpenStudio::Measure::ModelMeasure
     end
 
     # helper to make numbers pretty (converts 4125001.25641 to 4,125,001.26 or 4,125,001). The definition be called through this measure.
-    def neat_numbers(number, roundto = 2) # round to 0 or 2)
+    # round to 0 or 2)
+    def neat_numbers(number, roundto = 2)
       if roundto == 2
         number = format '%.2f', number
       else
@@ -259,6 +260,7 @@ class ReduceSpaceInfiltrationByPercentage < OpenStudio::Measure::ModelMeasure
     # loop through space types
     space_types.each do |space_type|
       next if space_type.spaces.size <= 0
+
       space_type_infiltration_objects = space_type.spaceInfiltrationDesignFlowRates
       space_type_infiltration_objects.each do |space_type_infiltration_object|
         # call def to alter performance and life cycle costs

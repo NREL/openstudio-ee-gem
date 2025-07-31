@@ -292,7 +292,7 @@ class NzeHvac < OpenStudio::Measure::ModelMeasure
     # add an argument for ventilation schedule
 
     return args
-  end # end the arguments method
+  end
 
   def run(model, runner, user_arguments)
     super(model, runner, user_arguments)
@@ -347,6 +347,7 @@ class NzeHvac < OpenStudio::Measure::ModelMeasure
     model.getThermalZones.each do |zone|
       next if OpenstudioStandards::ThermalZone.thermal_zone_plenum?(zone)
       next if !OpenstudioStandards::ThermalZone.thermal_zone_heated?(zone) && !OpenstudioStandards::ThermalZone.thermal_zone_cooled?(zone)
+
       conditioned_zones << zone
     end
 
@@ -430,8 +431,8 @@ class NzeHvac < OpenStudio::Measure::ModelMeasure
     runner.registerFinalCondition("Added system type #{hvac_system_type} to model.")
 
     return true
-  end # end the run method
-end # end the measure
+  end
+end
 
 # this allows the measure to be used by the application
 NzeHvac.new.registerWithApplication

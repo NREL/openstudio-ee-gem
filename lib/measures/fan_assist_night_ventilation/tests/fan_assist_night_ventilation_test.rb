@@ -9,7 +9,7 @@ require 'openstudio'
 require 'openstudio/measure/ShowRunnerOutput'
 require 'fileutils'
 
-require_relative '../measure.rb'
+require_relative '../measure'
 require 'minitest/autorun'
 
 class FanAssistNightVentilationTest < Minitest::Test
@@ -28,7 +28,7 @@ class FanAssistNightVentilationTest < Minitest::Test
 
     # load the test model
     translator = OpenStudio::OSVersion::VersionTranslator.new
-    path = OpenStudio::Path.new(File.dirname(__FILE__) + '/example_model.osm')
+    path = OpenStudio::Path.new("#{File.dirname(__FILE__)}/example_model.osm")
     model = translator.loadModel(path)
     assert(!model.empty?)
     model = model.get
@@ -63,7 +63,7 @@ class FanAssistNightVentilationTest < Minitest::Test
     assert_equal('Success', result.value.valueName)
 
     # save the model to test output directory
-    output_file_path = OpenStudio::Path.new(File.dirname(__FILE__) + '/output/test_output.osm')
+    output_file_path = OpenStudio::Path.new("#{File.dirname(__FILE__)}/output/test_output.osm")
     model.save(output_file_path, true)
   end
 
@@ -76,7 +76,7 @@ class FanAssistNightVentilationTest < Minitest::Test
 
     # load the test model
     translator = OpenStudio::OSVersion::VersionTranslator.new
-    path = OpenStudio::Path.new(File.dirname(__FILE__) + '/1028_night_purge_test_192.osm')
+    path = OpenStudio::Path.new("#{File.dirname(__FILE__)}/1028_night_purge_test_192.osm")
     model = translator.loadModel(path)
     assert(!model.empty?)
     model = model.get
@@ -124,7 +124,7 @@ class FanAssistNightVentilationTest < Minitest::Test
 
     # load the test model
     translator = OpenStudio::OSVersion::VersionTranslator.new
-    path = OpenStudio::Path.new(File.dirname(__FILE__) + '/EdgeTest.osm')
+    path = OpenStudio::Path.new("#{File.dirname(__FILE__)}/EdgeTest.osm")
     model = translator.loadModel(path)
     assert(!model.empty?)
     model = model.get
@@ -172,7 +172,7 @@ class FanAssistNightVentilationTest < Minitest::Test
 
     # load the test model
     translator = OpenStudio::OSVersion::VersionTranslator.new
-    path = OpenStudio::Path.new(File.dirname(__FILE__) + '/demo_a.osm')
+    path = OpenStudio::Path.new("#{File.dirname(__FILE__)}/demo_a.osm")
     model = translator.loadModel(path)
     assert(!model.empty?)
     model = model.get
@@ -208,7 +208,7 @@ class FanAssistNightVentilationTest < Minitest::Test
     assert(result.warnings.size == 2)
 
     # save the model to test output directory
-    output_file_path = OpenStudio::Path.new(File.dirname(__FILE__) + '/output/demo_a_output.osm')
+    output_file_path = OpenStudio::Path.new("#{File.dirname(__FILE__)}/output/demo_a_output.osm")
     model.save(output_file_path, true)
   end
 
@@ -221,7 +221,7 @@ class FanAssistNightVentilationTest < Minitest::Test
 
     # load the test model
     translator = OpenStudio::OSVersion::VersionTranslator.new
-    path = OpenStudio::Path.new(File.dirname(__FILE__) + '/no_opp_win.osm')
+    path = OpenStudio::Path.new("#{File.dirname(__FILE__)}/no_opp_win.osm")
     model = translator.loadModel(path)
     assert(!model.empty?)
     model = model.get

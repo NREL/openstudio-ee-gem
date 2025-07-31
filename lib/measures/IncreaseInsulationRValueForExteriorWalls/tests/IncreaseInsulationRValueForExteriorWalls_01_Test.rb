@@ -9,7 +9,7 @@ require 'openstudio'
 require 'openstudio/measure/ShowRunnerOutput'
 require 'fileutils'
 
-require_relative '../measure.rb'
+require_relative '../measure'
 require 'minitest/autorun'
 
 class IncreaseInsulationRValueForExteriorWalls_Test < Minitest::Test
@@ -55,7 +55,7 @@ class IncreaseInsulationRValueForExteriorWalls_Test < Minitest::Test
 
     # load the test model
     translator = OpenStudio::OSVersion::VersionTranslator.new
-    path = OpenStudio::Path.new(File.dirname(__FILE__) + '/EnvelopeAndLoadTestModel_01.osm')
+    path = OpenStudio::Path.new("#{File.dirname(__FILE__)}/EnvelopeAndLoadTestModel_01.osm")
     model = translator.loadModel(path)
     assert(!model.empty?)
     model = model.get
@@ -174,7 +174,7 @@ class IncreaseInsulationRValueForExteriorWalls_Test < Minitest::Test
 
     # loop over warnings
     expected_messages = {}
-    expected_messages[/The requested wall insulation R-value of 50\.0 ft\^2\*h\*R\/Btu is abnormally high./] = false
+    expected_messages[%r{The requested wall insulation R-value of 50\.0 ft\^2\*h\*R/Btu is abnormally high.}] = false
     expected_messages["Construction 'Test_No Insulation' does not appear to have an insulation layer and was not altered."] = false
     result.warnings.each do |warning|
       expected_messages.each_key do |message|
@@ -199,7 +199,7 @@ class IncreaseInsulationRValueForExteriorWalls_Test < Minitest::Test
 
     # load the test model
     translator = OpenStudio::OSVersion::VersionTranslator.new
-    path = OpenStudio::Path.new(File.dirname(__FILE__) + '/EnvelopeAndLoadTestModel_01.osm')
+    path = OpenStudio::Path.new("#{File.dirname(__FILE__)}/EnvelopeAndLoadTestModel_01.osm")
     model = translator.loadModel(path)
     assert(!model.empty?)
     model = model.get
@@ -251,7 +251,7 @@ class IncreaseInsulationRValueForExteriorWalls_Test < Minitest::Test
 
     # load the test model
     translator = OpenStudio::OSVersion::VersionTranslator.new
-    path = OpenStudio::Path.new(File.dirname(__FILE__) + '/EnvelopeAndLoadTestModel_01.osm')
+    path = OpenStudio::Path.new("#{File.dirname(__FILE__)}/EnvelopeAndLoadTestModel_01.osm")
     model = translator.loadModel(path)
     assert(!model.empty?)
     model = model.get
@@ -303,7 +303,7 @@ class IncreaseInsulationRValueForExteriorWalls_Test < Minitest::Test
 
     # load the test model
     translator = OpenStudio::OSVersion::VersionTranslator.new
-    path = OpenStudio::Path.new(File.dirname(__FILE__) + '/ReverseTranslatedModel.osm')
+    path = OpenStudio::Path.new("#{File.dirname(__FILE__)}/ReverseTranslatedModel.osm")
     model = translator.loadModel(path)
     assert(!model.empty?)
     model = model.get
@@ -406,7 +406,7 @@ class IncreaseInsulationRValueForExteriorWalls_Test < Minitest::Test
 
     # load the test model
     translator = OpenStudio::OSVersion::VersionTranslator.new
-    path = OpenStudio::Path.new(File.dirname(__FILE__) + '/EnvelopeAndLoadTestModel_01.osm')
+    path = OpenStudio::Path.new("#{File.dirname(__FILE__)}/EnvelopeAndLoadTestModel_01.osm")
     model = translator.loadModel(path)
     assert(!model.empty?)
     model = model.get
@@ -461,7 +461,7 @@ class IncreaseInsulationRValueForExteriorWalls_Test < Minitest::Test
 
       # load the test model
       translator = OpenStudio::OSVersion::VersionTranslator.new
-      path = OpenStudio::Path.new(File.dirname(__FILE__) + '/no_mass.osm')
+      path = OpenStudio::Path.new("#{File.dirname(__FILE__)}/no_mass.osm")
       model = translator.loadModel(path)
       assert(!model.empty?)
       model = model.get

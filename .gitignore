@@ -30,3 +30,22 @@ lib/test/*
 
 # Ignore measure tester gem local test results
 test_results/
+
+# Crush context
+/.crush
+
+# Local CRUSH configuration
+CRUSH.md
+
+# Node.js dependencies
+node_modules/
+package-lock.json
+
+# Crush files
+.crush.json
+
+# Devcontainer files
+.devcontainer/
+
+# Log files
+*.log

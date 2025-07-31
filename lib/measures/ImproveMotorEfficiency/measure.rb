@@ -203,7 +203,8 @@ class ImproveMotorEfficiency < OpenStudio::Measure::ModelMeasure
     end
 
     # short def to make numbers pretty (converts 4125001.25641 to 4,125,001.26 or 4,125,001). The definition be called through this measure
-    def neat_numbers(number, roundto = 2) # round to 0 or 2)
+    # round to 0 or 2)
+    def neat_numbers(number, roundto = 2)
       if roundto == 2
         number = format '%.2f', number
       else
@@ -217,12 +218,10 @@ class ImproveMotorEfficiency < OpenStudio::Measure::ModelMeasure
     def get_total_costs_for_objects(objects)
       counter = 0
       objects.each do |object|
-        object_LCCs = object.lifeCycleCosts
-        object_LCCs.each do |object_LCC|
-          if (object_LCC.category == 'Construction') || (object_LCC.category == 'Salvage')
-            if object_LCC.yearsFromStart == 0
-              counter += object_LCC.totalCost
-            end
+        object_lccs = object.lifeCycleCosts
+        object_lccs.each do |object_lcc|
+          if ((object_lcc.category == 'Construction') || (object_lcc.category == 'Salvage')) && (object_lcc.yearsFromStart == 0)
+            counter += object_lcc.totalCost
           end
         end
       end
