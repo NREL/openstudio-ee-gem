@@ -37,7 +37,7 @@ class AddDaylightSensors_Test < Minitest::Test
 
     # load the test model
     translator = OpenStudio::OSVersion::VersionTranslator.new
-    path = OpenStudio::Path.new(File.dirname(__FILE__) + '/ModelForDaylightSensors.osm')
+    path = OpenStudio::Path.new("#{File.dirname(__FILE__)}/ModelForDaylightSensors.osm")
     model = translator.loadModel(path)
     assert(!model.empty?)
     model = model.get

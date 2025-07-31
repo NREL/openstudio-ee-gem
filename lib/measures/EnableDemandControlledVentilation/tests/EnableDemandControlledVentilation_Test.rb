@@ -29,7 +29,7 @@ class EnableDemandControlledVentilation_Test < Minitest::Test
 
     # load the test model
     translator = OpenStudio::OSVersion::VersionTranslator.new
-    path = OpenStudio::Path.new(File.dirname(__FILE__) + '/0320_ModelWithHVAC_01.osm')
+    path = OpenStudio::Path.new("#{File.dirname(__FILE__)}/0320_ModelWithHVAC_01.osm")
     model = translator.loadModel(path)
     assert(!model.empty?)
     model = model.get
@@ -68,7 +68,7 @@ class EnableDemandControlledVentilation_Test < Minitest::Test
 
     # load the test model
     translator = OpenStudio::OSVersion::VersionTranslator.new
-    path = OpenStudio::Path.new(File.dirname(__FILE__) + '/0320_ModelWithHVAC_01.osm')
+    path = OpenStudio::Path.new("#{File.dirname(__FILE__)}/0320_ModelWithHVAC_01.osm")
     model = translator.loadModel(path)
     assert(!model.empty?)
     model = model.get

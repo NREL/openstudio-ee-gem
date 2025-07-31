@@ -30,7 +30,7 @@ class ReplaceWaterHeaterMixedWithThermalStorageChilledWaterTest < Minitest::Test
 
     # load the test model
     translator = OpenStudio::OSVersion::VersionTranslator.new
-    path = OpenStudio::Path.new(File.dirname(__FILE__) + '/WaterHeaterToChilledWater.osm')
+    path = OpenStudio::Path.new("#{File.dirname(__FILE__)}/WaterHeaterToChilledWater.osm")
     model = translator.loadModel(path)
     assert(!model.empty?)
     model = model.get
@@ -67,7 +67,7 @@ class ReplaceWaterHeaterMixedWithThermalStorageChilledWaterTest < Minitest::Test
     # assert(result.warnings.size == 0)
 
     # save the model to test output directory
-    output_file_path = OpenStudio::Path.new(File.dirname(__FILE__) + '/output/test_output.osm')
+    output_file_path = OpenStudio::Path.new("#{File.dirname(__FILE__)}/output/test_output.osm")
     model.save(output_file_path, true)
   end
 end

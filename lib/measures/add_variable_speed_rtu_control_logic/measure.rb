@@ -503,7 +503,7 @@ The measure is set up so that a separate block of EMS code is inserted for each 
 	#{revised_zone_name}_CC_Ctrl_Prgm,                          !- Program Name 4
 	#{revised_zone_name}_HC_Ctrl_Prgm;                          !- Program Name 3
 	"
-    end # Next airloop
+    end
 
     # Add EMS code to the model
     ems_strings << "
@@ -520,8 +520,8 @@ The measure is set up so that a separate block of EMS code is inserted for each 
     end
 
     return true
-  end # end the run method
-end # end the measure
+  end
+end
 
 # register the measure to be used by the application
 AddVariableSpeedRTUControlLogic.new.registerWithApplication

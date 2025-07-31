@@ -127,7 +127,8 @@ class AddOverhangsByProjectionFactor < OpenStudio::Measure::ModelMeasure
     end
 
     # helper to make numbers pretty (converts 4125001.25641 to 4,125,001.26 or 4,125,001). The definition be called through this measure.
-    def neat_numbers(number, roundto = 2) # round to 0 or 2)
+    # round to 0 or 2)
+    def neat_numbers(number, roundto = 2)
       if roundto == 2
         number = format '%.2f', number
       else
@@ -202,16 +203,17 @@ class AddOverhangsByProjectionFactor < OpenStudio::Measure::ModelMeasure
       absolute_azimuth = OpenStudio.convert(s.azimuth, 'rad', 'deg').get + s.space.get.directionofRelativeNorth + model.getBuilding.northAxis
       absolute_azimuth -= 360.0 until absolute_azimuth < 360.0
 
-      if facade == 'North'
+      case facade
+      when 'North'
         next if !((absolute_azimuth >= 315.0) || (absolute_azimuth < 45.0))
-      elsif facade == 'East'
+      when 'East'
         next if !((absolute_azimuth >= 45.0) && (absolute_azimuth < 135.0))
-      elsif facade == 'South'
+      when 'South'
         next if !((absolute_azimuth >= 135.0) && (absolute_azimuth < 225.0))
-      elsif facade == 'West'
+      when 'West'
         next if !((absolute_azimuth >= 225.0) && (absolute_azimuth < 315.0))
       else
-        runner.registerError('Unexpected value of facade: ' + facade + '.')
+        runner.registerError("Unexpected value of facade: #{facade}.")
         return false
       end
 
@@ -234,14 +236,11 @@ class AddOverhangsByProjectionFactor < OpenStudio::Measure::ModelMeasure
         # add the overhang
         new_overhang = s.addOverhangByProjectionFactor(projection_factor, 0)
         if new_overhang.empty?
-          ok = runner.registerWarning('Unable to add overhang to ' + s.briefDescription +
-                   ' with projection factor ' + projection_factor.to_s + ' and offset ' + offset.to_s + '.')
+          ok = runner.registerWarning("Unable to add overhang to #{s.briefDescription} with projection factor #{projection_factor} and offset #{offset}.")
           return false if !ok
         else
           new_overhang.get.setName("#{s.name} - Overhang")
-          runner.registerInfo('Added overhang ' + new_overhang.get.briefDescription + ' to ' +
-              s.briefDescription + ' with projection factor ' + projection_factor.to_s +
-              ' and offset ' + '0' + '.')
+          runner.registerInfo("Added overhang #{new_overhang.get.briefDescription} to #{s.briefDescription} with projection factor #{projection_factor} and offset 0.")
           if construction_chosen && !construction.to_Construction.empty?
             new_overhang.get.setConstruction(construction)
           end

@@ -185,7 +185,7 @@ class NzeHvac_Test < Minitest::Test
       puts "service hot water: #{shw_eui} (#{shw_elec_eui} elec / #{shw_gas_eui} gas)"
       puts "HVAC #{hvac_eui} (fans: #{fan_eui}, pumps: #{pump_eui}, cooling: #{cooling_eui}, heating: #{heating_eui} (#{heating_elec_eui} elec / #{heating_gas_eui} gas))"
 
-      if annual_eui > 100 && !((int_equipment_eui + int_lighting_eui) > 70)
+      if annual_eui > 100 && (int_equipment_eui + int_lighting_eui) <= 70
         # don't expect EUIs to be above 100 unless there are very high internal loads
         errs << "The annual eui is #{annual_eui.round(1)} kBtu/ft^2, higher than expected for an NZE building."
       end
@@ -223,8 +223,8 @@ class NzeHvac_Test < Minitest::Test
     # this tests adding a fancoils with doas system to the model
     test_name = 'test_primary_school_fancoils_doas'
     puts "\n######\nTEST:#{test_name}\n######\n"
-    osm_path = File.dirname(__FILE__) + '/primary_school_burlington.osm'
-    epw_path = File.dirname(__FILE__) + '/USA_VT_Burlington.Intl.AP.726170_TMY3.epw'
+    osm_path = "#{File.dirname(__FILE__)}/primary_school_burlington.osm"
+    epw_path = "#{File.dirname(__FILE__)}/USA_VT_Burlington.Intl.AP.726170_TMY3.epw"
     run_nze_hvac_measure_test(test_name, osm_path, epw_path,
                               hvac_system_type_input: 'DOAS with fan coil chiller with boiler',
                               hvac_system_partition_input: 'Whole Building')
@@ -234,8 +234,8 @@ class NzeHvac_Test < Minitest::Test
     # this tests adding a radiant slab system with doas system to the model
     test_name = 'test_office_radiant_doas'
     puts "\n######\nTEST:#{test_name}\n######\n"
-    osm_path = File.dirname(__FILE__) + '/office_chicago_exp_tstat.osm'
-    epw_path = File.dirname(__FILE__) + '/USA_IL_Chicago-OHare.Intl.AP.725300_TMY3.epw'
+    osm_path = "#{File.dirname(__FILE__)}/office_chicago_exp_tstat.osm"
+    epw_path = "#{File.dirname(__FILE__)}/USA_IL_Chicago-OHare.Intl.AP.725300_TMY3.epw"
     run_nze_hvac_measure_test(test_name, osm_path, epw_path,
                               hvac_system_type_input: 'DOAS with radiant slab chiller with central air source heat pump',
                               hvac_system_partition_input: 'Whole Building',
@@ -246,8 +246,8 @@ class NzeHvac_Test < Minitest::Test
     # this tests adding a doas with vrf system to the model
     test_name = 'test_office_vrf_doas_per_story'
     puts "\n######\nTEST:#{test_name}\n######\n"
-    osm_path = File.dirname(__FILE__) + '/office_chicago.osm'
-    epw_path = File.dirname(__FILE__) + '/USA_IL_Chicago-OHare.Intl.AP.725300_TMY3.epw'
+    osm_path = "#{File.dirname(__FILE__)}/office_chicago.osm"
+    epw_path = "#{File.dirname(__FILE__)}/USA_IL_Chicago-OHare.Intl.AP.725300_TMY3.epw"
     run_nze_hvac_measure_test(test_name, osm_path, epw_path,
                               hvac_system_type_input: 'DOAS with VRF',
                               hvac_system_partition_input: 'One System Per Building Story')
@@ -258,8 +258,8 @@ class NzeHvac_Test < Minitest::Test
     skip 'sizing issue with EnergyPlus 25.1. unskip after next E+ release'
     test_name = 'test_office_vav_reheat'
     puts "\n######\nTEST:#{test_name}\n######\n"
-    osm_path = File.dirname(__FILE__) + '/office_chicago.osm'
-    epw_path = File.dirname(__FILE__) + '/USA_IL_Chicago-OHare.Intl.AP.725300_TMY3.epw'
+    osm_path = "#{File.dirname(__FILE__)}/office_chicago.osm"
+    epw_path = "#{File.dirname(__FILE__)}/USA_IL_Chicago-OHare.Intl.AP.725300_TMY3.epw"
     run_nze_hvac_measure_test(test_name, osm_path, epw_path,
                               hvac_system_type_input: 'VAV chiller with gas boiler reheat',
                               hvac_system_partition_input: 'Whole Building')
@@ -270,8 +270,8 @@ class NzeHvac_Test < Minitest::Test
     skip 'sizing issue with EnergyPlus 25.1. unskip after next E+ release'
     test_name = 'test_office_pvav_reheat'
     puts "\n######\nTEST:#{test_name}\n######\n"
-    osm_path = File.dirname(__FILE__) + '/office_chicago.osm'
-    epw_path = File.dirname(__FILE__) + '/USA_IL_Chicago-OHare.Intl.AP.725300_TMY3.epw'
+    osm_path = "#{File.dirname(__FILE__)}/office_chicago.osm"
+    epw_path = "#{File.dirname(__FILE__)}/USA_IL_Chicago-OHare.Intl.AP.725300_TMY3.epw"
     run_nze_hvac_measure_test(test_name, osm_path, epw_path,
                               hvac_system_type_input: 'PVAV with gas boiler reheat',
                               hvac_system_partition_input: 'Whole Building')
@@ -281,8 +281,8 @@ class NzeHvac_Test < Minitest::Test
     # this tests adding a vrf with doas system to the model
     test_name = 'test_mixed_use_vrf_doas'
     puts "\n######\nTEST:#{test_name}\n######\n"
-    osm_path = File.dirname(__FILE__) + '/office_retail_mix_chicago.osm'
-    epw_path = File.dirname(__FILE__) + '/USA_IL_Chicago-OHare.Intl.AP.725300_TMY3.epw'
+    osm_path = "#{File.dirname(__FILE__)}/office_retail_mix_chicago.osm"
+    epw_path = "#{File.dirname(__FILE__)}/USA_IL_Chicago-OHare.Intl.AP.725300_TMY3.epw"
     run_nze_hvac_measure_test(test_name, osm_path, epw_path,
                               hvac_system_type_input: 'DOAS with VRF',
                               hvac_system_partition_input: 'One System Per Building Type',
@@ -293,8 +293,8 @@ class NzeHvac_Test < Minitest::Test
     # this tests adding a ghsp with doas system to the model
     test_name = 'test_mixed_use_gshp_doas'
     puts "\n######\nTEST:#{test_name}\n######\n"
-    osm_path = File.dirname(__FILE__) + '/office_retail_mix_chicago.osm'
-    epw_path = File.dirname(__FILE__) + '/USA_IL_Chicago-OHare.Intl.AP.725300_TMY3.epw'
+    osm_path = "#{File.dirname(__FILE__)}/office_retail_mix_chicago.osm"
+    epw_path = "#{File.dirname(__FILE__)}/USA_IL_Chicago-OHare.Intl.AP.725300_TMY3.epw"
     run_nze_hvac_measure_test(test_name, osm_path, epw_path,
                               hvac_system_type_input: 'DOAS with water source heat pumps with ground source heat pump',
                               hvac_system_partition_input: 'Whole Building')
@@ -305,8 +305,8 @@ class NzeHvac_Test < Minitest::Test
     skip 'sizing issue with EnergyPlus 25.1. unskip after next E+ release'
     test_name = 'test_model_with_sizing_issues'
     puts "\n######\nTEST:#{test_name}\n######\n"
-    osm_path = File.dirname(__FILE__) + '/glass_box_baltimore.osm'
-    epw_path = File.dirname(__FILE__) + '/USA_MD_Baltimore-Washington.Intl.AP.724060_TMY3.epw'
+    osm_path = "#{File.dirname(__FILE__)}/glass_box_baltimore.osm"
+    epw_path = "#{File.dirname(__FILE__)}/USA_MD_Baltimore-Washington.Intl.AP.724060_TMY3.epw"
     run_nze_hvac_measure_test(test_name, osm_path, epw_path,
                               hvac_system_type_input: 'VAV air-cooled chiller with central air source heat pump reheat',
                               hvac_system_partition_input: 'Whole Building')
@@ -316,8 +316,8 @@ class NzeHvac_Test < Minitest::Test
     # this tests adding a fancoils with doas system to the model
     test_name = 'test_humid_office_doas_fancoils'
     puts "\n######\nTEST:#{test_name}\n######\n"
-    osm_path = File.dirname(__FILE__) + '/office_houston.osm'
-    epw_path = File.dirname(__FILE__) + '/USA_TX_Houston-Bush.Intercontinental.AP.722430_TMY3.epw'
+    osm_path = "#{File.dirname(__FILE__)}/office_houston.osm"
+    epw_path = "#{File.dirname(__FILE__)}/USA_TX_Houston-Bush.Intercontinental.AP.722430_TMY3.epw"
     run_nze_hvac_measure_test(test_name, osm_path, epw_path,
                               hvac_system_type_input: 'DOAS with fan coil air-cooled chiller with central air source heat pump',
                               hvac_system_partition_input: 'Whole Building')
@@ -327,8 +327,8 @@ class NzeHvac_Test < Minitest::Test
     # this tests adding a fancoils with doas system to the model
     test_name = 'test_humid_office_doas_fancoils_dcv'
     puts "\n######\nTEST:#{test_name}\n######\n"
-    osm_path = File.dirname(__FILE__) + '/office_houston.osm'
-    epw_path = File.dirname(__FILE__) + '/USA_TX_Houston-Bush.Intercontinental.AP.722430_TMY3.epw'
+    osm_path = "#{File.dirname(__FILE__)}/office_houston.osm"
+    epw_path = "#{File.dirname(__FILE__)}/USA_TX_Houston-Bush.Intercontinental.AP.722430_TMY3.epw"
     run_nze_hvac_measure_test(test_name, osm_path, epw_path,
                               hvac_system_type_input: 'DOAS with fan coil air-cooled chiller with central air source heat pump',
                               doas_dcv_input: true,
@@ -339,8 +339,8 @@ class NzeHvac_Test < Minitest::Test
     # this tests adding a fancoils with doas system to the model with automatic partitioning
     test_name = 'test_humid_office_fancoils_doas_auto_partition'
     puts "\n######\nTEST:#{test_name}\n######\n"
-    osm_path = File.dirname(__FILE__) + '/office_houston.osm'
-    epw_path = File.dirname(__FILE__) + '/USA_TX_Houston-Bush.Intercontinental.AP.722430_TMY3.epw'
+    osm_path = "#{File.dirname(__FILE__)}/office_houston.osm"
+    epw_path = "#{File.dirname(__FILE__)}/USA_TX_Houston-Bush.Intercontinental.AP.722430_TMY3.epw"
     run_nze_hvac_measure_test(test_name, osm_path, epw_path,
                               hvac_system_type_input: 'DOAS with fan coil chiller with central air source heat pump',
                               hvac_system_partition_input: 'Automatic Partition')
@@ -350,8 +350,8 @@ class NzeHvac_Test < Minitest::Test
     # this tests adding a vav reheat system to the model with automatic partitioning
     test_name = 'test_humid_office_vav_reheat_auto_partition'
     puts "\n######\nTEST:#{test_name}\n######\n"
-    osm_path = File.dirname(__FILE__) + '/office_houston.osm'
-    epw_path = File.dirname(__FILE__) + '/USA_TX_Houston-Bush.Intercontinental.AP.722430_TMY3.epw'
+    osm_path = "#{File.dirname(__FILE__)}/office_houston.osm"
+    epw_path = "#{File.dirname(__FILE__)}/USA_TX_Houston-Bush.Intercontinental.AP.722430_TMY3.epw"
     run_nze_hvac_measure_test(test_name, osm_path, epw_path,
                               hvac_system_type_input: 'VAV chiller with central air source heat pump reheat',
                               hvac_system_partition_input: 'Automatic Partition')

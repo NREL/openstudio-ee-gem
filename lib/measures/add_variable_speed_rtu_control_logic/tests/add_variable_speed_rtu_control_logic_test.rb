@@ -32,7 +32,7 @@ class AddVariableSpeedRTUControlLogic_Test < Minitest::Test
     assert_equal('Success', result.value.valueName)
 
     # save the workspace to output directory
-    output_file_path = OpenStudio::Path.new(File.dirname(__FILE__) + '/output/test_output.idf')
+    output_file_path = OpenStudio::Path.new("#{File.dirname(__FILE__)}/output/test_output.idf")
     workspace.save(output_file_path, true)
   end
 end

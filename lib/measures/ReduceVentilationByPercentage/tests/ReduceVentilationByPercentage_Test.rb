@@ -59,7 +59,7 @@ class ReduceVentilationByPercentage_Test < Minitest::Test
 
     # re-load the test model
     translator = OpenStudio::OSVersion::VersionTranslator.new
-    path = OpenStudio::Path.new(File.dirname(__FILE__) + '/EnvelopeAndLoadTestModel_01.osm')
+    path = OpenStudio::Path.new("#{File.dirname(__FILE__)}/EnvelopeAndLoadTestModel_01.osm")
     model = translator.loadModel(path)
     assert(!model.empty?)
     model = model.get
@@ -89,7 +89,7 @@ class ReduceVentilationByPercentage_Test < Minitest::Test
     # assert(result.warnings.size == 1)
 
     # save the model to test output directory
-    output_file_path = OpenStudio::Path.new(File.dirname(__FILE__) + '/output/test_output.osm')
+    output_file_path = OpenStudio::Path.new("#{File.dirname(__FILE__)}/output/test_output.osm")
     model.save(output_file_path, true)
   end
 
@@ -105,7 +105,7 @@ class ReduceVentilationByPercentage_Test < Minitest::Test
 
     # re-load the test model
     translator = OpenStudio::OSVersion::VersionTranslator.new
-    path = OpenStudio::Path.new(File.dirname(__FILE__) + '/EnvelopeAndLoadTestModel_01.osm')
+    path = OpenStudio::Path.new("#{File.dirname(__FILE__)}/EnvelopeAndLoadTestModel_01.osm")
     model = translator.loadModel(path)
     assert(!model.empty?)
     model = model.get

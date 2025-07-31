@@ -135,7 +135,7 @@ class CreateVariableSpeedRTU < OpenStudio::Measure::ModelMeasure
     args << quarter_hc_cop
 
     return args
-  end # end the arguments method
+  end
 
   # define what happens when the measure is run
   def run(model, runner, user_arguments)
@@ -270,7 +270,7 @@ class CreateVariableSpeedRTU < OpenStudio::Measure::ModelMeasure
         runner.registerError('Script Error - argument not showing up as air loop.')
         return false
       end
-    end # end of if object.empty?
+    end
 
     # Add selected airloops to an array
     selected_airloops = []
@@ -345,7 +345,7 @@ class CreateVariableSpeedRTU < OpenStudio::Measure::ModelMeasure
           runner.registerInfo("AirLoop '#{air_loop.name}' was changed from CAV to VAV")
 
         end
-      end # next supply component
+      end
 
       # Move on to the next air loop if no CAV to VAV change happened
       next if changed_cav_to_vav != true
@@ -398,7 +398,7 @@ class CreateVariableSpeedRTU < OpenStudio::Measure::ModelMeasure
           # Remove the existing cooling coil.
           existing_cooling_coil.remove
         end
-      end # next supply component
+      end
 
       # Move the heating coil to the AirLoopHVAC:UnitarySystem object
       air_loop.supplyComponents.each do |supply_comp|
@@ -443,7 +443,7 @@ class CreateVariableSpeedRTU < OpenStudio::Measure::ModelMeasure
             air_loop_hvac_unitary_system.setHeatingCoil(new_heating_coil)
           end
         end
-      end # next supply component
+      end
 
       # Find the supply outlet node for the current AirLoop
       airloop_outlet_node = air_loop.supplyOutletNode
@@ -482,7 +482,7 @@ class CreateVariableSpeedRTU < OpenStudio::Measure::ModelMeasure
           end
         end
       end
-    end # Next selected airloop
+    end
 
     # Report final condition of model
     final_cav_airloops = 0
@@ -504,8 +504,8 @@ class CreateVariableSpeedRTU < OpenStudio::Measure::ModelMeasure
     end
 
     return true
-  end # end the run method
-end # end the measure
+  end
+end
 
 # register the measure to be used by the application
 CreateVariableSpeedRTU.new.registerWithApplication

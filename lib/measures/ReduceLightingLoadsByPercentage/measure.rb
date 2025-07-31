@@ -202,7 +202,8 @@ class ReduceLightingLoadsByPercentage < OpenStudio::Measure::ModelMeasure
     end
 
     # helper to make numbers pretty (converts 4125001.25641 to 4,125,001.26 or 4,125,001). The definition be called through this measure.
-    def neat_numbers(number, roundto = 2) # round to 0 or 2)
+    # round to 0 or 2)
+    def neat_numbers(number, roundto = 2)
       if roundto == 2
         number = format '%.2f', number
       else
@@ -296,15 +297,16 @@ class ReduceLightingLoadsByPercentage < OpenStudio::Measure::ModelMeasure
         end
       else
         new_def_lccs.each do |new_def_lcc|
-          if new_def_lcc.category == 'Construction'
+          case new_def_lcc.category
+          when 'Construction'
             new_def_lcc.setCost(new_def_lcc.cost * (1 + material_and_installation_cost / 100))
             new_def_lcc.setYearsFromStart(years_until_costs_start) # just uses argument value, does not need existing value
             new_def_lcc.setRepeatPeriodYears(expected_life) # just uses argument value, does not need existing value
-          elsif new_def_lcc.category == 'Salvage'
+          when 'Salvage'
             new_def_lcc.setCost(new_def_lcc.cost * (1 + demolition_cost / 100))
             new_def_lcc.setYearsFromStart(years_until_costs_start + expected_life) # just uses argument value, does not need existing value
             new_def_lcc.setRepeatPeriodYears(expected_life) # just uses argument value, does not need existing value
-          elsif new_def_lcc.category == 'Maintenance'
+          when 'Maintenance'
             new_def_lcc.setCost(new_def_lcc.cost * (1 + om_cost / 100))
             new_def_lcc.setRepeatPeriodYears(om_frequency) # just uses argument value, does not need existing value
           end
