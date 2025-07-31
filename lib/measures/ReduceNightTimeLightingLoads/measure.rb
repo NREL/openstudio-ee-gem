@@ -328,7 +328,6 @@ class ReduceNightTimeLightingLoads < OpenStudio::Measure::ModelMeasure
     # get schedules for lights instances that user the picked
     lighting_instances.each do |light|
       next unless light.lightsDefinition == lights_def
-
       lighting_instances_using_def << light
       if !light.schedule.empty?
         lights_sch = light.schedule.get
@@ -397,8 +396,10 @@ class ReduceNightTimeLightingLoads < OpenStudio::Measure::ModelMeasure
 
         # reduce weekdays
         new_lights_sch.scheduleRules.each do |sch_rule|
-          if apply_weekday && (sch_rule.applyMonday || sch_rule.applyTuesday || sch_rule.applyWednesday || sch_rule.applyThursday || sch_rule.applyFriday)
-            reduce_schedule(sch_rule.daySchedule, wk_before_hour, wk_before_min, wk_before_value, wk_after_hour, wk_after_min, wk_after_value)
+          if apply_weekday
+            if sch_rule.applyMonday || sch_rule.applyTuesday || sch_rule.applyWednesday || sch_rule.applyThursday || sch_rule.applyFriday
+              reduce_schedule(sch_rule.daySchedule, wk_before_hour, wk_before_min, wk_before_value, wk_after_hour, wk_after_min, wk_after_value)
+            end
           end
         end
 

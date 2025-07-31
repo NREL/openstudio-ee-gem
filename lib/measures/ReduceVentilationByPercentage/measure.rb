@@ -157,7 +157,6 @@ class ReduceVentilationByPercentage < OpenStudio::Measure::ModelMeasure
     design_spec_outdoor_air_objects.each do |design_spec_outdoor_air_object|
       direct_use_count = design_spec_outdoor_air_object.directUseCount
       next if direct_use_count <= 1
-
       direct_uses = design_spec_outdoor_air_object.sources
       original_cloned = false
 
@@ -214,7 +213,6 @@ class ReduceVentilationByPercentage < OpenStudio::Measure::ModelMeasure
     # loop through space types
     space_types.each do |space_type|
       next if space_type.spaces.size <= 0
-
       instances_array << space_type.designSpecificationOutdoorAir
     end
 
@@ -235,12 +233,10 @@ class ReduceVentilationByPercentage < OpenStudio::Measure::ModelMeasure
 
     instances_array.each do |instance|
       next if instance.empty?
-
       instance = instance.get
 
       # only continue if this instance has not been processed yet
       next if instance_processed.include? instance
-
       instance_processed << instance
 
       # call def to alter performance and life cycle costs

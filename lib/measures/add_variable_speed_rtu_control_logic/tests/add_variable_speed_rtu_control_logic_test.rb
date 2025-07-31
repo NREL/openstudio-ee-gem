@@ -9,7 +9,7 @@ require 'openstudio'
 require 'openstudio/ruleset/ShowRunnerOutput'
 require 'minitest/autorun'
 
-require_relative '../measure'
+require_relative '../measure.rb'
 
 class AddVariableSpeedRTUControlLogic_Test < Minitest::Test
   def test_good_argument_values

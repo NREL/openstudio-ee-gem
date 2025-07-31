@@ -263,7 +263,7 @@ The measure is set up so that a separate block of EMS code is inserted for each 
       selected_heating_coils = workspace.getObjectsByType(air_loop_heating_coil_type.to_s.to_IddObjectType)
       selected_heating_coils.each do |heating_coil|
         hc_name_test = heating_coil.getString(0, true).get
-        puts hc_name_test
+        puts hc_name_test.to_s
         if "#{hc_name_test}.to_s" == "#{air_loop_heating_coil}.to_s"
           if air_loop_heating_coil_type.to_s == 'Coil:Heating:Gas'
             selected_heating_coil_outlet_node = heating_coil.getString(5, true).get
@@ -297,7 +297,7 @@ The measure is set up so that a separate block of EMS code is inserted for each 
       selected_setpoint_manager.each do |setpoint_manager|
         setpoint_manager_setpoint_node_name = setpoint_manager.getString(7, true).get
         if selected_heating_coil_outlet_node.to_s == setpoint_manager_setpoint_node_name
-          puts selected_heating_coil_outlet_node
+          puts selected_heating_coil_outlet_node.to_s
           setpoint_manager.setString(7, "#{revised_air_loop_name}_NodeList")
         end
       end
@@ -490,7 +490,7 @@ The measure is set up so that a separate block of EMS code is inserted for each 
 	      SET #{revised_fan_name}_mass_flow_actuator = Timestep_Fan_Mass_Flow, !- Added for test of two actuator code
 	    ENDIF;
 	    "
-        end
+  end
       end
 
       # Add EMS code to the model
@@ -520,7 +520,7 @@ The measure is set up so that a separate block of EMS code is inserted for each 
     end
 
     return true
-  end # end the run method
+end # end the run method
 end # end the measure
 
 # register the measure to be used by the application

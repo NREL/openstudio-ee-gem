@@ -12,10 +12,10 @@ Gem::Specification.new do |spec|
   spec.summary       = 'Library and measures for OpenStudio for energy efficiency use cases'
   spec.description   = 'Library and measures for OpenStudio for energy efficiency use cases'
   spec.metadata = {
-    'bug_tracker_uri' => 'https://github.com/NREL/openstudio-ee-gem/issues',
-    'changelog_uri' => 'https://github.com/NREL/openstudio-ee-gem/blob/develop/CHANGELOG.md',
-    # 'documentation_uri' =>  'https://www.rubydoc.info/gems/openstudio-ee-gem/#{gem.version}',
-    'source_code_uri' => "https://github.com/NREL/openstudio-ee-gem/tree/v#{spec.version}"
+      'bug_tracker_uri' => 'https://github.com/NREL/openstudio-ee-gem/issues',
+      'changelog_uri' => 'https://github.com/NREL/openstudio-ee-gem/blob/develop/CHANGELOG.md',
+      # 'documentation_uri' =>  'https://www.rubydoc.info/gems/openstudio-ee-gem/#{gem.version}',
+      'source_code_uri' => "https://github.com/NREL/openstudio-ee-gem/tree/v#{spec.version}"
   }
 
   spec.files = `git ls-files -z`.split("\x0").reject do |f|
@@ -28,15 +28,15 @@ Gem::Specification.new do |spec|
   spec.required_ruby_version = '~> 3.2.2'
 
   spec.add_dependency 'bundler', '~> 2.4.10'
-  spec.add_dependency 'multipart-post', '2.4.0'
   spec.add_dependency 'openstudio-extension', '~> 0.9.1'
   spec.add_dependency 'openstudio-standards', '0.8.2'
+  spec.add_dependency 'multipart-post', '2.4.0'
 
-  spec.add_development_dependency 'octokit', '4.18.0' # for change logs
-  spec.add_development_dependency 'rake', '~> 13.0'
-  spec.add_development_dependency 'rspec', '~> 3.9'
   spec.add_development_dependency 'rubocop', '1.50'
   spec.add_development_dependency 'rubocop-checkstyle_formatter', '0.6.0'
   spec.add_development_dependency 'rubocop-performance', '1.20.0'
   spec.add_development_dependency 'simplecov', '0.22.0'
+  spec.add_development_dependency 'rake', '~> 13.0'
+  spec.add_development_dependency 'rspec', '~> 3.9'
+  spec.add_development_dependency 'octokit', '4.18.0' # for change logs
 end

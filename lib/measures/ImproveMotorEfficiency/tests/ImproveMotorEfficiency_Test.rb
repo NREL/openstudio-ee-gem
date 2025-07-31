@@ -9,7 +9,7 @@ require 'openstudio'
 require 'openstudio/measure/ShowRunnerOutput'
 require 'fileutils'
 
-require_relative '../measure'
+require_relative '../measure.rb'
 require 'minitest/autorun'
 
 class ImproveMotorEfficiency_Test < Minitest::Test

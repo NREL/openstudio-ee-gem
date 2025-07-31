@@ -39,7 +39,7 @@ class GLHEProExportLoadsforGroundHeatExchangerSizing < OpenStudio::Measure::Repo
       return result
     end
 
-    # NOTE: these variable requests replace the functionality of GLHEProSetupExportLoadsforGroundHeatExchangerSizing measure
+    # note: these variable requests replace the functionality of GLHEProSetupExportLoadsforGroundHeatExchangerSizing measure
 
     result << OpenStudio::IdfObject.load('Output:Variable,,District Heating Water Rate,hourly;').get
     result << OpenStudio::IdfObject.load('Output:Variable,,District Cooling Water Rate,hourly;').get
@@ -126,8 +126,10 @@ class GLHEProExportLoadsforGroundHeatExchangerSizing < OpenStudio::Measure::Repo
     annEnvPd = nil
     sql.availableEnvPeriods.each do |envPd|
       envType = sql.environmentType(envPd)
-      if !envType.empty? && (envType.get == 'WeatherRunPeriod'.to_EnvironmentType)
-        annEnvPd = envPd
+      if !envType.empty?
+        if envType.get == 'WeatherRunPeriod'.to_EnvironmentType
+          annEnvPd = envPd
+        end
       end
     end
 

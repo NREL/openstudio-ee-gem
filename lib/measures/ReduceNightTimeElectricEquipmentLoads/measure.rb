@@ -328,7 +328,6 @@ class ReduceNightTimeElectricEquipmentLoads < OpenStudio::Measure::ModelMeasure
     # get schedules for equipment instances that user the picked
     equipment_instances.each do |equip|
       next unless equip.electricEquipmentDefinition == elec_load_def
-
       equipment_instances_using_def << equip
       if !equip.schedule.empty?
         equip_sch = equip.schedule.get
@@ -397,8 +396,10 @@ class ReduceNightTimeElectricEquipmentLoads < OpenStudio::Measure::ModelMeasure
 
         # reduce weekdays
         new_equip_sch.scheduleRules.each do |sch_rule|
-          if apply_weekday && (sch_rule.applyMonday || sch_rule.applyTuesday || sch_rule.applyWednesday || sch_rule.applyThursday || sch_rule.applyFriday)
-            reduce_schedule(sch_rule.daySchedule, wk_before_hour, wk_before_min, wk_before_value, wk_after_hour, wk_after_min, wk_after_value)
+          if apply_weekday
+            if sch_rule.applyMonday || sch_rule.applyTuesday || sch_rule.applyWednesday || sch_rule.applyThursday || sch_rule.applyFriday
+              reduce_schedule(sch_rule.daySchedule, wk_before_hour, wk_before_min, wk_before_value, wk_after_hour, wk_after_min, wk_after_value)
+            end
           end
         end
 

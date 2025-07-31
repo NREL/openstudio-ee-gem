@@ -133,7 +133,7 @@ class IncreaseInsulationRValueForExteriorWalls < OpenStudio::Measure::ModelMeasu
     exterior_surface_constructions.uniq.each do |exterior_surface_construction|
       # unit conversion of wall insulation from SI units (M^2*K/W) to IP units (ft^2*h*R/Btu)
       initial_conductance_ip = unit_helper(1 / exterior_surface_construction.thermalConductance.to_f, 'm^2*K/W', 'ft^2*h*R/Btu')
-      initial_string << "#{exterior_surface_construction.name} (R-#{format '%.1f', initial_conductance_ip})"
+      initial_string << "#{exterior_surface_construction.name} (R-#{(format '%.1f', initial_conductance_ip)})"
     end
     runner.registerInitialCondition("The building had #{initial_string.size} exterior wall constructions: #{initial_string.sort.join(', ')}.")
 
@@ -355,18 +355,20 @@ class IncreaseInsulationRValueForExteriorWalls < OpenStudio::Measure::ModelMeasu
     final_string = [] # not all exterior wall constructions, but only new ones made. If wall didn't have insulation and was not altered we don't want to show it
     affected_area_si = 0
     totalCost_of_affected_area = 0
-    yr0_capital_total_costs = 0
+    yr0_capital_totalCosts = 0
     final_constructions_array.each do |final_construction|
       # unit conversion of wall insulation from SI units (M^2*K/W) to IP units (ft^2*h*R/Btu)
       final_conductance_ip = unit_helper(1 / final_construction.thermalConductance.to_f, 'm^2*K/W', 'ft^2*h*R/Btu')
-      final_string << "#{final_construction.name} (R-#{format '%.1f', final_conductance_ip})"
+      final_string << "#{final_construction.name} (R-#{(format '%.1f', final_conductance_ip)})"
       affected_area_si += final_construction.getNetArea
 
       # loop through lifecycle costs getting total costs under "Construction" or "Salvage" category and add to counter if occurs during year 0
       const_LCCs = final_construction.lifeCycleCosts
       const_LCCs.each do |const_LCC|
-        if ((const_LCC.category == 'Construction') || (const_LCC.category == 'Salvage')) && (const_LCC.yearsFromStart == 0)
-          yr0_capital_total_costs += const_LCC.totalCost
+        if (const_LCC.category == 'Construction') || (const_LCC.category == 'Salvage')
+          if const_LCC.yearsFromStart == 0
+            yr0_capital_totalCosts += const_LCC.totalCost
+          end
         end
       end
     end

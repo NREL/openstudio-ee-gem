@@ -222,10 +222,12 @@ class ReduceElectricEquipmentLoadsByPercentage < OpenStudio::Measure::ModelMeasu
     def get_total_costs_for_objects(objects)
       counter = 0
       objects.each do |object|
-        object_lccs = object.lifeCycleCosts
-        object_lccs.each do |object_lcc|
-          if ((object_lcc.category == 'Construction') || (object_lcc.category == 'Salvage')) && (object_lcc.yearsFromStart == 0)
-            counter += object_lcc.totalCost
+        object_LCCs = object.lifeCycleCosts
+        object_LCCs.each do |object_LCC|
+          if (object_LCC.category == 'Construction') || (object_LCC.category == 'Salvage')
+            if object_LCC.yearsFromStart == 0
+              counter += object_LCC.totalCost
+            end
           end
         end
       end
@@ -236,10 +238,10 @@ class ReduceElectricEquipmentLoadsByPercentage < OpenStudio::Measure::ModelMeasu
     demo_costs_of_baseline_objects = 0
 
     # counter for year 0 capital costs
-    yr0_capital_total_costs = 0
+    yr0_capital_totalCosts = 0
 
     # get initial electric equipment costs and multiply by -1
-    yr0_capital_total_costs += get_total_costs_for_objects(model.getElectricEquipmentDefinitions) * -1
+    yr0_capital_totalCosts +=  get_total_costs_for_objects(model.getElectricEquipmentDefinitions) * -1
 
     # report initial condition
     building = model.getBuilding
@@ -284,29 +286,29 @@ class ReduceElectricEquipmentLoadsByPercentage < OpenStudio::Measure::ModelMeasu
         runner.registerWarning("'#{new_def.name}' is used by one or more instances and has no load values. Its performance was not altered.")
       end
 
-      new_def_lccs = new_def.lifeCycleCosts
-      if new_def_lccs.empty?
+      new_def_LCCs = new_def.lifeCycleCosts
+      if new_def_LCCs.empty?
         if material_and_installation_cost.abs + demolition_cost.abs + om_cost.abs != 0
           runner.registerWarning("'#{new_def.name}' had no life cycle cost objects. No cost was added for it.")
         end
       else
-        new_def_lccs.each do |new_def_lcc|
-          if new_def_lcc.category == 'Construction'
-            new_def_lcc.setCost(new_def_lcc.cost * (1 + material_and_installation_cost / 100))
-            new_def_lcc.setYearsFromStart(years_until_costs_start) # just uses argument value, does not need existing value
-            new_def_lcc.setRepeatPeriodYears(expected_life) # just uses argument value, does not need existing value
-          elsif new_def_lcc.category == 'Salvage'
-            new_def_lcc.setCost(new_def_lcc.cost * (1 + demolition_cost / 100))
-            new_def_lcc.setYearsFromStart(years_until_costs_start + expected_life) # just uses argument value, does not need existing value
-            new_def_lcc.setRepeatPeriodYears(expected_life) # just uses argument value, does not need existing value
-          elsif new_def_lcc.category == 'Maintenance'
-            new_def_lcc.setCost(new_def_lcc.cost * (1 + om_cost / 100))
-            new_def_lcc.setRepeatPeriodYears(om_frequency) # just uses argument value, does not need existing value
+        new_def_LCCs.each do |new_def_LCC|
+          if new_def_LCC.category == 'Construction'
+            new_def_LCC.setCost(new_def_LCC.cost * (1 + material_and_installation_cost / 100))
+            new_def_LCC.setYearsFromStart(years_until_costs_start) # just uses argument value, does not need existing value
+            new_def_LCC.setRepeatPeriodYears(expected_life) # just uses argument value, does not need existing value
+          elsif new_def_LCC.category == 'Salvage'
+            new_def_LCC.setCost(new_def_LCC.cost * (1 + demolition_cost / 100))
+            new_def_LCC.setYearsFromStart(years_until_costs_start + expected_life) # just uses argument value, does not need existing value
+            new_def_LCC.setRepeatPeriodYears(expected_life) # just uses argument value, does not need existing value
+          elsif new_def_LCC.category == 'Maintenance'
+            new_def_LCC.setCost(new_def_LCC.cost * (1 + om_cost / 100))
+            new_def_LCC.setRepeatPeriodYears(om_frequency) # just uses argument value, does not need existing value
           end
 
           # reset any month durations
-          new_def_lcc.resetRepeatPeriodMonths
-          new_def_lcc.resetMonthsFromStart
+          new_def_LCC.resetRepeatPeriodMonths
+          new_def_LCC.resetMonthsFromStart
         end
 
       end
@@ -318,7 +320,6 @@ class ReduceElectricEquipmentLoadsByPercentage < OpenStudio::Measure::ModelMeasu
     # loop through space types
     space_types.each do |space_type|
       next if space_type.spaces.size <= 0
-
       space_type_equipments = space_type.electricEquipment
       space_type_equipments.each do |space_type_equipment|
         new_def = nil
@@ -393,7 +394,7 @@ class ReduceElectricEquipmentLoadsByPercentage < OpenStudio::Measure::ModelMeasu
     end
 
     # get final electric equipment costs to use in final condition
-    yr0_capital_total_costs += get_total_costs_for_objects(model.getElectricEquipmentDefinitions)
+    yr0_capital_totalCosts +=  get_total_costs_for_objects(model.getElectricEquipmentDefinitions)
 
     # add one time demo cost of removed electric equipment if appropriate
     if demo_cost_initial_const == true
@@ -403,15 +404,15 @@ class ReduceElectricEquipmentLoadsByPercentage < OpenStudio::Measure::ModelMeasu
 
       # if demo occurs on year 0 then add to initial capital cost counter
       if lcc_baseline_demo.yearsFromStart == 0
-        yr0_capital_total_costs += lcc_baseline_demo.totalCost
+        yr0_capital_totalCosts += lcc_baseline_demo.totalCost
       end
     end
 
     # report final condition
     final_building = model.getBuilding
     final_building_equip_power = final_building.electricEquipmentPower
-    final_building_epd = unit_helper(final_building.electricEquipmentPowerPerFloorArea, 'W/m^2', 'W/ft^2')
-    runner.registerFinalCondition("The model's final building electric equipment power was  #{neat_numbers(final_building_equip_power, 0)} watts, an electric equipment power density of #{neat_numbers(final_building_epd)} w/ft^2. Initial capital costs associated with the improvements are $#{neat_numbers(yr0_capital_total_costs, 0)}.")
+    final_building_EPD = unit_helper(final_building.electricEquipmentPowerPerFloorArea, 'W/m^2', 'W/ft^2')
+    runner.registerFinalCondition("The model's final building electric equipment power was  #{neat_numbers(final_building_equip_power, 0)} watts, an electric equipment power density of #{neat_numbers(final_building_EPD)} w/ft^2. Initial capital costs associated with the improvements are $#{neat_numbers(yr0_capital_totalCosts, 0)}.")
 
     return true
   end

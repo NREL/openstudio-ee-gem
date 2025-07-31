@@ -344,7 +344,7 @@ class CreateVariableSpeedRTU < OpenStudio::Measure::ModelMeasure
           changed_cav_to_vav = true
           runner.registerInfo("AirLoop '#{air_loop.name}' was changed from CAV to VAV")
 
-        end
+          end
       end # next supply component
 
       # Move on to the next air loop if no CAV to VAV change happened

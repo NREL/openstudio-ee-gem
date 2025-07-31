@@ -90,7 +90,7 @@ class IncreaseInsulationRValueForExteriorWallsByPercentage < OpenStudio::Ruleset
     exterior_surface_constructions.uniq.each do |exterior_surface_construction|
       # unit conversion of exterior surface insulation from SI units (M^2*K/W) to IP units (ft^2*h*R/Btu)
       initial_conductance_ip = unit_helper(1 / exterior_surface_construction.thermalConductance.to_f, 'm^2*K/W', 'ft^2*h*R/Btu')
-      initial_string << "#{exterior_surface_construction.name} (R-#{format '%.1f', initial_conductance_ip})"
+      initial_string << "#{exterior_surface_construction.name} (R-#{(format '%.1f', initial_conductance_ip)})"
     end
     runner.registerInitialCondition("The building had #{initial_string.size} exterior wall constructions: #{initial_string.sort.join(', ')}.")
 
@@ -113,9 +113,11 @@ class IncreaseInsulationRValueForExteriorWallsByPercentage < OpenStudio::Ruleset
       # loop through construction layers and infer insulation layer/material
       construction_layers.each do |construction_layer|
         construction_layer_r_value = construction_layer.to_OpaqueMaterial.get.thermalResistance
-        if !thermal_resistance_values.empty? && (construction_layer_r_value > thermal_resistance_values.max)
-          max_thermal_resistance_material = construction_layer
-          max_thermal_resistance_material_index = counter
+        if !thermal_resistance_values.empty?
+          if construction_layer_r_value > thermal_resistance_values.max
+            max_thermal_resistance_material = construction_layer
+            max_thermal_resistance_material_index = counter
+          end
         end
         thermal_resistance_values << construction_layer_r_value
         counter += 1
@@ -271,7 +273,7 @@ class IncreaseInsulationRValueForExteriorWallsByPercentage < OpenStudio::Ruleset
     final_constructions_array.each do |final_construction|
       # unit conversion of exterior surface insulation from SI units (M^2*K/W) to IP units (ft^2*h*R/Btu)
       final_conductance_ip = unit_helper(1 / final_construction.thermalConductance.to_f, 'm^2*K/W', 'ft^2*h*R/Btu')
-      final_string << "#{final_construction.name} (R-#{format '%.1f', final_conductance_ip})"
+      final_string << "#{final_construction.name} (R-#{(format '%.1f', final_conductance_ip)})"
       affected_area_si += final_construction.getNetArea
     end
 

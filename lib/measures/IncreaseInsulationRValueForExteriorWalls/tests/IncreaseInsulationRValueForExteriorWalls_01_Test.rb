@@ -9,7 +9,7 @@ require 'openstudio'
 require 'openstudio/measure/ShowRunnerOutput'
 require 'fileutils'
 
-require_relative '../measure'
+require_relative '../measure.rb'
 require 'minitest/autorun'
 
 class IncreaseInsulationRValueForExteriorWalls_Test < Minitest::Test
@@ -174,7 +174,7 @@ class IncreaseInsulationRValueForExteriorWalls_Test < Minitest::Test
 
     # loop over warnings
     expected_messages = {}
-    expected_messages[%r{The requested wall insulation R-value of 50\.0 ft\^2\*h\*R/Btu is abnormally high.}] = false
+    expected_messages[/The requested wall insulation R-value of 50\.0 ft\^2\*h\*R\/Btu is abnormally high./] = false
     expected_messages["Construction 'Test_No Insulation' does not appear to have an insulation layer and was not altered."] = false
     result.warnings.each do |warning|
       expected_messages.each_key do |message|

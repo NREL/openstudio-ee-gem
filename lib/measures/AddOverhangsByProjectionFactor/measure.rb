@@ -146,10 +146,12 @@ class AddOverhangsByProjectionFactor < OpenStudio::Measure::ModelMeasure
     def get_total_costs_for_objects(objects)
       counter = 0
       objects.each do |object|
-        object_lccs = object.lifeCycleCosts
-        object_lccs.each do |object_lcc|
-          if ((object_lcc.category == 'Construction') || (object_lcc.category == 'Salvage')) && (object_lcc.yearsFromStart == 0)
-            counter += object_lcc.totalCost
+        object_LCCs = object.lifeCycleCosts
+        object_LCCs.each do |object_LCC|
+          if (object_LCC.category == 'Construction') || (object_LCC.category == 'Salvage')
+            if object_LCC.yearsFromStart == 0
+              counter += object_LCC.totalCost
+            end
           end
         end
       end
@@ -157,23 +159,23 @@ class AddOverhangsByProjectionFactor < OpenStudio::Measure::ModelMeasure
     end
 
     # counter for year 0 capital costs
-    yr0_capital_total_costs = 0
+    yr0_capital_totalCosts = 0
 
     # get initial construction costs and multiply by -1
-    yr0_capital_total_costs += get_total_costs_for_objects(model.getConstructions) * -1
+    yr0_capital_totalCosts += get_total_costs_for_objects(model.getConstructions) * -1
 
     # reporting initial condition of model
-    number_of_existing_space_shading_surfaces = 0
+    number_of_exist_space_shading_surf = 0
     shading_groups = model.getShadingSurfaceGroups
     shading_groups.each do |shading_group|
       if shading_group.shadingSurfaceType == 'Space'
-        number_of_existing_space_shading_surfaces += shading_group.shading_surfaces.size
+        number_of_exist_space_shading_surf += shading_group.shadingSurfaces.size
       end
     end
-    runner.registerInitialCondition("The initial building had #{number_of_existing_space_shading_surfaces} space shading surfaces.")
+    runner.registerInitialCondition("The initial building had #{number_of_exist_space_shading_surf} space shading surfaces.")
 
     # delete all space shading groups if requested
-    if remove_ext_space_shading && (number_of_existing_space_shading_surfaces > 0)
+    if remove_ext_space_shading && (number_of_exist_space_shading_surf > 0)
       num_removed = 0
       shading_groups.each do |shading_group|
         if shading_group.shadingSurfaceType == 'Space'
@@ -198,18 +200,18 @@ class AddOverhangsByProjectionFactor < OpenStudio::Measure::ModelMeasure
       next if s.subSurfaceType == 'TubularDaylightDome'
       next if s.subSurfaceType == 'TubularDaylightDiffuser'
 
-      # get the absolute_azimuth for the surface so we can categorize it
-      absolute_azimuth = OpenStudio.convert(s.azimuth, 'rad', 'deg').get + s.space.get.directionofRelativeNorth + model.getBuilding.northAxis
-      absolute_azimuth -= 360.0 until absolute_azimuth < 360.0
+      # get the absoluteAzimuth for the surface so we can categorize it
+      absoluteAzimuth = OpenStudio.convert(s.azimuth, 'rad', 'deg').get + s.space.get.directionofRelativeNorth + model.getBuilding.northAxis
+      absoluteAzimuth -= 360.0 until absoluteAzimuth < 360.0
 
       if facade == 'North'
-        next if !((absolute_azimuth >= 315.0) || (absolute_azimuth < 45.0))
+        next if !((absoluteAzimuth >= 315.0) || (absoluteAzimuth < 45.0))
       elsif facade == 'East'
-        next if !((absolute_azimuth >= 45.0) && (absolute_azimuth < 135.0))
+        next if !((absoluteAzimuth >= 45.0) && (absoluteAzimuth < 135.0))
       elsif facade == 'South'
-        next if !((absolute_azimuth >= 135.0) && (absolute_azimuth < 225.0))
+        next if !((absoluteAzimuth >= 135.0) && (absoluteAzimuth < 225.0))
       elsif facade == 'West'
-        next if !((absolute_azimuth >= 225.0) && (absolute_azimuth < 315.0))
+        next if !((absoluteAzimuth >= 225.0) && (absoluteAzimuth < 315.0))
       else
         runner.registerError('Unexpected value of facade: ' + facade + '.')
         return false
@@ -217,7 +219,7 @@ class AddOverhangsByProjectionFactor < OpenStudio::Measure::ModelMeasure
 
       # delete existing overhang for this window if it exists from previously run measure
       shading_groups.each do |shading_group|
-        shading_s = shading_group.shading_surfaces
+        shading_s = shading_group.shadingSurfaces
         shading_s.each do |ss|
           if ss.name.to_s == "#{s.name} - Overhang"
             ss.remove
@@ -242,8 +244,10 @@ class AddOverhangsByProjectionFactor < OpenStudio::Measure::ModelMeasure
           runner.registerInfo('Added overhang ' + new_overhang.get.briefDescription + ' to ' +
               s.briefDescription + ' with projection factor ' + projection_factor.to_s +
               ' and offset ' + '0' + '.')
-          if construction_chosen && !construction.to_Construction.empty?
-            new_overhang.get.setConstruction(construction)
+          if construction_chosen
+            if !construction.to_Construction.empty?
+              new_overhang.get.setConstruction(construction)
+            end
           end
           overhang_added = true
         end
@@ -256,15 +260,15 @@ class AddOverhangsByProjectionFactor < OpenStudio::Measure::ModelMeasure
     end
 
     # get final construction costs and multiply
-    yr0_capital_total_costs += get_total_costs_for_objects(model.getConstructions)
+    yr0_capital_totalCosts += get_total_costs_for_objects(model.getConstructions)
 
     # reporting initial condition of model
-    number_of_final_space_shading_surfaces = 0
+    number_of_final_space_shading_surf = 0
     final_shading_groups = model.getShadingSurfaceGroups
     final_shading_groups.each do |shading_group|
-      number_of_final_space_shading_surfaces += shading_group.shading_surfaces.size
+      number_of_final_space_shading_surf += shading_group.shadingSurfaces.size
     end
-    runner.registerFinalCondition("The final building has #{number_of_final_space_shading_surfaces} space shading surfaces. Initial capital costs associated with the improvements are $#{neat_numbers(yr0_capital_total_costs, 0)}.")
+    runner.registerFinalCondition("The final building has #{number_of_final_space_shading_surf} space shading surfaces. Initial capital costs associated with the improvements are $#{neat_numbers(yr0_capital_totalCosts, 0)}.")
 
     return true
   end

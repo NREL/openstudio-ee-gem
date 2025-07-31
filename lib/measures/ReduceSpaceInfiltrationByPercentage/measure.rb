@@ -259,7 +259,6 @@ class ReduceSpaceInfiltrationByPercentage < OpenStudio::Measure::ModelMeasure
     # loop through space types
     space_types.each do |space_type|
       next if space_type.spaces.size <= 0
-
       space_type_infiltration_objects = space_type.spaceInfiltrationDesignFlowRates
       space_type_infiltration_objects.each do |space_type_infiltration_object|
         # call def to alter performance and life cycle costs
