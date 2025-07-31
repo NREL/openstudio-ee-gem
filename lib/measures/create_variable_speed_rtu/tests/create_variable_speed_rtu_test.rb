@@ -8,7 +8,7 @@
 require 'openstudio'
 require 'openstudio/ruleset/ShowRunnerOutput'
 require 'minitest/autorun'
-require_relative '../measure.rb'
+require_relative '../measure'
 require 'fileutils'
 
 class CreateVariableSpeedRTUTest < Minitest::Test

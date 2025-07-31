@@ -71,6 +71,7 @@ To address an issue in OpenStudio zones with ZoneVentilation, this measure adds 
     # looping through sorted hash of schedules to find air velocity schedules
     schedule_args_hash.sort.map do |key, value|
       next if value.scheduleTypeLimits.empty?
+
       if value.scheduleTypeLimits.get.unitType == 'Dimensionless'
         ventilation_schedule_handles << value.handle.to_s
         ventilation_schedule_display_names << key
@@ -99,15 +100,17 @@ To address an issue in OpenStudio zones with ZoneVentilation, this measure adds 
         next if surface.adjacentSurface.is_initialized != true
         next if !surface.adjacentSurface.get.space.is_initialized
         next if !surface.adjacentSurface.get.space.get.thermalZone.is_initialized
+
         adjacent_zone = surface.adjacentSurface.get.space.get.thermalZone.get
         if surface.surfaceType == 'RoofCeiling' || surface.surfaceType == 'Wall'
           if surface.isAirWall
             array << [adjacent_zone, surface.surfaceType]
           else
-            surface.subSurfaces.each do |sub_surface|
+            surface.sub_surfaces.each do |sub_surface|
               next if sub_surface.adjacentSubSurface.is_initialized != true
               next if !sub_surface.adjacentSubSurface.get.surface.get.space.is_initialized
               next if !sub_surface.adjacentSubSurface.get.surface.get.space.get.thermalZone.is_initialized
+
               adjacent_zone = sub_surface.adjacentSubSurface.get.surface.get.space.get.thermalZone.get
               if sub_surface.isAirWall || sub_surface.subSurfaceType == 'OperableWindow'
                 array << [adjacent_zone, surface.surfaceType]
@@ -156,9 +159,11 @@ To address an issue in OpenStudio zones with ZoneVentilation, this measure adds 
       zone.spaces.each do |space|
         space.surfaces.each do |surface|
           next if surface.surfaceType != 'Wall'
-          surface.subSurfaces.each do |sub_surface|
+
+          surface.sub_surfaces.each do |sub_surface|
             next if sub_surface.outsideBoundaryCondition != 'Outdoors'
             next if sub_surface.subSurfaceType != 'OperableWindow'
+
             zone_area_counter += sub_surface.netArea * sub_surface.multiplier
           end
         end
@@ -169,6 +174,7 @@ To address an issue in OpenStudio zones with ZoneVentilation, this measure adds 
 
       # add to operable_ext_window_hash if non-zero area
       next if zone_area_counter == 0.0
+
       bldg_area_counter += zone_area_counter
       operable_ext_window_hash[zone] = zone_area_counter
     end
@@ -226,9 +232,10 @@ To address an issue in OpenStudio zones with ZoneVentilation, this measure adds 
       until found_path_end == true
         found_ceiling = false
         path_objects[current_zone].each do |object|
-          next if zones_used_for_this_path.include? (object[0])
+          next if zones_used_for_this_path.include?(object[0])
           next if object[1].to_s != 'RoofCeiling'
-          next if operable_ext_window_hash.include? (object[0])
+          next if operable_ext_window_hash.include?(object[0])
+
           if found_ceiling
             runner.registerWarning("Found more than one possible airflow path for #{current_zone.name}")
           else
@@ -241,9 +248,10 @@ To address an issue in OpenStudio zones with ZoneVentilation, this measure adds 
         if !found_ceiling
           found_wall = false
           path_objects[current_zone].each do |object|
-            next if zones_used_for_this_path.include? (object[0])
+            next if zones_used_for_this_path.include?(object[0])
             next if object[1].to_s != 'Wall'
-            next if operable_ext_window_hash.include? (object[0])
+            next if operable_ext_window_hash.include?(object[0])
+
             if found_wall
               runner.registerWarning("Found more than one possible airflow path for #{current_zone.name}")
             else

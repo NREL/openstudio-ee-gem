@@ -257,12 +257,10 @@ class AddDaylightSensors < OpenStudio::Measure::ModelMeasure
     def get_total_costs_for_objects(objects)
       counter = 0
       objects.each do |object|
-        object_LCCs = object.lifeCycleCosts
-        object_LCCs.each do |object_LCC|
-          if (object_LCC.category == 'Construction') || (object_LCC.category == 'Salvage')
-            if object_LCC.yearsFromStart == 0
-              counter += object_LCC.totalCost
-            end
+        object_lccs = object.lifeCycleCosts
+        object_lccs.each do |object_lcc|
+          if ((object_lcc.category == 'Construction') || (object_lcc.category == 'Salvage')) && (object_lcc.yearsFromStart == 0)
+            counter += object_lcc.totalCost
           end
         end
       end
@@ -291,7 +289,7 @@ class AddDaylightSensors < OpenStudio::Measure::ModelMeasure
     runner.registerInitialCondition("#{spaces_using_space_type.size} spaces are assigned to space type '#{space_type.name}'.")
 
     # get starting costs for spaces
-    yr0_capital_totalCosts = -1 * get_total_costs_for_objects(spaces_using_space_type)
+    yr0_capital_total_costs = -1 * get_total_costs_for_objects(spaces_using_space_type)
 
     # test that there is no sensor already in the space, and that zone object doesn't already have sensors assigned.
     spaces_using_space_type.each do |space_using_space_type|
@@ -301,8 +299,7 @@ class AddDaylightSensors < OpenStudio::Measure::ModelMeasure
           space_zone = space_zone.get
           if space_zone.primaryDaylightingControl.empty? && space_zone.secondaryDaylightingControl.empty?
             spaces_using_space_type_in_zones_without_sensors << space_using_space_type
-          elsif
-            runner.registerWarning("Thermal zone '#{space_zone.name}' which includes space '#{space_using_space_type.name}' already had a daylighting sensor. No sensor was added to space '#{space_using_space_type.name}'.")
+          elsif runner.registerWarning("Thermal zone '#{space_zone.name}' which includes space '#{space_using_space_type.name}' already had a daylighting sensor. No sensor was added to space '#{space_using_space_type.name}'.")
           end
         else
           runner.registerWarning("Space '#{space_using_space_type.name}' is not associated with a thermal zone. It won't be part of the EnergyPlus simulation.")
@@ -323,9 +320,11 @@ class AddDaylightSensors < OpenStudio::Measure::ModelMeasure
       has_ext_nat_light = false
       space.surfaces.each do |surface|
         next if surface.outsideBoundaryCondition != 'Outdoors'
-        surface.subSurfaces.each do |sub_surface|
+
+        surface.sub_surfaces.each do |sub_surface|
           next if sub_surface.subSurfaceType == 'Door'
           next if sub_surface.subSurfaceType == 'OverheadDoor'
+
           has_ext_nat_light = true
         end
       end
@@ -338,6 +337,7 @@ class AddDaylightSensors < OpenStudio::Measure::ModelMeasure
       floors = []
       space.surfaces.each do |surface|
         next if surface.surfaceType != 'Floor'
+
         floors << surface
       end
 
@@ -480,10 +480,10 @@ class AddDaylightSensors < OpenStudio::Measure::ModelMeasure
     area_ip = OpenStudio.convert(area_si, unit_area_ip).get
 
     # get final costs for spaces
-    yr0_capital_totalCosts = get_total_costs_for_objects(spaces_using_space_type)
+    yr0_capital_total_costs = get_total_costs_for_objects(spaces_using_space_type)
 
     # reporting final condition of model
-    runner.registerFinalCondition("Added daylighting controls to #{sensor_count} spaces, covering #{area_ip}. Initial year costs associated with the daylighting controls is $#{neat_numbers(yr0_capital_totalCosts, 0)}.")
+    runner.registerFinalCondition("Added daylighting controls to #{sensor_count} spaces, covering #{area_ip}. Initial year costs associated with the daylighting controls is $#{neat_numbers(yr0_capital_total_costs, 0)}.")
 
     return true
   end

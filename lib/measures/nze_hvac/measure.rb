@@ -347,6 +347,7 @@ class NzeHvac < OpenStudio::Measure::ModelMeasure
     model.getThermalZones.each do |zone|
       next if OpenstudioStandards::ThermalZone.thermal_zone_plenum?(zone)
       next if !OpenstudioStandards::ThermalZone.thermal_zone_heated?(zone) && !OpenstudioStandards::ThermalZone.thermal_zone_cooled?(zone)
+
       conditioned_zones << zone
     end
 

@@ -9,7 +9,7 @@ require 'openstudio'
 require 'openstudio/measure/ShowRunnerOutput'
 require 'fileutils'
 
-require_relative '../measure.rb'
+require_relative '../measure'
 require 'minitest/autorun'
 
 class GLHEProExportLoadsforGroundHeatExchangerSizing_Test < Minitest::Test
@@ -129,10 +129,8 @@ class GLHEProExportLoadsforGroundHeatExchangerSizing_Test < Minitest::Test
     model.addObjects(request_model.objects)
     model.save(model_out_path(test_name), true)
 
-    if ENV['OPENSTUDIO_TEST_NO_CACHE_SQLFILE']
-      if File.exist?(sql_path(test_name))
-        FileUtils.rm_f(sql_path(test_name))
-      end
+    if ENV['OPENSTUDIO_TEST_NO_CACHE_SQLFILE'] && File.exist?(sql_path(test_name))
+      FileUtils.rm_f(sql_path(test_name))
     end
 
     if is_openstudio_2?

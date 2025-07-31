@@ -221,12 +221,10 @@ class ReduceLightingLoadsByPercentage < OpenStudio::Measure::ModelMeasure
     def get_total_costs_for_objects(objects)
       counter = 0
       objects.each do |object|
-        object_LCCs = object.lifeCycleCosts
-        object_LCCs.each do |object_LCC|
-          if (object_LCC.category == 'Construction') || (object_LCC.category == 'Salvage')
-            if object_LCC.yearsFromStart == 0
-              counter += object_LCC.totalCost
-            end
+        object_lccs = object.lifeCycleCosts
+        object_lccs.each do |object_lcc|
+          if ((object_lcc.category == 'Construction') || (object_lcc.category == 'Salvage')) && (object_lcc.yearsFromStart == 0)
+            counter += object_lcc.totalCost
           end
         end
       end
@@ -237,11 +235,11 @@ class ReduceLightingLoadsByPercentage < OpenStudio::Measure::ModelMeasure
     demo_costs_of_baseline_objects = 0
 
     # counter for year 0 capital costs
-    yr0_capital_totalCosts = 0
+    yr0_capital_total_costs = 0
 
     # get initial light and luminaire costs and multiply by -1
-    yr0_capital_totalCosts += get_total_costs_for_objects(model.getLightsDefinitions) * -1
-    yr0_capital_totalCosts += get_total_costs_for_objects(model.getLuminaireDefinitions) * -1
+    yr0_capital_total_costs += get_total_costs_for_objects(model.getLightsDefinitions) * -1
+    yr0_capital_total_costs += get_total_costs_for_objects(model.getLuminaireDefinitions) * -1
 
     # report initial condition
     building = model.getBuilding
@@ -291,29 +289,29 @@ class ReduceLightingLoadsByPercentage < OpenStudio::Measure::ModelMeasure
         runner.registerWarning("'#{new_def.name}' is used by one or more instances and has no load values. Its performance was not altered.")
       end
 
-      new_def_LCCs = new_def.lifeCycleCosts
-      if new_def_LCCs.empty?
+      new_def_lccs = new_def.lifeCycleCosts
+      if new_def_lccs.empty?
         if material_and_installation_cost.abs + demolition_cost.abs + om_cost.abs != 0
           runner.registerWarning("'#{new_def.name}' had no life cycle cost objects. No cost was added for it.")
         end
       else
-        new_def_LCCs.each do |new_def_LCC|
-          if new_def_LCC.category == 'Construction'
-            new_def_LCC.setCost(new_def_LCC.cost * (1 + material_and_installation_cost / 100))
-            new_def_LCC.setYearsFromStart(years_until_costs_start) # just uses argument value, does not need existing value
-            new_def_LCC.setRepeatPeriodYears(expected_life) # just uses argument value, does not need existing value
-          elsif new_def_LCC.category == 'Salvage'
-            new_def_LCC.setCost(new_def_LCC.cost * (1 + demolition_cost / 100))
-            new_def_LCC.setYearsFromStart(years_until_costs_start + expected_life) # just uses argument value, does not need existing value
-            new_def_LCC.setRepeatPeriodYears(expected_life) # just uses argument value, does not need existing value
-          elsif new_def_LCC.category == 'Maintenance'
-            new_def_LCC.setCost(new_def_LCC.cost * (1 + om_cost / 100))
-            new_def_LCC.setRepeatPeriodYears(om_frequency) # just uses argument value, does not need existing value
+        new_def_lccs.each do |new_def_lcc|
+          if new_def_lcc.category == 'Construction'
+            new_def_lcc.setCost(new_def_lcc.cost * (1 + material_and_installation_cost / 100))
+            new_def_lcc.setYearsFromStart(years_until_costs_start) # just uses argument value, does not need existing value
+            new_def_lcc.setRepeatPeriodYears(expected_life) # just uses argument value, does not need existing value
+          elsif new_def_lcc.category == 'Salvage'
+            new_def_lcc.setCost(new_def_lcc.cost * (1 + demolition_cost / 100))
+            new_def_lcc.setYearsFromStart(years_until_costs_start + expected_life) # just uses argument value, does not need existing value
+            new_def_lcc.setRepeatPeriodYears(expected_life) # just uses argument value, does not need existing value
+          elsif new_def_lcc.category == 'Maintenance'
+            new_def_lcc.setCost(new_def_lcc.cost * (1 + om_cost / 100))
+            new_def_lcc.setRepeatPeriodYears(om_frequency) # just uses argument value, does not need existing value
           end
 
           # reset any month durations
-          new_def_LCC.resetRepeatPeriodMonths
-          new_def_LCC.resetMonthsFromStart
+          new_def_lcc.resetRepeatPeriodMonths
+          new_def_lcc.resetMonthsFromStart
         end
 
       end
@@ -326,6 +324,7 @@ class ReduceLightingLoadsByPercentage < OpenStudio::Measure::ModelMeasure
     # loop through space types
     space_types.each do |space_type|
       next if space_type.spaces.size <= 0
+
       space_type_lights = space_type.lights
       space_type_lights.each do |space_type_light|
         # clone def if it has not already been cloned
@@ -450,8 +449,8 @@ class ReduceLightingLoadsByPercentage < OpenStudio::Measure::ModelMeasure
     end
 
     # get final light and luminaire costs to use in final condition
-    yr0_capital_totalCosts += get_total_costs_for_objects(model.getLightsDefinitions)
-    yr0_capital_totalCosts += get_total_costs_for_objects(model.getLuminaireDefinitions)
+    yr0_capital_total_costs += get_total_costs_for_objects(model.getLightsDefinitions)
+    yr0_capital_total_costs += get_total_costs_for_objects(model.getLuminaireDefinitions)
 
     # add one time demo cost of removed lights and luminaires if appropriate
     if demo_cost_initial_const == true
@@ -461,7 +460,7 @@ class ReduceLightingLoadsByPercentage < OpenStudio::Measure::ModelMeasure
 
       # if demo occurs on year 0 then add to initial capital cost counter
       if lcc_baseline_demo.yearsFromStart == 0
-        yr0_capital_totalCosts += lcc_baseline_demo.totalCost
+        yr0_capital_total_costs += lcc_baseline_demo.totalCost
       end
     end
 
@@ -472,7 +471,7 @@ class ReduceLightingLoadsByPercentage < OpenStudio::Measure::ModelMeasure
     # method should always return double but this is work around for when it is nan because of 0 floor area
     if building.floorArea > 0.0
       final_building_LPD = unit_helper(final_building.lightingPowerPerFloorArea, 'W/m^2', 'W/ft^2')
-      runner.registerFinalCondition("The model's final final lighting power was  #{neat_numbers(final_building_lighting_power, 0)} watts, a lighting power density of #{neat_numbers(final_building_LPD)} w/ft^2. Initial capital costs associated with the improvements are $#{neat_numbers(yr0_capital_totalCosts, 0)}.")
+      runner.registerFinalCondition("The model's final final lighting power was  #{neat_numbers(final_building_lighting_power, 0)} watts, a lighting power density of #{neat_numbers(final_building_LPD)} w/ft^2. Initial capital costs associated with the improvements are $#{neat_numbers(yr0_capital_total_costs, 0)}.")
     else
       runner.registerFinalCondition("The model's final final lighting power was  #{neat_numbers(final_building_lighting_power, 0)} wattsBuilding Area is not greater than 0 so an LPD can't be calculated.")
     end
