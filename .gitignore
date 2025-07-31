@@ -30,3 +30,8 @@ lib/test/*
 
 # Ignore measure tester gem local test results
 test_results/
+
+# Ignore Crush related files
+.crush.json
+/.crush
+CRUSH.md
