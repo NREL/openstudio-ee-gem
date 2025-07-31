@@ -12,6 +12,11 @@ gemspec
 # checkout the latest version (develop) from github.
 allow_local = ENV['FAVOR_LOCAL_GEMS']
 
+# LSP servers for development
+group :development do
+  gem 'solargraph', require: false
+end
+
 # Delete when these branchesa are merged and released
 # gem 'openstudio-extension', github: 'NREL/OpenStudio-extension-gem', branch: 'wenyi-fix-build-temp', ref: "34a39a24aee2259de"
 # gem 'openstudio-standards', github: 'NREL/openstudio-standards', tag: 'v0.6.0.rc2', ref: "1c42110"
