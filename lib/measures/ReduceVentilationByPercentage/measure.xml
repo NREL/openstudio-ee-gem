@@ -3,8 +3,8 @@
   <schema_version>3.1</schema_version>
   <name>reduce_ventilation_by_percentage</name>
   <uid>f0859a47-fddf-4962-9035-2f9fc9d6e283</uid>
-  <version_id>fff9383f-e56b-47db-a709-1e93b706bccd</version_id>
-  <version_modified>2024-11-16T23:47:44Z</version_modified>
+  <version_id>2ab1bcb6-0d6d-4d00-8ccb-e0c1f9ec0179</version_id>
+  <version_modified>2025-08-08T15:15:56Z</version_modified>
   <xml_checksum>ECE70A70</xml_checksum>
   <class_name>ReduceVentilationByPercentage</class_name>
   <display_name>ReduceVentilationByPercentage</display_name>
@@ -17,10 +17,10 @@
       <type>Choice</type>
       <required>true</required>
       <model_dependent>false</model_dependent>
-      <default_value>{cb2384e3-c006-4869-9e5b-9bb4da36a84f}</default_value>
+      <default_value>{a6e55f07-6997-4f72-af31-ce3fbcd38088}</default_value>
       <choices>
         <choice>
-          <value>{cb2384e3-c006-4869-9e5b-9bb4da36a84f}</value>
+          <value>{a6e55f07-6997-4f72-af31-ce3fbcd38088}</value>
           <display_name>*Entire Building*</display_name>
         </choice>
       </choices>
@@ -56,7 +56,7 @@
       <filename>LICENSE.md</filename>
       <filetype>md</filetype>
       <usage_type>license</usage_type>
-      <checksum>8C5A8023</checksum>
+      <checksum>FFCBFF29</checksum>
     </file>
     <file>
       <filename>README.md</filename>

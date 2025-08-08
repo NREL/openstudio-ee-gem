@@ -3,8 +3,8 @@
   <schema_version>3.1</schema_version>
   <name>improve_motor_efficiency</name>
   <uid>52013ba9-7b9b-4ffd-bc67-d4c0fa05d7ae</uid>
-  <version_id>9714ddc3-de33-48a4-8ef6-e577e8dc7b58</version_id>
-  <version_modified>2024-11-16T23:47:46Z</version_modified>
+  <version_id>f10a9555-aef0-4ca0-b1de-285d32d5561c</version_id>
+  <version_modified>2025-08-08T15:15:57Z</version_modified>
   <xml_checksum>F78494F2</xml_checksum>
   <class_name>ImproveMotorEfficiency</class_name>
   <display_name>Improve Motor Efficiency in Selected Fans and Pumps</display_name>
@@ -31,10 +31,10 @@ The cost arguments are user arguments that start with a default of $0. Operation
       <type>Choice</type>
       <required>true</required>
       <model_dependent>false</model_dependent>
-      <default_value>{e6d4f91e-af13-477b-b315-2c5dc6e9a6fc}</default_value>
+      <default_value>{783d4a71-fb33-4da4-8fea-0f5801bac4eb}</default_value>
       <choices>
         <choice>
-          <value>{e6d4f91e-af13-477b-b315-2c5dc6e9a6fc}</value>
+          <value>{783d4a71-fb33-4da4-8fea-0f5801bac4eb}</value>
           <display_name>*All Plant and Air Loops*</display_name>
         </choice>
       </choices>
@@ -154,7 +154,7 @@ The cost arguments are user arguments that start with a default of $0. Operation
       <filename>LICENSE.md</filename>
       <filetype>md</filetype>
       <usage_type>license</usage_type>
-      <checksum>8C5A8023</checksum>
+      <checksum>FFCBFF29</checksum>
     </file>
     <file>
       <filename>README.md</filename>
