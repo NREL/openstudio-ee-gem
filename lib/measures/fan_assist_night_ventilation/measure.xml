@@ -3,8 +3,8 @@
   <schema_version>3.1</schema_version>
   <name>fan_assist_night_ventilation</name>
   <uid>5e77cb11-0fa9-432b-97bd-87c40949ee1f</uid>
-  <version_id>7b02dbeb-897a-41f6-8c48-e987e9474ae5</version_id>
-  <version_modified>2024-11-16T23:47:46Z</version_modified>
+  <version_id>a06b24ea-d2cf-4397-931c-4d72ff15fce1</version_id>
+  <version_modified>2025-08-08T15:15:58Z</version_modified>
   <xml_checksum>26DDAE64</xml_checksum>
   <class_name>FanAssistNightVentilation</class_name>
   <display_name>Fan Assist Night Ventilation</display_name>
@@ -95,7 +95,7 @@ To address an issue in OpenStudio zones with ZoneVentilation, this measure adds 
       <filename>LICENSE.md</filename>
       <filetype>md</filetype>
       <usage_type>license</usage_type>
-      <checksum>8C5A8023</checksum>
+      <checksum>FFCBFF29</checksum>
     </file>
     <file>
       <filename>README.md</filename>
