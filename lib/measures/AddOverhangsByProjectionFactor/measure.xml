@@ -3,8 +3,8 @@
   <schema_version>3.1</schema_version>
   <name>add_overhangs_by_projection_factor</name>
   <uid>1e29e117-3916-4368-b24d-75da54045956</uid>
-  <version_id>4077a18a-0ae2-40cd-b206-979576822485</version_id>
-  <version_modified>2024-11-16T23:47:46Z</version_modified>
+  <version_id>680a7548-4ba3-4bde-9a58-f8873dd8d535</version_id>
+  <version_modified>2025-08-08T15:15:58Z</version_modified>
   <xml_checksum>6DE831F7</xml_checksum>
   <class_name>AddOverhangsByProjectionFactor</class_name>
   <display_name>Add Overhangs by Projection Factor</display_name>
@@ -104,7 +104,7 @@
       <filename>LICENSE.md</filename>
       <filetype>md</filetype>
       <usage_type>license</usage_type>
-      <checksum>8C5A8023</checksum>
+      <checksum>FFCBFF29</checksum>
     </file>
     <file>
       <filename>README.md</filename>
