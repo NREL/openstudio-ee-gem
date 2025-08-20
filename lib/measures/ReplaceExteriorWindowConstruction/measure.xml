@@ -3,9 +3,9 @@
   <schema_version>3.1</schema_version>
   <name>replace_exterior_window_construction</name>
   <uid>95116deb-0716-4cdc-af27-09c463befc7c</uid>
-  <version_id>9049d224-1adb-4f87-9b82-4c4f75a1bd44</version_id>
-  <version_modified>2025-06-13T00:10:56Z</version_modified>
-  <xml_checksum>680C4655</xml_checksum>
+  <version_id>464d60e7-4702-4a27-b56a-a5075a7fb57c</version_id>
+  <version_modified>2024-12-04T18:48:12Z</version_modified>
+  <xml_checksum>6DE831F7</xml_checksum>
   <class_name>ReplaceExteriorWindowConstruction</class_name>
   <display_name>Replace Exterior Window Constructions with a Different Construction from the Model.</display_name>
   <description>Replace existing windows with different windows to change thermal or lighting performance.  Window technology has improved drastically over the years, and double or triple-pane high performance windows currently on the market can cut down on envelope loads greatly.  Window frames with thermal breaks reduce the considerable energy that can transfer through thermally unbroken frames.  High performance windows typically also come with low-emissivity (low?e) glass to keep radiant heat on the same side of the glass from where the heat originated. This means that during the cooling months a low-e glass would tend to keep radiant heat from the sun on the outside of the window, which would keep the inside of a building cooler. Conversely, during heating months low-e glass helps keep radiant heat from inside the building on the inside, which would keep the inside of a building warmer.  Life cycle cost values may be added for the new window applied by the measure.</description>
