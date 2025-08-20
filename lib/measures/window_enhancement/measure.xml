@@ -1,0 +1,146 @@
+<?xml version="1.0"?>
+<measure>
+  <schema_version>3.1</schema_version>
+  <error>Failed to infer measure name from '/Users/dgoldwas/Documents/github/nrel/openstudio-ee-gem/lib/measures/window_enhancement/measure.py'</error>
+  <name>window_enhancment</name>
+  <uid>0ad8e761-8624-4d9d-a7d6-ebf30cce243b</uid>
+  <version_id>75793dfe-a8b4-4857-a447-7511e4cd4b38</version_id>
+  <version_modified>2025-08-20T03:03:21Z</version_modified>
+  <xml_checksum>7DADF7C5</xml_checksum>
+  <class_name>WindowEnhancment</class_name>
+  <display_name>Window Enhancment</display_name>
+  <description>Make existing window better by adding film, storm window, or something else.</description>
+  <modeler_description>I'm going to use layred construction and not simple glazing to do this. We have to think about how to address simple glazing with this.</modeler_description>
+  <arguments>
+    <argument>
+      <name>space_name</name>
+      <display_name>New space name</display_name>
+      <description>This name will be used as the name of the new space.</description>
+      <type>String</type>
+      <required>true</required>
+      <model_dependent>false</model_dependent>
+    </argument>
+  </arguments>
+  <outputs />
+  <provenances />
+  <tags>
+    <tag>Envelope.Fenestration</tag>
+  </tags>
+  <attributes>
+    <attribute>
+      <name>Measure Type</name>
+      <value>ModelMeasure</value>
+      <datatype>string</datatype>
+    </attribute>
+    <attribute>
+      <name>Measure Language</name>
+      <value>Python</value>
+      <datatype>string</datatype>
+    </attribute>
+    <attribute>
+      <name>Intended Software Tool</name>
+      <value>Apply Measure Now</value>
+      <datatype>string</datatype>
+    </attribute>
+    <attribute>
+      <name>Intended Software Tool</name>
+      <value>OpenStudio Application</value>
+      <datatype>string</datatype>
+    </attribute>
+    <attribute>
+      <name>Intended Software Tool</name>
+      <value>Parametric Analysis Tool</value>
+      <datatype>string</datatype>
+    </attribute>
+    <attribute>
+      <name>Intended Use Case</name>
+      <value>Retrofit EE</value>
+      <datatype>string</datatype>
+    </attribute>
+  </attributes>
+  <files>
+    <file>
+      <filename>LICENSE.md</filename>
+      <filetype>md</filetype>
+      <usage_type>license</usage_type>
+      <checksum>CD7F5672</checksum>
+    </file>
+    <file>
+      <filename>README.md</filename>
+      <filetype>md</filetype>
+      <usage_type>readme</usage_type>
+      <checksum>DE9B0464</checksum>
+    </file>
+    <file>
+      <filename>.gitkeep</filename>
+      <filetype>gitkeep</filetype>
+      <usage_type>doc</usage_type>
+      <checksum>00000000</checksum>
+    </file>
+    <file>
+      <version>
+        <software_program>OpenStudio</software_program>
+        <identifier>3.8.0</identifier>
+        <min_compatible>3.8.0</min_compatible>
+      </version>
+      <filename>measure.py</filename>
+      <filetype>py</filetype>
+      <usage_type>script</usage_type>
+      <checksum>3D0A891D</checksum>
+    </file>
+    <file>
+      <filename>EC3_lookup.py</filename>
+      <filetype>py</filetype>
+      <usage_type>resource</usage_type>
+      <checksum>2832F008</checksum>
+    </file>
+    <file>
+      <filename>Test_API.py</filename>
+      <filetype>py</filetype>
+      <usage_type>resource</usage_type>
+      <checksum>26458C20</checksum>
+    </file>
+    <file>
+      <filename>__pycache__/EC3_lookup.cpython-39.pyc</filename>
+      <filetype>pyc</filetype>
+      <usage_type>resource</usage_type>
+      <checksum>75A86FF8</checksum>
+    </file>
+    <file>
+      <filename>__pycache__/Original_EC3_lookup.py</filename>
+      <filetype>py</filetype>
+      <usage_type>resource</usage_type>
+      <checksum>12B4F7DC</checksum>
+    </file>
+    <file>
+      <filename>__pycache__/Test_API.cpython-39.pyc</filename>
+      <filetype>pyc</filetype>
+      <usage_type>resource</usage_type>
+      <checksum>817EE4CA</checksum>
+    </file>
+    <file>
+      <filename>calculate_perimeter.py</filename>
+      <filetype>py</filetype>
+      <usage_type>resource</usage_type>
+      <checksum>D7980CA8</checksum>
+    </file>
+    <file>
+      <filename>example_model.osm</filename>
+      <filetype>osm</filetype>
+      <usage_type>test</usage_type>
+      <checksum>E08CA027</checksum>
+    </file>
+    <file>
+      <filename>example_model_2.osm</filename>
+      <filetype>osm</filetype>
+      <usage_type>test</usage_type>
+      <checksum>E01ECAD1</checksum>
+    </file>
+    <file>
+      <filename>test_window_enhancement.py</filename>
+      <filetype>py</filetype>
+      <usage_type>test</usage_type>
+      <checksum>061487A7</checksum>
+    </file>
+  </files>
+</measure>
