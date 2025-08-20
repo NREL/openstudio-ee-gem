@@ -4,8 +4,8 @@
   <error>Failed to infer measure name from '/Users/dgoldwas/Documents/github/nrel/openstudio-ee-gem/lib/measures/window_enhancement/measure.py'</error>
   <name>window_enhancment</name>
   <uid>0ad8e761-8624-4d9d-a7d6-ebf30cce243b</uid>
-  <version_id>9148baa9-f1cf-4b67-bb75-97c8a2075204</version_id>
-  <version_modified>2025-07-15T07:23:29Z</version_modified>
+  <version_id>227939c0-0df1-4b31-8e3b-6f910c14bec0</version_id>
+  <version_modified>2025-08-20T00:19:39Z</version_modified>
   <xml_checksum>7DADF7C5</xml_checksum>
   <class_name>WindowEnhancment</class_name>
   <display_name>Window Enhancment</display_name>
@@ -368,7 +368,7 @@
       <filename>test_window_enhancement.py</filename>
       <filetype>py</filetype>
       <usage_type>test</usage_type>
-      <checksum>3BFB84E5</checksum>
+      <checksum>B287F322</checksum>
     </file>
   </files>
 </measure>
