@@ -1,7 +1,16 @@
 # OpenStudio(R) EE Gem
 
-## Version 0.12.1
+## Version 0.12.4
 * Adding first version of window enhancement measure. This is python measure that has extra dependencies, and also requires an EC3 API key. It looks up content on EC3, stores embodied carbon data in the OpenStudio model and updates the window performance. You can not use it to only update window performance without using the EC3 database.
+
+## Version 0.12.3
+* Update dependency for extension gem from 0.9.2 to 0.9.3
+
+## Version 0.12.2
+* Release maintenance version
+
+## Version 0.12.1
+* Update copyright year in LICENSE files to 2025
 
 ## Version 0.12.0
 * Support for OpenStudio 3.10 (upgrade to standards gem 0.8.2, extension gem 0.9.1)
