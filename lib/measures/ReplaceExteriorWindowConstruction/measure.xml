@@ -165,6 +165,11 @@
       <value>false</value>
       <datatype>boolean</datatype>
     </attribute>
+    <attribute>
+      <name>Measure Language</name>
+      <value>Ruby</value>
+      <datatype>string</datatype>
+    </attribute>
   </attributes>
   <files>
     <file>
@@ -207,6 +212,12 @@
       <filetype>osm</filetype>
       <usage_type>test</usage_type>
       <checksum>40BB59D1</checksum>
+    </file>
+    <file>
+      <filename>ReplaceExteriorWindowConstruction_Test.py</filename>
+      <filetype>py</filetype>
+      <usage_type>test</usage_type>
+      <checksum>ABA92ACD</checksum>
     </file>
     <file>
       <filename>ReplaceExteriorWindowConstruction_Test.rb</filename>
