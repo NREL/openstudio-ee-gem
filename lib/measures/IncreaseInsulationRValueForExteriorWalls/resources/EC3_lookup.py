@@ -8,11 +8,8 @@ import configparser
 from datetime import datetime
 import os
 import numpy as np
-
 import pprint as pp
-
-
-
+import urllib.parse
 
 script_dir = os.path.dirname(os.path.abspath(__file__))
 repo_root = os.path.abspath(os.path.join(script_dir, "../../../.."))
@@ -77,6 +74,46 @@ def generate_url(material_name, endpoint ="materials", page_number=1, page_size=
     url += "!pragma%20eMF(%222.0%2F1%22)%2C%20lcia(%22TRACI%202.1%22)"
     
     return url
+
+def generate_url_byname(query: str = None,
+                        name_like: str = None,
+                        description_like: str = None,
+                        category: str = None,
+                        page_number: int = 1,
+                        page_size: int = 250,
+                        declaration_type: str = "Product EPD",
+                        plant_geography: str = "021") -> str:
+    """
+    Generate a URL for fetching EPD data based on EPD name or description.
+    jurisdiction = "021" means Northern America region
+    Don't change the order of parameters in the URL, otherwise the API won't work.
+    """
+    base_url = "https://api.buildingtransparency.org/api/epds"
+    params = [
+        ("page_number", page_number),
+        ("page_size", page_size),
+        ("sort_by", "-updated_on"),
+    ]
+        # Place category immediately after sort_by if provided.
+    if category:
+        # e.g., insulation: "bf1c8882d7784db4b10d9d5698b8b5cc"
+        # door hardware: "ca54e842c0fc4bf2b4f3a8564c3b1a4d"
+        params.append(("category", category))
+
+    # Add the rest
+    if query:
+        params.append(("q", query))
+    if name_like:
+        params.append(("name__like", name_like))
+    if description_like:
+        params.append(("description__like", description_like))
+    if plant_geography:
+        params.append(("plant_geography", plant_geography))
+    if declaration_type:
+        params.append(("declaration_type", declaration_type))
+
+    return f"{base_url}?{urllib.parse.urlencode(params)}"
+
 # this function is sending API call, the response is json format
 def fetch_epd_data(url,api_token):
     """
@@ -131,13 +168,13 @@ def parse_product_epd(epd: Dict[str, Any]) -> Dict[str, Any]:
         mass_per_declared_unit = divide(category_mass_per_declared_unit,category_decalred_unit)
 
     # Per kg
-    if gwp_per_kg is None:
+    if gwp_per_kg is None or gwp_per_kg == 0.0:
         if "t" in declared_unit:
             gwp_per_kg = divide(gwp_per_declared_unit, declared_unit) / 1000
         elif "kg" in declared_unit:
             gwp_per_kg = divide(gwp_per_declared_unit, declared_unit)
         # handle when mass_per_declared_unit exist
-        elif mass_per_declared_unit is not None and not any(unit in declared_unit for unit in ["kg", "t"]):
+        elif mass_per_declared_unit:
             gwp_per_kg = divide(gwp_per_declared_unit, mass_per_declared_unit)
 
     # Per m3
@@ -145,13 +182,13 @@ def parse_product_epd(epd: Dict[str, Any]) -> Dict[str, Any]:
         gwp_per_m3 = divide(gwp_per_declared_unit, declared_unit)
     elif "cf" in declared_unit:
         gwp_per_m3 = divide(gwp_per_declared_unit, declared_unit) * 35.3147 # convert from cubic feet to m3
-    elif any(x in declared_unit for x in ["m2", "m^2"]) and thickness and "mm" in thickness:
+    elif any(x in declared_unit for x in ["m\u00b2","m2", "m^2"]) and thickness and "mm" in thickness:
         gwp_per_m3 = divide(gwp_per_declared_unit, declared_unit)/(extract_numeric_value(thickness)/1000)
     elif density and any(x in density for x in ["kg / m3", "kg / m^3"]) and gwp_per_kg:
         gwp_per_m3 = multiply(gwp_per_kg, density)
 
     # Per m2
-    if any(x in declared_unit for x in ["m2", "m^2"]):
+    if any(x in declared_unit for x in ["m\u00b2","m2", "m^2"]):
         gwp_per_m2 = divide(gwp_per_declared_unit, declared_unit)
     elif any(x in declared_unit for x in ["ft²","sf", "ft^2"]):
         gwp_per_m2 = divide(gwp_per_declared_unit, declared_unit) * 10.7639 # convert from square feet to m2
@@ -188,7 +225,6 @@ def parse_industrial_epd(epd: Dict[str, Any]) -> Dict[str, Any]:
     with open(file_path, 'w') as json_file:
         json.dump(epd, json_file)
 
-
     parsed_data = {}
     gwp_per_m3 = 0.0
     gwp_per_m2 = 0.0
@@ -214,13 +250,13 @@ def parse_industrial_epd(epd: Dict[str, Any]) -> Dict[str, Any]:
     thickness_per_declared_unit_avg = compute_average(thickness_per_declared_unit_min,thickness_per_declared_unit_max)
 
     # Per kg
-    if gwp_per_kg is None:
+    if gwp_per_kg is None or gwp_per_kg == 0.0:
         if "t" in declared_unit:
             gwp_per_kg = divide(gwp_per_declared_unit, declared_unit) / 1000
         elif "kg" in declared_unit:
             gwp_per_kg = divide(gwp_per_declared_unit, declared_unit)
         # handle when mass_per_declared_unit exist
-        elif mass_per_declared_unit is not None and not any(unit in declared_unit for unit in ["kg", "t"]):
+        elif mass_per_declared_unit:
             gwp_per_kg = divide(gwp_per_declared_unit, mass_per_declared_unit)
 
     # Per m3
@@ -228,13 +264,13 @@ def parse_industrial_epd(epd: Dict[str, Any]) -> Dict[str, Any]:
         gwp_per_m3 = divide(gwp_per_declared_unit, declared_unit)
     elif "cf" in declared_unit:
         gwp_per_m3 = divide(gwp_per_declared_unit, declared_unit) * 35.3147 # convert from cubic feet to m3
-    elif any(x in declared_unit for x in ["m2", "m^2"]) and thickness_per_declared_unit_avg and "mm" in thickness_per_declared_unit_min:
+    elif any(x in declared_unit for x in ["m\u00b2","m2", "m^2"]) and thickness_per_declared_unit_avg and "mm" in thickness_per_declared_unit_min:
         gwp_per_m3 = divide(gwp_per_declared_unit, declared_unit)/(extract_numeric_value(thickness_per_declared_unit_avg)/1000)
     elif density_avg and gwp_per_kg:
         gwp_per_m3 = multiply(gwp_per_kg, density_avg)
 
     # Per m2
-    if any(x in declared_unit for x in ["m2", "m^2"]):
+    if any(x in declared_unit for x in ["m\u00b2","m2", "m^2"]):
         gwp_per_m2 = divide(gwp_per_declared_unit, declared_unit)
     elif "sf" in declared_unit:
         gwp_per_m2 = divide(gwp_per_declared_unit, declared_unit) * 10.7639 # convert from square feet to m2
@@ -400,23 +436,33 @@ def main():
     """
     print("Fetching EC3 EPD data...")
 
-    for category, list in material_category.items():
-        # print(material_category[category])
-        for name in list:
-            # print(name)
-            product_url = generate_url(name, endpoint="materials", epd_type="Product",insulation_application='Exterior%20Wall')
-            industry_url = generate_url(name, endpoint="industry_epds", epd_type="Industry")
-
-            product_epd_data = fetch_epd_data(product_url,API_TOKEN) 
-            industrial_epd_data = fetch_epd_data(industry_url,API_TOKEN)
-            # print(f"Number of  product EPDs for {name}: {len(product_epd_data)}")
-            # print(f"Number of  industrial EPDs for {name}: {len(industrial_epd_data)}")
-            for idx, epd in enumerate(product_epd_data, start=1):
+    print("Search EPD based on names:")
+    search_url=generate_url_byname(name_like= "cellulose", category="bf1c8882d7784db4b10d9d5698b8b5cc")
+    epd_data = fetch_epd_data(search_url, API_TOKEN)
+    
+    for idx, epd in enumerate(epd_data, start=1):
                 parsed_data = parse_product_epd(epd)
-                # print(f"Product EPD #{idx}: {json.dumps(parsed_data, indent=4)}")
-            for idx, epd in enumerate(industrial_epd_data, start=1):
-                parsed_data = parse_industrial_epd(epd)
-                # print(f"Industrial EPD #{idx}: {json.dumps(parsed_data, indent=4)}")
+                print(f"Product EPD #{idx}: {json.dumps(parsed_data, indent=4)}")
+    print(f"Number of  product EPDs: {len(epd_data)}")
+
+    # print("Search EPD based on Masterformat divisons:")
+    # for category, list in material_category.items():
+    #     # print(material_category[category])
+    #     for name in list:
+    #         # print(name)
+    #         product_url = generate_url(name, endpoint="materials", epd_type="Product",insulation_application='Exterior%20Wall')
+    #         industry_url = generate_url(name, endpoint="industry_epds", epd_type="Industry")
+
+    #         product_epd_data = fetch_epd_data(product_url,API_TOKEN) 
+    #         industrial_epd_data = fetch_epd_data(industry_url,API_TOKEN)
+    #         # print(f"Number of  product EPDs for {name}: {len(product_epd_data)}")
+    #         # print(f"Number of  industrial EPDs for {name}: {len(industrial_epd_data)}")
+    #         for idx, epd in enumerate(product_epd_data, start=1):
+    #             parsed_data = parse_product_epd(epd)
+    #             # print(f"Product EPD #{idx}: {json.dumps(parsed_data, indent=4)}")
+    #         for idx, epd in enumerate(industrial_epd_data, start=1):
+    #             parsed_data = parse_industrial_epd(epd)
+    #             # print(f"Industrial EPD #{idx}: {json.dumps(parsed_data, indent=4)}")
 
 if __name__ == "__main__":
     main()
