@@ -93,6 +93,7 @@ def fetch_epd_data(url,api_token):
         else:
             print("No response content available.")
         return []
+    
 # process the json response obtained from fetch_epd_data function for product epds
 def parse_product_epd(epd: Dict[str, Any]) -> Dict[str, Any]:
     """
@@ -126,30 +127,30 @@ def parse_product_epd(epd: Dict[str, Any]) -> Dict[str, Any]:
 
     # Per kg
     if gwp_per_kg is None:
-        if "t" in declared_unit:
+        if declared_unit and "t" in declared_unit:
             gwp_per_kg = divide(gwp_per_declared_unit, declared_unit) / 1000
-        elif "kg" in declared_unit:
+        elif declared_unit and "kg" in declared_unit:
             gwp_per_kg = divide(gwp_per_declared_unit, declared_unit)
         # handle when mass_per_declared_unit exist
-        elif mass_per_declared_unit is not None and not any(unit in declared_unit for unit in ["kg", "t"]):
+        elif mass_per_declared_unit is not None and declared_unit is not None and not any(unit in declared_unit for unit in ["kg", "t"]):
             gwp_per_kg = divide(gwp_per_declared_unit, mass_per_declared_unit)
 
     # Per m3
-    if any(x in declared_unit for x in ["m3", "m^3"]): # these functional units come in differnet expression style, need to incorporate different styles by looking into json reponse
+    if declared_unit and any(x in declared_unit for x in ["m3", "m^3"]): # these functional units come in differnet expression style, need to incorporate different styles by looking into json reponse
         gwp_per_m3 = divide(gwp_per_declared_unit, declared_unit)
-    elif "cf" in declared_unit:
+    elif declared_unit and "cf" in declared_unit:
         gwp_per_m3 = divide(gwp_per_declared_unit, declared_unit) * 35.3147 # convert from cubic feet to m3
-    elif any(x in declared_unit for x in ["m2", "m^2"]) and thickness and "mm" in thickness:
+    elif declared_unit and any(x in declared_unit for x in ["m2", "m^2"]) and thickness and "mm" in thickness:
         gwp_per_m3 = divide(gwp_per_declared_unit, declared_unit)/(extract_numeric_value(thickness)/1000)
     elif density and any(x in density for x in ["kg / m3", "kg / m^3"]) and gwp_per_kg:
         gwp_per_m3 = multiply(gwp_per_kg, density)
 
     # Per m2
-    if any(x in declared_unit for x in ["m2", "m^2"]):
+    if declared_unit and any(x in declared_unit for x in ["m2", "m^2"]):
         gwp_per_m2 = divide(gwp_per_declared_unit, declared_unit)
-    elif any(x in declared_unit for x in ["ft²","sf", "ft^2"]):
+    elif declared_unit and any(x in declared_unit for x in ["ft²","sf", "ft^2"]):
         gwp_per_m2 = divide(gwp_per_declared_unit, declared_unit) * 10.7639 # convert from square feet to m2
-    elif any(x in declared_unit for x in ["m3", "m^3"]) and thickness and "mm" in thickness:
+    elif declared_unit and any(x in declared_unit for x in ["m3", "m^3"]) and thickness and "mm" in thickness:
         gwp_per_m2 = divide(gwp_per_declared_unit, declared_unit) * (extract_numeric_value(thickness)/1000)
     
     parsed_data["epd_name"] = epd_name
@@ -201,30 +202,35 @@ def parse_industrial_epd(epd: Dict[str, Any]) -> Dict[str, Any]:
 
     # Per kg
     if gwp_per_kg is None:
-        if "t" in declared_unit:
+        if declared_unit is not None and "t" in declared_unit:
             gwp_per_kg = divide(gwp_per_declared_unit, declared_unit) / 1000
-        elif "kg" in declared_unit:
+        elif declared_unit is not None and "kg" in declared_unit:
             gwp_per_kg = divide(gwp_per_declared_unit, declared_unit)
         # handle when mass_per_declared_unit exist
-        elif mass_per_declared_unit is not None and not any(unit in declared_unit for unit in ["kg", "t"]):
+        elif mass_per_declared_unit is not None and declared_unit is not None and not any(unit in declared_unit for unit in ["kg", "t"]):
             gwp_per_kg = divide(gwp_per_declared_unit, mass_per_declared_unit)
 
     # Per m3
-    if any(x in declared_unit for x in ["m3", "m^3"]):
+    if declared_unit and any(x in declared_unit for x in ["m3", "m^3"]):
         gwp_per_m3 = divide(gwp_per_declared_unit, declared_unit)
-    elif "cf" in declared_unit:
+    elif declared_unit and "cf" in declared_unit:
         gwp_per_m3 = divide(gwp_per_declared_unit, declared_unit) * 35.3147 # convert from cubic feet to m3
-    elif any(x in declared_unit for x in ["m2", "m^2"]) and thickness_per_declared_unit_avg and "mm" in thickness_per_declared_unit_min:
+    elif declared_unit and any(x in declared_unit for x in ["m2", "m^2"]) \
+        and thickness_per_declared_unit_avg \
+              and thickness_per_declared_unit_min and "mm" in thickness_per_declared_unit_min:
         gwp_per_m3 = divide(gwp_per_declared_unit, declared_unit)/(extract_numeric_value(thickness_per_declared_unit_avg)/1000)
     elif density_avg and gwp_per_kg:
         gwp_per_m3 = multiply(gwp_per_kg, density_avg)
 
     # Per m2
-    if any(x in declared_unit for x in ["m2", "m^2"]):
+    if declared_unit and any(x in declared_unit for x in ["m2", "m^2"]):
         gwp_per_m2 = divide(gwp_per_declared_unit, declared_unit)
-    elif "sf" in declared_unit:
+    elif declared_unit and "sf" in declared_unit:
         gwp_per_m2 = divide(gwp_per_declared_unit, declared_unit) * 10.7639 # convert from square feet to m2
-    elif any(x in declared_unit for x in ["m3", "m^3"]) and thickness_per_declared_unit_avg and (("mm" in thickness_per_declared_unit_min) or ("mm" in thickness_per_declared_unit_max)):
+    elif declared_unit and any(x in declared_unit for x in ["m3", "m^3"]) \
+        and thickness_per_declared_unit_avg \
+            and thickness_per_declared_unit_min and  (("mm" in thickness_per_declared_unit_min) \
+                or thickness_per_declared_unit_max and ("mm" in thickness_per_declared_unit_max)):
         gwp_per_m2 = divide(gwp_per_declared_unit, declared_unit) * (extract_numeric_value(thickness_per_declared_unit_avg)/1000)
         
     parsed_data["epd_name"] = epd_name
