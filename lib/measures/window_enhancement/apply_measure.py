@@ -43,7 +43,6 @@ set_arg("wf_lifetime", 15)
 set_arg("wf_option", "anodized")
 set_arg("frame_cross_section_area", 0.025)
 set_arg("gwp_statistic", "median")
-set_arg("total_embodied_carbon", 0.0)
 set_arg("api_key", API_TOKEN)
 set_arg("epd_type","Product")
 

@@ -7,11 +7,7 @@ import openstudio
 import typing
 import numpy as np
 import pprint as pp
-from resources.EC3_lookup import fetch_epd_data
-from resources.EC3_lookup import parse_product_epd
-from resources.EC3_lookup import parse_industrial_epd
-from resources.EC3_lookup import generate_url
-from resources.EC3_lookup import calculate_geometry
+from resources.EC3_lookup import fetch_epd_data,parse_product_epd,parse_industrial_epd,generate_url,calculate_geometry
 
 # Start the measure
 class WindowEnhancement(openstudio.measure.ModelMeasure):
@@ -114,13 +110,6 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
         gwp_statistic.setDescription("Statistic type (minimum or maximum or mean or median) of returned GWP value")
         args.append(gwp_statistic)
 
-        # make an argument for total embodied carbon (TEC) of whole construction/building
-        total_embodied_carbon = openstudio.measure.OSArgument.makeDoubleArgument("total_embodied_carbon", True)
-        total_embodied_carbon.setDisplayName("Total Embodied Carbon of Building/Building Assembly")
-        total_embodied_carbon.setDescription("Total GWP or embodied carbon intensity of the building (assembly) in kg CO2 eq.")
-        total_embodied_carbon.setDefaultValue(0.0)
-        args.append(total_embodied_carbon)
-
         # make an argument for api_token
         api_key = openstudio.measure.OSArgument.makeStringArgument("api_key",True)
         api_key.setDisplayName("API Token")
@@ -150,7 +139,6 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
         analysis_period = runner.getIntegerArgumentValue("analysis_period",user_arguments)
         igu_lifetime = runner.getIntegerArgumentValue("igu_lifetime",user_arguments)
         wf_lifetime = runner.getIntegerArgumentValue("wf_lifetime",user_arguments)
-        total_embodied_carbon = runner.getDoubleArgumentValue("total_embodied_carbon",user_arguments)
         api_key = runner.getStringArgumentValue("api_key", user_arguments)
         epd_type = runner.getStringArgumentValue("epd_type", user_arguments)
 
