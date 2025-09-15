@@ -16,71 +16,6 @@ optimization_excel_path = CURRENT_DIR_PATH.parent / 'resources' / 'optimization.
 new_optimization_excel_output_path = CURRENT_DIR_PATH.parent / 'resources' / 'optimization_updated.xlsx'
 rsmeans_data_path = CURRENT_DIR_PATH.parent / 'resources' / 'Master_Format_Codes.xlsx'
 
-def modify_optimization_sheet(replacement_value):
-
-    """Reads and modifies Excel spreadsheet for optimization visualizations"""
-    wb = load_workbook(optimization_excel_path, data_only=False, keep_links=True)
-
-    # Select the 'values' worksheet specifically
-    if 'values' not in wb.sheetnames:
-        raise ValueError("Sheet named 'values' not found in the Excel file.")
-    ws = wb['values']
-
-    # Find the row with "Embodied Carbon" in the first column
-    target_row = None
-    for row in ws.iter_rows(min_row=1, max_col=1):
-        cell = row[0]
-        if str(cell.value).strip() == 'Embodied Carbon':
-            target_row = cell.row
-            break
-
-    # Find the column with "Scenario_1" in the header row
-    target_col = None
-    for cell in ws[1]:  # First row is assumed to be the header
-        if str(cell.value).strip() == 'Scenario_1':
-            target_col = cell.column
-            break
-
-    # Modify the value if both row and column are found
-    if target_row and target_col:
-        ws.cell(row=target_row, column=target_col).value = replacement_value
-    else:
-        raise ValueError("Could not find 'Embodied Carbon' row or 'Scenario_1' column.")
-
-    # Save updated workbook
-    wb.save(new_optimization_excel_output_path)
-
-def optimization(self):
-
-    optimization_weights = pd.read_excel(optimization_excel_path, sheet_name = "weights") # Not being currently used
-    factor_values = pd.read_excel(optimization_excel_path, sheet_name = "values")
-    n_scenarios = 3
-
-    for scenario in range(1,n_scenarios+1):
-        #print(scenario)
-        factor_values["Normalized_Scenario_" + str(scenario)] = factor_values["Scenario_" + str(scenario)]/factor_values["Basis"]
-
-    fig = go.Figure()
-
-    for scenario in range(1, n_scenarios+1):
-        fig.add_trace(
-            go.Scatterpolar(
-                theta = factor_values["Factor"],
-                r = factor_values["Normalized_Scenario_" + str (scenario)], name = "Scenario_" + str(scenario) 
-            ))
-
-    fig.show()
-
-def pull_rsmeans_cost(self, sheet_name, code_3):
-    """Pulls RSMeans cost data from the Excel file. Currently, user needs to provide sheet name and Column E value from Master Format Codes"""
-    rsmeans_data = pd.read_excel(rsmeans_data_path, sheet_name=sheet_name)
-    product_cost = rsmeans_data.loc[rsmeans_data['Code 3'] == code_3, 'Total Incl O&P'].values
-    if len(product_cost) > 0:
-        print("RSMeans Total Incl O&P (USD) = " + str(product_cost[0]))
-    else:
-        print("No cost found for the given code.")
-    return
-
 class ECReport(openstudio.measure.ReportingMeasure):
     def name(self):
         return "ReportAdditionalProperties"
@@ -117,6 +52,71 @@ class ECReport(openstudio.measure.ReportingMeasure):
 
         return round(total, 2)
 
+    def modify_optimization_sheet(self, replacement_value):
+
+        """Reads and modifies Excel spreadsheet for optimization visualizations"""
+        wb = load_workbook(optimization_excel_path, data_only=False, keep_links=True)
+
+        # Select the 'values' worksheet specifically
+        if 'values' not in wb.sheetnames:
+            raise ValueError("Sheet named 'values' not found in the Excel file.")
+        ws = wb['values']
+
+        # Find the row with "Embodied Carbon" in the first column
+        target_row = None
+        for row in ws.iter_rows(min_row=1, max_col=1):
+            cell = row[0]
+            if str(cell.value).strip() == 'Embodied Carbon':
+                target_row = cell.row
+                break
+
+        # Find the column with "Scenario_1" in the header row
+        target_col = None
+        for cell in ws[1]:  # First row is assumed to be the header
+            if str(cell.value).strip() == 'Scenario_1':
+                target_col = cell.column
+                break
+
+        # Modify the value if both row and column are found
+        if target_row and target_col:
+            ws.cell(row=target_row, column=target_col).value = replacement_value
+        else:
+            raise ValueError("Could not find 'Embodied Carbon' row or 'Scenario_1' column.")
+
+        # Save updated workbook
+        wb.save(new_optimization_excel_output_path)
+
+    def optimization(self):
+
+        optimization_weights = pd.read_excel(optimization_excel_path, sheet_name = "weights") # Not being currently used
+        factor_values = pd.read_excel(optimization_excel_path, sheet_name = "values")
+        n_scenarios = 3
+
+        for scenario in range(1,n_scenarios+1):
+            #print(scenario)
+            factor_values["Normalized_Scenario_" + str(scenario)] = factor_values["Scenario_" + str(scenario)]/factor_values["Basis"]
+
+        fig = go.Figure()
+
+        for scenario in range(1, n_scenarios+1):
+            fig.add_trace(
+                go.Scatterpolar(
+                    theta = factor_values["Factor"],
+                    r = factor_values["Normalized_Scenario_" + str (scenario)], name = "Scenario_" + str(scenario) 
+                ))
+
+        fig.show()
+
+    def pull_rsmeans_cost(self, sheet_name, code_3):
+        """Pulls RSMeans cost data from the Excel file. Currently, user needs to provide sheet name and Column E value from Master Format Codes"""
+        rsmeans_data = pd.read_excel(rsmeans_data_path, sheet_name=sheet_name)
+        product_cost = rsmeans_data.loc[rsmeans_data['Code 3'] == code_3, 'Total Incl O&P'].values
+        if len(product_cost) > 0:
+            print("RSMeans Total Incl O&P (USD) = " + str(product_cost[0]))
+        else:
+            print("No cost found for the given code.")
+        return
+
     def run(self, runner, model):
         self.material_data.clear()
 
@@ -131,15 +131,11 @@ class ECReport(openstudio.measure.ReportingMeasure):
         runner.registerInfo(f"Extracted Material Data:{str(self.material_data)}")
 
         # Write result to Excel
-        modify_optimization_sheet(total_gwp)
-        optimization(self)
-        pull_rsmeans_cost(self, "windows costs", "08 53 13.40")
+        self.modify_optimization_sheet(total_gwp)
+        self.optimization()
+        self.pull_rsmeans_cost("windows costs", "08 53 13.40")
 
         runner.registerInfo("Cleaning up model from memory.")
-
-        del additional_properties_objects
-
-        del model
 
         return True
 
