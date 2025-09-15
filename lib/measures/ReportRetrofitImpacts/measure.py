@@ -7,9 +7,7 @@ import openstudio
 import pandas as pd
 from pathlib import Path
 from openpyxl import load_workbook
-import pandas as pd
 import plotly.graph_objects as go
-from openpyxl import load_workbook
 
 CURRENT_DIR_PATH = Path(__file__).absolute()
 optimization_excel_path = CURRENT_DIR_PATH.parent / 'resources' / 'optimization.xlsx'
