@@ -5,10 +5,10 @@
 # Example Report
 
 ## Description
-Simple example of modular code to create tables and charts in OpenStudio reporting measures. This is not meant to use as is, it is an example to help with reporting measure development.
+This is a reporting measure for SCOPE Measures. Besides reporting EC3 numbers, this reporing measure reports RSMeans cost value and provides some optimization metrics. 
 
 ## Modeler Description
-This measure uses the same framework and technologies (bootstrap and dimple) that the standard OpenStudio results report uses to create an html report with tables and charts. Download this measure and copy it to your Measures directory using PAT or the OpenStudio application. Then alter the data in os_lib_reporting_custom.rb to suit your needs. Make new sections and tables as needed.
+This is a reporting measure for SCOPE Measures. Besides reporting EC3 numbers, this reporing measure reports RSMeans cost value and provides some optimization metrics. 
 
 ## Measure Type
 ReportingMeasure

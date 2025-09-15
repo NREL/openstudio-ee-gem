@@ -14,6 +14,7 @@ from openpyxl import load_workbook
 CURRENT_DIR_PATH = Path(__file__).absolute()
 optimization_excel_path = CURRENT_DIR_PATH.parent / 'resources' / 'optimization.xlsx'
 new_optimization_excel_output_path = CURRENT_DIR_PATH.parent / 'resources' / 'optimization_updated.xlsx'
+rsmeans_data_path = CURRENT_DIR_PATH.parent / 'resources' / 'Master_Format_Codes.xlsx'
 
 def modify_optimization_sheet(replacement_value):
 
@@ -70,6 +71,16 @@ def optimization(self):
 
     fig.show()
 
+def pull_rsmeans_cost(self, sheet_name, code_3):
+    """Pulls RSMeans cost data from the Excel file. Currently, user needs to provide sheet name and Column E value from Master Format Codes"""
+    rsmeans_data = pd.read_excel(rsmeans_data_path, sheet_name=sheet_name)
+    product_cost = rsmeans_data.loc[rsmeans_data['Code 3'] == code_3, 'Total Incl O&P'].values
+    if len(product_cost) > 0:
+        print("RSMeans Total Incl O&P (USD) = " + str(product_cost[0]))
+    else:
+        print("No cost found for the given code.")
+    return
+
 class ECReport(openstudio.measure.ReportingMeasure):
     def name(self):
         return "ReportAdditionalProperties"
@@ -122,8 +133,10 @@ class ECReport(openstudio.measure.ReportingMeasure):
         # Write result to Excel
         modify_optimization_sheet(total_gwp)
         optimization(self)
+        pull_rsmeans_cost(self, "windows costs", "08 53 13.40")
 
         runner.registerInfo("Cleaning up model from memory.")
+
         del additional_properties_objects
 
         del model
