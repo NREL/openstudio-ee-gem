@@ -2,7 +2,7 @@
 import os
 import openstudio
 from pathlib import Path
-from measure import WindowEnhancement
+from measure import DoorEnhancement
 import configparser
 
 # read API Token from local
@@ -18,7 +18,7 @@ config.read(config_path)
 API_TOKEN= config["EC3_API_TOKEN"]["API_TOKEN"]
 
 CURRENT_DIR_PATH = Path(__file__).parent.absolute()
-model_path = Path(CURRENT_DIR_PATH / "tests/example_model_2.osm")
+model_path = Path(CURRENT_DIR_PATH / "tests/example_model.osm")
 
 translator = openstudio.osversion.VersionTranslator()
 model = translator.loadModel(openstudio.toPath(str(model_path))).get()
@@ -26,7 +26,7 @@ model = translator.loadModel(openstudio.toPath(str(model_path))).get()
 osw = openstudio.WorkflowJSON()
 runner = openstudio.measure.OSRunner(osw)
 
-measure = WindowEnhancement()
+measure = DoorEnhancement()
 args = measure.arguments(model)
 arg_map = openstudio.measure.convertOSArgumentVectorToMap(args)
 
@@ -37,15 +37,11 @@ def set_arg(name, value):
     arg_map[name] = arg  
 
 set_arg("analysis_period", 30)
-set_arg("igu_option", "low_emissivity")
-set_arg("igu_lifetime", 15)
-set_arg("wf_lifetime", 15)
-set_arg("wf_option", "anodized")
-set_arg("frame_cross_section_area", 0.025)
+set_arg("strip_option", "silicone adhesive smoke gasket")
+set_arg("strip_lifetime", 15)
 set_arg("gwp_statistic", "median")
 set_arg("total_embodied_carbon", 0.0)
 set_arg("api_key", API_TOKEN)
-set_arg("epd_type","Product")
 
 # Run the measure
 result = measure.run(model, runner, arg_map)

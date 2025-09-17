@@ -178,7 +178,7 @@ def parse_product_epd(epd: Dict[str, Any]) -> Dict[str, Any]:
     elif declared_unit and "cf" in declared_unit:
         gwp_per_m3 = divide(gwp_per_declared_unit, declared_unit)
         gwp_per_m3 = gwp_per_m3 * 35.3147 # convert from cubic feet to m3
-    #merge to openstudio-ee-gem/lib/measures/IncreaseInsulationRValueForExteriorWalls/resources/EC3_lookup.py (increase wall insulation branch)
+
     elif declared_unit and any(x in declared_unit for x in ["m\u00b2" ,"m2", "m^2"]) and thickness and "mm" in thickness:
         gwp_per_m2 = divide(gwp_per_declared_unit, declared_unit)
         gwp_per_m3 = gwp_per_m2/(extract_numeric_value(thickness)/1000)
@@ -305,10 +305,10 @@ def calculate_geometry(self, sub_surface):
     vertices = sub_surface.vertices()
     if len(vertices) != 4:
         return {
-            "length": 0.0,
-            "width": 0.0,
-            "perimeter": 0.0,
-            "area": 0.0
+            "length (m)": 0.0,
+            "width (m)": 0.0,
+            "perimeter (m)": 0.0,
+            "area (m^2)": 0.0
         }
 
     # Calculate all edge lengths
@@ -330,10 +330,10 @@ def calculate_geometry(self, sub_surface):
     area = length * width
 
     return {
-        "length": length,
-        "width": width,
-        "perimeter": perimeter,
-        "area": area
+        "length (m)": length,
+        "width (m)": width,
+        "perimeter (m)": perimeter,
+        "area (m^2)": area
     }
 
 def main():
@@ -343,7 +343,7 @@ def main():
     print("Fetching EC3 EPD data...")
 
     print("Using query search engine:")
-    search_url=generate_url_byname(name_like= "cellulose", category="bf1c8882d7784db4b10d9d5698b8b5cc")
+    search_url=generate_url_byname(name_like= "brush weatherstrip", category="ca54e842c0fc4bf2b4f3a8564c3b1a4d")
     epd_data = fetch_epd_data(search_url, API_TOKEN)
     
     for idx, epd in enumerate(epd_data, start=1):
