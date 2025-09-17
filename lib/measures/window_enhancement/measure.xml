@@ -101,24 +101,6 @@
       <checksum>26458C20</checksum>
     </file>
     <file>
-      <filename>__pycache__/EC3_lookup.cpython-39.pyc</filename>
-      <filetype>pyc</filetype>
-      <usage_type>resource</usage_type>
-      <checksum>75A86FF8</checksum>
-    </file>
-    <file>
-      <filename>__pycache__/Original_EC3_lookup.py</filename>
-      <filetype>py</filetype>
-      <usage_type>resource</usage_type>
-      <checksum>12B4F7DC</checksum>
-    </file>
-    <file>
-      <filename>__pycache__/Test_API.cpython-39.pyc</filename>
-      <filetype>pyc</filetype>
-      <usage_type>resource</usage_type>
-      <checksum>817EE4CA</checksum>
-    </file>
-    <file>
       <filename>calculate_perimeter.py</filename>
       <filetype>py</filetype>
       <usage_type>resource</usage_type>
