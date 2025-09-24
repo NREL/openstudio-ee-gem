@@ -7,12 +7,12 @@ import openstudio
 import typing
 import numpy as np
 import pprint as pp
-from resources.EC3_lookup import fetch_epd_data,parse_product_epd,parse_industrial_epd,generate_url_byname,calculate_geometry
+from resources.EC3_lookup import fetch_epd_data,parse_product_epd,parse_industrial_epd,generate_url,calculate_geometry
 
 # Start the measure
 class WindowEnhancement(openstudio.measure.ModelMeasure):
 
-    """A ModelMeasure for window enhancement, calculating embodied carbon. EC3 data fetched through categorization and keywords."""
+    """A ModelMeasure for window enhancement, calculating embodied carbon. EC3 data fetched through Masterformat divisions."""
 
     def name(self):
         """Measure name."""
@@ -30,17 +30,17 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
     def gwp_statistics():
         return ["minimum","maximum","mean","median"]
         
-    # @staticmethod
-    # def igu_options():
-    #     return ["electrochromic","fire_resistant","laminated","low_emissivity","tempered"]
+    @staticmethod
+    def igu_options():
+        return ["electrochromic","fire_resistant","laminated","low_emissivity","tempered"]
     
     @staticmethod
     def wf_options():
-        return ["wood window frame","wood-aluminum window frame"]
+        return ["anodized","painted","thermally_improved"]
     
-    # @staticmethod
-    # def epd_types():
-    #     return ["Product","Industry"]
+    @staticmethod
+    def epd_types():
+        return ["Product","Industry"]
 
     def arguments(self, model: typing.Optional[openstudio.model.Model] = None):
         """Define the arguments that user will input."""
@@ -53,14 +53,14 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
         analysis_period.setDefaultValue(30)
         args.append(analysis_period)
 
-        # #make an argument for igu options for filtering EPDs of igu
-        # igu_options_chs = openstudio.StringVector()
-        # for option in self.igu_options():
-        #     igu_options_chs.append(option)
-        # igu_option = openstudio.measure.OSArgument.makeChoiceArgument("igu_option", igu_options_chs, True)
-        # igu_option.setDisplayName("IGU option") 
-        # igu_option.setDescription("Type of insulating glazing unit")
-        # args.append(igu_option)
+        #make an argument for igu options for filtering EPDs of igu
+        igu_options_chs = openstudio.StringVector()
+        for option in self.igu_options():
+            igu_options_chs.append(option)
+        igu_option = openstudio.measure.OSArgument.makeChoiceArgument("igu_option", igu_options_chs, True)
+        igu_option.setDisplayName("IGU option") 
+        igu_option.setDescription("Type of insulating glazing unit")
+        args.append(igu_option)
 
         # make an argument for product life time of igu
         igu_lifetime = openstudio.measure.OSArgument.makeIntegerArgument("igu_lifetime",True)
@@ -82,7 +82,7 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
             wf_options_chs.append(option)
         wf_option = openstudio.measure.OSArgument.makeChoiceArgument("wf_option",wf_options_chs, True)
         wf_option.setDisplayName("Window frame option") 
-        wf_option.setDescription("Material type of window frame")
+        wf_option.setDescription("Type of aluminum extrusion")
         args.append(wf_option)
 
         # make an argument for cross-sectional area of window frame
@@ -92,21 +92,14 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
         frame_cross_section_area.setDefaultValue(0.0025)
         args.append(frame_cross_section_area)
 
-        # make an argument for number of panes to be replaced
-        num_panes = openstudio.measure.OSArgument.makeIntegerArgument("num_panes", True)
-        num_panes.setDisplayName("Number of Panes")
-        num_panes.setDescription("Number of panes to be replaced")
-        num_panes.setDefaultValue(0)
-        args.append(num_panes)
-
-        # # make an argument for selecting EPD type
-        # edp_type_chs = openstudio.StringVector()
-        # for type in self.epd_types():
-        #     edp_type_chs.append(type)
-        # epd_type = openstudio.measure.OSArgument.makeChoiceArgument("epd_type",edp_type_chs, True)
-        # epd_type.setDisplayName("EPD Type") 
-        # epd_type.setDescription("Type of EPD for searching GWP values, Product EPDs refer to specific products from a manufacturer, while industrial EPDs represent average data across an entire industry sector.")
-        # args.append(epd_type)
+        # make an argument for selecting EPD type
+        edp_type_chs = openstudio.StringVector()
+        for type in self.epd_types():
+            edp_type_chs.append(type)
+        epd_type = openstudio.measure.OSArgument.makeChoiceArgument("epd_type",edp_type_chs, True)
+        epd_type.setDisplayName("EPD Type") 
+        epd_type.setDescription("Type of EPD for searching GWP values, Product EPDs refer to specific products from a manufacturer, while industrial EPDs represent average data across an entire industry sector.")
+        args.append(epd_type)
 
         # make an argument for selecting which gwp statistic to use for embodied carbon calculation
         gwp_statistics_chs = openstudio.StringVector()
@@ -141,14 +134,13 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
         # Retrieve user inputs
         frame_cross_section_area = runner.getDoubleArgumentValue("frame_cross_section_area", user_arguments)
         gwp_statistic = runner.getStringArgumentValue("gwp_statistic", user_arguments)
-        # igu_option = runner.getStringArgumentValue("igu_option", user_arguments)
+        igu_option = runner.getStringArgumentValue("igu_option", user_arguments)
         wf_option = runner.getStringArgumentValue("wf_option", user_arguments)
         analysis_period = runner.getIntegerArgumentValue("analysis_period",user_arguments)
         igu_lifetime = runner.getIntegerArgumentValue("igu_lifetime",user_arguments)
         wf_lifetime = runner.getIntegerArgumentValue("wf_lifetime",user_arguments)
         api_key = runner.getStringArgumentValue("api_key", user_arguments)
-        num_panes = runner.getIntegerArgumentValue("num_panes", user_arguments)
-        # epd_type = runner.getStringArgumentValue("epd_type", user_arguments)
+        epd_type = runner.getStringArgumentValue("epd_type", user_arguments)
 
         # Debug: Print all user arguments received
         runner.registerInfo(f"User Arguments: {user_arguments}")
@@ -209,17 +201,15 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
             # If use unprocessed single pane EPD, underestimate emission associated with product manufacturing
             # if use multiple pane EPD, thickness of each pane in EPD might be different from the model (adopt this option, smaller error than single pane option)
             print(layered_construction.numLayers())
-            if num_panes != 0:
-                runner.registerInfo(f"Number of panes to be replaced provided by user is {num_panes}, overriding the value derived from model to replace all the panes.")
-                if layered_construction.numLayers() == 1:
-                    num_panes = 1 
-                elif layered_construction.numLayers() == 3:
-                    num_panes = 2
-                elif layered_construction.numLayers() == 5:
-                    num_panes = 3 
-                else:
-                    runner.registerInfo("currently unable to handle more complex scenarios.")
-            subsurface_dict[subsurface_name]["Number of panes replaced"] = num_panes
+            if layered_construction.numLayers() == 1:
+                num_panes = 1 
+            elif layered_construction.numLayers() == 3:
+                num_panes = 2
+            elif layered_construction.numLayers() == 5:
+                num_panes = 3 
+            else:
+                runner.registerInfo("currently unable to handle more complex scenarios.")
+            subsurface_dict[subsurface_name]["Number of panes"] = num_panes
 
             # get thickness from each window construction layer
             total_glazing_thickness = 0.0
@@ -277,19 +267,43 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
             subsurface_dict[subsurface_name]["Frame"]["Volume (m3)"] = frame_cross_section_area * frame_perimeter + divider_cross_section_area * total_divider_length
 
             epd_datalist = {}
-            glazing_product_url = None
-            frame_product_url = generate_url_byname(name_like = wf_option, plant_geography = '150') # '150' means Europe, there is no EPDs in NA region
-            glazing_product_url = generate_url_byname(category = '6daae3d967104f5c8c85199b259f58c8', name_like = 'monolithic glass')
-            if num_panes == 2:
-                glazing_product_url = generate_url_byname(category = 'ade3ad3405124279955e7d3085f59383', name_like = 'double pane')
-            elif num_panes == 3:
-                glazing_product_url = generate_url_byname(category = 'ade3ad3405124279955e7d3085f59383', name_like = 'triple pane')
+
+            glazing_product_url = generate_url(material_name = "InsulatingGlazingUnits", option = igu_option, glass_panes = num_panes, epd_type= "Product", endpoint = "materials")
+            frame_product_url = generate_url(material_name = "AluminiumExtrusions", epd_type= "Product", endpoint = "materials") # EC3 only has aluminum option, revisit later
+            glazing_industry_url = generate_url(material_name = "InsulatingGlazingUnits", option = igu_option, glass_panes = num_panes, epd_type= "Industry", endpoint = "industry_epds")
+            frame_industry_url = generate_url(material_name = "AluminiumExtrusions", epd_type= "Industry", endpoint = "industry_epds")
             glazing_product_epd = fetch_epd_data(url = glazing_product_url, api_token = api_key)
             frame_product_epd = fetch_epd_data(url = frame_product_url, api_token = api_key)
-            epd_datalist["Glazing"] = glazing_product_epd
-            epd_datalist["Frame"] = frame_product_epd
+            glazing_industry_epd = fetch_epd_data(url = glazing_industry_url, api_token = api_key)
+            frame_industry_epd = fetch_epd_data(url = frame_industry_url, api_token = api_key)
 
+            if epd_type == "Product":
+                if not glazing_product_epd:
+                    glazing_epd = glazing_industry_epd
+                    runner.registerInfo("Product EPDs are not avialable, industry EPDs are accessed instead")
+                else:
+                    glazing_epd = glazing_product_epd
+                epd_datalist["Glazing"] = glazing_epd
+                if not frame_product_epd:
+                    frame_epd = frame_industry_epd
+                    runner.registerInfo("Product EPDs are not avialable, industry EPDs are accessed instead")
+                else:
+                    frame_epd = frame_product_epd
+                epd_datalist["Frame"] = frame_epd
 
+            elif epd_type == "Industry":
+                if not glazing_industry_epd:
+                    glazing_epd = glazing_product_epd
+                    runner.registerInfo("Product EPDs are not avialable, industry EPDs are accessed instead")
+                else:
+                    glazing_epd = glazing_industry_epd
+                epd_datalist["Glazing"] = glazing_epd
+                if not frame_industry_epd:
+                    frame_epd = frame_product_epd
+                    runner.registerInfo("Product EPDs are not avialable, industry EPDs are accessed instead")
+                else:
+                    frame_epd = frame_industry_epd
+                epd_datalist["Frame"] = frame_epd
 
             for material_name, epd_data in epd_datalist.items():
                 # collect  GWP values per functional unit
@@ -299,7 +313,11 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
                 gwp_values["gwp_per_m3"] = []
 
                 for idx, epd in enumerate(epd_data,start = 1):
-                    parsed_data = parse_product_epd(epd)
+                    # parse json repsonse based on epd_eype
+                    if epd_type == "Industry":
+                        parsed_data = parse_industrial_epd(epd)
+                    elif epd_type == "Product":
+                        parsed_data = parse_product_epd(epd)
 
                     gwp_per_m2 = parsed_data["gwp_per_m2 (kg CO2 eq/m2)"]
                     if gwp_per_m2 != None:

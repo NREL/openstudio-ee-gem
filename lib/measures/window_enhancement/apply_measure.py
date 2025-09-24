@@ -37,14 +37,15 @@ def set_arg(name, value):
     arg_map[name] = arg  
 
 set_arg("analysis_period", 30)
-set_arg("igu_option", "low_emissivity")
+# set_arg("igu_option", "low_emissivity")
 set_arg("igu_lifetime", 15)
 set_arg("wf_lifetime", 15)
-set_arg("wf_option", "anodized")
+set_arg("wf_option", "wood window frame")
+set_arg('num_panes', 0)
 set_arg("frame_cross_section_area", 0.025)
 set_arg("gwp_statistic", "median")
 set_arg("api_key", API_TOKEN)
-set_arg("epd_type","Product")
+# set_arg("epd_type","Product")
 
 # Run the measure
 result = measure.run(model, runner, arg_map)
