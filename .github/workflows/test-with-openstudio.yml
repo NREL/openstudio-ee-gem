@@ -12,15 +12,33 @@ jobs:
       S3_BUCKET: ext-gem-dashboard
 
     container: # Define the Docker container for the job. All subsequent steps run inside it.
-      image: nrel/openstudio:develop
+      image: nrel/openstudio:3.10.0
       options: -u root -e "LANG=en_US.UTF-8" # These options are passed to the 'docker run' command internally
 
     steps:
       - name: Checkout Repository
-        # The repository will be checked out inside the 'nrel/openstudio:3.10.0' container
+        # The repository will be checked out inside the OpenStudio container
         uses: actions/checkout@v4 # Use v4 for better security and features
         with:
           submodules: true # Set to true if your repository uses Git submodules
+
+      - name: Verify Docker Image and Attempt Upgrade
+        # Try to check if we can access the develop image for future upgrades
+        shell: bash
+        run: |
+          echo "Current OpenStudio image info:"
+          echo "Container image: nrel/openstudio:3.10.0"
+          echo "OpenStudio Version: $(openstudio openstudio_version)"
+          
+          # Test if develop image is accessible (informational only)
+          echo "Testing access to develop image (for future reference)..."
+          if docker pull nrel/openstudio:develop 2>/dev/null; then
+            echo "✅ nrel/openstudio:develop is accessible"
+            echo "::notice::Consider upgrading to nrel/openstudio:develop in future workflow updates"
+          else
+            echo "⚠️ nrel/openstudio:develop requires authentication or is not accessible"
+            echo "::notice::Using stable nrel/openstudio:3.10.0 image"
+          fi
 
       - name: Install Node.js and AWS CLI
         # Install required dependencies for AWS actions to work in the OpenStudio container
