@@ -12,7 +12,7 @@ jobs:
       S3_BUCKET: ext-gem-dashboard
 
     container: # Define the Docker container for the job. All subsequent steps run inside it.
-      image: nrel/openstudio:3.10.0
+      image: nrel/openstudio:develop
       options: -u root -e "LANG=en_US.UTF-8" # These options are passed to the 'docker run' command internally
 
     steps:
@@ -32,7 +32,10 @@ jobs:
           apt-get update
 
           # Install curl and other dependencies
-          apt-get install -y curl unzip
+          apt-get install -y curl unzip locales
+          
+          # Generate the UTF-8 locale specified in container options
+          locale-gen en_US.UTF-8
 
           # Install Node.js (using NodeSource repository for latest LTS)
           curl -fsSL https://deb.nodesource.com/setup_lts.x | bash -
@@ -56,27 +59,62 @@ jobs:
         shell: bash # Specify the shell if needed, though bash is default for Ubuntu runners
         run: |
           # Fix git ownership issue in container
-          git config --global --add safe.directory /__w/openstudio-load-flexibility-measures-gem/openstudio-load-flexibility-measures-gem
+          git config --global --add safe.directory "*"
           
-          echo "OpenStudio Version: $(openstudio --version)"
+          echo "Bundle Version: $(bundle -v)"
+          echo "Bundle Environment:"
+          bundle env
           echo "Ruby Version: $(ruby -v)"
+          echo "OpenStudio Version: $(openstudio openstudio_version)"
           echo "Listing OpenStudio Gems: $(openstudio gem_list)"
           
           # Install dependencies before running tests
           echo "Installing gem dependencies..."
-          bundle install
+          if ! bundle install; then
+            echo "::error::Failed to install gem dependencies"
+            exit 1
+          fi
+          echo "✅ Successfully installed gem dependencies"
           
-          echo "Running spec tests..."
-          rake spec
-          echo "Running measures with verbose output:"
-          # This command will execute within the container.
-          # Ensure that './lib/measures' is the correct path relative to the checkout.
-          openstudio --verbose measure -r ./lib/measures
-
-          # The output for 'test' should now be generated directly into the workspace
-          # within the container, which is mounted from the host.
-          # No 'docker cp' is needed as the workspace is shared.
-          ls -al ./test # Verify the output directory exists and contains files
+          # Run test suite
+          echo "Running bundler tests..."
+          if ! bundle exec rake; then
+            echo "::error::Main rake task failed"
+            exit 1
+          fi
+          echo "✅ Main rake task completed successfully"
+          
+          if ! bundle exec rake openstudio:list_measures; then
+            echo "::error::Failed to list measures"
+            exit 1
+          fi
+          echo "✅ Successfully listed measures"
+          
+          if ! bundle exec rake openstudio:update_measures; then
+            echo "::error::Failed to update measures"
+            exit 1
+          fi
+          echo "✅ Successfully updated measures"
+          
+          if ! bundle exec rake openstudio:test_with_openstudio; then
+            echo "::error::Failed to run OpenStudio tests"
+            exit 1
+          fi
+          echo "✅ Successfully completed OpenStudio tests"
+          
+          # Archive test results (matching Groovy stage behavior)
+          if [ -d "test" ]; then
+            mv test test_with_cli_bundler
+            echo "Test directory renamed to test_with_cli_bundler"
+          fi
+          
+          # Find and rename test_results directory
+          dir_name=$(find . -type d -name "test_results" | head -1)
+          if [ -n "$dir_name" ]; then
+            mv "$dir_name" test_results_dashboard_cli_bundler
+            echo "Found and renamed test_results directory: $dir_name -> test_results_dashboard_cli_bundler"
+            ls -al test_results_dashboard_cli_bundler/
+          fi
 
       - name: Configure AWS Credentials
         # This step is crucial for authenticating with AWS S3
@@ -90,19 +128,28 @@ jobs:
         shell: bash
         run: |
           echo "Deploying to s3://${{ env.S3_BUCKET }}/${{ env.DEPLOY_PATH }}/"
-          # Ensure './test_results' is the correct source directory for the files to upload to S3.
-          dir_name=$(find -type d -name "test_results")
-          # It must match the output directory from the 'Run Measures' step.
-          aws s3 sync $dir_name s3://${{ env.S3_BUCKET }}/${{ env.DEPLOY_PATH }}/ \
-            --delete \
-            --acl public-read \
-            --cache-control "max-age=0, no-cache, no-store, must-revalidate"
-          echo "S3 sync complete."
-          echo "https://${{ env.S3_BUCKET }}.s3.amazonaws.com/${{ env.DEPLOY_PATH }}/dashboard/index.html"
-          echo dir_name=$dir_name >> $GITHUB_ENV # Save the directory name to an environment variable for later use
+          # Use the renamed test_results directory
+          dir_name="test_results_dashboard_cli_bundler"
+          if [ -d "$dir_name" ]; then
+            echo "TEST_RESULTS_DIR=$dir_name" >> $GITHUB_ENV # Save the directory name to environment
+            if ! aws s3 sync $dir_name s3://${{ env.S3_BUCKET }}/${{ env.DEPLOY_PATH }}/ \
+              --delete \
+              --acl public-read \
+              --cache-control "max-age=0, no-cache, no-store, must-revalidate"; then
+              echo "::error::Failed to sync results to S3"
+              exit 1
+            fi
+            echo "✅ S3 sync complete."
+            echo "🌐 Dashboard URL: https://${{ env.S3_BUCKET }}.s3.amazonaws.com/${{ env.DEPLOY_PATH }}/dashboard/index.html"
+          else
+            echo "::error::Test results directory $dir_name not found"
+            echo "::error::Available directories:"
+            ls -la
+            exit 1
+          fi
 
       - name: Archive static site as artifact
         uses: actions/upload-artifact@v4
         with:
           name: static-html-artifact
-          path: ${{ env.dir_name }} # Path should be relative to the GitHub workspace, which is shared with the container          
+          path: test_results_dashboard_cli_bundler # Path should be relative to the GitHub workspace, which is shared with the container          
