@@ -3,8 +3,8 @@
   <schema_version>3.1</schema_version>
   <name>fan_assist_night_ventilation</name>
   <uid>5e77cb11-0fa9-432b-97bd-87c40949ee1f</uid>
-  <version_id>a06b24ea-d2cf-4397-931c-4d72ff15fce1</version_id>
-  <version_modified>2025-08-08T15:15:58Z</version_modified>
+  <version_id>9faaaac3-a100-4359-9833-cbef50454be7</version_id>
+  <version_modified>2025-09-25T15:33:44Z</version_modified>
   <xml_checksum>26DDAE64</xml_checksum>
   <class_name>FanAssistNightVentilation</class_name>
   <display_name>Fan Assist Night Ventilation</display_name>
@@ -118,7 +118,7 @@ To address an issue in OpenStudio zones with ZoneVentilation, this measure adds 
       <filename>measure.rb</filename>
       <filetype>rb</filetype>
       <usage_type>script</usage_type>
-      <checksum>E96BE908</checksum>
+      <checksum>3DBADD15</checksum>
     </file>
     <file>
       <filename>FanAssistNightVentilationMeasureGuide.pdf</filename>
@@ -154,7 +154,7 @@ To address an issue in OpenStudio zones with ZoneVentilation, this measure adds 
       <filename>fan_assist_night_ventilation_test.rb</filename>
       <filetype>rb</filetype>
       <usage_type>test</usage_type>
-      <checksum>CC3F5531</checksum>
+      <checksum>8F5F0305</checksum>
     </file>
     <file>
       <filename>no_opp_win.osm</filename>

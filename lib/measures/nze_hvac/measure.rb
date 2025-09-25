@@ -9,26 +9,26 @@ class NzeHvac < OpenStudio::Measure::ModelMeasure
   require 'openstudio-standards'
 
   def name
-    return 'NZEHVAC'
+    'NZEHVAC'
   end
 
   # human readable description
   def description
-    return 'This measure replaces the existing HVAC system if any with the user selected HVAC system.  The user can select how to partition the system, applying it to the whole building, a system per building type, a system per building story, or automatically partition based on residential/non-residential occupany types and space loads.'
+    'This measure replaces the existing HVAC system if any with the user selected HVAC system.  The user can select how to partition the system, applying it to the whole building, a system per building type, a system per building story, or automatically partition based on residential/non-residential occupany types and space loads.'
   end
 
   # human readable description of modeling approach
   def modeler_description
-    return 'HVAC system creation logic uses [openstudio-standards](https://github.com/NREL/openstudio-standards) and efficiency values are defined in the openstudio-standards Standards spreadsheet under the *NREL ZNE Ready 2017* template.'
+    'HVAC system creation logic uses [openstudio-standards](https://github.com/NREL/openstudio-standards) and efficiency values are defined in the openstudio-standards Standards spreadsheet under the *NREL ZNE Ready 2017* template.'
   end
 
   def add_system_to_zones(model, runner, hvac_system_type, zones, standard,
                           doas_dcv: false)
-    if doas_dcv
-      doas_system_type = 'DOAS with DCV'
-    else
-      doas_system_type = 'DOAS'
-    end
+    doas_system_type = if doas_dcv
+                         'DOAS with DCV'
+                       else
+                         'DOAS'
+                       end
 
     # create HVAC system
     # use methods in openstudio-standards
@@ -129,7 +129,8 @@ class NzeHvac < OpenStudio::Measure::ModelMeasure
       standard.model_add_hvac_system(model, doas_system_type, ht = 'AirSourceHeatPump', znht = nil, cl = 'Electricity', zones,
                                      air_loop_heating_type: 'Water',
                                      air_loop_cooling_type: 'Water')
-      standard.model_add_hvac_system(model, 'Radiant Slab', ht = 'AirSourceHeatPump', znht = nil, cl = 'Electricity', zones)
+      standard.model_add_hvac_system(model, 'Radiant Slab', ht = 'AirSourceHeatPump', znht = nil, cl = 'Electricity',
+                                     zones)
       chilled_water_loop = model.getPlantLoopByName('Chilled Water Loop').get
       condenser_water_loop = model.getPlantLoopByName('Condenser Water Loop').get
       standard.model_add_waterside_economizer(model, chilled_water_loop, condenser_water_loop,
@@ -184,7 +185,8 @@ class NzeHvac < OpenStudio::Measure::ModelMeasure
                                      heat_pump_loop_cooling_type: 'CoolingTower')
 
     when 'Water source heat pumps with ground source heat pump'
-      standard.model_add_hvac_system(model, 'Ground Source Heat Pumps', ht = 'Electricity', znht = nil, cl = 'Electricity', zones)
+      standard.model_add_hvac_system(model, 'Ground Source Heat Pumps', ht = 'Electricity', znht = nil,
+                                     cl = 'Electricity', zones)
 
     # PVAV systems by default use a DX coil for cooling
     when 'PVAV with gas boiler reheat'
@@ -192,7 +194,8 @@ class NzeHvac < OpenStudio::Measure::ModelMeasure
                                      hot_water_loop_type: 'LowTemperature')
 
     when 'PVAV with central air source heat pump reheat'
-      standard.model_add_hvac_system(model, 'PVAV Reheat', ht = 'AirSourceHeatPump', znht = 'AirSourceHeatPump', cl = 'Electricity', zones)
+      standard.model_add_hvac_system(model, 'PVAV Reheat', ht = 'AirSourceHeatPump', znht = 'AirSourceHeatPump',
+                                     cl = 'Electricity', zones)
 
     when 'VAV chiller with gas boiler reheat'
       standard.model_add_hvac_system(model, 'VAV Reheat', ht = 'NaturalGas', znht = 'NaturalGas', cl = 'Electricity', zones,
@@ -203,7 +206,8 @@ class NzeHvac < OpenStudio::Measure::ModelMeasure
                                               integrated: true)
 
     when 'VAV chiller with central air source heat pump reheat'
-      standard.model_add_hvac_system(model, 'VAV Reheat', ht = 'AirSourceHeatPump', znht = 'AirSourceHeatPump', cl = 'Electricity', zones)
+      standard.model_add_hvac_system(model, 'VAV Reheat', ht = 'AirSourceHeatPump', znht = 'AirSourceHeatPump',
+                                     cl = 'Electricity', zones)
       chilled_water_loop = model.getPlantLoopByName('Chilled Water Loop').get
       condenser_water_loop = model.getPlantLoopByName('Condenser Water Loop').get
       standard.model_add_waterside_economizer(model, chilled_water_loop, condenser_water_loop,
@@ -227,7 +231,7 @@ class NzeHvac < OpenStudio::Measure::ModelMeasure
     runner.registerInfo("Added HVAC System type #{hvac_system_type} to the model for #{zones.size} zones")
   end
 
-  def arguments(model)
+  def arguments(_model)
     args = OpenStudio::Measure::OSArgumentVector.new
 
     # argument to remove existing hvac system
@@ -263,7 +267,8 @@ class NzeHvac < OpenStudio::Measure::ModelMeasure
     hvac_system_type_choices << 'PVAV with gas boiler reheat'
     hvac_system_type_choices << 'PVAV with central air source heat pump reheat'
 
-    hvac_system_type = OpenStudio::Measure::OSArgument.makeChoiceArgument('hvac_system_type', hvac_system_type_choices, true)
+    hvac_system_type = OpenStudio::Measure::OSArgument.makeChoiceArgument('hvac_system_type', hvac_system_type_choices,
+                                                                          true)
     hvac_system_type.setDisplayName('HVAC System Type:')
     hvac_system_type.setDescription('Details on HVAC system type in measure documentation.')
     hvac_system_type.setDefaultValue('DOAS with fan coil chiller with central air source heat pump')
@@ -283,7 +288,8 @@ class NzeHvac < OpenStudio::Measure::ModelMeasure
     hvac_system_partition_choices << 'One System Per Building Story'
     hvac_system_partition_choices << 'One System Per Building Type'
 
-    hvac_system_partition = OpenStudio::Measure::OSArgument.makeChoiceArgument('hvac_system_partition', hvac_system_partition_choices, true)
+    hvac_system_partition = OpenStudio::Measure::OSArgument.makeChoiceArgument('hvac_system_partition',
+                                                                               hvac_system_partition_choices, true)
     hvac_system_partition.setDisplayName('HVAC System Partition:')
     hvac_system_partition.setDescription('Automatic Partition will separate the HVAC system by residential/non-residential and if loads and schedules are substantially different.')
     hvac_system_partition.setDefaultValue('Automatic Partition')
@@ -291,16 +297,14 @@ class NzeHvac < OpenStudio::Measure::ModelMeasure
 
     # add an argument for ventilation schedule
 
-    return args
+    args
   end # end the arguments method
 
   def run(model, runner, user_arguments)
     super(model, runner, user_arguments)
 
     # use the built-in error checking
-    if !runner.validateUserArguments(arguments(model), user_arguments)
-      return false
-    end
+    return false unless runner.validateUserArguments(arguments(model), user_arguments)
 
     # assign user inputs
     remove_existing_hvac = runner.getBoolArgumentValue('remove_existing_hvac', user_arguments)
@@ -325,9 +329,7 @@ class NzeHvac < OpenStudio::Measure::ModelMeasure
 
     # get the climate zone
     climate_zone_obj = model.getClimateZones.getClimateZone('ASHRAE', 2006)
-    if climate_zone_obj.empty
-      climate_zone_obj = model.getClimateZones.getClimateZone('ASHRAE', 2013)
-    end
+    climate_zone_obj = model.getClimateZones.getClimateZone('ASHRAE', 2013) if climate_zone_obj.empty
 
     if climate_zone_obj.empty
       runner.registerError('Please assign an ASHRAE climate zone to the model before running the measure.')
@@ -346,59 +348,67 @@ class NzeHvac < OpenStudio::Measure::ModelMeasure
     conditioned_zones = []
     model.getThermalZones.each do |zone|
       next if OpenstudioStandards::ThermalZone.thermal_zone_plenum?(zone)
-      next if !OpenstudioStandards::ThermalZone.thermal_zone_heated?(zone) && !OpenstudioStandards::ThermalZone.thermal_zone_cooled?(zone)
+      if !OpenstudioStandards::ThermalZone.thermal_zone_heated?(zone) && !OpenstudioStandards::ThermalZone.thermal_zone_cooled?(zone)
+        next
+      end
+
       conditioned_zones << zone
     end
 
     # logic to partition thermal zones to be served by different HVAC systems
     case hvac_system_partition
 
-      when 'Automatic Partition'
-        # group zones by occupancy type (residential/nonresidential)
-        # split non-dominant groups if their total area exceeds 20,000 ft2.
-        sys_groups = OpenstudioStandards::Geometry.model_group_thermal_zones_by_occupancy_type(model, min_area_m2: OpenStudio.convert(20000, 'ft^2', 'm^2').get)
+    when 'Automatic Partition'
+      # group zones by occupancy type (residential/nonresidential)
+      # split non-dominant groups if their total area exceeds 20,000 ft2.
+      sys_groups = OpenstudioStandards::Geometry.model_group_thermal_zones_by_occupancy_type(model,
+                                                                                             min_area_m2: OpenStudio.convert(
+                                                                                               20_000, 'ft^2', 'm^2'
+                                                                                             ).get)
 
-        # assume secondary system type is PSZ-AC for VAV Reheat otherwise assume same hvac system type
-        sec_sys_type = hvac_system_type # same as primary system type
-        sec_sys_type = 'PSZ-HP' if (hvac_system_type.to_s == 'VAV Reheat') || (hvac_system_type.to_s == 'PVAV Reheat')
+      # assume secondary system type is PSZ-AC for VAV Reheat otherwise assume same hvac system type
+      sec_sys_type = hvac_system_type # same as primary system type
+      sec_sys_type = 'PSZ-HP' if (hvac_system_type.to_s == 'VAV Reheat') || (hvac_system_type.to_s == 'PVAV Reheat')
 
-        sys_groups.each do |sys_group|
-          # add the primary system to the primary zones and the secondary system to any zones that are different
-          # differentiate primary and secondary zones based on operating hours and internal loads (same as 90.1 PRM)
-          pri_sec_zone_lists = std.model_differentiate_primary_secondary_thermal_zones(model, sys_group['zones'])
+      sys_groups.each do |sys_group|
+        # add the primary system to the primary zones and the secondary system to any zones that are different
+        # differentiate primary and secondary zones based on operating hours and internal loads (same as 90.1 PRM)
+        pri_sec_zone_lists = std.model_differentiate_primary_secondary_thermal_zones(model, sys_group['zones'])
 
-          # add the primary system to the primary zones
-          add_system_to_zones(model, runner, hvac_system_type, pri_sec_zone_lists['primary'], std, doas_dcv: doas_dcv)
+        # add the primary system to the primary zones
+        add_system_to_zones(model, runner, hvac_system_type, pri_sec_zone_lists['primary'], std, doas_dcv: doas_dcv)
 
-          # add the secondary system to the secondary zones (if any)
-          if !pri_sec_zone_lists['secondary'].empty?
-            runner.registerInfo("Secondary system type is #{sec_sys_type}")
-            add_system_to_zones(model, runner, sec_sys_type, pri_sec_zone_lists['secondary'], std, doas_dcv: doas_dcv)
-          end
+        # add the secondary system to the secondary zones (if any)
+        unless pri_sec_zone_lists['secondary'].empty?
+          runner.registerInfo("Secondary system type is #{sec_sys_type}")
+          add_system_to_zones(model, runner, sec_sys_type, pri_sec_zone_lists['secondary'], std, doas_dcv: doas_dcv)
         end
+      end
 
-      when 'Whole Building'
-        add_system_to_zones(model, runner, hvac_system_type, conditioned_zones, std, doas_dcv: doas_dcv)
+    when 'Whole Building'
+      add_system_to_zones(model, runner, hvac_system_type, conditioned_zones, std, doas_dcv: doas_dcv)
 
-      when 'One System Per Building Story'
-        story_groups = OpenstudioStandards::Geometry.model_group_thermal_zones_by_building_story(model, conditioned_zones)
-        story_groups.each do |story_zones|
-          add_system_to_zones(model, runner, hvac_system_type, story_zones, std, doas_dcv: doas_dcv)
-        end
+    when 'One System Per Building Story'
+      story_groups = OpenstudioStandards::Geometry.model_group_thermal_zones_by_building_story(model,
+                                                                                               conditioned_zones)
+      story_groups.each do |story_zones|
+        add_system_to_zones(model, runner, hvac_system_type, story_zones, std, doas_dcv: doas_dcv)
+      end
 
-      when 'One System Per Building Type'
-        system_groups = OpenstudioStandards::Geometry.model_group_thermal_zones_by_building_type(model, min_area_m2: 0.0)
-        system_groups.each do |system_group|
-          add_system_to_zones(model, runner, hvac_system_type, system_group['zones'], std, doas_dcv: doas_dcv)
-        end
+    when 'One System Per Building Type'
+      system_groups = OpenstudioStandards::Geometry.model_group_thermal_zones_by_building_type(model,
+                                                                                               min_area_m2: 0.0)
+      system_groups.each do |system_group|
+        add_system_to_zones(model, runner, hvac_system_type, system_group['zones'], std, doas_dcv: doas_dcv)
+      end
 
-      else
-        runner.registerError('Invalid HVAC system partition choice')
-        return false
+    else
+      runner.registerError('Invalid HVAC system partition choice')
+      return false
     end
 
     # check that weather file exists for a sizing run
-    if !model.weatherFile.is_initialized
+    unless model.weatherFile.is_initialized
       runner.registerError('Weather file not set. Cannot perform sizing run.')
       return false
     end
@@ -429,7 +439,7 @@ class NzeHvac < OpenStudio::Measure::ModelMeasure
 
     runner.registerFinalCondition("Added system type #{hvac_system_type} to model.")
 
-    return true
+    true
   end # end the run method
 end # end the measure
 

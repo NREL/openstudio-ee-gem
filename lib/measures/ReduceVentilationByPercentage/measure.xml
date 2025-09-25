@@ -3,8 +3,8 @@
   <schema_version>3.1</schema_version>
   <name>reduce_ventilation_by_percentage</name>
   <uid>f0859a47-fddf-4962-9035-2f9fc9d6e283</uid>
-  <version_id>2ab1bcb6-0d6d-4d00-8ccb-e0c1f9ec0179</version_id>
-  <version_modified>2025-08-08T15:15:56Z</version_modified>
+  <version_id>7ed22a03-048f-434d-b7ad-23600275e8d8</version_id>
+  <version_modified>2025-09-25T15:33:42Z</version_modified>
   <xml_checksum>ECE70A70</xml_checksum>
   <class_name>ReduceVentilationByPercentage</class_name>
   <display_name>ReduceVentilationByPercentage</display_name>
@@ -17,10 +17,10 @@
       <type>Choice</type>
       <required>true</required>
       <model_dependent>false</model_dependent>
-      <default_value>{a6e55f07-6997-4f72-af31-ce3fbcd38088}</default_value>
+      <default_value>{ae8a6595-172d-452d-8afc-2bfc8f03b75f}</default_value>
       <choices>
         <choice>
-          <value>{a6e55f07-6997-4f72-af31-ce3fbcd38088}</value>
+          <value>{ae8a6595-172d-452d-8afc-2bfc8f03b75f}</value>
           <display_name>*Entire Building*</display_name>
         </choice>
       </choices>
@@ -79,7 +79,7 @@
       <filename>measure.rb</filename>
       <filetype>rb</filetype>
       <usage_type>script</usage_type>
-      <checksum>9EE9A262</checksum>
+      <checksum>F3271DBA</checksum>
     </file>
     <file>
       <filename>EnvelopeAndLoadTestModel_01.osm</filename>
@@ -91,7 +91,7 @@
       <filename>ReduceVentilationByPercentage_Test.rb</filename>
       <filetype>rb</filetype>
       <usage_type>test</usage_type>
-      <checksum>0439434E</checksum>
+      <checksum>10C306DB</checksum>
     </file>
   </files>
 </measure>

@@ -9,17 +9,17 @@
 class AddOverhangsByProjectionFactor < OpenStudio::Measure::ModelMeasure
   # define the name that a user will see
   def name
-    return 'Add Overhangs by Projection Factor'
+    'Add Overhangs by Projection Factor'
   end
 
   # human readable description
   def description
-    return 'Add overhangs by projection factor to specified windows. The projection factor is the overhang depth divided by the window height. This can be applied to windows by the closest cardinal direction. If baseline model contains overhangs made by this measure, they will be replaced. Optionally the measure can delete any pre-existing space shading surfaces.'
+    'Add overhangs by projection factor to specified windows. The projection factor is the overhang depth divided by the window height. This can be applied to windows by the closest cardinal direction. If baseline model contains overhangs made by this measure, they will be replaced. Optionally the measure can delete any pre-existing space shading surfaces.'
   end
 
   # human readable description of modeling approach
   def modeler_description
-    return "If requested then delete existing space shading surfaces. Then loop through exterior windows. If the requested cardinal direction is the closest to the window, then add the overhang. Name the shading surface the same as the window but append with '-Overhang'.  If a space shading surface of that name already exists, then delete it before making the new one. This measure has no life cycle cost arguments. You can see the economic impact of the measure by costing the construction used for the overhangs."
+    "If requested then delete existing space shading surfaces. Then loop through exterior windows. If the requested cardinal direction is the closest to the window, then add the overhang. Name the shading surface the same as the window but append with '-Overhang'.  If a space shading surface of that name already exists, then delete it before making the new one. This measure has no life cycle cost arguments. You can see the economic impact of the measure by costing the construction used for the overhangs."
   end
 
   # define the arguments that the user will input
@@ -64,18 +64,19 @@ class AddOverhangsByProjectionFactor < OpenStudio::Measure::ModelMeasure
     # looping through sorted hash of constructions
     construction_args_hash.sort.map do |key, value|
       # only include if construction is not used on surface
-      if !value.isFenestration
+      unless value.isFenestration
         construction_handles << value.handle.to_s
         construction_display_names << key
       end
     end
 
     # make an argument for construction
-    construction = OpenStudio::Measure::OSArgument.makeChoiceArgument('construction', construction_handles, construction_display_names, false)
+    construction = OpenStudio::Measure::OSArgument.makeChoiceArgument('construction', construction_handles,
+                                                                      construction_display_names, false)
     construction.setDisplayName('Optionally Choose a Construction for the Overhangs')
     args << construction
 
-    return args
+    args
   end
 
   # define what happens when the measure is run
@@ -83,9 +84,7 @@ class AddOverhangsByProjectionFactor < OpenStudio::Measure::ModelMeasure
     super(model, runner, user_arguments)
 
     # use the built-in error checking
-    if !runner.validateUserArguments(arguments(model), user_arguments)
-      return false
-    end
+    return false unless runner.validateUserArguments(arguments(model), user_arguments)
 
     # assign the user inputs to variables
     projection_factor = runner.getDoubleArgumentValue('projection_factor', user_arguments)
@@ -117,29 +116,30 @@ class AddOverhangsByProjectionFactor < OpenStudio::Measure::ModelMeasure
         return false
       end
 
+    elsif !construction.get.to_Construction.empty?
+      construction = construction.get.to_Construction.get
     else
-      if !construction.get.to_Construction.empty?
-        construction = construction.get.to_Construction.get
-      else
-        runner.registerError('Script Error - argument not showing up as construction.')
-        return false
-      end
+      runner.registerError('Script Error - argument not showing up as construction.')
+      return false
     end
 
     # helper to make numbers pretty (converts 4125001.25641 to 4,125,001.26 or 4,125,001). The definition be called through this measure.
     def neat_numbers(number, roundto = 2) # round to 0 or 2)
-      if roundto == 2
-        number = format '%.2f', number
-      else
-        number = number.round
-      end
+      number = if roundto == 2
+                 format '%.2f', number
+               else
+                 number.round
+               end
       # regex to add commas
       number.to_s.reverse.gsub(/([0-9]{3}(?=([0-9])))/, '\\1,').reverse
     end
 
     # helper to make it easier to do unit conversions on the fly.  The definition be called through this measure.
     def unit_helper(number, from_unit_string, to_unit_string)
-      converted_number = OpenStudio.convert(OpenStudio::Quantity.new(number, OpenStudio.createUnit(from_unit_string).get), OpenStudio.createUnit(to_unit_string).get).get.value
+      converted_number = OpenStudio.convert(
+        OpenStudio::Quantity.new(number,
+                                 OpenStudio.createUnit(from_unit_string).get), OpenStudio.createUnit(to_unit_string).get
+      ).get.value
     end
 
     # helper that loops through lifecycle costs getting total costs under "Construction" or "Salvage" category and add to counter if occurs during year 0
@@ -148,14 +148,12 @@ class AddOverhangsByProjectionFactor < OpenStudio::Measure::ModelMeasure
       objects.each do |object|
         object_LCCs = object.lifeCycleCosts
         object_LCCs.each do |object_LCC|
-          if (object_LCC.category == 'Construction') || (object_LCC.category == 'Salvage')
-            if object_LCC.yearsFromStart == 0
-              counter += object_LCC.totalCost
-            end
-          end
+          next unless (object_LCC.category == 'Construction') || (object_LCC.category == 'Salvage')
+
+          counter += object_LCC.totalCost if object_LCC.yearsFromStart == 0
         end
       end
-      return counter
+      counter
     end
 
     # counter for year 0 capital costs
@@ -201,17 +199,18 @@ class AddOverhangsByProjectionFactor < OpenStudio::Measure::ModelMeasure
       next if s.subSurfaceType == 'TubularDaylightDiffuser'
 
       # get the absoluteAzimuth for the surface so we can categorize it
-      absoluteAzimuth = OpenStudio.convert(s.azimuth, 'rad', 'deg').get + s.space.get.directionofRelativeNorth + model.getBuilding.northAxis
+      absoluteAzimuth = OpenStudio.convert(s.azimuth, 'rad',
+                                           'deg').get + s.space.get.directionofRelativeNorth + model.getBuilding.northAxis
       absoluteAzimuth -= 360.0 until absoluteAzimuth < 360.0
 
       if facade == 'North'
-        next if !((absoluteAzimuth >= 315.0) || (absoluteAzimuth < 45.0))
+        next unless (absoluteAzimuth >= 315.0) || (absoluteAzimuth < 45.0)
       elsif facade == 'East'
-        next if !((absoluteAzimuth >= 45.0) && (absoluteAzimuth < 135.0))
+        next unless (absoluteAzimuth >= 45.0) && (absoluteAzimuth < 135.0)
       elsif facade == 'South'
-        next if !((absoluteAzimuth >= 135.0) && (absoluteAzimuth < 225.0))
+        next unless (absoluteAzimuth >= 135.0) && (absoluteAzimuth < 225.0)
       elsif facade == 'West'
-        next if !((absoluteAzimuth >= 225.0) && (absoluteAzimuth < 315.0))
+        next unless (absoluteAzimuth >= 225.0) && (absoluteAzimuth < 315.0)
       else
         runner.registerError('Unexpected value of facade: ' + facade + '.')
         return false
@@ -238,23 +237,19 @@ class AddOverhangsByProjectionFactor < OpenStudio::Measure::ModelMeasure
         if new_overhang.empty?
           ok = runner.registerWarning('Unable to add overhang to ' + s.briefDescription +
                    ' with projection factor ' + projection_factor.to_s + ' and offset ' + offset.to_s + '.')
-          return false if !ok
+          return false unless ok
         else
           new_overhang.get.setName("#{s.name} - Overhang")
           runner.registerInfo('Added overhang ' + new_overhang.get.briefDescription + ' to ' +
               s.briefDescription + ' with projection factor ' + projection_factor.to_s +
               ' and offset ' + '0' + '.')
-          if construction_chosen
-            if !construction.to_Construction.empty?
-              new_overhang.get.setConstruction(construction)
-            end
-          end
+          new_overhang.get.setConstruction(construction) if construction_chosen && !construction.to_Construction.empty?
           overhang_added = true
         end
       end
     end
 
-    if !overhang_added
+    unless overhang_added
       runner.registerAsNotApplicable("The model has exterior #{facade.downcase} walls, but no windows were found to add overhangs to.")
       return true
     end
@@ -268,9 +263,11 @@ class AddOverhangsByProjectionFactor < OpenStudio::Measure::ModelMeasure
     final_shading_groups.each do |shading_group|
       number_of_final_space_shading_surf += shading_group.shadingSurfaces.size
     end
-    runner.registerFinalCondition("The final building has #{number_of_final_space_shading_surf} space shading surfaces. Initial capital costs associated with the improvements are $#{neat_numbers(yr0_capital_totalCosts, 0)}.")
+    runner.registerFinalCondition("The final building has #{number_of_final_space_shading_surf} space shading surfaces. Initial capital costs associated with the improvements are $#{neat_numbers(
+      yr0_capital_totalCosts, 0
+    )}.")
 
-    return true
+    true
   end
 end
 

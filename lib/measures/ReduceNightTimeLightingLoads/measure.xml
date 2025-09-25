@@ -3,8 +3,8 @@
   <schema_version>3.1</schema_version>
   <name>reduce_night_time_lighting_loads</name>
   <uid>acce8fde-a5d7-4c27-af89-28327132bafa</uid>
-  <version_id>3058c4c5-c326-4929-90d7-57e2b4e4d988</version_id>
-  <version_modified>2025-08-08T15:15:58Z</version_modified>
+  <version_id>64d7f496-fa8e-409f-9e9a-9a69c3a0022f</version_id>
+  <version_modified>2025-09-25T15:33:44Z</version_modified>
   <xml_checksum>0AC58119</xml_checksum>
   <class_name>ReduceNightTimeLightingLoads</class_name>
   <display_name>Reduce Night Time Lighting Loads</display_name>
@@ -224,7 +224,7 @@
       <filename>measure.rb</filename>
       <filetype>rb</filetype>
       <usage_type>script</usage_type>
-      <checksum>2641F702</checksum>
+      <checksum>A5407321</checksum>
     </file>
     <file>
       <filename>EnvelopeAndLoadTestModel_01.osm</filename>
@@ -236,7 +236,7 @@
       <filename>ReduceNightTimeLightingLoads_Test.rb</filename>
       <filetype>rb</filetype>
       <usage_type>test</usage_type>
-      <checksum>926E0720</checksum>
+      <checksum>4CB3E9CB</checksum>
     </file>
   </files>
 </measure>

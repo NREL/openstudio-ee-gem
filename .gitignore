@@ -10,8 +10,11 @@
 /spec/reports/
 /tmp/
 /test/
+/test_results_dashboard_cli_bundler/
+/test_with_cli_bundler/
 /lib/measures/test_results
 /lib/measures/*/tests/output
+/vendor/bundle/
 
 .rubocop*s3*
 
@@ -30,3 +33,21 @@ lib/test/*
 
 # Ignore measure tester gem local test results
 test_results/
+
+lib/measures/window_enhancement/__pycache__
+lib/measures/window_enhancement/tests/__pycache__
+lib/measures/window_enhancement/resources/__pycache__
+lib/measures/window_enhancement/tests/.pytest_cache
+lib/measures/window_enhancement/tests/example_model/run
+**/__pycache__/
+config.ini
+
+# Environment variables (contains secrets)
+.env
+
+# Act secrets file
+.secrets
+
+# Act configuration file
+.actrc
+node_modules

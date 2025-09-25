@@ -3,8 +3,8 @@
   <schema_version>3.1</schema_version>
   <name>improve_motor_efficiency</name>
   <uid>52013ba9-7b9b-4ffd-bc67-d4c0fa05d7ae</uid>
-  <version_id>f10a9555-aef0-4ca0-b1de-285d32d5561c</version_id>
-  <version_modified>2025-08-08T15:15:57Z</version_modified>
+  <version_id>b489d3b7-146d-4ef3-95b3-02fbed79c46b</version_id>
+  <version_modified>2025-09-25T15:33:44Z</version_modified>
   <xml_checksum>F78494F2</xml_checksum>
   <class_name>ImproveMotorEfficiency</class_name>
   <display_name>Improve Motor Efficiency in Selected Fans and Pumps</display_name>
@@ -31,10 +31,10 @@ The cost arguments are user arguments that start with a default of $0. Operation
       <type>Choice</type>
       <required>true</required>
       <model_dependent>false</model_dependent>
-      <default_value>{783d4a71-fb33-4da4-8fea-0f5801bac4eb}</default_value>
+      <default_value>{477f3286-308d-43c0-8e7f-483284eb60d1}</default_value>
       <choices>
         <choice>
-          <value>{783d4a71-fb33-4da4-8fea-0f5801bac4eb}</value>
+          <value>{477f3286-308d-43c0-8e7f-483284eb60d1}</value>
           <display_name>*All Plant and Air Loops*</display_name>
         </choice>
       </choices>
@@ -177,7 +177,7 @@ The cost arguments are user arguments that start with a default of $0. Operation
       <filename>measure.rb</filename>
       <filetype>rb</filetype>
       <usage_type>script</usage_type>
-      <checksum>CB567949</checksum>
+      <checksum>09B3E503</checksum>
     </file>
     <file>
       <filename>0320_ModelWithHVAC_01.osm</filename>
@@ -189,7 +189,7 @@ The cost arguments are user arguments that start with a default of $0. Operation
       <filename>ImproveMotorEfficiency_Test.rb</filename>
       <filetype>rb</filetype>
       <usage_type>test</usage_type>
-      <checksum>087B8F20</checksum>
+      <checksum>E64A2125</checksum>
     </file>
   </files>
 </measure>

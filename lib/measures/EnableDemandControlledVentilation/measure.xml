@@ -3,8 +3,8 @@
   <schema_version>3.1</schema_version>
   <name>enable_demand_controlled_ventilation</name>
   <uid>3ff4b412-8689-4b11-a588-935c621dc97d</uid>
-  <version_id>99de1cf0-2a9b-46f9-9e7f-d66cbe8e8b8a</version_id>
-  <version_modified>2025-08-08T15:15:56Z</version_modified>
+  <version_id>708475fa-7ed5-4cd0-b329-567329e2d602</version_id>
+  <version_modified>2025-09-25T15:33:42Z</version_modified>
   <xml_checksum>ECE70A70</xml_checksum>
   <class_name>EnableDemandControlledVentilation</class_name>
   <display_name>Enable Demand Controlled Ventilation</display_name>
@@ -102,7 +102,7 @@ The cost arguments are user arguments that start with a default of $0.</modeler_
       <filename>measure.rb</filename>
       <filetype>rb</filetype>
       <usage_type>script</usage_type>
-      <checksum>AE953EFB</checksum>
+      <checksum>0F3A5367</checksum>
     </file>
     <file>
       <filename>0320_ModelWithHVAC_01.osm</filename>
@@ -114,7 +114,7 @@ The cost arguments are user arguments that start with a default of $0.</modeler_
       <filename>EnableDemandControlledVentilation_Test.rb</filename>
       <filetype>rb</filetype>
       <usage_type>test</usage_type>
-      <checksum>FE1D9051</checksum>
+      <checksum>BAB1432E</checksum>
     </file>
   </files>
 </measure>

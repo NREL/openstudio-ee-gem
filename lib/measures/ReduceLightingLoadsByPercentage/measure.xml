@@ -3,8 +3,8 @@
   <schema_version>3.1</schema_version>
   <name>reduce_lighting_loads_by_percentage</name>
   <uid>791f3404-a28b-4a80-ba3f-e15b339e39ea</uid>
-  <version_id>47db4b69-1273-4e27-9e86-2643ad0d2bcc</version_id>
-  <version_modified>2025-08-08T15:15:58Z</version_modified>
+  <version_id>0d447c49-6da8-40a0-ae1e-e40aa7d5844e</version_id>
+  <version_modified>2025-09-25T15:33:44Z</version_modified>
   <xml_checksum>293730A7</xml_checksum>
   <class_name>ReduceLightingLoadsByPercentage</class_name>
   <display_name>Reduce Lighting Loads by Percentage</display_name>
@@ -17,10 +17,10 @@
       <type>Choice</type>
       <required>true</required>
       <model_dependent>false</model_dependent>
-      <default_value>{2950f03c-960d-47bd-aa9a-d6ee473b6395}</default_value>
+      <default_value>{99f185ba-0bd9-48d1-b66a-1cd70b749c8d}</default_value>
       <choices>
         <choice>
-          <value>{2950f03c-960d-47bd-aa9a-d6ee473b6395}</value>
+          <value>{99f185ba-0bd9-48d1-b66a-1cd70b749c8d}</value>
           <display_name>*Entire Building*</display_name>
         </choice>
       </choices>
@@ -162,7 +162,7 @@
       <filename>measure.rb</filename>
       <filetype>rb</filetype>
       <usage_type>script</usage_type>
-      <checksum>85F7B1BC</checksum>
+      <checksum>82DE91FC</checksum>
     </file>
     <file>
       <filename>EC_QAQC.osm</filename>
@@ -186,7 +186,7 @@
       <filename>ReduceLightingLoadsByPercentage_Test.rb</filename>
       <filetype>rb</filetype>
       <usage_type>test</usage_type>
-      <checksum>9FA79011</checksum>
+      <checksum>8EE6A0F2</checksum>
     </file>
   </files>
 </measure>

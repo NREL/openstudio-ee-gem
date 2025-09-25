@@ -3,8 +3,8 @@
   <schema_version>3.1</schema_version>
   <name>enable_economizer_control</name>
   <uid>f8cc920d-8ae3-411a-922f-e6fed3223c4d</uid>
-  <version_id>50469df5-0b35-42a9-b0f8-b689e1d29209</version_id>
-  <version_modified>2025-08-08T15:15:56Z</version_modified>
+  <version_id>0a64dc7a-3455-437b-b187-386ad6d373ab</version_id>
+  <version_modified>2025-09-25T15:33:42Z</version_modified>
   <xml_checksum>ECE70A70</xml_checksum>
   <class_name>EnableEconomizerControl</class_name>
   <display_name>Enable Economizer Control</display_name>
@@ -159,7 +159,7 @@ The cost arguments are user arguments that start with a default of $0.
       <filename>measure.rb</filename>
       <filetype>rb</filetype>
       <usage_type>script</usage_type>
-      <checksum>09B34548</checksum>
+      <checksum>A51BE018</checksum>
     </file>
     <file>
       <filename>0320_ModelWithHVAC_01.osm</filename>
@@ -171,7 +171,7 @@ The cost arguments are user arguments that start with a default of $0.
       <filename>measure_Test.rb</filename>
       <filetype>rb</filetype>
       <usage_type>test</usage_type>
-      <checksum>6A1E7B4A</checksum>
+      <checksum>76136CAF</checksum>
     </file>
   </files>
 </measure>

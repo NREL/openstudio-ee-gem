@@ -16,14 +16,12 @@ class GLHEProSetupExportLoadsforGroundHeatExchangerSizing < OpenStudio::Measure:
   # define the name that a user will see, this method may be deprecated as
   # the display name in PAT comes from the name field in measure.xml
   def name
-    return 'GLHEProSetupExportLoadsforGroundHeatExchangerSizing'
+    'GLHEProSetupExportLoadsforGroundHeatExchangerSizing'
   end
 
   # define the arguments that the user will input
-  def arguments(model)
-    args = OpenStudio::Measure::OSArgumentVector.new
-
-    return args
+  def arguments(_model)
+    OpenStudio::Measure::OSArgumentVector.new
   end
 
   # define what happens when the measure is run
@@ -31,9 +29,7 @@ class GLHEProSetupExportLoadsforGroundHeatExchangerSizing < OpenStudio::Measure:
     super(model, runner, user_arguments)
 
     # use the built-in error checking
-    if !runner.validateUserArguments(arguments(model), user_arguments)
-      return false
-    end
+    return false unless runner.validateUserArguments(arguments(model), user_arguments)
 
     # Define the reporting frequency
     reporting_frequency = 'hourly'
@@ -67,7 +63,7 @@ class GLHEProSetupExportLoadsforGroundHeatExchangerSizing < OpenStudio::Measure:
       end
     end
 
-    return true
+    true
   end
 end
 

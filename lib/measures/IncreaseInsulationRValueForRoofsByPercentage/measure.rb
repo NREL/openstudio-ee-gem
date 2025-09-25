@@ -7,11 +7,11 @@
 class IncreaseInsulationRValueForRoofsByPercentage < OpenStudio::Ruleset::ModelUserScript
   # define the name that a user will see
   def name
-    return 'Increase R-value of Insulation for Roofs by a Specified Percentage.'
+    'Increase R-value of Insulation for Roofs by a Specified Percentage.'
   end
 
   # define the arguments that the user will input
-  def arguments(model)
+  def arguments(_model)
     args = OpenStudio::Ruleset::OSArgumentVector.new
 
     # make an argument insulation R-value
@@ -20,7 +20,7 @@ class IncreaseInsulationRValueForRoofsByPercentage < OpenStudio::Ruleset::ModelU
     r_value.setDefaultValue(30.0)
     args << r_value
 
-    return args
+    args
   end
 
   # define what happens when the measure is run
@@ -28,9 +28,7 @@ class IncreaseInsulationRValueForRoofsByPercentage < OpenStudio::Ruleset::ModelU
     super(model, runner, user_arguments)
 
     # use the built-in error checking
-    if !runner.validateUserArguments(arguments(model), user_arguments)
-      return false
-    end
+    return false unless runner.validateUserArguments(arguments(model), user_arguments)
 
     # assign the user inputs to variables
     r_value = runner.getDoubleArgumentValue('r_value', user_arguments)
@@ -46,18 +44,21 @@ class IncreaseInsulationRValueForRoofsByPercentage < OpenStudio::Ruleset::ModelU
 
     # short def to make numbers pretty (converts 4125001.25641 to 4,125,001.26 or 4,125,001). The definition be called through this measure
     def neat_numbers(number, roundto = 2) # round to 0 or 2)
-      if roundto == 2
-        number = format '%.2f', number
-      else
-        number = number.round
-      end
+      number = if roundto == 2
+                 format '%.2f', number
+               else
+                 number.round
+               end
       # regex to add commas
       number.to_s.reverse.gsub(/([0-9]{3}(?=([0-9])))/, '\\1,').reverse
     end
 
     # helper to make it easier to do unit conversions on the fly
     def unit_helper(number, from_unit_string, to_unit_string)
-      converted_number = OpenStudio.convert(OpenStudio::Quantity.new(number, OpenStudio.createUnit(from_unit_string).get), OpenStudio.createUnit(to_unit_string).get).get.value
+      converted_number = OpenStudio.convert(
+        OpenStudio::Quantity.new(number,
+                                 OpenStudio.createUnit(from_unit_string).get), OpenStudio.createUnit(to_unit_string).get
+      ).get.value
     end
 
     # create an array of roofs and find range of starting construction R-value (not just insulation layer)
@@ -67,16 +68,16 @@ class IncreaseInsulationRValueForRoofsByPercentage < OpenStudio::Ruleset::ModelU
     exterior_surface_construction_names = []
     roof_resistance = []
     surfaces.each do |surface|
-      if (surface.outsideBoundaryCondition == 'Outdoors') && (surface.surfaceType == 'RoofCeiling')
-        exterior_surfaces << surface
-        roof_const = surface.construction.get
-        # only add construction if it hasn't been added yet
-        if !exterior_surface_construction_names.include?(roof_const.name.to_s)
-          exterior_surface_constructions << roof_const.to_Construction.get
-        end
-        exterior_surface_construction_names << roof_const.name.to_s
-        roof_resistance << 1 / roof_const.thermalConductance.to_f
+      next unless (surface.outsideBoundaryCondition == 'Outdoors') && (surface.surfaceType == 'RoofCeiling')
+
+      exterior_surfaces << surface
+      roof_const = surface.construction.get
+      # only add construction if it hasn't been added yet
+      unless exterior_surface_construction_names.include?(roof_const.name.to_s)
+        exterior_surface_constructions << roof_const.to_Construction.get
       end
+      exterior_surface_construction_names << roof_const.name.to_s
+      roof_resistance << (1 / roof_const.thermalConductance.to_f)
     end
 
     # nothing will be done if there are no exterior surfaces
@@ -89,8 +90,9 @@ class IncreaseInsulationRValueForRoofsByPercentage < OpenStudio::Ruleset::ModelU
     initial_string = []
     exterior_surface_constructions.uniq.each do |exterior_surface_construction|
       # unit conversion of roof insulation from SI units (M^2*K/W) to IP units (ft^2*h*R/Btu)
-      initial_conductance_ip = unit_helper(1 / exterior_surface_construction.thermalConductance.to_f, 'm^2*K/W', 'ft^2*h*R/Btu')
-      initial_string << "#{exterior_surface_construction.name} (R-#{(format '%.1f', initial_conductance_ip)})"
+      initial_conductance_ip = unit_helper(1 / exterior_surface_construction.thermalConductance.to_f, 'm^2*K/W',
+                                           'ft^2*h*R/Btu')
+      initial_string << "#{exterior_surface_construction.name} (R-#{format '%.1f', initial_conductance_ip})"
     end
     runner.registerInitialCondition("The building had #{initial_string.size} roof constructions: #{initial_string.sort.join(', ')}.")
 
@@ -113,11 +115,9 @@ class IncreaseInsulationRValueForRoofsByPercentage < OpenStudio::Ruleset::ModelU
       # loop through construction layers and infer insulation layer/material
       construction_layers.each do |construction_layer|
         construction_layer_r_value = construction_layer.to_OpaqueMaterial.get.thermalResistance
-        if !thermal_resistance_values.empty?
-          if construction_layer_r_value > thermal_resistance_values.max
-            max_thermal_resistance_material = construction_layer
-            max_thermal_resistance_material_index = counter
-          end
+        if !thermal_resistance_values.empty? && (construction_layer_r_value > thermal_resistance_values.max)
+          max_thermal_resistance_material = construction_layer
+          max_thermal_resistance_material_index = counter
         end
         thermal_resistance_values << construction_layer_r_value
         counter += 1
@@ -142,13 +142,13 @@ class IncreaseInsulationRValueForRoofsByPercentage < OpenStudio::Ruleset::ModelU
         target_material = max_thermal_resistance_material
         found_material = false
         materials_hash.each do |orig, new|
-          if target_material.name.to_s == orig
-            new_material = new
-            materials_hash[max_thermal_resistance_material.name.to_s] = new_material
-            final_construction.eraseLayer(max_thermal_resistance_material_index)
-            final_construction.insertLayer(max_thermal_resistance_material_index, new_material)
-            found_material = true
-          end
+          next unless target_material.name.to_s == orig
+
+          new_material = new
+          materials_hash[max_thermal_resistance_material.name.to_s] = new_material
+          final_construction.eraseLayer(max_thermal_resistance_material_index)
+          final_construction.insertLayer(max_thermal_resistance_material_index, new_material)
+          found_material = true
         end
 
         # clone and edit insulation material and link to construction
@@ -163,20 +163,20 @@ class IncreaseInsulationRValueForRoofsByPercentage < OpenStudio::Ruleset::ModelU
 
           # edit insulation material
           new_material_matt = new_material.to_Material
-          if !new_material_matt.empty?
+          unless new_material_matt.empty?
             starting_thickness = new_material_matt.get.thickness
-            target_thickness = starting_thickness * (1 + r_value / 100)
+            target_thickness = starting_thickness * (1 + (r_value / 100))
             final_thickness = new_material_matt.get.setThickness(target_thickness)
           end
           new_material_massless = new_material.to_MasslessOpaqueMaterial
-          if !new_material_massless.empty?
+          unless new_material_massless.empty?
             starting_thermal_resistance = new_material_massless.get.thermalResistance
-            final_thermal_resistance = new_material_massless.get.setThermalResistance(starting_thermal_resistance * (1 + r_value / 100))
+            final_thermal_resistance = new_material_massless.get.setThermalResistance(starting_thermal_resistance * (1 + (r_value / 100)))
           end
           new_material_airgap = new_material.to_AirGap
-          if !new_material_airgap.empty?
+          unless new_material_airgap.empty?
             starting_thermal_resistance = new_material_airgap.get.thermalResistance
-            final_thermal_resistance = new_material_airgap.get.setThermalResistance(starting_thermal_resistance * (1 + r_value / 100))
+            final_thermal_resistance = new_material_airgap.get.setThermalResistance(starting_thermal_resistance * (1 + (r_value / 100)))
           end
         end
       end
@@ -185,85 +185,82 @@ class IncreaseInsulationRValueForRoofsByPercentage < OpenStudio::Ruleset::ModelU
     # loop through construction sets used in the model
     default_construction_sets = model.getDefaultConstructionSets
     default_construction_sets.each do |default_construction_set|
-      if default_construction_set.directUseCount > 0
-        default_surface_const_set = default_construction_set.defaultExteriorSurfaceConstructions
-        if !default_surface_const_set.empty?
-          starting_construction = default_surface_const_set.get.roofCeilingConstruction
+      next unless default_construction_set.directUseCount > 0
 
-          # creating new default construction set
-          new_default_construction_set = default_construction_set.clone(model)
-          new_default_construction_set = new_default_construction_set.to_DefaultConstructionSet.get
-          new_default_construction_set.setName("#{default_construction_set.name} adj roof insulation")
+      default_surface_const_set = default_construction_set.defaultExteriorSurfaceConstructions
+      next if default_surface_const_set.empty?
 
-          # create new surface set and link to construction set
-          new_default_surface_const_set = default_surface_const_set.get.clone(model)
-          new_default_surface_const_set = new_default_surface_const_set.to_DefaultSurfaceConstructions.get
-          new_default_surface_const_set.setName("#{default_surface_const_set.get.name} adj roof insulation")
-          new_default_construction_set.setDefaultExteriorSurfaceConstructions(new_default_surface_const_set)
+      starting_construction = default_surface_const_set.get.roofCeilingConstruction
 
-          # use the hash to find the proper construction and link to new_default_surface_const_set
-          target_const = new_default_surface_const_set.roofCeilingConstruction
-          if !target_const.empty?
-            target_const = target_const.get.name.to_s
-            found_const_flag = false
-            constructions_hash_old_new.each do |orig, new|
-              if target_const == orig
-                final_construction = new
-                new_default_surface_const_set.setRoofCeilingConstruction(final_construction)
-                found_const_flag = true
-              end
-            end
-            if found_const_flag == false # this should never happen but is just an extra test in case something goes wrong with the measure code
-              runner.registerWarning("Measure couldn't find the construction named '#{target_const}' in the exterior surface hash.")
-            end
-          end
+      # creating new default construction set
+      new_default_construction_set = default_construction_set.clone(model)
+      new_default_construction_set = new_default_construction_set.to_DefaultConstructionSet.get
+      new_default_construction_set.setName("#{default_construction_set.name} adj roof insulation")
 
-          # swap all uses of the old construction set for the new
-          construction_set_sources = default_construction_set.sources
-          construction_set_sources.each do |construction_set_source|
-            building_source = construction_set_source.to_Building
-            # if statement for each type of object than can use a DefaultConstructionSet
-            if !building_source.empty?
-              building_source = building_source.get
-              building_source.setDefaultConstructionSet(new_default_construction_set)
-            end
-            building_story_source = construction_set_source.to_BuildingStory
-            if !building_story_source.empty?
-              building_story_source = building_story_source.get
-              building_story_source.setDefaultConstructionSet(new_default_construction_set)
-            end
-            space_type_source = construction_set_source.to_SpaceType
-            if !space_type_source.empty?
-              space_type_source = space_type_source.get
-              space_type_source.setDefaultConstructionSet(new_default_construction_set)
-            end
-            space_source = construction_set_source.to_Space
-            if !space_source.empty?
-              space_source = space_source.get
-              space_source.setDefaultConstructionSet(new_default_construction_set)
-            end
-          end
+      # create new surface set and link to construction set
+      new_default_surface_const_set = default_surface_const_set.get.clone(model)
+      new_default_surface_const_set = new_default_surface_const_set.to_DefaultSurfaceConstructions.get
+      new_default_surface_const_set.setName("#{default_surface_const_set.get.name} adj roof insulation")
+      new_default_construction_set.setDefaultExteriorSurfaceConstructions(new_default_surface_const_set)
 
+      # use the hash to find the proper construction and link to new_default_surface_const_set
+      target_const = new_default_surface_const_set.roofCeilingConstruction
+      unless target_const.empty?
+        target_const = target_const.get.name.to_s
+        found_const_flag = false
+        constructions_hash_old_new.each do |orig, new|
+          next unless target_const == orig
+
+          final_construction = new
+          new_default_surface_const_set.setRoofCeilingConstruction(final_construction)
+          found_const_flag = true
+        end
+        if found_const_flag == false # this should never happen but is just an extra test in case something goes wrong with the measure code
+          runner.registerWarning("Measure couldn't find the construction named '#{target_const}' in the exterior surface hash.")
+        end
+      end
+
+      # swap all uses of the old construction set for the new
+      construction_set_sources = default_construction_set.sources
+      construction_set_sources.each do |construction_set_source|
+        building_source = construction_set_source.to_Building
+        # if statement for each type of object than can use a DefaultConstructionSet
+        unless building_source.empty?
+          building_source = building_source.get
+          building_source.setDefaultConstructionSet(new_default_construction_set)
+        end
+        building_story_source = construction_set_source.to_BuildingStory
+        unless building_story_source.empty?
+          building_story_source = building_story_source.get
+          building_story_source.setDefaultConstructionSet(new_default_construction_set)
+        end
+        space_type_source = construction_set_source.to_SpaceType
+        unless space_type_source.empty?
+          space_type_source = space_type_source.get
+          space_type_source.setDefaultConstructionSet(new_default_construction_set)
+        end
+        space_source = construction_set_source.to_Space
+        unless space_source.empty?
+          space_source = space_source.get
+          space_source.setDefaultConstructionSet(new_default_construction_set)
         end
       end
     end
 
     # link cloned and edited constructions for surfaces with hard assigned constructions
     exterior_surfaces.each do |exterior_surface|
-      if !exterior_surface.isConstructionDefaulted && !exterior_surface.construction.empty?
+      next unless !exterior_surface.isConstructionDefaulted && !exterior_surface.construction.empty?
 
-        # use the hash to find the proper construction and link to surface
-        target_const = exterior_surface.construction
-        if !target_const.empty?
-          target_const = target_const.get.name.to_s
-          constructions_hash_old_new.each do |orig, new|
-            if target_const == orig
-              final_construction = new
-              exterior_surface.setConstruction(final_construction)
-            end
-          end
+      # use the hash to find the proper construction and link to surface
+      target_const = exterior_surface.construction
+      next if target_const.empty?
+
+      target_const = target_const.get.name.to_s
+      constructions_hash_old_new.each do |orig, new|
+        if target_const == orig
+          final_construction = new
+          exterior_surface.setConstruction(final_construction)
         end
-
       end
     end
 
@@ -273,7 +270,7 @@ class IncreaseInsulationRValueForRoofsByPercentage < OpenStudio::Ruleset::ModelU
     final_constructions_array.each do |final_construction|
       # unit conversion of roof insulation from SI units (M^2*K/W) to IP units (ft^2*h*R/Btu)
       final_conductance_ip = unit_helper(1 / final_construction.thermalConductance.to_f, 'm^2*K/W', 'ft^2*h*R/Btu')
-      final_string << "#{final_construction.name} (R-#{(format '%.1f', final_conductance_ip)})"
+      final_string << "#{final_construction.name} (R-#{format '%.1f', final_conductance_ip})"
       affected_area_si += final_construction.getNetArea
     end
 
@@ -288,9 +285,11 @@ class IncreaseInsulationRValueForRoofsByPercentage < OpenStudio::Ruleset::ModelU
     end
 
     # report final condition
-    runner.registerFinalCondition("The existing insulation for roofs was increased by #{r_value}%. This was applied to #{neat_numbers(affected_area_ip, 0)} (ft^2) across #{final_string.size} roof constructions: #{final_string.sort.join(', ')}.")
+    runner.registerFinalCondition("The existing insulation for roofs was increased by #{r_value}%. This was applied to #{neat_numbers(
+      affected_area_ip, 0
+    )} (ft^2) across #{final_string.size} roof constructions: #{final_string.sort.join(', ')}.")
 
-    return true
+    true
   end
 end
 

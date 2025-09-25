@@ -11,98 +11,133 @@ jobs:
       DEPLOY_PATH: ${{ github.repository }}/${{ github.ref_name }}/${{ github.run_number }} # Path for S3 deployment
       S3_BUCKET: ext-gem-dashboard
 
-    container: # Define the Docker container for the job. All subsequent steps run inside it.
-      image: nrel/openstudio:3.10.0
-      options: -u root -e "LANG=en_US.UTF-8" # These options are passed to the 'docker run' command internally
-
     steps:
-      - name: Checkout Repository
-        # The repository will be checked out inside the 'nrel/openstudio:3.10.0' container
-        uses: actions/checkout@v4 # Use v4 for better security and features
+      - name: Login to Docker Hub
+        # Authenticate with Docker Hub using repository secrets to access nrel/openstudio:develop
+        uses: docker/login-action@v3
         with:
-          submodules: true # Set to true if your repository uses Git submodules
+          username: ${{ secrets.DOCKERHUB_USERNAME }} # Ensure this secret exists in your repository or organization settings
+          password: ${{ secrets.DOCKERHUB_TOKEN }}    # Ensure this secret exists in your repository or organization settings
 
-      - name: Install Node.js and AWS CLI
-        # Install required dependencies for AWS actions to work in the OpenStudio container
-        shell: bash
+      - name: Checkout Repository
+        # Checkout the repository to the runner's workspace
+        uses: actions/checkout@v4
+        with:
+          submodules: true
+
+      - name: Cache Bundle Dependencies
+        # Cache gem dependencies to speed up builds and improve reliability
+        uses: actions/cache@v4
+        with:
+          path: vendor/bundle
+          key: ${{ runner.os }}-gems-${{ hashFiles('**/Gemfile.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-gems-
+
+      - name: Run Tests in OpenStudio Container
+        # Run all tests inside the OpenStudio develop container with proper authentication
         run: |
-          echo "Installing Node.js and AWS CLI..."
-
-          # Update package list
-          apt-get update
-
-          # Install curl and other dependencies
-          apt-get install -y curl unzip
-
-          # Install Node.js (using NodeSource repository for latest LTS)
-          curl -fsSL https://deb.nodesource.com/setup_lts.x | bash -
-          apt-get install -y nodejs
-
-          # Install AWS CLI v2
-          curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
-          unzip awscliv2.zip
-          ./aws/install
-
-          # Verify installations
-          echo "Node.js version: $(node --version)"
-          echo "npm version: $(npm --version)"
-          echo "AWS CLI version: $(aws --version)"
-
-          # Clean up
-          rm -rf awscliv2.zip aws/
-
-      - name: Verify Environment and Run Measures
-        # All 'run' commands in this job now execute inside the specified Docker container.
-        shell: bash # Specify the shell if needed, though bash is default for Ubuntu runners
-        run: |
-          # Fix git ownership issue in container
-          git config --global --add safe.directory /__w/openstudio-load-flexibility-measures-gem/openstudio-load-flexibility-measures-gem
+          # Pull the develop image now that we're authenticated
+          docker pull nrel/openstudio:develop
           
-          echo "OpenStudio Version: $(openstudio --version)"
-          echo "Ruby Version: $(ruby -v)"
-          echo "Listing OpenStudio Gems: $(openstudio gem_list)"
-          
-          # Install dependencies before running tests
-          echo "Installing gem dependencies..."
-          bundle install
-          
-          echo "Running spec tests..."
-          rake spec
-          echo "Running measures with verbose output:"
-          # This command will execute within the container.
-          # Ensure that './lib/measures' is the correct path relative to the checkout.
-          openstudio --verbose measure -r ./lib/measures
-
-          # The output for 'test' should now be generated directly into the workspace
-          # within the container, which is mounted from the host.
-          # No 'docker cp' is needed as the workspace is shared.
-          ls -al ./test # Verify the output directory exists and contains files
+          # Run the container with all our test commands
+          docker run --rm \
+            -u root \
+            -e "LANG=en_US.UTF-8" \
+            -v "${{ github.workspace }}:/workspace" \
+            -w /workspace \
+            nrel/openstudio:develop \
+            bash -c '
+              set -e
+              
+              echo "Starting OpenStudio EE Gem tests..."
+              echo "Ruby: $(ruby -v)"
+              echo "OpenStudio: $(openstudio openstudio_version)"
+              
+              # Fix git ownership issue in container
+              git config --global --add safe.directory "*"
+              
+              # Install system dependencies
+              apt-get update -qq
+              apt-get install -y -qq curl unzip ca-certificates
+              
+              # Install Node.js and AWS CLI (required for some tests)
+              curl -fsSL https://deb.nodesource.com/setup_20.x | DEBIAN_FRONTEND=noninteractive bash -
+              DEBIAN_FRONTEND=noninteractive apt-get install -y -qq nodejs
+              
+              curl -fsSL "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o /tmp/awscliv2.zip
+              unzip -q /tmp/awscliv2.zip -d /tmp/
+              /tmp/aws/install
+              rm -rf /tmp/aws /tmp/awscliv2.zip
+              
+              # Install gem dependencies
+              echo "Installing gem dependencies..."
+              
+              # Clean up bundler environment
+              unset BUNDLE_GEMFILE BUNDLE_PATH BUNDLE_BIN_PATH
+              
+              # Install bundler and configure
+              gem install bundler -v 2.4.10 --no-document
+              bundle config set --local path vendor/bundle
+              bundle config set --local force_ruby_platform true
+              
+              # Install gems
+              bundle install --retry 3 --jobs 4
+              
+              # Run test suite
+              echo "Running tests..."
+              bundle exec rake
+              bundle exec rake openstudio:list_measures
+              bundle exec rake openstudio:update_measures
+              bundle exec rake openstudio:test_with_openstudio
+              
+              # Archive test results
+              if [ -d "test" ]; then
+                mv test test_with_cli_bundler
+              fi
+              
+              dir_name=$(find . -type d -name "test_results" | head -1)
+              if [ -n "$dir_name" ]; then
+                mv "$dir_name" test_results_dashboard_cli_bundler
+              fi
+              
+              echo "Tests completed successfully!"
+            '
 
       - name: Configure AWS Credentials
-        # This step is crucial for authenticating with AWS S3
-        uses: aws-actions/configure-aws-credentials@v4 # Use v4 for updated features
+        # Configure AWS credentials for S3 deployment
+        uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }} # Assuming this is your secret name
-          aws-region: ${{ secrets.AWS_DEFAULT_REGION }} # Replace with your AWS region, e.g., us-east-1
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_DEFAULT_REGION }}
 
       - name: Sync files to S3 with branch and build in path
         shell: bash
         run: |
           echo "Deploying to s3://${{ env.S3_BUCKET }}/${{ env.DEPLOY_PATH }}/"
-          # Ensure './test_results' is the correct source directory for the files to upload to S3.
-          dir_name=$(find -type d -name "test_results")
-          # It must match the output directory from the 'Run Measures' step.
-          aws s3 sync $dir_name s3://${{ env.S3_BUCKET }}/${{ env.DEPLOY_PATH }}/ \
-            --delete \
-            --acl public-read \
-            --cache-control "max-age=0, no-cache, no-store, must-revalidate"
-          echo "S3 sync complete."
-          echo "https://${{ env.S3_BUCKET }}.s3.amazonaws.com/${{ env.DEPLOY_PATH }}/dashboard/index.html"
-          echo dir_name=$dir_name >> $GITHUB_ENV # Save the directory name to an environment variable for later use
+          # Use the renamed test_results directory
+          dir_name="test_results_dashboard_cli_bundler"
+          if [ -d "$dir_name" ]; then
+            echo "TEST_RESULTS_DIR=$dir_name" >> $GITHUB_ENV
+            if ! aws s3 sync $dir_name s3://${{ env.S3_BUCKET }}/${{ env.DEPLOY_PATH }}/ \
+              --delete \
+              --acl public-read \
+              --cache-control "max-age=0, no-cache, no-store, must-revalidate"; then
+              echo "::error::Failed to sync results to S3"
+              exit 1
+            fi
+            echo "✅ S3 sync complete."
+            echo "🌐 Dashboard URL: https://${{ env.S3_BUCKET }}.s3.amazonaws.com/${{ env.DEPLOY_PATH }}/dashboard/index.html"
+          else
+            echo "::error::Test results directory $dir_name not found"
+            echo "::error::Available directories:"
+            ls -la
+            exit 1
+          fi
 
       - name: Archive static site as artifact
         uses: actions/upload-artifact@v4
         with:
           name: static-html-artifact
-          path: ${{ env.dir_name }} # Path should be relative to the GitHub workspace, which is shared with the container          
+          path: test_results_dashboard_cli_bundler          
