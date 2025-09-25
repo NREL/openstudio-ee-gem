@@ -9,17 +9,17 @@
 class AddDaylightSensors < OpenStudio::Measure::ModelMeasure
   # define the name that a user will see
   def name
-    return 'Add Daylight Sensor at the Center of Spaces with a Specified Space Type Assigned'
+    'Add Daylight Sensor at the Center of Spaces with a Specified Space Type Assigned'
   end
 
   # human readable description
   def description
-    return 'This measure will add daylighting controls to spaces that that have space types assigned with names containing the string in the argument. You can also add a cost per space for sensors added to the model.'
+    'This measure will add daylighting controls to spaces that that have space types assigned with names containing the string in the argument. You can also add a cost per space for sensors added to the model.'
   end
 
   # human readable description of modeling approach
   def modeler_description
-    return "Make an array of the spaces that meet the criteria. Locate the sensor x and y values by averaging the min and max X and Y values from floor surfaces in the space. If a space already has a daylighting control, do not add a new one and leave the original in place. Warn the user if the space isn't assigned to a thermal zone, or if the space doesn't have any translucent surfaces. Note that the cost is added to the space not the sensor. If the sensor is removed at a later date, the cost will remain."
+    "Make an array of the spaces that meet the criteria. Locate the sensor x and y values by averaging the min and max X and Y values from floor surfaces in the space. If a space already has a daylighting control, do not add a new one and leave the original in place. Warn the user if the space isn't assigned to a thermal zone, or if the space doesn't have any translucent surfaces. Note that the cost is added to the space not the sensor. If the sensor is removed at a later date, the cost will remain."
   end
 
   # define the arguments that the user will input
@@ -40,14 +40,15 @@ class AddDaylightSensors < OpenStudio::Measure::ModelMeasure
     # looping through sorted hash of model objects
     space_type_args_hash.sort.map do |key, value|
       # only include if space type is used in the model
-      if !value.spaces.empty?
+      unless value.spaces.empty?
         space_type_handles << value.handle.to_s
         space_type_display_names << key
       end
     end
 
     # make a choice argument for space type
-    space_type = OpenStudio::Measure::OSArgument.makeChoiceArgument('space_type', space_type_handles, space_type_display_names, true)
+    space_type = OpenStudio::Measure::OSArgument.makeChoiceArgument('space_type', space_type_handles,
+                                                                    space_type_display_names, true)
     space_type.setDisplayName('Add Daylight Sensors to Spaces of This Space Type')
     args << space_type
 
@@ -144,7 +145,7 @@ class AddDaylightSensors < OpenStudio::Measure::ModelMeasure
     om_frequency.setDefaultValue(1)
     args << om_frequency
 
-    return args
+    args
   end
 
   # define what happens when the measure is run
@@ -152,9 +153,7 @@ class AddDaylightSensors < OpenStudio::Measure::ModelMeasure
     super(model, runner, user_arguments)
 
     # use the built-in error checking
-    if !runner.validateUserArguments(arguments(model), user_arguments)
-      return false
-    end
+    return false unless runner.validateUserArguments(arguments(model), user_arguments)
 
     # assign the user inputs to variables
     space_type = runner.getOptionalWorkspaceObjectChoiceValue('space_type', user_arguments, model)
@@ -181,13 +180,11 @@ class AddDaylightSensors < OpenStudio::Measure::ModelMeasure
         runner.registerError("The selected space type with handle '#{handle}' was not found in the model. It may have been removed by another measure.")
       end
       return false
+    elsif !space_type.get.to_SpaceType.empty?
+      space_type = space_type.get.to_SpaceType.get
     else
-      if !space_type.get.to_SpaceType.empty?
-        space_type = space_type.get.to_SpaceType.get
-      else
-        runner.registerError('Script Error - argument not showing up as space type.')
-        return false
-      end
+      runner.registerError('Script Error - argument not showing up as space type.')
+      return false
     end
 
     # check the setpoint for reasonableness
@@ -238,17 +235,15 @@ class AddDaylightSensors < OpenStudio::Measure::ModelMeasure
     if (expected_life < 1) && (expected_life > 100)
       runner.registerError('Choose an integer greater than 0 and less than or equal to 100 for Expected Life.')
     end
-    if om_frequency < 1
-      runner.registerError('Choose an integer greater than 0 for O & M Frequency.')
-    end
+    runner.registerError('Choose an integer greater than 0 for O & M Frequency.') if om_frequency < 1
 
     # short def to make numbers pretty (converts 4125001.25641 to 4,125,001.26 or 4,125,001). The definition be called through this measure
     def neat_numbers(number, roundto = 2) # round to 0 or 2)
-      if roundto == 2
-        number = format '%.2f', number
-      else
-        number = number.round
-      end
+      number = if roundto == 2
+                 format '%.2f', number
+               else
+                 number.round
+               end
       # regex to add commas
       number.to_s.reverse.gsub(/([0-9]{3}(?=([0-9])))/, '\\1,').reverse
     end
@@ -259,14 +254,12 @@ class AddDaylightSensors < OpenStudio::Measure::ModelMeasure
       objects.each do |object|
         object_LCCs = object.lifeCycleCosts
         object_LCCs.each do |object_LCC|
-          if (object_LCC.category == 'Construction') || (object_LCC.category == 'Salvage')
-            if object_LCC.yearsFromStart == 0
-              counter += object_LCC.totalCost
-            end
-          end
+          next unless (object_LCC.category == 'Construction') || (object_LCC.category == 'Salvage')
+
+          counter += object_LCC.totalCost if object_LCC.yearsFromStart == 0
         end
       end
-      return counter
+      counter
     end
 
     # unit conversion from IP units to SI units
@@ -297,15 +290,14 @@ class AddDaylightSensors < OpenStudio::Measure::ModelMeasure
     spaces_using_space_type.each do |space_using_space_type|
       if space_using_space_type.daylightingControls.empty?
         space_zone = space_using_space_type.thermalZone
-        if !space_zone.empty?
+        if space_zone.empty?
+          runner.registerWarning("Space '#{space_using_space_type.name}' is not associated with a thermal zone. It won't be part of the EnergyPlus simulation.")
+        else
           space_zone = space_zone.get
           if space_zone.primaryDaylightingControl.empty? && space_zone.secondaryDaylightingControl.empty?
             spaces_using_space_type_in_zones_without_sensors << space_using_space_type
-          elsif
-            runner.registerWarning("Thermal zone '#{space_zone.name}' which includes space '#{space_using_space_type.name}' already had a daylighting sensor. No sensor was added to space '#{space_using_space_type.name}'.")
+          elsif runner.registerWarning("Thermal zone '#{space_zone.name}' which includes space '#{space_using_space_type.name}' already had a daylighting sensor. No sensor was added to space '#{space_using_space_type.name}'.")
           end
-        else
-          runner.registerWarning("Space '#{space_using_space_type.name}' is not associated with a thermal zone. It won't be part of the EnergyPlus simulation.")
         end
       else
         runner.registerWarning("Space '#{space_using_space_type.name}' already has a daylighting sensor. No sensor was added.")
@@ -323,9 +315,11 @@ class AddDaylightSensors < OpenStudio::Measure::ModelMeasure
       has_ext_nat_light = false
       space.surfaces.each do |surface|
         next if surface.outsideBoundaryCondition != 'Outdoors'
+
         surface.subSurfaces.each do |sub_surface|
           next if sub_surface.subSurfaceType == 'Door'
           next if sub_surface.subSurfaceType == 'OverheadDoor'
+
           has_ext_nat_light = true
         end
       end
@@ -338,6 +332,7 @@ class AddDaylightSensors < OpenStudio::Measure::ModelMeasure
       floors = []
       space.surfaces.each do |surface|
         next if surface.surfaceType != 'Floor'
+
         floors << surface
       end
 
@@ -373,16 +368,20 @@ class AddDaylightSensors < OpenStudio::Measure::ModelMeasure
         starting_lcc_counter = space.lifeCycleCosts.size
 
         # adding new cost items
-        lcc_mat = OpenStudio::Model::LifeCycleCost.createLifeCycleCost("LCC_Mat - #{sensor.name}", space, material_cost, 'CostPerEach', 'Construction', expected_life, years_until_costs_start)
+        lcc_mat = OpenStudio::Model::LifeCycleCost.createLifeCycleCost("LCC_Mat - #{sensor.name}", space,
+                                                                       material_cost, 'CostPerEach', 'Construction', expected_life, years_until_costs_start)
         if demo_cost_initial_const
-          lcc_demo = OpenStudio::Model::LifeCycleCost.createLifeCycleCost("LCC_Demo - #{sensor.name}", space, demolition_cost, 'CostPerEach', 'Salvage', expected_life, years_until_costs_start)
+          lcc_demo = OpenStudio::Model::LifeCycleCost.createLifeCycleCost("LCC_Demo - #{sensor.name}", space,
+                                                                          demolition_cost, 'CostPerEach', 'Salvage', expected_life, years_until_costs_start)
         else
-          lcc_demo = OpenStudio::Model::LifeCycleCost.createLifeCycleCost("LCC_Demo - #{sensor.name}", space, demolition_cost, 'CostPerEach', 'Salvage', expected_life, years_until_costs_start + expected_life)
+          lcc_demo = OpenStudio::Model::LifeCycleCost.createLifeCycleCost("LCC_Demo - #{sensor.name}", space,
+                                                                          demolition_cost, 'CostPerEach', 'Salvage', expected_life, years_until_costs_start + expected_life)
         end
-        lcc_om = OpenStudio::Model::LifeCycleCost.createLifeCycleCost("LCC_OM - #{sensor.name}", space, om_cost, 'CostPerEach', 'Maintenance', om_frequency, 0)
+        lcc_om = OpenStudio::Model::LifeCycleCost.createLifeCycleCost("LCC_OM - #{sensor.name}", space, om_cost,
+                                                                      'CostPerEach', 'Maintenance', om_frequency, 0)
 
         if space.lifeCycleCosts.size - starting_lcc_counter == 3
-          if !warning_cost_assign_to_space
+          unless warning_cost_assign_to_space
             runner.registerInfo('Cost for daylight sensors was added to spaces. The cost will remain in the model unless the space is removed. Removing only the sensor will not remove the cost.')
             warning_cost_assign_to_space = true
           end
@@ -424,48 +423,47 @@ class AddDaylightSensors < OpenStudio::Measure::ModelMeasure
         end
       end
 
-      if !zone_spaces_with_new_sensors.empty?
-        # need to identify the two largest spaces
-        primary_area = 0
-        secondary_area = 0
-        primary_space = nil
-        secondary_space = nil
-        three_or_more_sensors = false
+      next if zone_spaces_with_new_sensors.empty?
 
-        # dfg temp - need to add another if statement so only get spaces with sensors
-        zone_spaces_with_new_sensors.each do |zone_space|
-          zone_space_area = zone_space.floorArea
-          if zone_space_area > primary_area
-            primary_area = zone_space_area
-            primary_space = zone_space
-          elsif zone_space_area > secondary_area
-            secondary_area = zone_space_area
-            secondary_space = zone_space
-          else
-            # setup flag to warn user that more than 2 sensors can't be added to a space
-            three_or_more_sensors = true
-          end
+      # need to identify the two largest spaces
+      primary_area = 0
+      secondary_area = 0
+      primary_space = nil
+      secondary_space = nil
+      three_or_more_sensors = false
+
+      # dfg temp - need to add another if statement so only get spaces with sensors
+      zone_spaces_with_new_sensors.each do |zone_space|
+        zone_space_area = zone_space.floorArea
+        if zone_space_area > primary_area
+          primary_area = zone_space_area
+          primary_space = zone_space
+        elsif zone_space_area > secondary_area
+          secondary_area = zone_space_area
+          secondary_space = zone_space
+        else
+          # setup flag to warn user that more than 2 sensors can't be added to a space
+          three_or_more_sensors = true
         end
+      end
 
-        if primary_space
-          # setup primary sensor
-          sensor_primary = new_sensor_objects[primary_space.name.to_s]
-          zone.setPrimaryDaylightingControl(sensor_primary)
-          zone.setFractionofZoneControlledbyPrimaryDaylightingControl(fraction_zone_controlled * primary_area / (primary_area + secondary_area))
-        end
+      if primary_space
+        # setup primary sensor
+        sensor_primary = new_sensor_objects[primary_space.name.to_s]
+        zone.setPrimaryDaylightingControl(sensor_primary)
+        zone.setFractionofZoneControlledbyPrimaryDaylightingControl(fraction_zone_controlled * primary_area / (primary_area + secondary_area))
+      end
 
-        if secondary_space
-          # setup secondary sensor
-          sensor_secondary = new_sensor_objects[secondary_space.name.to_s]
-          zone.setSecondaryDaylightingControl(sensor_secondary)
-          zone.setFractionofZoneControlledbySecondaryDaylightingControl(fraction_zone_controlled * secondary_area / (primary_area + secondary_area))
-        end
+      if secondary_space
+        # setup secondary sensor
+        sensor_secondary = new_sensor_objects[secondary_space.name.to_s]
+        zone.setSecondaryDaylightingControl(sensor_secondary)
+        zone.setFractionofZoneControlledbySecondaryDaylightingControl(fraction_zone_controlled * secondary_area / (primary_area + secondary_area))
+      end
 
-        # warn that additional sensors were not used
-        if three_or_more_sensors == true
-          runner.registerWarning("Thermal zone '#{zone.name}' had more than two spaces with sensors. Only two sensors were associated with the thermal zone.")
-        end
-
+      # warn that additional sensors were not used
+      if three_or_more_sensors == true
+        runner.registerWarning("Thermal zone '#{zone.name}' had more than two spaces with sensors. Only two sensors were associated with the thermal zone.")
       end
     end
 
@@ -483,9 +481,11 @@ class AddDaylightSensors < OpenStudio::Measure::ModelMeasure
     yr0_capital_totalCosts = get_total_costs_for_objects(spaces_using_space_type)
 
     # reporting final condition of model
-    runner.registerFinalCondition("Added daylighting controls to #{sensor_count} spaces, covering #{area_ip}. Initial year costs associated with the daylighting controls is $#{neat_numbers(yr0_capital_totalCosts, 0)}.")
+    runner.registerFinalCondition("Added daylighting controls to #{sensor_count} spaces, covering #{area_ip}. Initial year costs associated with the daylighting controls is $#{neat_numbers(
+      yr0_capital_totalCosts, 0
+    )}.")
 
-    return true
+    true
   end
 end
 

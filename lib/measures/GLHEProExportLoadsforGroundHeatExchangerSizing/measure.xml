@@ -3,8 +3,8 @@
   <schema_version>3.1</schema_version>
   <name>glhe_pro_export_loadsfor_ground_heat_exchanger_sizing</name>
   <uid>7bb0ce67-cffb-4ef6-b7fb-093c7c43e263</uid>
-  <version_id>0f94f8bc-7ac5-4e87-82f2-768d4aafa52a</version_id>
-  <version_modified>2025-08-08T15:15:55Z</version_modified>
+  <version_id>f6942ed0-43ab-4423-86f1-1ef38469a968</version_id>
+  <version_modified>2025-09-25T15:33:42Z</version_modified>
   <xml_checksum>2C8A3EEF</xml_checksum>
   <class_name>GLHEProExportLoadsforGroundHeatExchangerSizing</class_name>
   <display_name>GLHEProExportLoadsforGroundHeatExchangerSizing</display_name>
@@ -134,7 +134,7 @@
       <filename>measure.rb</filename>
       <filetype>rb</filetype>
       <usage_type>script</usage_type>
-      <checksum>5F643BE6</checksum>
+      <checksum>86B7579E</checksum>
     </file>
     <file>
       <filename>report.html.in</filename>
@@ -152,7 +152,7 @@
       <filename>GLHEProExportLoadsforGroundHeatExchangerSizing_Test.rb</filename>
       <filetype>rb</filetype>
       <usage_type>test</usage_type>
-      <checksum>4E5FE874</checksum>
+      <checksum>AB9FCD20</checksum>
     </file>
     <file>
       <filename>USA_CO_Golden-NREL.724666_TMY3.epw</filename>

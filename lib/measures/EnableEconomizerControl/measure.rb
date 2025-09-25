@@ -10,11 +10,11 @@ class EnableEconomizerControl < OpenStudio::Measure::ModelMeasure
   # define the name that a user will see, this method may be deprecated as
   # the display name in PAT comes from the name field in measure.xml
   def name
-    return 'Enable Economizer Control'
+    'Enable Economizer Control'
   end
 
   # define the arguments that the user will input
-  def arguments(model)
+  def arguments(_model)
     args = OpenStudio::Measure::OSArgumentVector.new
 
     # make choice argument economizer control type
@@ -38,7 +38,7 @@ class EnableEconomizerControl < OpenStudio::Measure::ModelMeasure
     econoMinDryBulbTemp.setDefaultValue(-148.0)
     args << econoMinDryBulbTemp
 
-    return args
+    args
   end
 
   # define what happens when the measure is cop
@@ -46,9 +46,7 @@ class EnableEconomizerControl < OpenStudio::Measure::ModelMeasure
     super(model, runner, user_arguments)
 
     # use the built-in error checking
-    if !runner.validateUserArguments(arguments(model), user_arguments)
-      return false
-    end
+    return false unless runner.validateUserArguments(arguments(model), user_arguments)
 
     # assign the user inputs to variables
     economizer_type = runner.getStringArgumentValue('economizer_type', user_arguments)
@@ -64,11 +62,11 @@ class EnableEconomizerControl < OpenStudio::Measure::ModelMeasure
 
     # short def to make numbers pretty (converts 4125001.25641 to 4,125,001.26 or 4,125,001). The definition be called through this measure
     def neat_numbers(number, roundto = 2) # round to 0 or 2)
-      if roundto == 2
-        number = format '%.2f', number
-      else
-        number = number.round
-      end
+      number = if roundto == 2
+                 format '%.2f', number
+               else
+                 number.round
+               end
       # regex to add commas
       number.to_s.reverse.gsub(/([0-9]{3}(?=([0-9])))/, '\\1,').reverse
     end
@@ -82,42 +80,43 @@ class EnableEconomizerControl < OpenStudio::Measure::ModelMeasure
       # find AirLoopHVACOutdoorAirSystem on loop
       air_loop.supplyComponents.each do |supply_component|
         hVACComponent = supply_component.to_AirLoopHVACOutdoorAirSystem
-        if hVACComponent.is_initialized
-          hVACComponent = hVACComponent.get
+        next unless hVACComponent.is_initialized
 
-          # set flag that at least one air loop has outdoor air objects
-          loops_with_outdoor_air = true
+        hVACComponent = hVACComponent.get
 
-          # get ControllerOutdoorAir
-          controller_oa = hVACComponent.getControllerOutdoorAir
+        # set flag that at least one air loop has outdoor air objects
+        loops_with_outdoor_air = true
 
-          # get ControllerMechanicalVentilation
-          controller_mv = controller_oa.controllerMechanicalVentilation # not using this
+        # get ControllerOutdoorAir
+        controller_oa = hVACComponent.getControllerOutdoorAir
 
-          if controller_oa.getEconomizerControlType == economizer_type
-            # report info about air loop
-            runner.registerInfo("#{air_loop.name} already has the requested economizer type of #{economizer_type}.")
-          else
-            # store starting economizer type
-            starting_econo_control_type = controller_oa.getEconomizerControlType
+        # get ControllerMechanicalVentilation
+        controller_mv = controller_oa.controllerMechanicalVentilation # not using this
 
-            # set economizer to the requested control type
-            controller_oa.setEconomizerControlType(economizer_type)
+        if controller_oa.getEconomizerControlType == economizer_type
+          # report info about air loop
+          runner.registerInfo("#{air_loop.name} already has the requested economizer type of #{economizer_type}.")
+        else
+          # store starting economizer type
+          starting_econo_control_type = controller_oa.getEconomizerControlType
 
-            # report info about air loop
-            runner.registerInfo("Changing Economizer Control Type on #{air_loop.name} from #{starting_econo_control_type} to #{controller_oa.getEconomizerControlType} and adjusting temperature and enthalpy limits per measure arguments.")
+          # set economizer to the requested control type
+          controller_oa.setEconomizerControlType(economizer_type)
 
-            air_loops_changed << air_loop
+          # report info about air loop
+          runner.registerInfo("Changing Economizer Control Type on #{air_loop.name} from #{starting_econo_control_type} to #{controller_oa.getEconomizerControlType} and adjusting temperature and enthalpy limits per measure arguments.")
 
-          end
-
-          # set maximum limit drybulb temperature
-          controller_oa.setEconomizerMaximumLimitDryBulbTemperature(OpenStudio.convert(econoMaxDryBulbTemp, 'F', 'C').get)
-
-          # set minimum limit drybulb temperature
-          controller_oa.setEconomizerMinimumLimitDryBulbTemperature(OpenStudio.convert(econoMinDryBulbTemp, 'F', 'C').get)
+          air_loops_changed << air_loop
 
         end
+
+        # set maximum limit drybulb temperature
+        controller_oa.setEconomizerMaximumLimitDryBulbTemperature(OpenStudio.convert(econoMaxDryBulbTemp, 'F',
+                                                                                     'C').get)
+
+        # set minimum limit drybulb temperature
+        controller_oa.setEconomizerMinimumLimitDryBulbTemperature(OpenStudio.convert(econoMinDryBulbTemp, 'F',
+                                                                                     'C').get)
       end
     end
 
@@ -136,7 +135,7 @@ class EnableEconomizerControl < OpenStudio::Measure::ModelMeasure
     # Report the final condition of model
     runner.registerFinalCondition("#{air_loops_changed.size} air loops now have economizers.")
 
-    return true
+    true
   end
 end
 

@@ -9,7 +9,7 @@
 class ReduceNightTimeLightingLoads < OpenStudio::Measure::ModelMeasure
   # define the name that a user will see
   def name
-    return 'Reduce Night Time Lighting Loads'
+    'Reduce Night Time Lighting Loads'
   end
 
   # define the arguments that the user will input
@@ -29,14 +29,15 @@ class ReduceNightTimeLightingLoads < OpenStudio::Measure::ModelMeasure
 
     # looping through sorted hash of load defs
     light_def_args_hash.sort.map do |key, value|
-      if !value.instances.empty?
+      unless value.instances.empty?
         lights_def_handles << value.handle.to_s
         lights_def_display_names << key
       end
     end
 
     # make an argument for lights definition
-    lights_def = OpenStudio::Measure::OSArgument.makeChoiceArgument('lights_def', lights_def_handles, lights_def_display_names)
+    lights_def = OpenStudio::Measure::OSArgument.makeChoiceArgument('lights_def', lights_def_handles,
+                                                                    lights_def_display_names)
     lights_def.setDisplayName('Pick a Lighting Definition From the Model (schedules using this will be altered)')
     args << lights_def
 
@@ -130,7 +131,7 @@ class ReduceNightTimeLightingLoads < OpenStudio::Measure::ModelMeasure
     om_frequency.setDefaultValue(1)
     args << om_frequency
 
-    return args
+    args
   end
 
   # define what happens when the measure is run
@@ -138,9 +139,7 @@ class ReduceNightTimeLightingLoads < OpenStudio::Measure::ModelMeasure
     super(model, runner, user_arguments)
 
     # use the built-in error checking
-    if !runner.validateUserArguments(arguments(model), user_arguments)
-      return false
-    end
+    return false unless runner.validateUserArguments(arguments(model), user_arguments)
 
     # assign the user inputs to variables
     lights_def = runner.getOptionalWorkspaceObjectChoiceValue('lights_def', user_arguments, model)
@@ -169,13 +168,11 @@ class ReduceNightTimeLightingLoads < OpenStudio::Measure::ModelMeasure
         runner.registerError("A Lighting Definition with handle '#{lights_def}' was not found in the model. It may have been removed by another measure.")
       end
       return false
+    elsif !lights_def.get.to_LightsDefinition.empty?
+      lights_def = lights_def.get.to_LightsDefinition.get
     else
-      if !lights_def.get.to_LightsDefinition.empty?
-        lights_def = lights_def.get.to_LightsDefinition.get
-      else
-        runner.registerError('Script Error - argument not showing up as lights definition.')
-        return false
-      end
+      runner.registerError('Script Error - argument not showing up as lights definition.')
+      return false
     end
 
     # check the fraction for reasonableness
@@ -294,17 +291,15 @@ class ReduceNightTimeLightingLoads < OpenStudio::Measure::ModelMeasure
     if (expected_life < 1) && (expected_life > 100)
       runner.registerError('Choose an integer greater than 0 and less than or equal to 100 for Expected Life.')
     end
-    if om_frequency < 1
-      runner.registerError('Choose an integer greater than 0 for O & M Frequency.')
-    end
+    runner.registerError('Choose an integer greater than 0 for O & M Frequency.') if om_frequency < 1
 
     # short def to make numbers pretty (converts 4125001.25641 to 4,125,001.26 or 4,125,001). The definition be called through this measure
     def neat_numbers(number, roundto = 2) # round to 0 or 2)
-      if roundto == 2
-        number = format '%.2f', number
-      else
-        number = number.round
-      end
+      number = if roundto == 2
+                 format '%.2f', number
+               else
+                 number.round
+               end
       # regex to add commas
       number.to_s.reverse.gsub(/([0-9]{3}(?=([0-9])))/, '\\1,').reverse
     end
@@ -328,12 +323,13 @@ class ReduceNightTimeLightingLoads < OpenStudio::Measure::ModelMeasure
     # get schedules for lights instances that user the picked
     lighting_instances.each do |light|
       next unless light.lightsDefinition == lights_def
+
       lighting_instances_using_def << light
-      if !light.schedule.empty?
-        lights_sch = light.schedule.get
-        lights_schs[lights_sch.name.to_s] = lights_sch
-        lights_sch_names << lights_sch.name.to_s
-      end
+      next if light.schedule.empty?
+
+      lights_sch = light.schedule.get
+      lights_schs[lights_sch.name.to_s] = lights_sch
+      lights_sch_names << lights_sch.name.to_s
     end
 
     # reporting initial condition of model
@@ -343,7 +339,9 @@ class ReduceNightTimeLightingLoads < OpenStudio::Measure::ModelMeasure
     # and reducing schedule fraction before and after the specified times
     lights_sch_names.uniq.each do |lights_sch_name|
       lights_sch = lights_schs[lights_sch_name]
-      if !lights_sch.to_ScheduleRuleset.empty?
+      if lights_sch.to_ScheduleRuleset.empty?
+        runner.registerWarning("Schedule '#{lights_sch_name}' isn't a ScheduleRuleset object and won't be altered by this measure.")
+      else
         new_lights_sch = lights_sch.clone(model).to_ScheduleRuleset.get
         new_lights_sch.setName("#{lights_sch_name} NightLightingControl")
         reduced_lights_schs[lights_sch_name] = new_lights_sch
@@ -392,14 +390,16 @@ class ReduceNightTimeLightingLoads < OpenStudio::Measure::ModelMeasure
         if new_lights_sch.scheduleRules.empty?
           runner.registerWarning("Schedule '#{new_lights_sch.name}' applies to all days.  It has been treated as a Weekday schedule.")
         end
-        reduce_schedule(new_lights_sch.defaultDaySchedule, wk_before_hour, wk_before_min, wk_before_value, wk_after_hour, wk_after_min, wk_after_value)
+        reduce_schedule(new_lights_sch.defaultDaySchedule, wk_before_hour, wk_before_min, wk_before_value,
+                        wk_after_hour, wk_after_min, wk_after_value)
 
         # reduce weekdays
         new_lights_sch.scheduleRules.each do |sch_rule|
-          if apply_weekday
-            if sch_rule.applyMonday || sch_rule.applyTuesday || sch_rule.applyWednesday || sch_rule.applyThursday || sch_rule.applyFriday
-              reduce_schedule(sch_rule.daySchedule, wk_before_hour, wk_before_min, wk_before_value, wk_after_hour, wk_after_min, wk_after_value)
-            end
+          next unless apply_weekday
+
+          if sch_rule.applyMonday || sch_rule.applyTuesday || sch_rule.applyWednesday || sch_rule.applyThursday || sch_rule.applyFriday
+            reduce_schedule(sch_rule.daySchedule, wk_before_hour, wk_before_min, wk_before_value, wk_after_hour,
+                            wk_after_min, wk_after_value)
           end
         end
 
@@ -409,7 +409,8 @@ class ReduceNightTimeLightingLoads < OpenStudio::Measure::ModelMeasure
             if sch_rule.applyMonday || sch_rule.applyTuesday || sch_rule.applyWednesday || sch_rule.applyThursday || sch_rule.applyFriday
               runner.registerWarning("Rule '#{sch_rule.name}' for schedule '#{new_lights_sch.name}' applies to both Saturdays and Weekdays.  It has been treated as a Weekday schedule.")
             else
-              reduce_schedule(sch_rule.daySchedule, sat_before_hour, sat_before_min, sat_before_value, sat_after_hour, sat_after_min, sat_after_value)
+              reduce_schedule(sch_rule.daySchedule, sat_before_hour, sat_before_min, sat_before_value, sat_after_hour,
+                              sat_after_min, sat_after_value)
             end
           end
         end
@@ -422,13 +423,12 @@ class ReduceNightTimeLightingLoads < OpenStudio::Measure::ModelMeasure
             elsif sch_rule.applySaturday
               runner.registerWarning("Rule '#{sch_rule.name}' for schedule '#{new_lights_sch.name}' applies to both Saturdays and Sundays.  It has been  treated as a Saturday schedule.")
             else
-              reduce_schedule(sch_rule.daySchedule, sun_before_hour, sun_before_min, sun_before_value, sun_after_hour, sun_after_min, sun_after_value)
+              reduce_schedule(sch_rule.daySchedule, sun_before_hour, sun_before_min, sun_before_value, sun_after_hour,
+                              sun_after_min, sun_after_value)
             end
           end
         end
 
-      else
-        runner.registerWarning("Schedule '#{lights_sch_name}' isn't a ScheduleRuleset object and won't be altered by this measure.")
       end
     end
 
@@ -446,9 +446,7 @@ class ReduceNightTimeLightingLoads < OpenStudio::Measure::ModelMeasure
     end
 
     # na if no schedules to change
-    if lights_sch_names.uniq.empty?
-      runner.registerNotAsApplicable('There are no schedules to change.')
-    end
+    runner.registerNotAsApplicable('There are no schedules to change.') if lights_sch_names.uniq.empty?
 
     measure_cost = 0
 
@@ -457,15 +455,19 @@ class ReduceNightTimeLightingLoads < OpenStudio::Measure::ModelMeasure
     if costs_requested == true
       quantity = lights_def.quantity
       # adding new cost items
-      lcc_mat = OpenStudio::Model::LifeCycleCost.createLifeCycleCost("LCC_Mat - #{lights_def.name} night reduction", building, material_cost * quantity, 'CostPerEach', 'Construction', expected_life, years_until_costs_start)
-      lcc_om = OpenStudio::Model::LifeCycleCost.createLifeCycleCost("LCC_OM - #{lights_def.name} night reduction", building, om_cost * quantity, 'CostPerEach', 'Maintenance', om_frequency, 0)
+      lcc_mat = OpenStudio::Model::LifeCycleCost.createLifeCycleCost("LCC_Mat - #{lights_def.name} night reduction",
+                                                                     building, material_cost * quantity, 'CostPerEach', 'Construction', expected_life, years_until_costs_start)
+      lcc_om = OpenStudio::Model::LifeCycleCost.createLifeCycleCost("LCC_OM - #{lights_def.name} night reduction",
+                                                                    building, om_cost * quantity, 'CostPerEach', 'Maintenance', om_frequency, 0)
       measure_cost = material_cost * quantity
     end
 
     # reporting final condition of model
-    runner.registerFinalCondition("#{lights_sch_names.uniq.size} schedule(s) were edited. The cost for the measure is #{neat_numbers(measure_cost, 0)}.")
+    runner.registerFinalCondition("#{lights_sch_names.uniq.size} schedule(s) were edited. The cost for the measure is #{neat_numbers(
+      measure_cost, 0
+    )}.")
 
-    return true
+    true
   end
 end
 
