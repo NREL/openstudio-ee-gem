@@ -25,6 +25,15 @@ jobs:
         with:
           submodules: true
 
+      - name: Cache Bundle Dependencies
+        # Cache gem dependencies to speed up builds and improve reliability
+        uses: actions/cache@v4
+        with:
+          path: vendor/bundle
+          key: ${{ runner.os }}-gems-${{ hashFiles('**/Gemfile.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-gems-
+
       - name: Run Tests in OpenStudio Container
         # Run all tests inside the OpenStudio develop container with proper authentication
         run: |
@@ -43,7 +52,11 @@ jobs:
               
               echo "Starting OpenStudio EE Gem tests..."
               echo "Ruby Version: $(ruby -v)"
+              echo "Platform: $(uname -a)"
               echo "OpenStudio Version: $(openstudio openstudio_version)"
+              echo "Current working directory: $(pwd)"
+              echo "Available memory: $(free -h)" || echo "Memory info not available"
+              echo "Disk space: $(df -h .)" || echo "Disk info not available"
               
               # Fix git ownership issue in container
               git config --global --add safe.directory "*"
@@ -69,12 +82,66 @@ jobs:
               echo "npm version: $(npm --version)"
               echo "AWS CLI version: $(aws --version)"
               
-              # Install gem dependencies
+              # Install gem dependencies with better error handling
               echo "Installing gem dependencies..."
-              if ! bundle install; then
-                echo "::error::Failed to install gem dependencies"
-                exit 1
-              fi
+              echo "Ruby version: $(ruby -v)"
+              echo "Bundler version: $(bundle -v)"
+              
+              # Update gem sources to ensure we can reach all repositories
+              echo "Current gem sources:"
+              gem sources -l
+              
+              # Update RubyGems if needed
+              echo "Updating RubyGems..."
+              gem update --system --no-document || echo "Warning: Could not update RubyGems"
+              
+              # Ensure bundler is up to date
+              echo "Ensuring bundler is available..."
+              gem install bundler -v 2.4.10 --no-document || echo "Warning: Could not install specific bundler version"
+              echo "Final bundler version: $(bundle -v)"
+              
+              # Configure bundler for better platform support
+              bundle config set --local build.nokogiri --use-system-libraries
+              bundle config set --local force_ruby_platform true
+              bundle config set --local path vendor/bundle
+              bundle config set --local deployment false
+              
+              # Show current bundle configuration
+              echo "Bundle configuration:"
+              bundle config list
+              
+              # Try bundle install with verbose output and retries
+              echo "Running bundle install..."
+              RETRY_COUNT=0
+              MAX_RETRIES=3
+              
+              while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
+                if bundle install --verbose --retry 3 --jobs 4; then
+                  echo "✅ Successfully installed gem dependencies"
+                  break
+                else
+                  RETRY_COUNT=$((RETRY_COUNT + 1))
+                  if [ $RETRY_COUNT -lt $MAX_RETRIES ]; then
+                    echo "⚠️ Bundle install failed, retrying ($RETRY_COUNT/$MAX_RETRIES)..."
+                    sleep 10
+                    # Clear bundle cache on retry
+                    bundle clean --force || true
+                  else
+                    echo "::error::Failed to install gem dependencies after $MAX_RETRIES attempts"
+                    echo "Final bundle environment:"
+                    bundle env
+                    echo "Gemfile content:"
+                    cat Gemfile
+                    echo "Gemfile.lock content (first 50 lines):"
+                    head -50 Gemfile.lock
+                    echo "Available gems:"
+                    gem list
+                    echo "Network connectivity test:"
+                    curl -I https://rubygems.org/ || echo "Cannot reach rubygems.org"
+                    exit 1
+                  fi
+                fi
+              done
               echo "✅ Successfully installed gem dependencies"
               
               # Show environment info
