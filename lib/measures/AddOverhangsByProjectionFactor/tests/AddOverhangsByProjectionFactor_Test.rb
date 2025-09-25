@@ -9,7 +9,7 @@ require 'openstudio'
 require 'openstudio/measure/ShowRunnerOutput'
 require 'fileutils'
 
-require_relative '../measure.rb'
+require_relative '../measure'
 require 'minitest/autorun'
 
 class AddOverhangsByProjectionFactor_Test < Minitest::Test
@@ -62,7 +62,7 @@ class AddOverhangsByProjectionFactor_Test < Minitest::Test
     model = model.get
 
     model.getSpaces.each do |space|
-      if space.name.get =~ Regexp.new(/Space 104/)
+      if space.name.get&.match?(Regexp.new(/Space 104/))
         # should be two space shading groups
         assert_equal(2, space.shadingSurfaceGroups.size)
       else

@@ -3,8 +3,8 @@
   <schema_version>3.1</schema_version>
   <name>reduce_space_infiltration_by_percentage</name>
   <uid>6e9de4b1-aa97-4010-80c8-529e53ffe943</uid>
-  <version_id>f3a4891c-715f-4736-a1a5-3b1cbddbe343</version_id>
-  <version_modified>2025-08-08T15:15:56Z</version_modified>
+  <version_id>b1bd09e1-4ba1-4759-b642-65dfa8bcf283</version_id>
+  <version_modified>2025-09-25T15:33:42Z</version_modified>
   <xml_checksum>EACB548E</xml_checksum>
   <class_name>ReduceSpaceInfiltrationByPercentage</class_name>
   <display_name>ReduceSpaceInfiltrationByPercentage</display_name>
@@ -17,10 +17,10 @@
       <type>Choice</type>
       <required>true</required>
       <model_dependent>false</model_dependent>
-      <default_value>{e9970f4e-07dd-433b-adc1-e7dedcd762b3}</default_value>
+      <default_value>{873fd05a-3dff-4e05-80d4-59a5b492c31f}</default_value>
       <choices>
         <choice>
-          <value>{e9970f4e-07dd-433b-adc1-e7dedcd762b3}</value>
+          <value>{873fd05a-3dff-4e05-80d4-59a5b492c31f}</value>
           <display_name>*Entire Building*</display_name>
         </choice>
       </choices>
@@ -158,7 +158,7 @@
       <filename>measure.rb</filename>
       <filetype>rb</filetype>
       <usage_type>script</usage_type>
-      <checksum>F7F6B0AE</checksum>
+      <checksum>155D496B</checksum>
     </file>
     <file>
       <filename>EnvelopeAndLoadTestModel_01.osm</filename>
@@ -176,7 +176,7 @@
       <filename>ReduceSpaceInfiltrationByPercentage_Test.rb</filename>
       <filetype>rb</filetype>
       <usage_type>test</usage_type>
-      <checksum>9F83F933</checksum>
+      <checksum>E9669F9A</checksum>
     </file>
   </files>
 </measure>

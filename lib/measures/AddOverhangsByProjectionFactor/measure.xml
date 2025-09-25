@@ -3,8 +3,8 @@
   <schema_version>3.1</schema_version>
   <name>add_overhangs_by_projection_factor</name>
   <uid>1e29e117-3916-4368-b24d-75da54045956</uid>
-  <version_id>680a7548-4ba3-4bde-9a58-f8873dd8d535</version_id>
-  <version_modified>2025-08-08T15:15:58Z</version_modified>
+  <version_id>7de48598-b984-4a31-b8b7-bedb9a80e9c2</version_id>
+  <version_modified>2025-09-25T15:33:44Z</version_modified>
   <xml_checksum>6DE831F7</xml_checksum>
   <class_name>AddOverhangsByProjectionFactor</class_name>
   <display_name>Add Overhangs by Projection Factor</display_name>
@@ -127,13 +127,13 @@
       <filename>measure.rb</filename>
       <filetype>rb</filetype>
       <usage_type>script</usage_type>
-      <checksum>330F0C00</checksum>
+      <checksum>5C47B13D</checksum>
     </file>
     <file>
       <filename>AddOverhangsByProjectionFactor_Test.rb</filename>
       <filetype>rb</filetype>
       <usage_type>test</usage_type>
-      <checksum>18A9E740</checksum>
+      <checksum>E5AFF7A2</checksum>
     </file>
     <file>
       <filename>OverhangTestModel_01.osm</filename>

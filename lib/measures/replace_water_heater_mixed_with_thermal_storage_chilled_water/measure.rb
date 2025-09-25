@@ -12,21 +12,21 @@
 class ReplaceWaterHeaterMixedWithThermalStorageChilledWater < OpenStudio::Measure::ModelMeasure
   # human readable name
   def name
-    return 'Replace Water Heater Mixed with Thermal Storage Chilled Water'
+    'Replace Water Heater Mixed with Thermal Storage Chilled Water'
   end
 
   # human readable description
   def description
-    return 'This measure is a quick fix for GUI issue that prevents putting thermal storage on two plant loops.'
+    'This measure is a quick fix for GUI issue that prevents putting thermal storage on two plant loops.'
   end
 
   # human readable description of modeling approach
   def modeler_description
-    return 'The model in this case used a water heater mixed as a place holder. This measure will take a string argument, and will replace the water heater with a new thermal storage chilled water object.'
+    'The model in this case used a water heater mixed as a place holder. This measure will take a string argument, and will replace the water heater with a new thermal storage chilled water object.'
   end
 
   # define the arguments that the user will input
-  def arguments(model)
+  def arguments(_model)
     args = OpenStudio::Measure::OSArgumentVector.new
 
     # the name of the water heater to replace
@@ -36,7 +36,7 @@ class ReplaceWaterHeaterMixedWithThermalStorageChilledWater < OpenStudio::Measur
     wh_name.setDefaultValue('CHW Tank Placeholder')
     args << wh_name
 
-    return args
+    args
   end
 
   # define what happens when the measure is run
@@ -44,9 +44,7 @@ class ReplaceWaterHeaterMixedWithThermalStorageChilledWater < OpenStudio::Measur
     super(model, runner, user_arguments)
 
     # use the built-in error checking
-    if !runner.validateUserArguments(arguments(model), user_arguments)
-      return false
-    end
+    return false unless runner.validateUserArguments(arguments(model), user_arguments)
 
     # assign the user inputs to variables
     wh_name = runner.getStringArgumentValue('wh_name', user_arguments)
@@ -71,22 +69,21 @@ class ReplaceWaterHeaterMixedWithThermalStorageChilledWater < OpenStudio::Measur
       puts "Checking #{plant_loop.name}"
 
       plant_loop.supplyComponents.each do |component|
-        if component.name.to_s == wh_name
-          placeholder = component
-          puts "found #{component.name}"
+        next unless component.name.to_s == wh_name
 
-          # swap components
-          supply_inlet_node = component.to_WaterToWaterComponent.get.supplyInletModelObject.get.to_Node.get
-          new_chilled_water.addToNode(supply_inlet_node)
-          demand_inlet_node = component.to_WaterToWaterComponent.get.demandInletModelObject.get.to_Node.get
-          new_chilled_water.addToNode(demand_inlet_node)
+        placeholder = component
+        puts "found #{component.name}"
 
-        end
+        # swap components
+        supply_inlet_node = component.to_WaterToWaterComponent.get.supplyInletModelObject.get.to_Node.get
+        new_chilled_water.addToNode(supply_inlet_node)
+        demand_inlet_node = component.to_WaterToWaterComponent.get.demandInletModelObject.get.to_Node.get
+        new_chilled_water.addToNode(demand_inlet_node)
       end
     end
 
     # remove unused water heater from the model
-    if !placeholder.nil?
+    unless placeholder.nil?
       puts 'Removing water heater'
       placeholder.remove
     end
@@ -94,7 +91,7 @@ class ReplaceWaterHeaterMixedWithThermalStorageChilledWater < OpenStudio::Measur
     # report final condition of model
     runner.registerFinalCondition("The building finished with #{model.getThermalStorageChilledWaterStratifieds.size} chilled water objects.")
 
-    return true
+    true
   end
 end
 

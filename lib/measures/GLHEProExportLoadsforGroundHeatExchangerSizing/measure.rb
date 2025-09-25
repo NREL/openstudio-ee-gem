@@ -19,14 +19,12 @@ class GLHEProExportLoadsforGroundHeatExchangerSizing < OpenStudio::Measure::Repo
   # define the name that a user will see, this method may be deprecated as
   # the display name in PAT comes from the name field in measure.xml
   def name
-    return 'GLHEProExportLoadsforGroundHeatExchangerSizing'
+    'GLHEProExportLoadsforGroundHeatExchangerSizing'
   end
 
   # define the arguments that the user will input
-  def arguments(model = nil)
-    args = OpenStudio::Measure::OSArgumentVector.new
-
-    return args
+  def arguments(_model = nil)
+    OpenStudio::Measure::OSArgumentVector.new
   end
 
   def energyPlusOutputRequests(runner, user_arguments)
@@ -35,11 +33,9 @@ class GLHEProExportLoadsforGroundHeatExchangerSizing < OpenStudio::Measure::Repo
     result = OpenStudio::IdfObjectVector.new
 
     # use the built-in error checking
-    unless runner.validateUserArguments(arguments, user_arguments)
-      return result
-    end
+    return result unless runner.validateUserArguments(arguments, user_arguments)
 
-    # note: these variable requests replace the functionality of GLHEProSetupExportLoadsforGroundHeatExchangerSizing measure
+    # NOTE: these variable requests replace the functionality of GLHEProSetupExportLoadsforGroundHeatExchangerSizing measure
 
     result << OpenStudio::IdfObject.load('Output:Variable,,District Heating Water Rate,hourly;').get
     result << OpenStudio::IdfObject.load('Output:Variable,,District Cooling Water Rate,hourly;').get
@@ -75,9 +71,7 @@ class GLHEProExportLoadsforGroundHeatExchangerSizing < OpenStudio::Measure::Repo
     super(runner, user_arguments)
 
     # use the built-in error checking
-    if !runner.validateUserArguments(arguments, user_arguments)
-      return false
-    end
+    return false unless runner.validateUserArguments(arguments, user_arguments)
 
     # Get the model and sql file
     model = runner.lastOpenStudioModel
@@ -117,20 +111,16 @@ class GLHEProExportLoadsforGroundHeatExchangerSizing < OpenStudio::Measure::Repo
       js_time = js_time.gsub('Sep', '09')
       js_time = js_time.gsub('Oct', '10')
       js_time = js_time.gsub('Nov', '11')
-      js_time = js_time.gsub('Dec', '12')
-
-      return js_time
+      js_time.gsub('Dec', '12')
     end
 
     # Get the weather file (as opposed to design day) run period
     annEnvPd = nil
     sql.availableEnvPeriods.each do |envPd|
       envType = sql.environmentType(envPd)
-      if !envType.empty?
-        if envType.get == 'WeatherRunPeriod'.to_EnvironmentType
-          annEnvPd = envPd
-        end
-      end
+      next if envType.empty?
+
+      annEnvPd = envPd if envType.get == 'WeatherRunPeriod'.to_EnvironmentType
     end
 
     # Find the names of all plant loops in the model that contain both a
@@ -148,9 +138,7 @@ class GLHEProExportLoadsforGroundHeatExchangerSizing < OpenStudio::Measure::Repo
         end
       end
 
-      if dist_htg_name && dist_clg_name
-        loop_names << [loop.name.get, dist_htg_name, dist_clg_name]
-      end
+      loop_names << [loop.name.get, dist_htg_name, dist_clg_name] if dist_htg_name && dist_clg_name
     end
 
     # Report any loops that were found that appear to be
@@ -264,14 +252,12 @@ class GLHEProExportLoadsforGroundHeatExchangerSizing < OpenStudio::Measure::Repo
       graph['title'] = "#{loop_name} - Hourly Heating and Cooling Power"
       graph['xaxislabel'] = 'Time'
       graph['yaxislabel'] = 'Power (kBtu/hr)'
-      graph['labels'] = ['Date', 'Heating', 'Cooling']
+      graph['labels'] = %w[Date Heating Cooling]
       graph['colors'] = ['#FF5050', '#0066FF']
       graph['timeseries'] = hourly_vals
 
       # This measure requires ruby 2.0.0 to create the JSON for the report graph
-      if RUBY_VERSION >= '2.0.0'
-        annualGraphData << graph
-      end
+      annualGraphData << graph if RUBY_VERSION >= '2.0.0'
 
       # Save out hourly load data to CSV
       File.open("./Annual Hourly Loads for #{loop_name}.csv", 'w') do |file|
@@ -355,15 +341,15 @@ class GLHEProExportLoadsforGroundHeatExchangerSizing < OpenStudio::Measure::Repo
 
       # Save the monthly load data for import into GLHEPro (.gt1)
       File.open("./Monthly Loads for #{loop_name}.gt1", 'w') do |file|
-        file.puts 'Clg/Htg Consumption (kBtu),'\
-                  "#{mon_clg_cons.join(',')},"\
-                  "#{ann_clg_cons},"\
-                  "#{mon_htg_cons.join(',')},"\
+        file.puts 'Clg/Htg Consumption (kBtu),' \
+                  "#{mon_clg_cons.join(',')}," \
+                  "#{ann_clg_cons}," \
+                  "#{mon_htg_cons.join(',')}," \
                   "#{ann_htg_cons}"
-        file.puts 'Clg/Htg Demand (Btuh),'\
-                  "#{mon_clg_dmd.join(',')},"\
-                  "#{ann_clg_dmd},"\
-                  "#{mon_htg_dmd.join(',')},"\
+        file.puts 'Clg/Htg Demand (Btuh),' \
+                  "#{mon_clg_dmd.join(',')}," \
+                  "#{ann_clg_dmd}," \
+                  "#{mon_htg_dmd.join(',')}," \
                   "#{ann_htg_dmd}"
       end
 
@@ -381,11 +367,11 @@ class GLHEProExportLoadsforGroundHeatExchangerSizing < OpenStudio::Measure::Repo
 
     # Read in the HTML report template
     html_in_path = "#{File.dirname(__FILE__)}/resources/report.html.in"
-    if File.exist?(html_in_path)
-      html_in_path = html_in_path
-    else
-      html_in_path = "#{File.dirname(__FILE__)}/report.html.in"
-    end
+    html_in_path = if File.exist?(html_in_path)
+                     html_in_path
+                   else
+                     "#{File.dirname(__FILE__)}/report.html.in"
+                   end
     html_in = ''
     File.open(html_in_path, 'r') do |file|
       html_in = file.read
@@ -410,7 +396,7 @@ class GLHEProExportLoadsforGroundHeatExchangerSizing < OpenStudio::Measure::Repo
     # Close the sql file
     sql.close
 
-    return true
+    true
   end
 end
 

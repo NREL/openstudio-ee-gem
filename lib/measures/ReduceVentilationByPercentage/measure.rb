@@ -19,7 +19,7 @@ class ReduceVentilationByPercentage < OpenStudio::Measure::ModelMeasure
   # define the name that a user will see, this method may be deprecated as
   # the display name in PAT comes from the name field in measure.xml
   def name
-    return 'ReduceVentilationByPercentage'
+    'ReduceVentilationByPercentage'
   end
 
   # define the arguments that the user will input
@@ -40,7 +40,7 @@ class ReduceVentilationByPercentage < OpenStudio::Measure::ModelMeasure
     # looping through sorted hash of model objects
     space_type_args_hash.sort.map do |key, value|
       # only include if space type is used in the model
-      if !value.spaces.empty?
+      unless value.spaces.empty?
         space_type_handles << value.handle.to_s
         space_type_display_names << key
       end
@@ -52,20 +52,23 @@ class ReduceVentilationByPercentage < OpenStudio::Measure::ModelMeasure
     space_type_display_names << '*Entire Building*'
 
     # make a choice argument for space type
-    space_type = OpenStudio::Measure::OSArgument.makeChoiceArgument('space_type', space_type_handles, space_type_display_names)
+    space_type = OpenStudio::Measure::OSArgument.makeChoiceArgument('space_type', space_type_handles,
+                                                                    space_type_display_names)
     space_type.setDisplayName('Apply the Measure to a Specific Space Type or to the Entire Model.')
     space_type.setDefaultValue('*Entire Building*') # if no space type is chosen this will run on the entire building
     args << space_type
 
     # make an argument for reduction percentage
-    design_spec_outdoor_air_reduction_percent = OpenStudio::Measure::OSArgument.makeDoubleArgument('design_spec_outdoor_air_reduction_percent', true)
+    design_spec_outdoor_air_reduction_percent = OpenStudio::Measure::OSArgument.makeDoubleArgument(
+      'design_spec_outdoor_air_reduction_percent', true
+    )
     design_spec_outdoor_air_reduction_percent.setDisplayName('Design Specification Outdoor Air Reduction (%).')
     design_spec_outdoor_air_reduction_percent.setDefaultValue(30.0)
     args << design_spec_outdoor_air_reduction_percent
 
     # no cost required to reduce required amount of outdoor air. Cost increase or decrease will relate to system sizing and ongoing energy use due to change in outdoor air provided.
 
-    return args
+    args
   end
 
   # define what happens when the measure is run
@@ -73,13 +76,13 @@ class ReduceVentilationByPercentage < OpenStudio::Measure::ModelMeasure
     super(model, runner, user_arguments)
 
     # use the built-in error checking
-    if !runner.validateUserArguments(arguments(model), user_arguments)
-      return false
-    end
+    return false unless runner.validateUserArguments(arguments(model), user_arguments)
 
     # assign the user inputs to variables
     object = runner.getOptionalWorkspaceObjectChoiceValue('space_type', user_arguments, model)
-    design_spec_outdoor_air_reduction_percent = runner.getDoubleArgumentValue('design_spec_outdoor_air_reduction_percent', user_arguments)
+    design_spec_outdoor_air_reduction_percent = runner.getDoubleArgumentValue(
+      'design_spec_outdoor_air_reduction_percent', user_arguments
+    )
 
     # check the space_type for reasonableness and see if measure should run on space type or on the entire building
     apply_to_building = false
@@ -92,15 +95,13 @@ class ReduceVentilationByPercentage < OpenStudio::Measure::ModelMeasure
         runner.registerError("The selected space type with handle '#{handle}' was not found in the model. It may have been removed by another measure.")
       end
       return false
+    elsif !object.get.to_SpaceType.empty?
+      space_type = object.get.to_SpaceType.get
+    elsif !object.get.to_Building.empty?
+      apply_to_building = true
     else
-      if !object.get.to_SpaceType.empty?
-        space_type = object.get.to_SpaceType.get
-      elsif !object.get.to_Building.empty?
-        apply_to_building = true
-      else
-        runner.registerError('Script Error - argument not showing up as space type or building.')
-        return false
-      end
+      runner.registerError('Script Error - argument not showing up as space type or building.')
+      return false
     end
 
     # check the design_spec_outdoor_air_reduction_percent and for reasonableness
@@ -119,11 +120,11 @@ class ReduceVentilationByPercentage < OpenStudio::Measure::ModelMeasure
 
     # helper to make numbers pretty (converts 4125001.25641 to 4,125,001.26 or 4,125,001). The definition be called through this measure.
     def neat_numbers(number, roundto = 2) # round to 0 or 2)
-      if roundto == 2
-        number = format '%.2f', number
-      else
-        number = number.round
-      end
+      number = if roundto == 2
+                 format '%.2f', number
+               else
+                 number.round
+               end
       # regex to add commas
       number.to_s.reverse.gsub(/([0-9]{3}(?=([0-9])))/, '\\1,').reverse
     end
@@ -136,10 +137,10 @@ class ReduceVentilationByPercentage < OpenStudio::Measure::ModelMeasure
     altered_instances = 0
 
     # reporting initial condition of model
-    if !design_spec_outdoor_air_objects.empty?
-      runner.registerInitialCondition("The initial model contained #{design_spec_outdoor_air_objects.size} design specification outdoor air objects.")
-    else
+    if design_spec_outdoor_air_objects.empty?
       runner.registerInitialCondition('The initial model did not contain any design specification outdoor air.')
+    else
+      runner.registerInitialCondition("The initial model contained #{design_spec_outdoor_air_objects.size} design specification outdoor air objects.")
     end
 
     # get space types in model
@@ -157,22 +158,21 @@ class ReduceVentilationByPercentage < OpenStudio::Measure::ModelMeasure
     design_spec_outdoor_air_objects.each do |design_spec_outdoor_air_object|
       direct_use_count = design_spec_outdoor_air_object.directUseCount
       next if direct_use_count <= 1
+
       direct_uses = design_spec_outdoor_air_object.sources
       original_cloned = false
 
       # adjust count test for direct uses that are component data
       direct_uses.each do |direct_use|
         component_data_source = direct_use.to_ComponentData
-        if !component_data_source.empty?
-          direct_use_count -= 1
-        end
+        direct_use_count -= 1 unless component_data_source.empty?
       end
       next if direct_use_count <= 1
 
       direct_uses.each do |direct_use|
         # clone and hookup design spec OA
         space_type_source = direct_use.to_SpaceType
-        if !space_type_source.empty?
+        unless space_type_source.empty?
           space_type_source = space_type_source.get
           cloned_object = design_spec_outdoor_air_object.clone
           space_type_source.setDesignSpecificationOutdoorAir(cloned_object.to_DesignSpecificationOutdoorAir.get)
@@ -180,12 +180,12 @@ class ReduceVentilationByPercentage < OpenStudio::Measure::ModelMeasure
         end
 
         space_source = direct_use.to_Space
-        if !space_source.empty?
-          space_source = space_source.get
-          cloned_object = design_spec_outdoor_air_object.clone
-          space_source.setDesignSpecificationOutdoorAir(cloned_object.to_DesignSpecificationOutdoorAir.get)
-          original_cloned = true
-        end
+        next if space_source.empty?
+
+        space_source = space_source.get
+        cloned_object = design_spec_outdoor_air_object.clone
+        space_source.setDesignSpecificationOutdoorAir(cloned_object.to_DesignSpecificationOutdoorAir.get)
+        original_cloned = true
       end
 
       # delete the now unused design spec OA
@@ -196,15 +196,15 @@ class ReduceVentilationByPercentage < OpenStudio::Measure::ModelMeasure
     end
 
     # def to alter performance and life cycle costs of objects
-    def alter_performance(object, design_spec_outdoor_air_reduction_percent, runner)
+    def alter_performance(object, design_spec_outdoor_air_reduction_percent, _runner)
       # edit instance based on percentage reduction
       instance = object
 
       # not checking if fields are empty because these are optional like values for space infiltration are.
-      new_outdoor_air_per_person = instance.setOutdoorAirFlowperPerson(instance.outdoorAirFlowperPerson - instance.outdoorAirFlowperPerson * design_spec_outdoor_air_reduction_percent * 0.01)
-      new_outdoor_air_per_floor_area = instance.setOutdoorAirFlowperFloorArea(instance.outdoorAirFlowperFloorArea - instance.outdoorAirFlowperFloorArea * design_spec_outdoor_air_reduction_percent * 0.01)
-      new_outdoor_air_ach = instance.setOutdoorAirFlowAirChangesperHour(instance.outdoorAirFlowAirChangesperHour - instance.outdoorAirFlowAirChangesperHour * design_spec_outdoor_air_reduction_percent * 0.01)
-      new_outdoor_air_rate = instance.setOutdoorAirFlowRate(instance.outdoorAirFlowRate - instance.outdoorAirFlowRate * design_spec_outdoor_air_reduction_percent * 0.01)
+      new_outdoor_air_per_person = instance.setOutdoorAirFlowperPerson(instance.outdoorAirFlowperPerson - (instance.outdoorAirFlowperPerson * design_spec_outdoor_air_reduction_percent * 0.01))
+      new_outdoor_air_per_floor_area = instance.setOutdoorAirFlowperFloorArea(instance.outdoorAirFlowperFloorArea - (instance.outdoorAirFlowperFloorArea * design_spec_outdoor_air_reduction_percent * 0.01))
+      new_outdoor_air_ach = instance.setOutdoorAirFlowAirChangesperHour(instance.outdoorAirFlowAirChangesperHour - (instance.outdoorAirFlowAirChangesperHour * design_spec_outdoor_air_reduction_percent * 0.01))
+      new_outdoor_air_rate = instance.setOutdoorAirFlowRate(instance.outdoorAirFlowRate - (instance.outdoorAirFlowRate * design_spec_outdoor_air_reduction_percent * 0.01))
     end
 
     # array of instances to change
@@ -213,16 +213,15 @@ class ReduceVentilationByPercentage < OpenStudio::Measure::ModelMeasure
     # loop through space types
     space_types.each do |space_type|
       next if space_type.spaces.size <= 0
+
       instances_array << space_type.designSpecificationOutdoorAir
     end
 
     # get spaces in model
     if apply_to_building
       spaces = model.getSpaces
-    else
-      if !space_type.spaces.empty?
-        spaces = space_type.spaces # only run on a single space type
-      end
+    elsif !space_type.spaces.empty?
+      spaces = space_type.spaces
     end
 
     spaces.each do |space|
@@ -233,10 +232,12 @@ class ReduceVentilationByPercentage < OpenStudio::Measure::ModelMeasure
 
     instances_array.each do |instance|
       next if instance.empty?
+
       instance = instance.get
 
       # only continue if this instance has not been processed yet
       next if instance_processed.include? instance
+
       instance_processed << instance
 
       # call def to alter performance and life cycle costs
@@ -253,9 +254,11 @@ class ReduceVentilationByPercentage < OpenStudio::Measure::ModelMeasure
 
     # report final condition
     affected_area_ip = OpenStudio.convert(affected_area_si, 'm^2', 'ft^2').get
-    runner.registerFinalCondition("#{altered_instances} design specification outdoor air objects in the model were altered affecting #{neat_numbers(affected_area_ip, 0)}(ft^2).")
+    runner.registerFinalCondition("#{altered_instances} design specification outdoor air objects in the model were altered affecting #{neat_numbers(
+      affected_area_ip, 0
+    )}(ft^2).")
 
-    return true
+    true
   end
 end
 

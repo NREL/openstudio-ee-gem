@@ -9,7 +9,7 @@ require 'openstudio'
 require 'openstudio/measure/ShowRunnerOutput'
 require 'fileutils'
 
-require_relative '../measure.rb'
+require_relative '../measure'
 require 'minitest/autorun'
 
 class IncreaseInsulationRValueForExteriorWalls_Test < Minitest::Test
@@ -174,11 +174,12 @@ class IncreaseInsulationRValueForExteriorWalls_Test < Minitest::Test
 
     # loop over warnings
     expected_messages = {}
-    expected_messages[/The requested wall insulation R-value of 50\.0 ft\^2\*h\*R\/Btu is abnormally high./] = false
-    expected_messages["Construction 'Test_No Insulation' does not appear to have an insulation layer and was not altered."] = false
+    expected_messages[%r{The requested wall insulation R-value of 50\.0 ft\^2\*h\*R/Btu is abnormally high.}] = false
+    expected_messages["Construction 'Test_No Insulation' does not appear to have an insulation layer and was not altered."] =
+      false
     result.warnings.each do |warning|
       expected_messages.each_key do |message|
-        if warning.logMessage =~ Regexp.new(message)
+        if warning.logMessage&.match?(Regexp.new(message))
           assert(expected_messages[message] == false, "Message '#{message}' found multiple times")
           expected_messages[message] = true
         end
@@ -451,57 +452,56 @@ class IncreaseInsulationRValueForExteriorWalls_Test < Minitest::Test
 
   def test_IncreaseInsulationRValueForExteriorWalls__no_mass
     # test file is 2.5.1
-    if OpenStudio::VersionString.new(OpenStudio.openStudioVersion) >= OpenStudio::VersionString.new('2.5.1')
+    return unless OpenStudio::VersionString.new(OpenStudio.openStudioVersion) >= OpenStudio::VersionString.new('2.5.1')
 
-      # create an instance of the measure
-      measure = IncreaseInsulationRValueForExteriorWalls.new
+    # create an instance of the measure
+    measure = IncreaseInsulationRValueForExteriorWalls.new
 
-      # create an instance of a runner
-      runner = OpenStudio::Measure::OSRunner.new(OpenStudio::WorkflowJSON.new)
+    # create an instance of a runner
+    runner = OpenStudio::Measure::OSRunner.new(OpenStudio::WorkflowJSON.new)
 
-      # load the test model
-      translator = OpenStudio::OSVersion::VersionTranslator.new
-      path = OpenStudio::Path.new(File.dirname(__FILE__) + '/no_mass.osm')
-      model = translator.loadModel(path)
-      assert(!model.empty?)
-      model = model.get
+    # load the test model
+    translator = OpenStudio::OSVersion::VersionTranslator.new
+    path = OpenStudio::Path.new(File.dirname(__FILE__) + '/no_mass.osm')
+    model = translator.loadModel(path)
+    assert(!model.empty?)
+    model = model.get
 
-      # get arguments and test that they are what we are expecting
-      arguments = measure.arguments(model)
+    # get arguments and test that they are what we are expecting
+    arguments = measure.arguments(model)
 
-      # set argument values to good values and run the measure on model with spaces
-      argument_map = OpenStudio::Measure.convertOSArgumentVectorToMap(arguments)
+    # set argument values to good values and run the measure on model with spaces
+    argument_map = OpenStudio::Measure.convertOSArgumentVectorToMap(arguments)
 
-      # set all argument values
+    # set all argument values
 
-      count = -1
+    count = -1
 
-      r_value = arguments[count += 1].clone
-      assert(r_value.setValue(5.0))
-      argument_map['r_value'] = r_value
+    r_value = arguments[count += 1].clone
+    assert(r_value.setValue(5.0))
+    argument_map['r_value'] = r_value
 
-      allow_reduction = arguments[count += 1].clone
-      assert(allow_reduction.setValue('true'))
-      argument_map['allow_reduction'] = allow_reduction
+    allow_reduction = arguments[count += 1].clone
+    assert(allow_reduction.setValue('true'))
+    argument_map['allow_reduction'] = allow_reduction
 
-      material_cost_increase_ip = arguments[count += 1].clone
-      assert(material_cost_increase_ip.setValue(0.0))
-      argument_map['material_cost_increase_ip'] = material_cost_increase_ip
+    material_cost_increase_ip = arguments[count += 1].clone
+    assert(material_cost_increase_ip.setValue(0.0))
+    argument_map['material_cost_increase_ip'] = material_cost_increase_ip
 
-      one_time_retrofit_cost_ip = arguments[count += 1].clone
-      assert(one_time_retrofit_cost_ip.setValue(0.0))
-      argument_map['one_time_retrofit_cost_ip'] = one_time_retrofit_cost_ip
+    one_time_retrofit_cost_ip = arguments[count += 1].clone
+    assert(one_time_retrofit_cost_ip.setValue(0.0))
+    argument_map['one_time_retrofit_cost_ip'] = one_time_retrofit_cost_ip
 
-      years_until_retrofit_cost = arguments[count += 1].clone
-      assert(years_until_retrofit_cost.setValue(0))
-      argument_map['years_until_retrofit_cost'] = years_until_retrofit_cost
+    years_until_retrofit_cost = arguments[count += 1].clone
+    assert(years_until_retrofit_cost.setValue(0))
+    argument_map['years_until_retrofit_cost'] = years_until_retrofit_cost
 
-      measure.run(model, runner, argument_map)
-      result = runner.result
-      show_output(result) # this displays the output when you run the test
-      assert(result.value.valueName == 'Success')
-      # assert(result.info.size == 4)
-      # assert(result.warnings.size == 1)
-    end
+    measure.run(model, runner, argument_map)
+    result = runner.result
+    show_output(result) # this displays the output when you run the test
+    assert(result.value.valueName == 'Success')
+    # assert(result.info.size == 4)
+    # assert(result.warnings.size == 1)
   end
 end
