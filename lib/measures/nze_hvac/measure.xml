@@ -3,8 +3,8 @@
   <schema_version>3.1</schema_version>
   <name>nze_hvac</name>
   <uid>f060dff2-b28d-4194-a6af-e66d88ddb33c</uid>
-  <version_id>39e57cbe-7434-4f78-8050-db44e6e4773d</version_id>
-  <version_modified>2025-09-25T15:33:42Z</version_modified>
+  <version_id>9ef6d0b1-beec-4b75-a119-476f2fa9d4dc</version_id>
+  <version_modified>2025-09-25T16:10:25Z</version_modified>
   <xml_checksum>0E5E4776</xml_checksum>
   <class_name>NzeHvac</class_name>
   <display_name>NZEHVAC</display_name>
@@ -264,7 +264,7 @@
       <filename>NZEHVAC_Test.rb</filename>
       <filetype>rb</filetype>
       <usage_type>test</usage_type>
-      <checksum>7B398BA0</checksum>
+      <checksum>721443D9</checksum>
     </file>
     <file>
       <filename>USA_IL_Chicago-OHare.Intl.AP.725300_TMY3.epw</filename>
