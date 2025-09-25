@@ -1,11 +1,11 @@
 <?xml version="1.0"?>
 <measure>
   <schema_version>3.1</schema_version>
-  <error>Failed to infer measure name from '/Users/dgoldwas/Documents/github/nrel/openstudio-ee-gem/lib/measures/window_enhancement/measure.py'</error>
+  <error>Failed to infer measure name from '/workspace/lib/measures/window_enhancement/measure.py'</error>
   <name>window_enhancment</name>
   <uid>0ad8e761-8624-4d9d-a7d6-ebf30cce243b</uid>
-  <version_id>75793dfe-a8b4-4857-a447-7511e4cd4b38</version_id>
-  <version_modified>2025-08-20T03:03:21Z</version_modified>
+  <version_id>6e806249-5eab-444e-b724-f00dd42c13fb</version_id>
+  <version_modified>2025-09-25T04:50:20Z</version_modified>
   <xml_checksum>7DADF7C5</xml_checksum>
   <class_name>WindowEnhancment</class_name>
   <display_name>Window Enhancment</display_name>
@@ -63,7 +63,7 @@
       <filename>LICENSE.md</filename>
       <filetype>md</filetype>
       <usage_type>license</usage_type>
-      <checksum>CD7F5672</checksum>
+      <checksum>FFCBFF29</checksum>
     </file>
     <file>
       <filename>README.md</filename>

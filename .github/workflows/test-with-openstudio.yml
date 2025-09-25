@@ -51,146 +51,57 @@ jobs:
               set -e
               
               echo "Starting OpenStudio EE Gem tests..."
-              echo "Ruby Version: $(ruby -v)"
-              echo "Platform: $(uname -a)"
-              echo "OpenStudio Version: $(openstudio openstudio_version)"
-              echo "Current working directory: $(pwd)"
-              echo "Available memory: $(free -h)" || echo "Memory info not available"
-              echo "Disk space: $(df -h .)" || echo "Disk info not available"
+              echo "Ruby: $(ruby -v)"
+              echo "OpenStudio: $(openstudio openstudio_version)"
               
               # Fix git ownership issue in container
               git config --global --add safe.directory "*"
               
               # Install system dependencies
-              echo "Installing Node.js and AWS CLI..."
-              apt-get update
-              apt-get install -y curl unzip locales
-              locale-gen en_US.UTF-8
+              apt-get update -qq
+              apt-get install -y -qq curl unzip ca-certificates
               
-              # Install Node.js
-              curl -fsSL https://deb.nodesource.com/setup_lts.x | bash -
-              apt-get install -y nodejs
+              # Install Node.js and AWS CLI (required for some tests)
+              curl -fsSL https://deb.nodesource.com/setup_20.x | DEBIAN_FRONTEND=noninteractive bash -
+              DEBIAN_FRONTEND=noninteractive apt-get install -y -qq nodejs
               
-              # Install AWS CLI v2
-              curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
-              unzip awscliv2.zip
-              ./aws/install
-              rm -rf awscliv2.zip aws/
+              curl -fsSL "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o /tmp/awscliv2.zip
+              unzip -q /tmp/awscliv2.zip -d /tmp/
+              /tmp/aws/install
+              rm -rf /tmp/aws /tmp/awscliv2.zip
               
-              # Verify installations
-              echo "Node.js version: $(node --version)"
-              echo "npm version: $(npm --version)"
-              echo "AWS CLI version: $(aws --version)"
-              
-              # Install gem dependencies with better error handling
+              # Install gem dependencies
               echo "Installing gem dependencies..."
-              echo "Ruby version: $(ruby -v)"
-              echo "Bundler version: $(bundle -v)"
               
-              # Update gem sources to ensure we can reach all repositories
-              echo "Current gem sources:"
-              gem sources -l
+              # Clean up bundler environment
+              unset BUNDLE_GEMFILE BUNDLE_PATH BUNDLE_BIN_PATH
               
-              # Update RubyGems if needed
-              echo "Updating RubyGems..."
-              gem update --system --no-document || echo "Warning: Could not update RubyGems"
-              
-              # Ensure bundler is up to date
-              echo "Ensuring bundler is available..."
-              gem install bundler -v 2.4.10 --no-document || echo "Warning: Could not install specific bundler version"
-              echo "Final bundler version: $(bundle -v)"
-              
-              # Configure bundler for better platform support
-              bundle config set --local build.nokogiri --use-system-libraries
-              bundle config set --local force_ruby_platform true
+              # Install bundler and configure
+              gem install bundler -v 2.4.10 --no-document
               bundle config set --local path vendor/bundle
-              bundle config set --local deployment false
+              bundle config set --local force_ruby_platform true
               
-              # Show current bundle configuration
-              echo "Bundle configuration:"
-              bundle config list
-              
-              # Try bundle install with verbose output and retries
-              echo "Running bundle install..."
-              RETRY_COUNT=0
-              MAX_RETRIES=3
-              
-              while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
-                if bundle install --verbose --retry 3 --jobs 4; then
-                  echo "✅ Successfully installed gem dependencies"
-                  break
-                else
-                  RETRY_COUNT=$((RETRY_COUNT + 1))
-                  if [ $RETRY_COUNT -lt $MAX_RETRIES ]; then
-                    echo "⚠️ Bundle install failed, retrying ($RETRY_COUNT/$MAX_RETRIES)..."
-                    sleep 10
-                    # Clear bundle cache on retry
-                    bundle clean --force || true
-                  else
-                    echo "::error::Failed to install gem dependencies after $MAX_RETRIES attempts"
-                    echo "Final bundle environment:"
-                    bundle env
-                    echo "Gemfile content:"
-                    cat Gemfile
-                    echo "Gemfile.lock content (first 50 lines):"
-                    head -50 Gemfile.lock
-                    echo "Available gems:"
-                    gem list
-                    echo "Network connectivity test:"
-                    curl -I https://rubygems.org/ || echo "Cannot reach rubygems.org"
-                    exit 1
-                  fi
-                fi
-              done
-              echo "✅ Successfully installed gem dependencies"
-              
-              # Show environment info
-              echo "Bundle Version: $(bundle -v)"
-              echo "Bundle Environment:"
-              bundle env
-              echo "Listing OpenStudio Gems: $(openstudio gem_list)"
+              # Install gems
+              bundle install --retry 3 --jobs 4
               
               # Run test suite
-              echo "Running bundler tests..."
-              if ! bundle exec rake; then
-                echo "::error::Main rake task failed"
-                exit 1
-              fi
-              echo "✅ Main rake task completed successfully"
+              echo "Running tests..."
+              bundle exec rake
+              bundle exec rake openstudio:list_measures
+              bundle exec rake openstudio:update_measures
+              bundle exec rake openstudio:test_with_openstudio
               
-              if ! bundle exec rake openstudio:list_measures; then
-                echo "::error::Failed to list measures"
-                exit 1
-              fi
-              echo "✅ Successfully listed measures"
-              
-              if ! bundle exec rake openstudio:update_measures; then
-                echo "::error::Failed to update measures"
-                exit 1
-              fi
-              echo "✅ Successfully updated measures"
-              
-              if ! bundle exec rake openstudio:test_with_openstudio; then
-                echo "::error::Failed to run OpenStudio tests"
-                exit 1
-              fi
-              echo "✅ Successfully completed OpenStudio tests"
-              
-              # Archive test results (matching original workflow behavior)
+              # Archive test results
               if [ -d "test" ]; then
                 mv test test_with_cli_bundler
-                echo "Test directory renamed to test_with_cli_bundler"
               fi
               
-              # Find and rename test_results directory
               dir_name=$(find . -type d -name "test_results" | head -1)
               if [ -n "$dir_name" ]; then
                 mv "$dir_name" test_results_dashboard_cli_bundler
-                echo "Found and renamed test_results directory: $dir_name -> test_results_dashboard_cli_bundler"
-                ls -al test_results_dashboard_cli_bundler/
               fi
               
-              echo "🎉 All tests completed successfully with nrel/openstudio:develop!"
+              echo "Tests completed successfully!"
             '
 
       - name: Configure AWS Credentials
