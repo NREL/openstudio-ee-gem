@@ -1,20 +1,170 @@
 <?xml version="1.0"?>
 <measure>
   <schema_version>3.1</schema_version>
-  <name>window_enhancment</name>
+  <name>window_enhancement</name>
   <uid>0ad8e761-8624-4d9d-a7d6-ebf30cce243b</uid>
   <version_id>6e806249-5eab-444e-b724-f00dd42c13fb</version_id>
   <version_modified>2025-09-25T04:50:20Z</version_modified>
   <xml_checksum>7DADF7C5</xml_checksum>
-  <class_name>WindowEnhancment</class_name>
-  <display_name>Window Enhancment</display_name>
+  <class_name>WindowEnhancement</class_name>
+  <display_name>Window Enhancement</display_name>
   <description>Make existing window better by adding film, storm window, or something else.</description>
-  <modeler_description>I'm going to use layred construction and not simple glazing to do this. We have to think about how to address simple glazing with this.</modeler_description>
+  <modeler_description>Using layered construction and not simple glazing to do this. We have to think about how to address simple glazing with this.</modeler_description>
   <arguments>
     <argument>
-      <name>space_name</name>
-      <display_name>New space name</display_name>
-      <description>This name will be used as the name of the new space.</description>
+      <name>analysis_period</name>
+      <display_name>Analysis Period</display_name>
+      <description>Analysis period of embodied carbon of building/building assembly</description>
+      <type>Integer</type>
+      <required>true</required>
+      <model_dependent>false</model_dependent>
+      <default_value>30</default_value>
+    </argument>
+    <argument>
+      <name>igu_option</name>
+      <display_name>IGU Option</display_name>
+      <description>Type of insulating glazing unit</description>
+      <type>Choice</type>
+      <required>true</required>
+      <model_dependent>false</model_dependent>
+      <choices>
+        <choice>
+          <value>electrochromic</value>
+          <display_name>electrochromic</display_name>
+        </choice>
+        <choice>
+          <value>fire_resistant</value>
+          <display_name>fire_resistant</display_name>
+        </choice>
+        <choice>
+          <value>laminated</value>
+          <display_name>laminated</display_name>
+        </choice>
+        <choice>
+          <value>low_emissivity</value>
+          <display_name>low_emissivity</display_name>
+        </choice>
+        <choice>
+          <value>tempered</value>
+          <display_name>tempered</display_name>
+        </choice>
+      </choices>
+    </argument>
+    <argument>
+      <name>igu_lifetime</name>
+      <display_name>IGU Lifetime</display_name>
+      <description>Lifetime of the insulating glazing unit</description>
+      <type>Integer</type>
+      <required>true</required>
+      <model_dependent>false</model_dependent>
+      <default_value>15</default_value>
+    </argument>
+    <argument>
+      <name>wf_lifetime</name>
+      <display_name>Product Lifetime of Window Frame</display_name>
+      <description>Life expectancy of window frame</description>
+      <type>Integer</type>
+      <required>true</required>
+      <model_dependent>false</model_dependent>
+      <default_value>15</default_value>
+    </argument>
+    <argument>
+      <name>wf_option</name>
+      <display_name>Window frame option</display_name>
+      <description>Type of aluminum extrusion</description>
+      <type>Choice</type>
+      <required>true</required>
+      <model_dependent>false</model_dependent>
+      <choices>
+        <choice>
+          <value>anodized</value>
+          <display_name>anodized</display_name>
+        </choice>
+        <choice>
+          <value>painted</value>
+          <display_name>painted</display_name>
+        </choice>
+        <choice>
+          <value>thermally_improved</value>
+          <display_name>thermally_improved</display_name>
+        </choice>
+      </choices>
+    </argument>
+    <argument>
+      <name>frame_cross_section_area</name>
+      <display_name>Frame Cross Section Area (m²)</display_name>
+      <description>Cross-sectional area of the IGU frame in square meters.</description>
+      <type>Double</type>
+      <required>true</required>
+      <model_dependent>false</model_dependent>
+      <default_value>0.0025</default_value>
+    </argument>
+    <argument>
+      <name>epd_type</name>
+      <display_name>EPD Type</display_name>
+      <description>Type of EPD for searching GWP values, Product EPDs refer to specific products from a manufacturer, while industrial EPDs represent average data across an entire industry sector.</description>
+      <type>Choice</type>
+      <required>true</required>
+      <model_dependent>false</model_dependent>
+      <choices>
+        <choice>
+          <value>Product</value>
+          <display_name>Product</display_name>
+        </choice>
+        <choice>
+          <value>Industry</value>
+          <display_name>Industry</display_name>
+        </choice>
+      </choices>
+    </argument>
+    <argument>
+      <name>gwp_statistic</name>
+      <display_name>GWP Statistic</display_name>
+      <description>Type of GWP statistic for searching GWP values, Product GWP statistics refer to specific products from a manufacturer, while industrial GWP statistics represent average data across an entire industry sector.</description>
+      <type>Choice</type>
+      <required>true</required>
+      <model_dependent>false</model_dependent>
+      <choices>
+        <choice>
+          <value>minimum</value>
+          <display_name>minimum</display_name>
+        </choice>
+        <choice>
+          <value>maximum</value>
+          <display_name>maximum</display_name>
+        </choice>
+        <choice>
+          <value>mean</value>
+          <display_name>mean</display_name>
+        </choice>
+        <choice>
+          <value>median</value>
+          <display_name>median</display_name>
+        </choice>
+      </choices>
+    </argument>
+    <argument>
+      <name>total_embodied_carbon</name>
+      <display_name>Total Embodied Carbon (kgCO2e)</display_name>
+      <description>Total embodied carbon of the window frame in kilograms of CO2 equivalent.</description>
+      <type>Double</type>
+      <required>true</required>
+      <model_dependent>false</model_dependent>
+      <default_value>0.0</default_value>
+    </argument>
+    <argument>
+      <name>total_embodied_carbon</name>
+      <display_name>Total Embodied Carbon (kgCO2e)</display_name>
+      <description>Total embodied carbon of the window frame in kilograms of CO2 equivalent.</description>
+      <type>Double</type>
+      <required>true</required>
+      <model_dependent>false</model_dependent>
+      <default_value>0.0</default_value>
+    </argument>
+    <argument>
+      <name>api_key</name>
+      <display_name>API Key</display_name>
+      <description>API key for accessing external services.</description>
       <type>String</type>
       <required>true</required>
       <model_dependent>false</model_dependent>
@@ -69,12 +219,6 @@
       <filetype>md</filetype>
       <usage_type>readme</usage_type>
       <checksum>DE9B0464</checksum>
-    </file>
-    <file>
-      <filename>.gitkeep</filename>
-      <filetype>gitkeep</filetype>
-      <usage_type>doc</usage_type>
-      <checksum>00000000</checksum>
     </file>
     <file>
       <version>

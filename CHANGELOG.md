@@ -1,6 +1,6 @@
 # OpenStudio(R) EE Gem
 
-## Version 0.12.4
+## Version 0.12.5
 * Removing error from measure.xml of window enhancement measure
 
 ## Version 0.12.4
