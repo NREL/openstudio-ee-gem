@@ -62,7 +62,7 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
         for option in self.igu_options():
             igu_options_chs.append(option)
         igu_option = openstudio.measure.OSArgument.makeChoiceArgument("igu_option", igu_options_chs, True)
-        igu_option.setDisplayName("IGU option") 
+        igu_option.setDisplayName("IGU option")
         igu_option.setDescription("Type of insulating glazing unit")
         args.append(igu_option)
 
@@ -80,12 +80,12 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
         wf_lifetime.setDefaultValue(15)
         args.append(wf_lifetime)
 
-        #make an argument for window frame options for filtering EPDs 
+        #make an argument for window frame options for filtering EPDs
         wf_options_chs = openstudio.StringVector()
         for option in self.wf_options():
             wf_options_chs.append(option)
         wf_option = openstudio.measure.OSArgument.makeChoiceArgument("wf_option",wf_options_chs, True)
-        wf_option.setDisplayName("Window frame option") 
+        wf_option.setDisplayName("Window frame option")
         wf_option.setDescription("Type of aluminum extrusion")
         args.append(wf_option)
 

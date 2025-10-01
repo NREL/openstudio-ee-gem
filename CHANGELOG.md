@@ -1,5 +1,8 @@
 # OpenStudio(R) EE Gem
 
+## Version 0.12.5
+* Removing error from measure.xml of window enhancement measure
+
 ## Version 0.12.4
 * Adding first version of window enhancement measure. This is python measure that has extra dependencies, and also requires an EC3 API key. It looks up content on EC3, stores embodied carbon data in the OpenStudio model and updates the window performance. You can not use it to only update window performance without using the EC3 database.
 
