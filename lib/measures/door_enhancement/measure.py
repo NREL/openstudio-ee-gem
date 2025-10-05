@@ -7,7 +7,7 @@ import openstudio
 import typing
 import numpy as np
 import pprint as pp
-from resources.EC3_lookup import fetch_epd_data, parse_product_epd,generate_url_byname,calculate_geometry
+from resources.EC3_lookup import extract_numeric_value, fetch_epd_data, parse_product_epd,generate_url_byname,calculate_geometry
 
 # Start the measure
 class DoorEnhancement(openstudio.measure.ModelMeasure):
@@ -102,11 +102,14 @@ class DoorEnhancement(openstudio.measure.ModelMeasure):
         args.append(api_key)
 
         # make an argument for mass per length of strip
-        mass_per_length = openstudio.measure.OSArgument.makeDoubleArgument("mass_per_length", True)
-        mass_per_length.setDisplayName("Mass per Length of Strip")
-        mass_per_length.setDescription("Mass per length of door bottom strip in kg/m")
-        mass_per_length.setDefaultValue(0.0595) # source: https://www.pemko.com/en/view-pdf?id=AADSS1046707&page=1
-        args.append(mass_per_length)
+        # 36''= 0.9144 m for weatherstrip brush, source: https://www.pemko.com/en/view-pdf?id=AADSS1046707&page=1
+        # 17' = 5.1816 m for silicone adhesive smoke gasket, source: https://buildingtransparency.org/ec3/epds/ec327rq0
+        # 36'' = 0.9144 m for automatic door bottom, source: https://www.adair.com/p-1537-automatic-door-bottom.aspx
+        length_per_unit = openstudio.measure.OSArgument.makeDoubleArgument("length_per_unit", True)
+        length_per_unit.setDisplayName("Length per Unit of Strip")
+        length_per_unit.setDescription("Length per unit of door bottom strip in m")
+        length_per_unit.setDefaultValue(0.9144)
+        args.append(length_per_unit)
 
         return args
 
@@ -128,7 +131,7 @@ class DoorEnhancement(openstudio.measure.ModelMeasure):
         analysis_period = runner.getIntegerArgumentValue("analysis_period",user_arguments)
         strip_lifetime = runner.getIntegerArgumentValue("strip_lifetime",user_arguments)
         api_key = runner.getStringArgumentValue("api_key", user_arguments)
-        mass_per_length = runner.getDoubleArgumentValue("mass_per_length", user_arguments)
+        length_per_unit = runner.getDoubleArgumentValue("length_per_unit", user_arguments)
 
         # Debug: Print all user arguments received
         runner.registerInfo(f"User Arguments: {user_arguments}")
@@ -194,6 +197,7 @@ class DoorEnhancement(openstudio.measure.ModelMeasure):
                 gwp_values["gwp_per_m2"] = []
                 gwp_values["gwp_per_kg"] = []
                 gwp_values["gwp_per_m3"] = []
+                gwp_values["gwp_per_m"] = []
 
                 for idx, epd in enumerate(epd_data,start = 1):
                     # parse json repsonse based on epd_type
@@ -210,6 +214,10 @@ class DoorEnhancement(openstudio.measure.ModelMeasure):
                     gwp_per_m3 = parsed_data["gwp_per_m3 (kg CO2 eq/m3)"]
                     if gwp_per_m3 != None:
                         gwp_values["gwp_per_m3"].append(float(gwp_per_m3))
+
+                    gwp_per_m = gwp_per_kg * extract_numeric_value(parsed_data["mass_per_declared_unit"])/length_per_unit
+                    if gwp_per_m != None:
+                        gwp_values["gwp_per_m"].append(float(gwp_per_m))
                 
                 # extract gwp statistics by 
                 for functional_unit, list in gwp_values.items():
@@ -230,15 +238,14 @@ class DoorEnhancement(openstudio.measure.ModelMeasure):
                     subsurface_dict[subsurface_name][material_name][functional_unit] = gwp
 
                 if analysis_period <= subsurface_dict[subsurface_name][material_name]["lifetime"]:
-                    embodied_carbon = float(subsurface_dict[subsurface_name][material_name]["gwp_per_kg"] *
-                                             subsurface_dict[subsurface_name]['dimension']['width (m)'] *
-                                             mass_per_length)
+                    embodied_carbon = float(subsurface_dict[subsurface_name][material_name]["gwp_per_m"] *
+                                             subsurface_dict[subsurface_name]['dimension']['width (m)'])
                     subsurface_dict[subsurface_name][material_name]["embodied_carbon"] = embodied_carbon
                 else:
                     multiplier = np.ceil(analysis_period/subsurface_dict[subsurface_name][material_name]["lifetime"])
-                    embodied_carbon = float(subsurface_dict[subsurface_name][material_name]["gwp_per_kg"] *
+                    embodied_carbon = float(subsurface_dict[subsurface_name][material_name]["gwp_per_m"] *
                                              subsurface_dict[subsurface_name]['dimension']['width (m)'] *
-                                             mass_per_length * multiplier)
+                                              multiplier)
                     subsurface_dict[subsurface_name][material_name]["embodied_carbon"] = embodied_carbon
 
                 subsurface_dict[subsurface_name]["embodied_carbon"] +=  subsurface_dict[subsurface_name][material_name]["embodied_carbon"]

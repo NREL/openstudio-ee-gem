@@ -98,7 +98,7 @@ def generate_url_byname(
         # Place category immediately after sort_by if provided.
     if category:
         # e.g., insulation: "bf1c8882d7784db4b10d9d5698b8b5cc"
-        # door hardware: "ca54e842c0fc4bf2b4f3a8564c3b1a4d"
+        # doors hardware: "ca54e842c0fc4bf2b4f3a8564c3b1a4d"
         params.append(("category", category))
 
     # Add the rest
@@ -122,8 +122,13 @@ def fetch_epd_data(url,api_token):
     Fetch EPD data from the EC3 API.
     return: Parsed JSON response or empty list on failure.
     """
+
+    # Handle the case when renovation option is "none", return empty list directly
+    if url is None:
+        print("Renovation option is None, fetch_epd_data: URL is None, skipping request.")
+        return None
     try: 
-        # print(f"Fetching data from URL: {url}")  # Log the URL being fetched
+        print(f"Fetching data from URL: {url}")  # Log the URL being fetched
         # API configuration
         HEADERS = {"Accept": "application/json", "Authorization": "Bearer " + api_token}
         response = requests.get(url, headers=HEADERS, verify=False)
@@ -136,6 +141,7 @@ def fetch_epd_data(url,api_token):
         else:
             print("No response content available.")
         return []
+    
 # process the json response obtained from fetch_epd_data function for product epds
 def parse_product_epd(epd: Dict[str, Any]) -> Dict[str, Any]:
     """
@@ -185,8 +191,9 @@ def parse_product_epd(epd: Dict[str, Any]) -> Dict[str, Any]:
         gwp_per_m3 = divide(gwp_per_declared_unit, declared_unit) * 35.3147 # convert from cubic feet to m3
     elif declared_unit and any(x in declared_unit for x in ["m\u00b2","m2", "m^2"]) and thickness and "mm" in thickness:
         gwp_per_m3 = divide(gwp_per_declared_unit, declared_unit)/(extract_numeric_value(thickness)/1000)
-    elif density and any(x in density for x in ["kg / m3", "kg / m^3"]) and gwp_per_kg:
+    elif density and any(x in density for x in ["kg / m3", "kg / m^3", "kg/m3", "kg/m^3"]) and gwp_per_kg:
         gwp_per_m3 = multiply(gwp_per_kg, density)
+
 
     # Per m2
     if declared_unit and any(x in declared_unit for x in ["m\u00b2","m2", "m^2"]):
@@ -218,7 +225,6 @@ def parse_industrial_epd(epd: Dict[str, Any]) -> Dict[str, Any]:
     :param epd: EPD dictionary
     :return: Parsed GWP data
     """
-
     # pp.pprint(epd)
 
     file_path = "my_data.json"
@@ -288,6 +294,7 @@ def parse_industrial_epd(epd: Dict[str, Any]) -> Dict[str, Any]:
     parsed_data["thickness_per_declared_unit_min"] = thickness_per_declared_unit_min
     parsed_data["thickness_per_declared_unit_max"] = thickness_per_declared_unit_max
     parsed_data["area"] = area
+    parsed_data['lifetime_avg'] = servicelife_avg
     parsed_data["gwp_per_m3 (kg CO2 eq/m3)"] = gwp_per_m3
     parsed_data["gwp_per_m2 (kg CO2 eq/m2)"] = gwp_per_m2
     parsed_data["gwp_per_kg (kg CO2 eq/kg)"] = gwp_per_kg 
@@ -295,6 +302,13 @@ def parse_industrial_epd(epd: Dict[str, Any]) -> Dict[str, Any]:
     parsed_data["description"] = description
 
     return parsed_data
+
+def lifetime_multiplier(lifetime: int, analysis_period: int) -> int:
+    if analysis_period <= lifetime:
+        multiplier = 1
+    else:
+        multiplier = np.ceil(analysis_period/lifetime) # round up to the nearest integer
+    return multiplier
 
 def extract_numeric_value(value: Any) -> float:
     """
@@ -350,10 +364,10 @@ def calculate_geometry(self, sub_surface):
     area = length * width
 
     return {
-        "length": length,
-        "width": width,
-        "perimeter": perimeter,
-        "area": area
+        "length_m": length,
+        "width_m": width,
+        "perimeter_m": perimeter,
+        "area_m2": area
     }
 # handle the case when no epd returned from API request 
 def test_empty_epd(primary, fallback):
@@ -438,7 +452,7 @@ def main():
     print("Fetching EC3 EPD data...")
 
     print("Search EPD based on names:")
-    search_url=generate_url_byname(name_like= "cellulose", category="bf1c8882d7784db4b10d9d5698b8b5cc")
+    search_url=generate_url_byname(name_like= "sealant",description_like="acrylic")
     epd_data = fetch_epd_data(search_url, API_TOKEN)
     
     for idx, epd in enumerate(epd_data, start=1):

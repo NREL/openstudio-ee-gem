@@ -38,6 +38,7 @@ def set_arg(name, value):
 
 set_arg("analysis_period", 30)
 set_arg("strip_option", "silicone adhesive smoke gasket")
+set_arg("length_per_unit", 5.1816) 
 set_arg("strip_lifetime", 15)
 set_arg("gwp_statistic", "median")
 set_arg("total_embodied_carbon", 0.0)
