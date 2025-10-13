@@ -39,7 +39,7 @@ material_category = {
                      "test":["Insulation"]
                      }
 # Generate a EC3 API URL with search and filters
-def generate_url(material_name, endpoint ="materials", page_number=1, page_size=3, jurisdiction="021", date=None, option=None, boolean="yes",
+def generate_url(material_name, endpoint ="materials", page_number=1, page_size=250, jurisdiction="021", date=None, option=None, boolean="yes",
                   glass_panes=None, epd_type="Product", insulation_application = None, insulation_material = None):
     '''
     jurisdiction = "021" means Northern America region
@@ -162,6 +162,11 @@ def parse_product_epd(epd: Dict[str, Any]) -> Dict[str, Any]:
     gwp_per_declared_unit = epd.get("gwp")
     mass_per_declared_unit = epd.get("mass_per_declared_unit")
     density = epd.get("density")
+    # fix the issue that density unit is g/cm3 but parsed as kg/m3 in EC3 json repsonse
+    if density and any(x in density for x in ["kg / m3", "kg / m^3", "kg/m3", "kg/m^3"]) and extract_numeric_value(density) < 10:
+        density_value = extract_numeric_value(density)*1000
+        density = str(density_value) + " kg/m3"
+
     gwp_per_kg = extract_numeric_value(epd.get("gwp_per_kg"))
     epd_name = epd.get('name')
     description = epd.get('description')

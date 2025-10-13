@@ -2,8 +2,8 @@
 # OpenStudio(R), Copyright (c) Alliance for Sustainable Energy, LLC.
 # See also https://openstudio.net/license
 # *******************************************************************************
+
 import pprint as pp
-from re import sub
 import openstudio
 import typing
 import numpy as np
@@ -32,7 +32,7 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
     
     @staticmethod
     def wf_options():
-        return ["none","wood window frame","wood-aluminum window frame"] # options provided are based on EPD availability
+        return ["none","wood window frame","wood-aluminium window frame"] # options provided are based on EPD availability
     
     @staticmethod
     def caulking_options():
@@ -44,7 +44,7 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
 
     @staticmethod
     def window_options():
-        return ["none", "fixed window", "project window", "sliding window", "storefront window"]
+        return ["none", "fixed window", "project window", "sliding window", "storefront window", "defined in model"]
 
     @staticmethod
     def weatherstrip_options():
@@ -61,49 +61,49 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
         #make an argument for analysis period
         analysis_period = openstudio.measure.OSArgument.makeIntegerArgument("analysis_period",True)
         analysis_period.setDisplayName("Analysis Period")
-        analysis_period.setDescription("Analysis period of embodied carbon of building/building assembly")
+        analysis_period.setDescription("Analysis period of embodied carbon calculation in years. This parameter and product life expectancy will affect the number of replacements during the analysis period.")
         analysis_period.setDefaultValue(30)
         args.append(analysis_period)
 
         # make an argument for product life time of glass pane
         glass_lifetime = openstudio.measure.OSArgument.makeIntegerArgument("glass_lifetime",True)
         glass_lifetime.setDisplayName("Product Lifetime of Glass pane")
-        glass_lifetime.setDescription("Life expectancy of glass pane")
+        glass_lifetime.setDescription("Life expectancy of glass pane. Default value is provided based on data from the Certified Commercial Property Inspectors Association (CCPIA).")
         glass_lifetime.setDefaultValue(15)
         args.append(glass_lifetime)
 
         # make an argument for product life time of window frame
         wf_lifetime = openstudio.measure.OSArgument.makeIntegerArgument("wf_lifetime",True)
         wf_lifetime.setDisplayName("Product Lifetime of Window Frame")
-        wf_lifetime.setDescription("Life expectancy of window frame")
+        wf_lifetime.setDescription("Life expectancy of window frame. Default value is provided based on data from the Certified Commercial Property Inspectors Association (CCPIA).")
         wf_lifetime.setDefaultValue(15)
         args.append(wf_lifetime)
 
         # make an argument for product life time of caulking sealant
         caulking_lifetime = openstudio.measure.OSArgument.makeIntegerArgument("caulking_lifetime",True)
         caulking_lifetime.setDisplayName("Product Lifetime of Caulking Sealant")
-        caulking_lifetime.setDescription("Life expectancy of caulking sealant")
+        caulking_lifetime.setDescription("Life expectancy of caulking sealant. Default value is provided based on data from the Certified Commercial Property Inspectors Association (CCPIA).")
         caulking_lifetime.setDefaultValue(10)
         args.append(caulking_lifetime)
 
         # make an argument for product life time of glazing film
         film_lifetime = openstudio.measure.OSArgument.makeIntegerArgument("film_lifetime",True)
         film_lifetime.setDisplayName("Product Lifetime of Glazing Film")
-        film_lifetime.setDescription("Life expectancy of glazing film")
+        film_lifetime.setDescription("Life expectancy of glazing film. Default value is provided based on data from the Certified Commercial Property Inspectors Association (CCPIA).")
         film_lifetime.setDefaultValue(10)
         args.append(film_lifetime)
 
         #make an argument for product life time of weatherstrip
         weatherstrip_lifetime = openstudio.measure.OSArgument.makeIntegerArgument("weatherstrip_lifetime",True)
         weatherstrip_lifetime.setDisplayName("Product Lifetime of Weatherstrip")
-        weatherstrip_lifetime.setDescription("Life expectancy of weatherstrip")
+        weatherstrip_lifetime.setDescription("Life expectancy of weatherstrip. Default value is provided based on data from the Certified Commercial Property Inspectors Association (CCPIA).")
         weatherstrip_lifetime.setDefaultValue(10)
         args.append(weatherstrip_lifetime)
 
         # make an argument for product life time of window
         window_lifetime = openstudio.measure.OSArgument.makeIntegerArgument("window_lifetime",True)
         window_lifetime.setDisplayName("Product Lifetime of Window")
-        window_lifetime.setDescription("Life expectancy of window")
+        window_lifetime.setDescription("Life expectancy of window. Default value is provided based on data from the Certified Commercial Property Inspectors Association (CCPIA).")
         window_lifetime.setDefaultValue(30)
         args.append(window_lifetime)
 
@@ -113,7 +113,8 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
             wf_options_chs.append(option)
         wf_option = openstudio.measure.OSArgument.makeChoiceArgument("wf_option",wf_options_chs, True)
         wf_option.setDisplayName("Window frame option")
-        wf_option.setDescription("Select none if no window frame is to be installed, otherwise provide frame type.")
+        wf_option.setDescription("Select none if no window frame is to be installed, otherwise provide frame type. NOTE: When not none, this renovation option can not work with the entire window replacement at the same time to avoid double counting.")
+        wf_option.setDefaultValue("none")
         args.append(wf_option)
 
         # make an argument for caulking material options for filtering EPDs
@@ -122,7 +123,8 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
             caulking_options_chs.append(option)
         caulking_option = openstudio.measure.OSArgument.makeChoiceArgument("caulking_option", caulking_options_chs, True)
         caulking_option.setDisplayName("Caulking Material Option")
-        caulking_option.setDescription("Select none if no caulking is to be applied, otherwise provide material type.")
+        caulking_option.setDescription("Select none if no caulking is to be applied, otherwise provide material type. This renovation option is for the window perimeter joint sealing.")
+        caulking_option.setDefaultValue("none")
         args.append(caulking_option)
 
         # make an argument for film options for filtering EPDs
@@ -131,7 +133,8 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
             film_options_chs.append(option)
         film_option = openstudio.measure.OSArgument.makeChoiceArgument("film_option", film_options_chs, True)
         film_option.setDisplayName("Glazing Film Option")
-        film_option.setDescription("Select none if no glazing film is to be installed, otherwise provide film type.")
+        film_option.setDescription("Select none if no glazing film is to be installed, otherwise provide film type. This renovation option is for the window glazing.")
+        film_option.setDefaultValue("none")
         args.append(film_option)
 
         # make an argument for window options for filtering EPDs
@@ -140,7 +143,8 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
             window_options_chs.append(option)
         window_option = openstudio.measure.OSArgument.makeChoiceArgument("window_option", window_options_chs, True)
         window_option.setDisplayName("Window Type Option")
-        window_option.setDescription("Select none if no new window is to be installed, otherwise provide window type. NOTE: if window_option is selected, wf_option and glass_option will be ignored in the calculation to avoid double counting.")
+        window_option.setDescription("Select none if no new window is to be installed, otherwise provide window type. NOTE: When not none, this renovation option can not work with window frame or window glass replacement in the same time to avoid double counting.")
+        window_option.setDefaultValue("none")
         args.append(window_option)
 
         # make an argument for glass option for filtering EPDs and decide whether to renovate
@@ -149,7 +153,8 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
             glass_options_chs.append(option)
         glass_option = openstudio.measure.OSArgument.makeChoiceArgument("glass_option", glass_options_chs, True)
         glass_option.setDisplayName("Glass Option on Renovation")
-        glass_option.setDescription("Select none if no new glass pane is to be installed, otherwise provide user_num_panes.")
+        glass_option.setDescription("Select none if no new glass pane is to be installed, otherwise provide user_num_panes. NOTE: When not none, this renovation option can not work with the entire window replacement at the same time to avoid double counting.")
+        glass_option.setDefaultValue("none")
         args.append(glass_option)
 
         # make an argument for weatherstrip options for filtering EPDs
@@ -158,20 +163,21 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
             weatherstrip_options_chs.append(option)
         weatherstrip_option = openstudio.measure.OSArgument.makeChoiceArgument("weatherstrip_option", weatherstrip_options_chs, True)
         weatherstrip_option.setDisplayName("Weatherstrip Option")
-        weatherstrip_option.setDescription("Material type of weatherstrip")
+        weatherstrip_option.setDescription("Select none if no weatherstrip is to be applied, otherwise provide material type. NOTE: Weatherstrip is only applicable to operable windows, and will be applied to the sliding edge only.")
+        weatherstrip_option.setDefaultValue("none")
         args.append(weatherstrip_option)
 
         # make an argument for caulking material thickness applied
         caulking_thickness = openstudio.measure.OSArgument.makeDoubleArgument("caulking_thickness", True)
         caulking_thickness.setDisplayName("Caulking Material Thickness (m)")
-        caulking_thickness.setDescription("Thickness of the caulking material applied in meters.")
+        caulking_thickness.setDescription("Thickness of the caulking material applied in meters. This parameter is equivalent to the diameter of the caulking bead. Default value is set to 0.008 m (8 mm).")
         caulking_thickness.setDefaultValue(0.008) # 8 mm thickness
         args.append(caulking_thickness)
 
         # make an argument for number of panes to be replaced
         user_num_panes = openstudio.measure.OSArgument.makeIntegerArgument("user_num_panes", True)
         user_num_panes.setDisplayName("Number of Glass Panes Provided by User")
-        user_num_panes.setDescription("Number of glass panes to be installed as determined by user")
+        user_num_panes.setDescription("When glass option is not none, this is the number of glass panes to be installed as determined by user. Otherwise, the number of panes will be derived from the model. Valid values are 0, 1, 2, or 3. 0 means do not install any new glass panes. 1 means single pane, 2 means double pane, and 3 means triple pane. If the value provided is more than 3, it will be changed to 3 because currently the measure is unable to handle more complex scenarios due to the lack of EPD data.")
         user_num_panes.setDefaultValue(0) # 0 means do not install any new glass panes
         args.append(user_num_panes)
 
@@ -188,14 +194,14 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
         api_key = openstudio.measure.OSArgument.makeStringArgument("api_key",True)
         api_key.setDisplayName("API Token")
         api_key.setDescription("API Token for sending API call to EC3 EPD Database")
-        api_key.setDefaultValue("Obtain the key from EC3 website")
+        api_key.setDefaultValue("Obtain the API key from EC3 website")
         args.append(api_key)
 
         # make an argument for mass per length of strip
         # 17' = 5.1816 m for silicone adhesive smoke gasket, source: https://buildingtransparency.org/ec3/epds/ec327rq0
         length_per_unit = openstudio.measure.OSArgument.makeDoubleArgument("length_per_unit", True)
         length_per_unit.setDisplayName("Length per Unit of Strip")
-        length_per_unit.setDescription("Length per unit of window sash strip in m")
+        length_per_unit.setDescription("Length per unit of window sash strip in m. Default value 5.1816 m is provided based on the product 'Silicone Adhesive Smoke Gasket' from EC3 database, which has a length of 17 feet per declared functional unit in EPD.")
         length_per_unit.setDefaultValue(5.1816)
         args.append(length_per_unit)
 
@@ -232,7 +238,6 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
         api_key = runner.getStringArgumentValue("api_key", user_arguments)
         user_num_panes = runner.getIntegerArgumentValue("user_num_panes", user_arguments)
         length_per_unit = runner.getDoubleArgumentValue("length_per_unit", user_arguments)
-        # epd_type = runner.getStringArgumentValue("epd_type", user_arguments)
 
         # Debug: Print all user arguments received
         runner.registerInfo(f"User Arguments: {user_arguments}")
@@ -288,15 +293,17 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
             if subsurface_const.to_LayeredConstruction().is_initialized():
                 layered_construction = subsurface_const.to_LayeredConstruction().get()
 
-            # If num_panes not provided by users, determine number of panes from model
+            # initialize number of panes
             num_panes = 0
+            # Determine number of panes to be installed based on user input or model information
             if user_num_panes > 0 and user_num_panes <= 3:
                 num_panes = user_num_panes
                 runner.registerInfo(f"Number of panes to be installed provided by user is {num_panes}, use it for all the windows.")
             elif user_num_panes > 3:
                 num_panes = 3 # assign triple pane as the maximum number of panes
-                runner.registerInfo("Number of panes is changed tidio 3 because user_num_panes is more than 3, currently unable to handle more complex scenarios due to the lack of EPD data.")
-            elif user_num_panes == 0:
+                runner.registerInfo("Number of panes is changed to 3 because user_num_panes is more than 3, currently unable to handle more complex scenarios due to the lack of EPD data.")
+            # If num_panes not provided by users, determine number of panes from model
+            elif glass_option != "none" and user_num_panes == 0:
                 runner.registerInfo("Number of panes to be installed is not provided by user, deriving the value from the model.")
                 if layered_construction.numLayers() == 1:
                     num_panes = 1
@@ -304,12 +311,23 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
                     num_panes = 2
                 elif layered_construction.numLayers() == 5:
                     num_panes = 3
-            else:
+                elif layered_construction.numLayers() in [2,4]:
+                    runner.registerError(f"Number of layers in {subsurface.nameString()} is {layered_construction.numLayers()}, which is not typical for window construction. Please check the model and provide user_num_panes to avoid ambiguity.")
+                else:
+                    num_panes = 3 # assign triple pane as the maximum number of panes
+                    runner.registerInfo(f"Number of panes derived from model is {layered_construction.numLayers()}, changed to 3 because currently the measure is unable to handle more complex scenarios due to the lack of EPD data.")
+            elif user_num_panes < 0:
                 runner.registerError("Number of panes provided by user is less than 0, please provide a valid integer.")
                 return False
+            elif glass_option == "none" and user_num_panes != 0:
+                runner.registerInfo("Glass option is none but user_num_panes is not 0, to avoid ambiguity, no new glass panes will be installed.")
+            else: # glass_option is none and user_num_panes is 0
+                runner.registerInfo("No new glass panes will be installed because glass option is none and user_num_panes is 0.")
+                num_panes = 0
             
             # initialize total embodied carbon of window renovation in this subsurface
-            subsurface_dict[subsurface_name]["window_renovation_embodied_carbon_kg_co2_eq"] = 0.0 
+            subsurface_dict[subsurface_name]["window_renovation_embodied_carbon_kg_co2_eq"] = 0.0
+            subsurface_dict[subsurface_name]["window_type"] = subsurface.subSurfaceType()
 
             # create renovation scenarios for each window type subsurface
             subsurface_dict[subsurface_name]["glass"] = {}
@@ -334,7 +352,11 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
             subsurface_dict[subsurface_name]["frame"]["renovation_option"] = wf_option
             subsurface_dict[subsurface_name]["caulking"]["renovation_option"] = caulking_option
             subsurface_dict[subsurface_name]["film"]["renovation_option"] = film_option
-            subsurface_dict[subsurface_name]["weatherstrip"]["renovation_option"] = weatherstrip_option
+            subsurface_dict[subsurface_name]["weatherstrip"]["renovation_option"] = "none"
+            if weatherstrip_option != "none" and subsurface.subSurfaceType() == "OperableWindow":
+                subsurface_dict[subsurface_name]["weatherstrip"]["renovation_option"] = weatherstrip_option # weatherstrip is not applicable to non-operable windows
+            elif weatherstrip_option != "none" and subsurface.subSurfaceType() != "OperableWindow":
+                runner.registerInfo(f"Weatherstrip option is selected but {subsurface.nameString()} is not an operable window, skip applying weatherstrip to this subsurface.")
             subsurface_dict[subsurface_name]["window"]["renovation_option"] = window_option
 
             #initialize total embodied carbon of window renovation in this subsurface
@@ -388,7 +410,7 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
             subsurface_dict[subsurface_name]["weatherstrip"]["length_m"] = float(strip_length)
             # assign window area to window, glass, and window frame
             subsurface_dict[subsurface_name]["window"]["area_m2"] = window_area
-            subsurface_dict[subsurface_name]["glass"]["area_m2"] = window_area
+            subsurface_dict[subsurface_name]["glass"]["area_m2"] = subsurface_dict[subsurface_name]["film"]["area_m2"]
             subsurface_dict[subsurface_name]["frame"]["area_m2"] = window_area
 
             # fetch EPD data from EC3 database
@@ -442,10 +464,26 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
 
             # window product EPD
             window_product_url = None
+            # handle not "none" options when glass or frame option is none
             if window_option != "none" and glass_option == "none" and wf_option == "none": # if window_option is selected, glass and frame option will be ignored to avoid double counting
-                window_product_url = generate_url_byname(name_like = window_option)
+                # assign different types of windows based on model information
+                if window_option != "defined in model":
+                    window_product_url = generate_url_byname(name_like = window_option)
+                else:
+                    model_window_type = None
+                    if subsurface.subSurfaceType() == "FixedWindow":
+                        model_window_type = "fixed window"
+                    elif subsurface.subSurfaceType() == "OperableWindow":
+                        model_window_type = "sliding window"
+                    elif subsurface.subSurfaceType() == "Skylight":
+                        model_window_type = "project window"
+                    else:
+                        runner.registerError("Window type not recognized, unable to fetch window product EPD data.")
+                    window_product_url = generate_url_byname(name_like = model_window_type) 
+            # handle not "none" options when glass or frame option is not none
             elif window_option != "none" and (glass_option != "none" or wf_option != "none"):
                 runner.registerInfo("Both window option and glass or frame option are selected, to avoid double counting, window option is ignored in the calculation.")
+            # handle "none" options
             else:
                 runner.registerInfo("No window renovation option selected, skip fetching window product EPD data.")
 
@@ -481,7 +519,9 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
                 gwp_values["gwp_per_m2"] = []
                 gwp_values["gwp_per_kg"] = []
                 gwp_values["gwp_per_m3"] = []
-                gwp_values["gwp_per_m"] = [] 
+                gwp_values["gwp_per_m"] = []
+                # collect thickness strings from EPDs if available
+                thickness_summary = []
 
                 for idx, epd in enumerate(epd_data,start = 1):
                     parsed_data = parse_product_epd(epd)
@@ -501,6 +541,10 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
                     gwp_per_m = gwp_per_kg * extract_numeric_value(parsed_data["mass_per_declared_unit"])/length_per_unit
                     if gwp_per_m != None:
                         gwp_values["gwp_per_m"].append(float(gwp_per_m))
+
+                    thickness = parsed_data["thickness"]
+                    if thickness != None:
+                        thickness_summary.append(thickness)
                 
                 # extract gwp statistics
                 for functional_unit, list in gwp_values.items():
@@ -519,6 +563,7 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
                         gwp = float(np.median(list))
                     # store gwp value
                     subsurface_dict[subsurface_name][material_name][functional_unit] = gwp
+                    subsurface_dict[subsurface_name][material_name]["thickness_list"] = thickness_summary
 
                 # multipliers for calculating embodied carbon over analysis period
                 multiplier = lifetime_multiplier(subsurface_dict[subsurface_name][material_name]["lifetime"], analysis_period)
@@ -546,8 +591,8 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
                 subsurface_dict[subsurface_name][material_name]["embodied_carbon_kg_co2_eq"] = embodied_carbon
                 runner.registerInfo(f"Embodied carbon of {material_name} in {subsurface_name} (kg CO2 eq): {subsurface_dict[subsurface_name][material_name]['embodied_carbon_kg_co2_eq']}")
 
-                if parsed_data["thickness"]:# provide thickness of the product if available
-                    subsurface_dict[subsurface_name][material_name]["thickness"] = parsed_data["thickness"]
+                # if parsed_data["thickness"]:# provide thickness of the product if available
+                #     subsurface_dict[subsurface_name][material_name]["thickness"] = parsed_data["thickness"]
                 subsurface_dict[subsurface_name]["window_renovation_embodied_carbon_kg_co2_eq"] +=  subsurface_dict[subsurface_name][material_name]["embodied_carbon_kg_co2_eq"]
 
             runner.registerInfo(f"Embodied carbon of window renovation in this subsurface (kg CO2 eq): {subsurface_dict[subsurface_name]['window_renovation_embodied_carbon_kg_co2_eq']}")
