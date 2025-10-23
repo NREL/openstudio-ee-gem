@@ -40,8 +40,10 @@ set_arg("analysis_period", 30)
 set_arg("strip_option", "silicone adhesive smoke gasket")
 set_arg("length_per_unit", 5.1816) 
 set_arg("strip_lifetime", 15)
+set_arg('door_lifetime',30)
+set_arg('door_area_per_unit', 1.95)
+set_arg('door_option','honeycomb core steel door')
 set_arg("gwp_statistic", "median")
-set_arg("total_embodied_carbon", 0.0)
 set_arg("api_key", API_TOKEN)
 
 # Run the measure

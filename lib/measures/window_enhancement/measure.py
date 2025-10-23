@@ -44,7 +44,7 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
 
     @staticmethod
     def window_options():
-        return ["none", "fixed window", "project window", "sliding window", "storefront window", "defined in model"]
+        return ["none", "fixed window", "project window", "sliding window", "casement window", "storefront window", "defined by model"]
 
     @staticmethod
     def weatherstrip_options():
@@ -408,6 +408,7 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
             if subsurface.subSurfaceType() == "OperableWindow":
                 strip_length = min(window_length, window_width) # use the shorter side of the window as the length of strip applied
             subsurface_dict[subsurface_name]["weatherstrip"]["length_m"] = float(strip_length)
+            
             # assign window area to window, glass, and window frame
             subsurface_dict[subsurface_name]["window"]["area_m2"] = window_area
             subsurface_dict[subsurface_name]["glass"]["area_m2"] = subsurface_dict[subsurface_name]["film"]["area_m2"]
@@ -467,16 +468,14 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
             # handle not "none" options when glass or frame option is none
             if window_option != "none" and glass_option == "none" and wf_option == "none": # if window_option is selected, glass and frame option will be ignored to avoid double counting
                 # assign different types of windows based on model information
-                if window_option != "defined in model":
+                if window_option != "defined by model":
                     window_product_url = generate_url_byname(name_like = window_option)
                 else:
                     model_window_type = None
-                    if subsurface.subSurfaceType() == "FixedWindow":
+                    if subsurface.subSurfaceType() in["FixedWindow","Skylight"]:
                         model_window_type = "fixed window"
                     elif subsurface.subSurfaceType() == "OperableWindow":
                         model_window_type = "sliding window"
-                    elif subsurface.subSurfaceType() == "Skylight":
-                        model_window_type = "project window"
                     else:
                         runner.registerError("Window type not recognized, unable to fetch window product EPD data.")
                     window_product_url = generate_url_byname(name_like = model_window_type) 
@@ -568,6 +567,7 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
                 # multipliers for calculating embodied carbon over analysis period
                 multiplier = lifetime_multiplier(subsurface_dict[subsurface_name][material_name]["lifetime"], analysis_period)
 
+                embodied_carbon = 0.0
                 if material_name in ["glass","film","frame","window"]: # functional unit is area, 1 m2
                     if subsurface_dict[subsurface_name][material_name]["gwp_per_m2"] is None:
                         embodied_carbon = 0.0
@@ -596,7 +596,6 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
                 subsurface_dict[subsurface_name]["window_renovation_embodied_carbon_kg_co2_eq"] +=  subsurface_dict[subsurface_name][material_name]["embodied_carbon_kg_co2_eq"]
 
             runner.registerInfo(f"Embodied carbon of window renovation in this subsurface (kg CO2 eq): {subsurface_dict[subsurface_name]['window_renovation_embodied_carbon_kg_co2_eq']}")
-
 
             # attach additional properties to openstudio material
             additional_properties = subsurface_dict[subsurface_name]["subsurface_object"].additionalProperties()

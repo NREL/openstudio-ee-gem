@@ -3,11 +3,13 @@
 # See also https://openstudio.net/license
 # *******************************************************************************
 
+from atexit import register
+from re import sub
 import openstudio
 import typing
 import numpy as np
 import pprint as pp
-from resources.EC3_lookup import extract_numeric_value, fetch_epd_data, parse_product_epd,generate_url_byname,calculate_geometry
+from resources.EC3_lookup import extract_numeric_value, fetch_epd_data, parse_product_epd,generate_url_byname,calculate_geometry,lifetime_multiplier
 
 # Start the measure
 class DoorEnhancement(openstudio.measure.ModelMeasure):
@@ -35,15 +37,22 @@ class DoorEnhancement(openstudio.measure.ModelMeasure):
         
     @staticmethod
     def strip_options():
-        return ["brush weatherstrip","automatic door bottom","silicone adhesive smoke gasket"]
+        return ["none","brush weatherstrip","automatic door bottom","silicone adhesive smoke gasket"]
     
     @staticmethod
-    def epd_types():
-        return ["Product","Industry"]
+    def door_options():
+        return ['none','wooden door','garage door','glass door','polystyrene core steel door', 'polyurethane core steel door','fiberglass core steel door','honeycomb core steel door','stiffened core steel door','defined by model']
 
     def arguments(self, model: typing.Optional[openstudio.model.Model] = None):
         """Define the arguments that user will input."""
         args = openstudio.measure.OSArgumentVector()
+
+        #As per the guiding Product Category Rule (PCR), the declared unit is defined as 21 sq.ft. (1.95m2) of door leaf at a nominal 44.45 mm (1-3/4 in.) thickness.
+        door_area_per_unit = openstudio.measure.OSArgument.makeDoubleArgument("door_area_per_unit", True)
+        door_area_per_unit.setDisplayName("Door Area per Unit")
+        door_area_per_unit.setDescription("Area per unit of door leaf in m2")
+        door_area_per_unit.setDefaultValue(1.95)
+        args.append(door_area_per_unit)
 
         #make an argument for analysis period
         analysis_period = openstudio.measure.OSArgument.makeIntegerArgument("analysis_period",True)
@@ -58,9 +67,19 @@ class DoorEnhancement(openstudio.measure.ModelMeasure):
             strip_options_chs.append(option)
         strip_option = openstudio.measure.OSArgument.makeChoiceArgument("strip_option", strip_options_chs, True)
         strip_option.setDisplayName("strip option") 
-        strip_option.setDescription("Type of door bottom strip")
+        strip_option.setDescription("Select none if no strip is to be installed, otherwise select the type of strip to be installed.")
         strip_option.setDefaultValue("brush weatherstrip")
         args.append(strip_option)
+
+        # make an argument for door options for filtering EPDs of door
+        door_options_chs = openstudio.StringVector()
+        for option in self.door_options():
+            door_options_chs.append(option)
+        door_option = openstudio.measure.OSArgument.makeChoiceArgument("door_option", door_options_chs, True)
+        door_option.setDisplayName("door option")   
+        door_option.setDescription("Select none if no door is to be installed, otherwise select the type of door to be installed. Select 'defined by model' to use the existing door construction types in the model.")
+        door_option.setDefaultValue("wooden door")
+        args.append(door_option)
 
         # make an argument for product life time of strip
         strip_lifetime = openstudio.measure.OSArgument.makeIntegerArgument("strip_lifetime",True)
@@ -69,14 +88,12 @@ class DoorEnhancement(openstudio.measure.ModelMeasure):
         strip_lifetime.setDefaultValue(15)
         args.append(strip_lifetime)
 
-        # # make an argument for selecting EPD type (Not in use anymore, new search method won't return industry EPDs)
-        # edp_type_chs = openstudio.StringVector()
-        # for type in self.epd_types():
-        #     edp_type_chs.append(type)
-        # epd_type = openstudio.measure.OSArgument.makeChoiceArgument("epd_type",edp_type_chs, True)
-        # epd_type.setDisplayName("EPD Type") 
-        # epd_type.setDescription("Type of EPD for searching GWP values, Product EPDs refer to specific products from a manufacturer, while industrial EPDs represent average data across an entire industry sector.")
-        # args.append(epd_type)
+        # make an argument for product life time of door
+        door_lifetime = openstudio.measure.OSArgument.makeIntegerArgument("door_lifetime",True)
+        door_lifetime.setDisplayName("Product Lifetime of door")
+        door_lifetime.setDescription("Life expectancy of door")
+        door_lifetime.setDefaultValue(30)
+        args.append(door_lifetime)
 
         # make an argument for selecting which gwp statistic to use for embodied carbon calculation
         gwp_statistics_chs = openstudio.StringVector()
@@ -86,13 +103,6 @@ class DoorEnhancement(openstudio.measure.ModelMeasure):
         gwp_statistic.setDisplayName("GWP Statistic") 
         gwp_statistic.setDescription("Statistic type (minimum or maximum or mean or median) of returned GWP value")
         args.append(gwp_statistic)
-
-        # make an argument for total embodied carbon (TEC) of whole construction/building
-        total_embodied_carbon = openstudio.measure.OSArgument.makeDoubleArgument("total_embodied_carbon", True)
-        total_embodied_carbon.setDisplayName("Total Embodied Carbon of Building/Building Assembly")
-        total_embodied_carbon.setDescription("Total GWP or embodied carbon intensity of the building (assembly) in kg CO2 eq.")
-        total_embodied_carbon.setDefaultValue(0.0)
-        args.append(total_embodied_carbon)
 
         # make an argument for api_token
         api_key = openstudio.measure.OSArgument.makeStringArgument("api_key",True)
@@ -128,10 +138,13 @@ class DoorEnhancement(openstudio.measure.ModelMeasure):
         # Retrieve user inputs
         gwp_statistic = runner.getStringArgumentValue("gwp_statistic", user_arguments)
         strip_option = runner.getStringArgumentValue("strip_option", user_arguments)
+        door_option = runner.getStringArgumentValue("door_option", user_arguments)
         analysis_period = runner.getIntegerArgumentValue("analysis_period",user_arguments)
         strip_lifetime = runner.getIntegerArgumentValue("strip_lifetime",user_arguments)
+        door_lifetime = runner.getIntegerArgumentValue("door_lifetime",user_arguments)
         api_key = runner.getStringArgumentValue("api_key", user_arguments)
         length_per_unit = runner.getDoubleArgumentValue("length_per_unit", user_arguments)
+        door_area_per_unit = runner.getDoubleArgumentValue("door_area_per_unit", user_arguments)
 
         # Debug: Print all user arguments received
         runner.registerInfo(f"User Arguments: {user_arguments}")
@@ -145,10 +158,11 @@ class DoorEnhancement(openstudio.measure.ModelMeasure):
         
         # Check if numeric values are reasonable
         if analysis_period <= 0:
-            runner.registerError("Choose an integer larger than 0 for analysis period of embodeid carbon calcualtion.")
+            runner.registerError("Choose an integer larger than 0 for analysis period of embodied carbon calculation.")
         if strip_lifetime <= 0:
             runner.registerError("Choose an integer larger than 0 for product lifetime of door bottom strip.")
-
+        if door_lifetime <= 0:
+            runner.registerError("Choose an integer larger than 0 for product lifetime of door.")
 
         # Print the number of sub-surfaces before processing
         sub_surfaces = model.getSubSurfaces()
@@ -168,6 +182,7 @@ class DoorEnhancement(openstudio.measure.ModelMeasure):
 
         # dictionary storing properties of subsurfaces containing door construcitons
         subsurface_dict = {}
+        
         # loop through layered door construciton to collect door materials
         for subsurface in sub_surfaces_to_change:
             subsurface_name = subsurface.nameString()
@@ -177,6 +192,8 @@ class DoorEnhancement(openstudio.measure.ModelMeasure):
             if subsurface_const.to_LayeredConstruction().is_initialized():
                 layered_construction = subsurface_const.to_LayeredConstruction().get()
 
+            subsurface_dict[subsurface_name]["door_renovation_embodied_carbon_kg_co2_eq"] = 0.0
+
             subsurface_dict[subsurface_name]["strip"] = {}
             subsurface_dict[subsurface_name]["subsurface object"] = subsurface
             subsurface_dict[subsurface_name]["strip"]["object"] = layered_construction
@@ -184,39 +201,81 @@ class DoorEnhancement(openstudio.measure.ModelMeasure):
             subsurface_dict[subsurface_name]["embodied_carbon"] = 0.0
             subsurface_dict[subsurface_name]["dimension"] = calculate_geometry(self, subsurface)
 
+            subsurface_dict[subsurface_name]['door'] = {}
+            subsurface_dict[subsurface_name]['subsurface object'] = subsurface
+            subsurface_dict[subsurface_name]['door']['lifetime'] = door_lifetime
+            subsurface_dict[subsurface_name]['embodied_carbon'] = 0.0
+            subsurface_dict[subsurface_name]['dimension'] = calculate_geometry(self, subsurface)
+
             epd_datalist = {}
 
             strip_product_url = generate_url_byname(name_like = strip_option, category = 'ca54e842c0fc4bf2b4f3a8564c3b1a4d')
             strip_product_epd = fetch_epd_data(url = strip_product_url, api_token = api_key)
             epd_datalist["strip"] = strip_product_epd
 
+            door_product_url = None
+            if door_option == 'defined by model':
+                if subsurface_name == "Door":
+                    door_product_url = generate_url_byname(name_like = 'wood door leaf')
+                elif subsurface_name == "GlassDoor":
+                    door_product_url = generate_url_byname(name_like = 'window door system', plant_geography = '150')
+                elif subsurface_name == "OverheadDoor":
+                    door_product_url = generate_url_byname(name_like = 'garage door', plant_geography = '150')
+            elif door_option == 'wooden door':
+                door_product_url = generate_url_byname(name_like = 'wood door leaf')
+            elif door_option == 'glass door':
+                door_product_url = generate_url_byname(name_like = 'window door system', plant_geography = '150')
+            elif door_option == 'garage door':
+                door_product_url = generate_url_byname(name_like = 'garage door', plant_geography = '150')
+            elif door_option == 'fiberglass core steel door':
+                door_product_url = generate_url_byname(name_like = 'fiberglass core', category = '73e602b930884f559e904184f35ee4ed')
+            elif door_option == 'stiffened core steel door':
+                door_product_url = generate_url_byname(name_like = 'stiffened core', category = 'e9605505973e4f088078c6f53e58129f')
+            elif door_option == 'none':
+                door_product_url = None
+            else:
+                door_product_url = generate_url_byname(name_like = door_option)
+
+            door_product_epd = fetch_epd_data(url = door_product_url, api_token = api_key)
+            epd_datalist["door"] = door_product_epd
 
             for material_name, epd_data in epd_datalist.items():
                 # collect  GWP values per functional unit
+
                 gwp_values = {}
                 gwp_values["gwp_per_m2"] = []
                 gwp_values["gwp_per_kg"] = []
                 gwp_values["gwp_per_m3"] = []
                 gwp_values["gwp_per_m"] = []
+                gwp_values['gwp_per_unit'] = []
 
                 for idx, epd in enumerate(epd_data,start = 1):
                     # parse json repsonse based on epd_type
                     parsed_data = parse_product_epd(epd)
-
+                    # per unit
+                    gwp_per_unit = parsed_data["gwp_per_unit (kg CO2 eq/unit)"]
+   
+                    # per area
                     gwp_per_m2 = parsed_data["gwp_per_m2 (kg CO2 eq/m2)"]
-                    if gwp_per_m2 != None:
+                    if gwp_per_m2 != 0.0:
+                        gwp_values["gwp_per_m2"].append(float(gwp_per_m2))
+                    elif gwp_per_m2 == 0.0 and gwp_per_unit != 0.0 and material_name == "door" and door_option != 'garage door':
+                        gwp_per_m2 = gwp_per_unit/door_area_per_unit
                         gwp_values["gwp_per_m2"].append(float(gwp_per_m2))
 
                     gwp_per_kg = parsed_data["gwp_per_kg (kg CO2 eq/kg)"]
-                    if gwp_per_kg != None:
+                    gwp_per_m = 0.0
+                    if gwp_per_kg != 0.0:
                         gwp_values["gwp_per_kg"].append(float(gwp_per_kg))
+                        if material_name == "strip":
+                            gwp_per_m = gwp_per_kg * extract_numeric_value(parsed_data["mass_per_declared_unit"])/length_per_unit
+
 
                     gwp_per_m3 = parsed_data["gwp_per_m3 (kg CO2 eq/m3)"]
-                    if gwp_per_m3 != None:
+                    if gwp_per_m3 != 0.0:
                         gwp_values["gwp_per_m3"].append(float(gwp_per_m3))
 
-                    gwp_per_m = gwp_per_kg * extract_numeric_value(parsed_data["mass_per_declared_unit"])/length_per_unit
-                    if gwp_per_m != None:
+                    if gwp_per_m != 0.0:
                         gwp_values["gwp_per_m"].append(float(gwp_per_m))
                 
                 # extract gwp statistics by 
@@ -237,25 +296,41 @@ class DoorEnhancement(openstudio.measure.ModelMeasure):
                     # store gwp value
                     subsurface_dict[subsurface_name][material_name][functional_unit] = gwp
 
-                if analysis_period <= subsurface_dict[subsurface_name][material_name]["lifetime"]:
+                # multipliers for calculating embodied carbon over analysis period
+                multiplier = lifetime_multiplier(subsurface_dict[subsurface_name][material_name]["lifetime"], analysis_period)
+                
+                embodied_carbon = 0.0
+                if material_name == "strip":
+                    strip_length = None
+                    # silicone adhesive smoke gasket is applied to the full perimeter of the door
+                    if subsurface.subSurfaceType() in ["Door","GlassDoor"] and strip_option in ["brush weatherstrip","silicone adhesive smoke gasket"]:
+                        strip_length = subsurface_dict[subsurface_name]['dimension']['perimeter_m']
+                    else:
+                        strip_length = subsurface_dict[subsurface_name]['dimension']['width_m']
+                    
                     embodied_carbon = float(subsurface_dict[subsurface_name][material_name]["gwp_per_m"] *
-                                             subsurface_dict[subsurface_name]['dimension']['width (m)'])
-                    subsurface_dict[subsurface_name][material_name]["embodied_carbon"] = embodied_carbon
-                else:
-                    multiplier = np.ceil(analysis_period/subsurface_dict[subsurface_name][material_name]["lifetime"])
-                    embodied_carbon = float(subsurface_dict[subsurface_name][material_name]["gwp_per_m"] *
-                                             subsurface_dict[subsurface_name]['dimension']['width (m)'] *
-                                              multiplier)
-                    subsurface_dict[subsurface_name][material_name]["embodied_carbon"] = embodied_carbon
+                                                strip_length *
+                                                multiplier)
+                elif material_name == "door":
+                    door_area = subsurface_dict[subsurface_name]['dimension']['area_m2']
+                    if subsurface_dict[subsurface_name][material_name]["gwp_per_m2"] != None:
+                        embodied_carbon = float(subsurface_dict[subsurface_name][material_name]["gwp_per_m2"] *
+                                                    door_area *
+                                                    multiplier)
+                    else:
+                        runner.registerInfo(f"No GWP per m2 value available for door in {subsurface_name}, skipping embodied carbon calculation for door.")
+                
+                subsurface_dict[subsurface_name][material_name]["embodied_carbon_kg_co2_eq"] = embodied_carbon
+                runner.registerInfo(f"Embodied carbon of {material_name} in {subsurface_name} (kg CO2 eq): {subsurface_dict[subsurface_name][material_name]['embodied_carbon_kg_co2_eq']}")
+                
+                subsurface_dict[subsurface_name]["door_renovation_embodied_carbon_kg_co2_eq"] +=  subsurface_dict[subsurface_name][material_name]["embodied_carbon_kg_co2_eq"]
 
-                subsurface_dict[subsurface_name]["embodied_carbon"] +=  subsurface_dict[subsurface_name][material_name]["embodied_carbon"]
-
-            runner.registerInfo(f"Embodied carbon in this subsurface in kg CO2 eq: {subsurface_dict[subsurface_name]['embodied_carbon']}")
+            runner.registerInfo(f"Embodied carbon in this subsurface in kg CO2 eq: {subsurface_dict[subsurface_name]['door_renovation_embodied_carbon_kg_co2_eq']}")
 
             # attach additional properties to openstudio material
             additional_properties = subsurface_dict[subsurface_name]["subsurface object"].additionalProperties()
             additional_properties.setFeature("Subsurface name", subsurface_name)
-            additional_properties.setFeature("Embodied carbon", subsurface_dict[subsurface_name]["embodied_carbon"])
+            additional_properties.setFeature("embodied_carbon_kg_co2_eq", subsurface_dict[subsurface_name]["door_renovation_embodied_carbon_kg_co2_eq"])
    
         pp.pprint(subsurface_dict)
 
