@@ -3,7 +3,6 @@ import requests
 import json
 import re
 from typing import Dict, Any, Optional
-from pathlib import Path
 import configparser
 from datetime import datetime
 import os

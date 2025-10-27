@@ -3,7 +3,6 @@ import requests
 import json
 import re
 from typing import Dict, Any, Optional
-from pathlib import Path
 import configparser
 from datetime import datetime
 import os
@@ -154,6 +153,7 @@ def parse_product_epd(epd: Dict[str, Any]) -> Dict[str, Any]:
     gwp_per_m3 = 0.0
     gwp_per_m2 = 0.0
     gwp_per_kg = 0.0
+    gwp_per_unit = 0.0
 
     # pp.pprint(epd)
     # extract information from EPD's json repsonse
@@ -174,10 +174,14 @@ def parse_product_epd(epd: Dict[str, Any]) -> Dict[str, Any]:
     # For the two parameters below, need to confirm the accuracy of data before using; for insulation material, the mass per declared unit is always 2.04 kg,
     # not sure where this 2.04 kg is from, didn't see it in EPD, better not to use
     category_mass_per_declared_unit = epd['category']['mass_per_declared_unit']
-    category_decalred_unit = epd['category']['declared_unit']
+    category_declared_unit = epd['category']['declared_unit']
 
-    if mass_per_declared_unit is None and category_mass_per_declared_unit is not None and any(x in category_decalred_unit for x in ["m2", "m^2"]):
-        mass_per_declared_unit = divide(category_mass_per_declared_unit,category_decalred_unit)
+    mass_per_area = 0.0
+    if "kg" in category_mass_per_declared_unit and "m2" in category_declared_unit:
+        mass_per_area = divide(category_mass_per_declared_unit, category_declared_unit)
+
+    if mass_per_declared_unit is None and category_mass_per_declared_unit is not None and any(x in category_declared_unit for x in ["m2", "m^2"]):
+        mass_per_declared_unit = divide(category_mass_per_declared_unit,category_declared_unit)
 
     # Per kg
     if gwp_per_kg is None or gwp_per_kg == 0.0:
@@ -207,7 +211,13 @@ def parse_product_epd(epd: Dict[str, Any]) -> Dict[str, Any]:
         gwp_per_m2 = divide(gwp_per_declared_unit, declared_unit) * 10.7639 # convert from square feet to m2
     elif declared_unit and any(x in declared_unit for x in ["m3", "m^3"]) and thickness and "mm" in thickness:
         gwp_per_m2 = divide(gwp_per_declared_unit, declared_unit) * (extract_numeric_value(thickness)/1000)
-    
+    if gwp_per_m2 == 0.0 and mass_per_area and gwp_per_kg:
+        gwp_per_m2 = multiply(gwp_per_kg, mass_per_area)
+
+    # Per unit
+    if declared_unit and any(x in declared_unit for x in ["unit", "each", "item", 'piece']):
+        gwp_per_unit = divide(gwp_per_declared_unit, declared_unit)
+
     parsed_data["epd_name"] = epd_name
     parsed_data["declared_unit"] = declared_unit
     parsed_data["gwp_per_declared_unit"] = gwp_per_declared_unit
@@ -218,7 +228,8 @@ def parse_product_epd(epd: Dict[str, Any]) -> Dict[str, Any]:
     parsed_data["gwp_per_m2 (kg CO2 eq/m2)"] = gwp_per_m2
     parsed_data["gwp_per_kg (kg CO2 eq/kg)"] = gwp_per_kg 
     parsed_data["category_mass_per_declared_unit"] = category_mass_per_declared_unit
-    parsed_data["category_decalred_unit"] = category_decalred_unit
+    parsed_data["category_declared_unit"] = category_declared_unit
+    parsed_data["mass_per_area"] = mass_per_area
     parsed_data["original_ec3_link"] = original_ec3_link
     parsed_data["description"] = description
 
