@@ -78,19 +78,22 @@ urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 
 insulation_data = {
-    "Mineral Wool": "Mineral%20Wool",
-    "Cellulose": "Cellulose",
+    # "Mineral Wool": "Mineral%20Wool",
+    # "Cellulose": "Cellulose",
     "Fiberglass": "Fiberglass",
-    "Expanded Polystyrene (EPS)": "EPS",
-    "Extruded Polystyrene (XPS)": "XPS",
-    "Graphite Polystyrene (GPS)": "GPS",
-    "Polyiso (iso)": "ISO",
-    "Expanded Polyethylene": "Expanded%20Polyethylene",
-    "Other": "Other"
+    # "Expanded Polystyrene (EPS)": "EPS",
+    # "Extruded Polystyrene (XPS)": "XPS",
+    # "Graphite Polystyrene (GPS)": "GPS",
+    # "Polyiso (iso)": "ISO",
+    # "Expanded Polyethylene": "Expanded%20Polyethylene",
+    # "Other": "Other"
 }
 
-
 insulation_material_type = list(insulation_data.values())[0]
+material = list(insulation_data)[0]
+
+
+
 
 print('**************************')
 print(insulation_material_type)
@@ -102,9 +105,35 @@ product_epds = []
 material_name = "Insulation"
 
 
+
+print('#########################################   NEW METHOD #########################################.')
+
+epd_summary = []
+search_url=generate_url_byname(name_like= material, category="bf1c8882d7784db4b10d9d5698b8b5cc")
+epd_data = fetch_epd_data(search_url, API_TOKEN)
+
+for idx, epd in enumerate(epd_data, start=1):
+    parsed_data = parse_product_epd(epd)
+    epd_summary.append({
+        "epd_name": parsed_data.get("epd_name"),
+        "mass_per_declared_unit": parsed_data.get("mass_per_declared_unit"),
+        "gwp_per_m2 (kg CO2 eq/m2)": parsed_data.get("gwp_per_m2 (kg CO2 eq/m2)"),
+        "gwp_per_m3 (kg CO2 eq/m3)": parsed_data.get("gwp_per_m3 (kg CO2 eq/m3)"),
+        "gwp_per_kg (kg CO2 eq/kg)": parsed_data.get("gwp_per_kg (kg CO2 eq/kg)"),
+        "density (kg/m3)": parsed_data.get("density")
+
+    })
+df_epd_summary = pd.DataFrame(epd_summary)
+print(df_epd_summary.head(50))
+
+
+print('#########################################   OLD METHOD #########################################.')
+
+
+
 # Collecting parsed industrial EPDs into a list
 epd_summary = []
-
+df_epd_summary = pd.DataFrame(epd_summary)
 
 product_url = generate_url(material_name=material_name, endpoint="materials", epd_type="Product", insulation_application=insulation_application_type, insulation_material=insulation_material_type, page_size=100)
 industry_url = generate_url(material_name=material_name, endpoint="industry_epds", epd_type="Industry", insulation_application=insulation_application_type, insulation_material=insulation_material_type, page_size=100)
@@ -113,7 +142,7 @@ industry_url = generate_url(material_name=material_name, endpoint="industry_epds
 product_epd_data = fetch_epd_data(product_url,API_TOKEN) 
 industrial_epd_data = fetch_epd_data(industry_url,API_TOKEN)
 # print(f"Number of  product EPDs for {name}: {len(product_epd_data)}")
-pp.pprint(product_epd_data)
+# pp.pprint(product_epd_data)
 # print(f"Number of  industrial EPDs for {name}: {len(industrial_epd_data)}")
 for idx, epd in enumerate(product_epd_data, start=1):
     parsed_data = parse_product_epd(epd)
@@ -147,7 +176,7 @@ for idx, epd in enumerate(industrial_epd_data, start=1):
 df_epd_summary = pd.DataFrame(epd_summary)
 
 # Display DataFrame
-# print(df_epd_summary.head(50))
+print(df_epd_summary.head(50))
 
 
 
