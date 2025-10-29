@@ -35,15 +35,11 @@ def run_measure():
     # Set required and optional inputs
     set_arg("r_value", 60.0)
     set_arg("api_key", "Obtain the key from EC3 website")
-    set_arg("epd_type", "Product")
     set_arg("insulation_material_type", "Fiberglass")
     set_arg("insulation_material_lifetime", 30)
-    set_arg("precast_concrete_type", "lightweight")
-    set_arg("precast_concrete_lifetime", 30)
-    set_arg("brick_lifetime", 30)
-    set_arg("gypsum_board_type", "moisture_resistant")
-    set_arg("gypsum_board_fr", "X")
-    set_arg("gypsum_board_lifetime", 30)
+    set_arg("insulation_thermal_conductivity", 0.0)
+    set_arg('gwp_statistic', 'median')
+    set_arg('insulation_material_density', 0.0)
 
     # Run the measure
     result = measure.run(model, runner, arg_map)
