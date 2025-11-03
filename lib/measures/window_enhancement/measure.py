@@ -6,6 +6,7 @@
 from importlib.util import spec_from_file_location
 import pprint as pp
 from pyexpat import model
+from re import sub
 import openstudio
 import typing
 import numpy as np
@@ -293,7 +294,7 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
 
         # Retrieve user inputs
         # for infiltration reduction
-        object = runner.getOptionalWorkspaceObjectChoiceValue('space_type', user_arguments)
+        object = runner.getOptionalWorkspaceObjectChoiceValue('space_type', user_arguments, model)
         space_infiltration_reduction_percent = runner.getDoubleArgumentValue("space_infiltration_reduction_percent", user_arguments)
         constant_coefficient = runner.getDoubleArgumentValue('constant_coefficient', user_arguments)
         temperature_coefficient = runner.getDoubleArgumentValue('temperature_coefficient', user_arguments)
@@ -322,13 +323,9 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
 
         # Debug: Print all user arguments received
         runner.registerInfo(f"User Arguments: {user_arguments}")
-        for arg_name, arg_value in user_arguments.items():
-            try:
-                # Ensure that arg_value is valid and that the valueAsString() method can be called
-                value_str = arg_value.valueAsString() if arg_value is not None else "None"
-                runner.registerInfo(f"user_argument: {arg_name} = {value_str}")
-            except Exception as e:
-                runner.registerInfo(f"Error processing argument: {arg_name} - {str(e)}")
+        # use the built-in error checking
+        if not runner.validateUserArguments(self.arguments(model), user_arguments):
+            return False
         
         # Check if numeric values are reasonable
         if analysis_period <= 0:
@@ -402,7 +399,7 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
             space_types.append(space_type)  # only run on a single space type
             affected_area_si = space_type.floorArea()
 
-        # Function to alter performance and life cycle costs of objects
+        # Function to alter performance of objects
         def alter_performance(instance, space_infiltration_reduction_percent, constant_coefficient, temperature_coefficient,
                       wind_speed_coefficient, wind_speed_squared_coefficient, alter_coef, runner):
             # Edit instance based on percentage reduction
@@ -433,43 +430,45 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
             instance.setVelocityTermCoefficient(wind_speed_coefficient)
             instance.setVelocitySquaredTermCoefficient(wind_speed_squared_coefficient)
 
-            # loop through space types
-            for space_type in space_types:
-                if len(space_type.spaces()) <= 0:
-                    continue
+        # loop through space types
+        for space_type in space_types:
+            if len(space_type.spaces()) <= 0:
+                continue
 
-                space_type_infiltration_objects = space_type.spaceInfiltrationDesignFlowRates()
-                for space_type_infiltration_object in space_type_infiltration_objects:
-                    # call function to alter performance and life cycle costs
-                    alter_performance(
-                        space_type_infiltration_object,
-                        space_infiltration_reduction_percent,
-                        constant_coefficient,
-                        temperature_coefficient,
-                        wind_speed_coefficient,
-                        wind_speed_squared_coefficient,
-                        alter_coef,
-                        runner
-                    )
+            space_type_infiltration_objects = space_type.spaceInfiltrationDesignFlowRates()
+            for space_type_infiltration_object in space_type_infiltration_objects:
+                # call function to alter performance
+                alter_performance(
+                    space_type_infiltration_object,
+                    space_infiltration_reduction_percent,
+                    constant_coefficient,
+                    temperature_coefficient,
+                    wind_speed_coefficient,
+                    wind_speed_squared_coefficient,
+                    alter_coef,
+                    runner
+                )
 
-                    # rename
-                    updated_instance_name = space_type_infiltration_object.setName(
-                        f"{space_type_infiltration_object.nameString()} {space_infiltration_reduction_percent} percent reduction"
-                    )
-                    altered_instances += 1
+                # rename
+                updated_instance_name = space_type_infiltration_object.setName(
+                    f"{space_type_infiltration_object.nameString()} {space_infiltration_reduction_percent} percent reduction"
+                )
+                altered_instances += 1
 
         # Get spaces in the model
         spaces = model.getSpaces()
 
-        # Determine which spaces to process based on apply_to_building and space_type
+        # Get space types in model
         if apply_to_building:
-            spaces_to_process = spaces
+            spaces = model.getSpaces()
+        # this handles the case where we are applying to a specific space type
         elif space_type is not None and len(space_type.spaces()) > 0:
-            spaces_to_process = space_type.spaces()
+            spaces = space_type.spaces()
         else:
-            spaces_to_process = []
+            spaces = []
 
-        for space in spaces_to_process:
+        for space in spaces:
+
             space_infiltration_objects = space.spaceInfiltrationDesignFlowRates()
             for space_infiltration_object in space_infiltration_objects:
                 # Call function to alter performance and life cycle costs
@@ -484,11 +483,12 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
                     runner
                 )
 
-            # Rename
-            updated_instance_name = space_infiltration_object.setName(
-                f"{space_infiltration_object.nameString()} {space_infiltration_reduction_percent} percent reduction"
-            )
-            altered_instances += 1
+                # Rename
+                updated_instance_name = space_infiltration_object.setName(
+                    f"{space_infiltration_object.nameString()} {space_infiltration_reduction_percent} percent reduction"
+                )
+                altered_instances += 1
+
         if altered_instances == 0:
             runner.registerInfo(f"No space infiltration objects were altered for space type '{space_type.nameString()}'.")
         altered_instances = 0
@@ -496,12 +496,17 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
         # only add LifeCyCyleCostItem if the user entered some non 0 cost values
         affected_area_ip = openstudio.convert(affected_area_si, 'm^2', 'ft^2').get()
 
-
-################# EC PART ########################
+        #report final condition
+        runner.registerFinalCondition(f'#{altered_instances} space infiltration objects were altered affecting a total area of {affected_area_si:.2f} m^2 ({affected_area_ip:.2f} ft^2).')
+        
+        ####################### Calculate Embodied Carbon################
 
         # Print the number of sub-surfaces before processing
-        sub_surfaces = model.getSubSurfaces()
-        runner.registerInfo(f"Total sub-surfaces found: {len(sub_surfaces)}")
+        sub_surfaces = []
+        for space in spaces:
+            for surface in space.surfaces():
+                for subsurface in surface.subSurfaces():
+                    sub_surfaces.append(subsurface)
         # List storing subsurface object subject to change, here we want to catch "Name: Sub Surface 2, Surface Type: FixedWindow, Space Name: Space 2"
         sub_surfaces_to_change = []
         # loop through sub surfaces
@@ -586,41 +591,17 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
             subsurface_dict[subsurface_name]["frame"]["renovation_option"] = wf_option
             subsurface_dict[subsurface_name]["caulking"]["renovation_option"] = caulking_option
             subsurface_dict[subsurface_name]["film"]["renovation_option"] = film_option
-            subsurface_dict[subsurface_name]["weatherstrip"]["renovation_option"] = "none"
-            if weatherstrip_option != "none" and subsurface.subSurfaceType() == "OperableWindow":
-                subsurface_dict[subsurface_name]["weatherstrip"]["renovation_option"] = weatherstrip_option # weatherstrip is not applicable to non-operable windows
-            elif weatherstrip_option != "none" and subsurface.subSurfaceType() != "OperableWindow":
+            subsurface_dict[subsurface_name]["weatherstrip"]["renovation_option"] = weatherstrip_option
+            if weatherstrip_option != "none" and subsurface.subSurfaceType() != "OperableWindow":
                 runner.registerInfo(f"Weatherstrip option is selected but {subsurface.nameString()} is not an operable window, skip applying weatherstrip to this subsurface.")
             subsurface_dict[subsurface_name]["window"]["renovation_option"] = window_option
 
-            #initialize total embodied carbon of window renovation in this subsurface
-            subsurface_dict[subsurface_name]["window_embodied_carbon_kg_co2_eq"] = 0.0
             #calculate and store subsurface dimension
             subsurface_dict[subsurface_name]["dimension"] = calculate_geometry(self, subsurface)
 
             # calculate glazing area and caulking material consumption
             #reference: https://bigladdersoftware.com/epx/docs/9-3/input-output-reference/group-thermal-zone-description-geometry.html#windowpropertyframeanddivider
-            if subsurface.windowPropertyFrameAndDivider().is_initialized(): # check if frame_and_divider exist in selected subsurface
-                frame = subsurface.windowPropertyFrameAndDivider().get()
-                frame_name = frame.nameString()
-                frame_width = float(frame.frameWidth()) # need to subtract from total width and length to get glazing area
-
-                # handle the case when divider exist
-                if frame.numberOfHorizontalDividers() != 0 or frame.numberOfVerticalDividers() != 0:
-                    divider_width = float(frame.dividerWidth())
-                    num_hori_divider = frame.numberOfHorizontalDividers() # integer, number of horizontal dividers
-                    num_verti_divider = frame.numberOfVerticalDividers() # integer, number of vertical dividers
-                else:
-                    divider_width = 0.0
-                    num_hori_divider = 0
-                    num_verti_divider = 0   
-                    runner.registerInfo(f"In {subsurface.nameString()}'s Frame {frame_name}: no divider")
-
-                runner.registerInfo(f"In {subsurface.nameString()}'s Frame and divider: {frame_name},"
-                                    f"Frame Width: {frame_width} m"
-                                    f"Divider width: {divider_width}m")
-            else:
-                runner.registerInfo(f"In {subsurface.nameString()}: no frame and divider")
+            frame_width, divider_width, num_hori_divider, num_verti_divider = self.get_frame_and_divider_dimension(runner, subsurface)
 
             window_width = float(subsurface_dict[subsurface_name]["dimension"]["width_m"])
             window_length = float(subsurface_dict[subsurface_name]["dimension"]["length_m"])
@@ -747,38 +728,11 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
                     subsurface_dict[subsurface_name][material_name]["gwp_per_m"] = None
                     continue
 
-                # collect  GWP values per functional unit
-                gwp_values = {}
-                gwp_values["gwp_per_m2"] = []
-                gwp_values["gwp_per_kg"] = []
-                gwp_values["gwp_per_m3"] = []
-                gwp_values["gwp_per_m"] = []
+                gwp_values, thickness_summary = self.extract_gwp_and_thickness_from_epd(length_per_unit, epd_data)
+
                 # collect thickness strings from EPDs if available
-                thickness_summary = []
+                subsurface_dict[subsurface_name][material_name]["thickness_list"] = thickness_summary
 
-                for idx, epd in enumerate(epd_data,start = 1):
-                    parsed_data = parse_product_epd(epd)
-
-                    gwp_per_m2 = parsed_data["gwp_per_m2 (kg CO2 eq/m2)"]
-                    if gwp_per_m2 != None:
-                        gwp_values["gwp_per_m2"].append(float(gwp_per_m2))
-
-                    gwp_per_kg = parsed_data["gwp_per_kg (kg CO2 eq/kg)"]
-                    if gwp_per_kg != None:
-                        gwp_values["gwp_per_kg"].append(float(gwp_per_kg))
-
-                    gwp_per_m3 = parsed_data["gwp_per_m3 (kg CO2 eq/m3)"]
-                    if gwp_per_m3 != None:
-                        gwp_values["gwp_per_m3"].append(float(gwp_per_m3))
-
-                    gwp_per_m = gwp_per_kg * extract_numeric_value(parsed_data["mass_per_declared_unit"])/length_per_unit
-                    if gwp_per_m != None:
-                        gwp_values["gwp_per_m"].append(float(gwp_per_m))
-
-                    thickness = parsed_data["thickness"]
-                    if thickness != None:
-                        thickness_summary.append(thickness)
-                
                 # extract gwp statistics
                 for functional_unit, list in gwp_values.items():
                     if len(list) == 0:
@@ -796,8 +750,7 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
                         gwp = float(np.median(list))
                     # store gwp value
                     subsurface_dict[subsurface_name][material_name][functional_unit] = gwp
-                    subsurface_dict[subsurface_name][material_name]["thickness_list"] = thickness_summary
-
+                    
                 # multipliers for calculating embodied carbon over analysis period
                 multiplier = lifetime_multiplier(subsurface_dict[subsurface_name][material_name]["lifetime"], analysis_period)
 
@@ -836,8 +789,64 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
             additional_properties.setFeature("subsurface_name", subsurface_name)
             additional_properties.setFeature("embodied_carbon_kg_co2_eq", subsurface_dict[subsurface_name]["window_renovation_embodied_carbon_kg_co2_eq"])
 
-        #pp.pprint(subsurface_dict)
+        pp.pprint(subsurface_dict)
         return True
+
+    def extract_gwp_and_thickness_from_epd(self, length_per_unit, epd_data):
+        gwp_values = {}
+        gwp_values["gwp_per_m2"] = []
+        gwp_values["gwp_per_kg"] = []
+        gwp_values["gwp_per_m3"] = []
+        gwp_values["gwp_per_m"] = []
+        thickness_summary = []
+
+        for idx, epd in enumerate(epd_data,start = 1):
+            parsed_data = parse_product_epd(epd)
+
+            gwp_per_m2 = parsed_data["gwp_per_m2 (kg CO2 eq/m2)"]
+            if gwp_per_m2 != None:
+                gwp_values["gwp_per_m2"].append(float(gwp_per_m2))
+
+            gwp_per_kg = parsed_data["gwp_per_kg (kg CO2 eq/kg)"]
+            if gwp_per_kg != None:
+                gwp_values["gwp_per_kg"].append(float(gwp_per_kg))
+
+            gwp_per_m3 = parsed_data["gwp_per_m3 (kg CO2 eq/m3)"]
+            if gwp_per_m3 != None:
+                gwp_values["gwp_per_m3"].append(float(gwp_per_m3))
+
+            gwp_per_m = gwp_per_kg * extract_numeric_value(parsed_data["mass_per_declared_unit"])/length_per_unit
+            if gwp_per_m != None:
+                gwp_values["gwp_per_m"].append(float(gwp_per_m))
+
+            thickness = parsed_data["thickness"]
+            if thickness != None:
+                thickness_summary.append(thickness)
+        return gwp_values,thickness_summary
+
+    def get_frame_and_divider_dimension(self, runner, subsurface):
+        if subsurface.windowPropertyFrameAndDivider().is_initialized(): # check if frame_and_divider exist in selected subsurface
+            frame = subsurface.windowPropertyFrameAndDivider().get()
+            frame_name = frame.nameString()
+            frame_width = float(frame.frameWidth()) # need to subtract from total width and length to get glazing area
+
+                # handle the case when divider exist
+            if frame.numberOfHorizontalDividers() != 0 or frame.numberOfVerticalDividers() != 0:
+                divider_width = float(frame.dividerWidth())
+                num_hori_divider = frame.numberOfHorizontalDividers() # integer, number of horizontal dividers
+                num_verti_divider = frame.numberOfVerticalDividers() # integer, number of vertical dividers
+            else:
+                divider_width = 0.0
+                num_hori_divider = 0
+                num_verti_divider = 0   
+                runner.registerInfo(f"In {subsurface.nameString()}'s Frame {frame_name}: no divider")
+
+            runner.registerInfo(f"In {subsurface.nameString()}'s Frame and divider: {frame_name},"
+                                    f"Frame Width: {frame_width} m"
+                                    f"Divider width: {divider_width}m")
+        else:
+            runner.registerInfo(f"In {subsurface.nameString()}: no frame and divider")
+        return frame_width,divider_width,num_hori_divider,num_verti_divider
 
 # Register the measure
 WindowEnhancement().registerWithApplication()
