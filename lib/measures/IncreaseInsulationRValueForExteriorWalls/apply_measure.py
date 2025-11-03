@@ -1,6 +1,20 @@
 from pathlib import Path
 import openstudio
 from measure import IncreaseInsulationRValueForExteriorWalls
+import configparser
+import os
+
+# read API Token from local
+script_dir = os.path.dirname(os.path.abspath(__file__))
+repo_root = os.path.abspath(os.path.join(script_dir, "../../.."))
+config_path = os.path.join(repo_root, "config.ini")
+
+if not os.path.exists(config_path):
+    raise FileNotFoundError(f"Config file not found: {config_path}")
+
+config = configparser.ConfigParser()
+config.read(config_path)
+API_TOKEN= config["EC3_API_TOKEN"]["API_TOKEN"]
 
 def run_measure():
     CURRENT_DIR_PATH = Path(__file__).parent.absolute()
@@ -34,7 +48,7 @@ def run_measure():
 
     # Set required and optional inputs
     set_arg("r_value", 60.0)
-    set_arg("api_key", "Obtain the key from EC3 website")
+    set_arg("api_key", API_TOKEN)
     set_arg("insulation_material_type", "Fiberglass")
     set_arg("insulation_material_lifetime", 30)
     set_arg("insulation_thermal_conductivity", 0.0)
