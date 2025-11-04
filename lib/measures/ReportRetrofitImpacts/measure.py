@@ -8,6 +8,7 @@ import pandas as pd
 from pathlib import Path
 from openpyxl import load_workbook
 import plotly.graph_objects as go
+import requests
 
 CURRENT_DIR_PATH = Path(__file__).absolute()
 optimization_excel_path = CURRENT_DIR_PATH.parent / 'resources' / 'optimization.xlsx'
@@ -15,6 +16,11 @@ new_optimization_excel_output_path = CURRENT_DIR_PATH.parent / 'resources' / 'op
 rsmeans_data_path = CURRENT_DIR_PATH.parent / 'resources' / 'Master_Format_Codes.xlsx'
 
 class ECReport(openstudio.measure.ReportingMeasure):
+    def __init__(self):
+        super().__init__()
+
+        self.material_data = {}
+
     def name(self):
         return "ReportAdditionalProperties"
 
@@ -23,10 +29,6 @@ class ECReport(openstudio.measure.ReportingMeasure):
 
     def modeler_description(self):
         return "Traverses the model and extracts data from AdditionalProperties objects."
-
-    def __init__(self):
-        super().__init__()
-        self.material_data = {}
 
     def parse_workspace_objects(self, objects):
         """Processes a list of OS:AdditionalProperties objects and returns the total numeric value."""
@@ -100,13 +102,17 @@ class ECReport(openstudio.measure.ReportingMeasure):
             fig.add_trace(
                 go.Scatterpolar(
                     theta = factor_values["Factor"],
-                    r = factor_values["Normalized_Scenario_" + str (scenario)], name = "Scenario_" + str(scenario) 
+                    r = factor_values["Normalized_Scenario_" + str (scenario)], name = "Scenario_" + str(scenario)
                 ))
 
         fig.show()
 
     def pull_rsmeans_cost(self, sheet_name, code_3):
-        """Pulls RSMeans cost data from the Excel file. Currently, user needs to provide sheet name and Column E value from Master Format Codes"""
+        """
+        Pulls RSMeans cost data from the Excel file. Currently, user needs to provide
+        sheet name and Column E value from Master Format Codes
+        """
+        #
         rsmeans_data = pd.read_excel(rsmeans_data_path, sheet_name=sheet_name)
         product_cost = rsmeans_data.loc[rsmeans_data['Code 3'] == code_3, 'Total Incl O&P'].values
         if len(product_cost) > 0:
@@ -114,6 +120,23 @@ class ECReport(openstudio.measure.ReportingMeasure):
         else:
             print("No cost found for the given code.")
         return
+    def fetch_rsmeans_results (request):
+        headers = {
+        'grant_type': 'client_credentials',
+        'client_id': 'rsm-api-nrel',
+        'client_secret': '8b3bb692-569e-4a69-919c-2e2e1247326a',
+        'scope': 'rsm_api:costdata'
+        }
+
+        base_url = ""
+        calculation_endpoint = base_url + ""
+
+        response = requests.post(calculation_endpoint,
+                                 headers=headers,
+                                 json=request,
+                                 verify=False).json
+        return response
+
 
     def run(self, runner, model):
         self.material_data.clear()

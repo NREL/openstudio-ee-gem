@@ -3,8 +3,8 @@ import sys
 from pathlib import Path
 
 # Load model
-CURRENT_DIR_PATH = Path(__file__).parent.absolute()
-model_path = CURRENT_DIR_PATH / "example_model_with_enhancements.osm"
+CURRENT_DIR_PATH = Path(__file__).parent.absolute() #current directory path
+model_path = CURRENT_DIR_PATH / "example_model_with_AdditionalProperties.osm" # path to open studio model
 
 translator = openstudio.osversion.VersionTranslator()
 model_opt = translator.loadModel(openstudio.toPath(str(model_path)))
@@ -56,3 +56,4 @@ print(f"\nTotal GWP: {total_gwp}")
 del model
 del model_opt
 del translator
+
