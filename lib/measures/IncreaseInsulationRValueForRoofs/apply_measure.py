@@ -1,9 +1,19 @@
 from pathlib import Path
+from typing import Optional
 import sys, argparse, os, configparser
 import openstudio
+
+# --- make local imports robust ---
+HERE = Path(__file__).parent.resolve()
+if str(HERE) not in sys.path:
+    sys.path.insert(0, str(HERE))                 # for measure.py
+if str(HERE / "resources") not in sys.path:
+    sys.path.insert(0, str(HERE / "resources"))   # for resources/EC3_lookup.py
+
 from measure import IncreaseInsulationRValueForRoofs
 
-def find_model_path(default_dir: Path) -> Path | None:
+
+def find_model_path(default_dir: Path) -> Optional[Path]:
     candidate = default_dir / "tests/example_model.osm"
     if candidate.exists() and candidate.is_file() and candidate.stat().st_size > 0:
         return candidate
@@ -23,19 +33,24 @@ def find_model_path(default_dir: Path) -> Path | None:
         pass
     return None
 
-def list_dir_sample(dirpath: Path, label: str):
+
+def list_dir_sample(dirpath: Path, label: str) -> None:
     if not dirpath.exists():
         return
-    print(f"\n[{label}] {dirpath}")
-    for p in sorted(dirpath.iterdir()):
-        kind = "DIR " if p.is_dir() else "FILE"
-        print(f" - {kind:<4} {p.name}")
+    print("\n[{}] {}".format(label, dirpath))
+    try:
+        for p in sorted(dirpath.iterdir()):
+            kind = "DIR " if p.is_dir() else "FILE"
+            print(" - {:<4} {}".format(kind, p.name))
+    except Exception as e:
+        print("(could not list {}: {})".format(dirpath, e))
 
-def load_model_or_new(model_path: Path | None) -> openstudio.model.Model:
+
+def load_model_or_new(model_path: Optional[Path]) -> openstudio.model.Model:
     if model_path is None:
         print("No .osm found — creating a new empty Model so the measure can run.")
         return openstudio.model.Model()
-    print(f"Attempting to load model: {model_path}")
+    print("Attempting to load model: {}".format(model_path))
     vt = openstudio.osversion.VersionTranslator()
     opt = vt.loadModel(openstudio.toPath(str(model_path)))
     if opt.is_initialized():
@@ -43,8 +58,9 @@ def load_model_or_new(model_path: Path | None) -> openstudio.model.Model:
     opt2 = openstudio.model.Model.load(openstudio.toPath(str(model_path)))
     if opt2.is_initialized():
         return opt2.get()
-    print(f"Failed to load OSM at {model_path}. Creating a blank model instead.")
+    print("Failed to load OSM at {}. Creating a blank model instead.".format(model_path))
     return openstudio.model.Model()
+
 
 def get_api_key(cur_dir: Path) -> str:
     api_key = os.getenv("EC3_API_TOKEN", "").strip()
@@ -60,20 +76,26 @@ def get_api_key(cur_dir: Path) -> str:
                 pass
     return "Obtain the key from EC3 website"
 
-def run_measure():
+
+def run_measure() -> None:
     CURRENT_DIR = Path(__file__).parent.resolve()
     list_dir_sample(CURRENT_DIR, "Current dir")
     list_dir_sample(CURRENT_DIR / "tests", "tests dir (if exists)")
 
     parser = argparse.ArgumentParser()
     parser.add_argument("--model", type=str, default="", help="Path to an OSM file to load")
-    args = parser.parse_args()
+    cli_args = parser.parse_args()
 
-    model_path = Path(args.model).resolve() if args.model else find_model_path(CURRENT_DIR)
+    model_path: Optional[Path]
+    if cli_args.model:
+        model_path = Path(cli_args.model).resolve()
+    else:
+        model_path = find_model_path(CURRENT_DIR)
+
     if model_path is None or not model_path.exists():
         print("WARNING: Could not locate an example .osm; continuing with a new empty model.")
     else:
-        print(f"Using model: {model_path}")
+        print("Using model: {}".format(model_path))
 
     model = load_model_or_new(model_path)
     osw = openstudio.WorkflowJSON()
@@ -89,9 +111,9 @@ def run_measure():
             a.setValue(value)
             arg_map[name] = a
         else:
-            print(f"Argument '{name}' not found in this measure.")
+            print("Argument '{}' not found in this measure.".format(name))
 
-    # --- Print arguments cleanly ---
+    # --- Print arguments cleanly (portable) ---
     print("\n== Measure Arguments ==")
     for i in range(args_vec.size()):
         a = args_vec[i]
@@ -100,7 +122,8 @@ def run_measure():
             default_str = a.defaultValueAsString() if a.hasDefaultValue() else ""
         except Exception:
             default_str = ""
-        print(f"  - {a.name()} (required={req}, default={default_str})")
+        line = "  - {} (required={}, default={})".format(a.name(), req, default_str)
+        print(line)
 
     # --- Set arguments ---
     set_arg("r_value", 60.0)
@@ -120,7 +143,7 @@ def run_measure():
     result_ok = measure.run(model, runner, arg_map)
     result = runner.result()
 
-    print("\n== RESULT =", result.value().valueName(), "==")
+    print("\n== RESULT = {} ==".format(result.value().valueName()))
     for info in result.info():
         print("INFO   :", info.logMessage())
     for warn in result.warnings():
@@ -134,8 +157,9 @@ def run_measure():
 
     ok = model.save(openstudio.toPath(str(save_path)), True)
     if not ok:
-        raise RuntimeError(f"Failed to save model to {save_path}")
-    print(f"\nSaved: {save_path}")
+        raise RuntimeError("Failed to save model to {}".format(save_path))
+    print("\nSaved: {}".format(save_path))
+
 
 if __name__ == "__main__":
     run_measure()
