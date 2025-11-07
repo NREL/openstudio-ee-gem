@@ -6,14 +6,7 @@
 import openstudio
 import numpy as np
 import pandas as pd
-
-# EC3 helpers you already use for walls
-from resources.EC3_lookup import (
-    generate_url_byname,
-    fetch_epd_data,
-    parse_product_epd,
-    lifetime_multiplier
-)
+from resources.EC3_lookup import *
 
 class IncreaseInsulationRValueForRoofs(openstudio.measure.ModelMeasure):
     # ---- Metadata ----
@@ -30,7 +23,6 @@ class IncreaseInsulationRValueForRoofs(openstudio.measure.ModelMeasure):
                 "Also computes embodied carbon for *added* insulation using EC3 (EPDs) and saves results "
                 "on the construction via additionalProperties.")
 
-    # ---- Static lists ----
     @staticmethod
     def gwp_statistics():
         return ["minimum", "maximum", "mean", "median"]
@@ -38,15 +30,19 @@ class IncreaseInsulationRValueForRoofs(openstudio.measure.ModelMeasure):
     @staticmethod
     def insulation_material_types():
         return [
-            "Mineral Wool",
+            "Mineral Wool Light Density Board",
+            "Mineral Wool Heavy Density Board",
             "Cellulose",
             "Fiberglass",
-            "Expanded Polystyrene (EPS)",
-            "Extruded Polystyrene (XPS)",
-            "Graphite Polystyrene (GPS)",
-            "Polyiso (ISO)",
-            "Expanded Polyethylene",
-            "Other"
+            "Expanded Polystyrene (EPS) Foam Board",
+            "Extruded Polystyrene (XPS) Foam Board",
+            "Graphite Polystyrene (GPS) Foam Board",
+            "Polyiso (ISO) Foam Board",
+            "Expanded Polyethylene Foam Board",
+            "Blown Cellulose",
+            "Blown Fiberglass",
+            "Blown Mineral Wool",
+            "Blown Wool"
         ]
 
     # ---- Helpers ----
@@ -73,11 +69,12 @@ class IncreaseInsulationRValueForRoofs(openstudio.measure.ModelMeasure):
         elif material_type == "Extruded Polystyrene (XPS)":
             return generate_url_byname(category="bf1c8882d7784db4b10d9d5698b8b5cc", name_like="xps")
         elif material_type == "Graphite Polystyrene (GPS)":
-            return generate_url_byname(category="56f3c898f94b459eb18feadeb792ab88", name_like="Graphite Polystyrene")
+            return generate_url_byname(category="56f3c898f94b459eb18feadeb792ab88", name_like="Graphite Polystyrene Board")
         elif material_type == "Polyiso (ISO)":
             return generate_url_byname(category="bf1c8882d7784db4b10d9d5698b8b5cc", name_like="polyiso")
         elif material_type == "Expanded Polyethylene":
-            return generate_url_byname(category="56f3c898f94b459eb18feadeb792ab88", name_like="ArmaPET")
+            return generate_url_byname(category="56f3c898f94b459eb18feadeb792ab88", name_like="ArmaPET", plant_geography = 150)
+        
         else:
             return None
 
