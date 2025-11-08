@@ -11,7 +11,17 @@ if str(HERE / "resources") not in sys.path:
     sys.path.insert(0, str(HERE / "resources"))   # for resources/EC3_lookup.py
 
 from measure import IncreaseInsulationRValueForRoofs
+# read API Token 
+script_dir = os.path.dirname(os.path.abspath(__file__))
+repo_root = os.path.abspath(os.path.join(script_dir, "../../.."))
+config_path = os.path.join(repo_root, "config.ini")
 
+if not os.path.exists(config_path):
+    raise FileNotFoundError(f"Config file not found: {config_path}")
+
+config = configparser.ConfigParser()
+config.read(config_path)
+API_TOKEN= config["EC3_API_TOKEN"]["API_TOKEN"]
 
 def find_model_path(default_dir: Path) -> Optional[Path]:
     candidate = default_dir / "tests/example_model.osm"
@@ -126,16 +136,12 @@ def run_measure() -> None:
         print(line)
 
     # --- Set arguments ---
-    set_arg("r_value", 60.0)
-    set_arg("allow_reduction", True)
-    set_arg("material_cost_increase_ip", 0.0)
-    set_arg("one_time_retrofit_cost_ip", 0.0)
-    set_arg("years_until_retrofit_cost", 0)
+    set_arg("r_value", 75.0)
 
     set_arg("analysis_period", 30)
     set_arg("gwp_statistic", "median")
-    set_arg("api_key", get_api_key(CURRENT_DIR))
-    set_arg("insulation_material_type", "Polyiso (ISO)")
+    set_arg("api_key", API_TOKEN)
+    set_arg("insulation_material_type", "Blown Fiberglass")
     set_arg("insulation_material_lifetime", 30)
     set_arg("insulation_thermal_conductivity", 0.0)
     set_arg("insulation_material_density", 0.0)
