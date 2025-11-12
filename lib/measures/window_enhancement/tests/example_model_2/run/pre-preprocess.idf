@@ -7532,11 +7532,11 @@ Output:Table:SummaryReports,
   AllSummary;                             !- Report Name 1
 
 Site:Location,
-  Denver Intl Ap,                         !- Name
-  39.83,                                  !- Latitude {deg}
-  -104.65,                                !- Longitude {deg}
+  Golden,                                 !- Name
+  39.74,                                  !- Latitude {deg}
+  -105.18,                                !- Longitude {deg}
   -7,                                     !- Time Zone {hr}
-  1650;                                   !- Elevation {m}
+  1829;                                   !- Elevation {m}
 
 Output:Variable,
   *,                                      !- Key Value

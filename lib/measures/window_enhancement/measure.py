@@ -96,7 +96,7 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
         # make an argument for air infiltration reduction percentage
         space_infiltration_reduction_percent = openstudio.measure.OSArgument.makeDoubleArgument("space_infiltration_reduction_percent", True)
         space_infiltration_reduction_percent.setDisplayName("Space Infiltration Power Reduction")
-        space_infiltration_reduction_percent.setDefaultValue(30.0)
+        space_infiltration_reduction_percent.setDefaultValue(50.0)
         space_infiltration_reduction_percent.setUnits("%")
         args.append(space_infiltration_reduction_percent)
 
@@ -453,6 +453,7 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
                 updated_instance_name = space_type_infiltration_object.setName(
                     f"{space_type_infiltration_object.nameString()} {space_infiltration_reduction_percent} percent reduction"
                 )
+                runner.registerInfo(f"Altered space infiltration object: {updated_instance_name} in space type: {space_type.nameString()}")
                 altered_instances += 1
 
         # Get spaces in the model
@@ -487,17 +488,16 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
                 updated_instance_name = space_infiltration_object.setName(
                     f"{space_infiltration_object.nameString()} {space_infiltration_reduction_percent} percent reduction"
                 )
+                runner.registerInfo(f"Altered space infiltration object: {updated_instance_name} in space: {space.nameString()}")
                 altered_instances += 1
 
         if altered_instances == 0:
             runner.registerInfo(f"No space infiltration objects were altered for space type '{space_type.nameString()}'.")
-        altered_instances = 0
 
-        # only add LifeCyCyleCostItem if the user entered some non 0 cost values
         affected_area_ip = openstudio.convert(affected_area_si, 'm^2', 'ft^2').get()
 
         #report final condition
-        runner.registerFinalCondition(f'#{altered_instances} space infiltration objects were altered affecting a total area of {affected_area_si:.2f} m^2 ({affected_area_ip:.2f} ft^2).')
+        runner.registerFinalCondition(f'{altered_instances} space infiltration objects were altered affecting a total area of {affected_area_si:.2f} m^2 ({affected_area_ip:.2f} ft^2).')
         
         ####################### Calculate Embodied Carbon################
 
@@ -601,7 +601,7 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
 
             # calculate glazing area and caulking material consumption
             #reference: https://bigladdersoftware.com/epx/docs/9-3/input-output-reference/group-thermal-zone-description-geometry.html#windowpropertyframeanddivider
-            frame_width, divider_width, num_hori_divider, num_verti_divider = self.get_frame_and_divider_dimension(runner, subsurface)
+            frame_width, divider_width, num_hori_divider, num_verti_divider = self.get_frame_and_divider_dimension(runner, subsurface) if subsurface.windowPropertyFrameAndDivider().is_initialized() else (0.0, 0.0, 0, 0)
 
             window_width = float(subsurface_dict[subsurface_name]["dimension"]["width_m"])
             window_length = float(subsurface_dict[subsurface_name]["dimension"]["length_m"])

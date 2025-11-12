@@ -1,4 +1,4 @@
-Program Version,EnergyPlus, Version 24.1.0-9d7789a3ac, YMD=2025.06.12 18:41
+Program Version,EnergyPlus, Version 24.1.0-9d7789a3ac, YMD=2025.11.12 12:58
 ! <Version>, Version ID
  Version, 24.1
 ! <Timesteps per Hour>, #TimeSteps, Minutes per TimeStep {minutes}
@@ -14,7 +14,7 @@ Program Version,EnergyPlus, Version 24.1.0-9d7789a3ac, YMD=2025.06.12 18:41
 ! <Site:GroundTemperature:BuildingSurface>,Jan{C},Feb{C},Mar{C},Apr{C},May{C},Jun{C},Jul{C},Aug{C},Sep{C},Oct{C},Nov{C},Dec{C}
  Site:GroundTemperature:BuildingSurface,  18.00,  18.00,  18.00,  18.00,  18.00,  18.00,  18.00,  18.00,  18.00,  18.00,  18.00,  18.00
 ! <Site:GroundTemperature:FCfactorMethod>,Jan{C},Feb{C},Mar{C},Apr{C},May{C},Jun{C},Jul{C},Aug{C},Sep{C},Oct{C},Nov{C},Dec{C}
- Site:GroundTemperature:FCfactorMethod,   0.36,   2.33,   6.17,   9.79,  16.66,  20.28,  21.27,  19.44,  15.20,   9.93,   4.73,   1.30
+ Site:GroundTemperature:FCfactorMethod,   0.28,   2.20,   5.93,   9.47,  16.16,  19.68,  20.65,  18.87,  14.74,   9.60,   4.54,   1.19
 ! <Site:GroundTemperature:Shallow>,Jan{C},Feb{C},Mar{C},Apr{C},May{C},Jun{C},Jul{C},Aug{C},Sep{C},Oct{C},Nov{C},Dec{C}
  Site:GroundTemperature:Shallow,  13.00,  13.00,  13.00,  13.00,  13.00,  13.00,  13.00,  13.00,  13.00,  13.00,  13.00,  13.00
 ! <Site:GroundTemperature:Deep>,Jan{C},Feb{C},Mar{C},Apr{C},May{C},Jun{C},Jul{C},Aug{C},Sep{C},Oct{C},Nov{C},Dec{C}
@@ -30,7 +30,7 @@ Program Version,EnergyPlus, Version 24.1.0-9d7789a3ac, YMD=2025.06.12 18:41
 ! <Environment:Weather Station>,Wind Sensor Height Above Ground {m},Wind Speed Profile Exponent {},Wind Speed Profile Boundary Layer Thickness {m},Air Temperature Sensor Height Above Ground {m},Wind Speed Modifier Coefficient-Internal,Temperature Modifier Coefficient-Internal
 Environment:Weather Station,10.000,0.140,270.000,1.500,1.586,9.750E-003
 ! <Site:Location>, Location Name, Latitude {N+/S- Deg}, Longitude {E+/W- Deg},  Time Zone Number {GMT+/-}, Elevation {m},  Standard Pressure at Elevation {Pa}, Standard RhoAir at Elevation
-Site:Location,Denver Intl Ap CO USA TMY3 WMO#=725650,39.83,-104.65,-7.00,1650.00,83011,0.9866
+Site:Location,Golden CO USA Custom-724666 WMO#=724666,39.74,-105.18,-7.00,1829.00,81198,0.9651
 ! <Site Water Mains Temperature Information>,Calculation Method{},Water Mains Temperature Schedule Name{},Annual Average Outdoor Air Temperature{C},Maximum Difference In Monthly Average Outdoor Air Temperatures{deltaC},Fixed Default Water Mains Temperature{C}
 Site Water Mains Temperature Information,FixedDefault,NA,NA,NA,10.0
 ! <Building Information>, Building Name,North Axis {deg},Terrain,  Loads Convergence Tolerance Value,Temperature Convergence Tolerance Value,  Solar Distribution,Maximum Number of Warmup Days,Minimum Number of Warmup Days
@@ -126,10 +126,10 @@ Environment:WarmupDays,  4
 ! <Tabular Report>,Style,Unit Conversion
 Tabular Report,HTML,None
 ! <Warmup Convergence Information>,Zone Name,Environment Type/Name,Average Warmup Temperature Difference {deltaC},Std Dev Warmup Temperature Difference {deltaC},Max Temperature Pass/Fail Convergence,Min Temperature Pass/Fail Convergence,Average Warmup Load Difference {W},Std Dev Warmup Load Difference {W},Heating Load Pass/Fail Convergence,Cooling Load Pass/Fail Convergence
- Warmup Convergence Information,THERMAL ZONE: SPACE 101,RunPeriod: RUN PERIOD 1,5.5887186192E-002,4.7086125347E-002,Pass,Pass,0.0000000000,0.0000000000,Pass,Pass
- Warmup Convergence Information,THERMAL ZONE: SPACE 102,RunPeriod: RUN PERIOD 1,5.7620308953E-002,3.2789067981E-002,Pass,Pass,0.0000000000,0.0000000000,Pass,Pass
- Warmup Convergence Information,THERMAL ZONE: SPACE 103,RunPeriod: RUN PERIOD 1,4.8631451653E-002,3.7560236250E-002,Pass,Pass,0.0000000000,0.0000000000,Pass,Pass
- Warmup Convergence Information,THERMAL ZONE: SPACE 104,RunPeriod: RUN PERIOD 1,0.1278069652,8.7110143242E-002,Pass,Pass,0.0000000000,0.0000000000,Pass,Pass
+ Warmup Convergence Information,THERMAL ZONE: SPACE 101,RunPeriod: RUN PERIOD 1,7.0093830945E-002,6.7656076269E-002,Pass,Pass,0.0000000000,0.0000000000,Pass,Pass
+ Warmup Convergence Information,THERMAL ZONE: SPACE 102,RunPeriod: RUN PERIOD 1,6.0666125615E-002,4.1748485706E-002,Pass,Pass,0.0000000000,0.0000000000,Pass,Pass
+ Warmup Convergence Information,THERMAL ZONE: SPACE 103,RunPeriod: RUN PERIOD 1,4.4654601040E-002,4.4855590657E-002,Pass,Pass,0.0000000000,0.0000000000,Pass,Pass
+ Warmup Convergence Information,THERMAL ZONE: SPACE 104,RunPeriod: RUN PERIOD 1,9.0198418270E-002,7.1474101867E-002,Pass,Pass,0.0000000000,0.0000000000,Pass,Pass
 ! <Program Control Information:Threads/Parallel Sims>, Threading Supported,Maximum Number of Threads, Env Set Threads (OMP_NUM_THREADS), EP Env Set Threads (EP_OMP_NUM_THREADS), IDF Set Threads, Number of Threads Used (Interior Radiant Exchange), Number Nominal Surfaces, Number Parallel Sims
 Program Control:Threads/Parallel Sims, No,1, N/A, N/A, N/A, N/A, N/A, N/A
 End of Data
