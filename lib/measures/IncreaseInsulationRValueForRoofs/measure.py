@@ -398,35 +398,42 @@ class IncreaseInsulationRValueForRoofs(openstudio.measure.ModelMeasure):
 
         # Swap default construction sets for roof where applicable
         for dcs in model.getDefaultConstructionSets():
-            if dcs.directUseCount() > 0:
-                dsc_opt = dcs.defaultExteriorSurfaceConstructions()
-                if dsc_opt.is_initialized():
-                    dsc = dsc_opt.get()
-                    rc_opt = dsc.roofCeilingConstruction()
-                    if rc_opt.is_initialized():
-                        base_name = rc_opt.get().nameString()
-                        if base_name in constructions_hash_old_new:
-                            new_dcs = dcs.clone(model).to_DefaultConstructionSet().get()
-                            new_dsc = dsc.clone(model).to_DefaultSurfaceConstructions().get()
-                            new_dcs.setName(f"{dcs.nameString()} adj roof insulation")
-                            new_dsc.setName(f"{dsc.nameString()} adj roof insulation")
-                            new_dcs.setDefaultExteriorSurfaceConstructions(new_dsc)
-                            new_dsc.setRoofCeilingConstruction(constructions_hash_old_new[base_name])
+            dsc_opt = dcs.defaultExteriorSurfaceConstructions()
+            if dsc_opt.is_initialized():
+                dsc = dsc_opt.get()
+                rc_opt = dsc.roofCeilingConstruction()
+                if rc_opt.is_initialized():
+                    base_name = rc_opt.get().nameString()
+                    if base_name in constructions_hash_old_new:
+                        # Clone and configure new construction set
+                        new_dcs = dcs.clone(model).to_DefaultConstructionSet().get()
+                        new_dsc = dsc.clone(model).to_DefaultSurfaceConstructions().get()
+                        new_dcs.setName(f"{dcs.nameString()} adj roof insulation")
+                        new_dsc.setName(f"{dsc.nameString()} adj roof insulation")
+                        new_dcs.setDefaultExteriorSurfaceConstructions(new_dsc)
+                        new_dsc.setRoofCeilingConstruction(constructions_hash_old_new[base_name])
 
-                            # Replace on sources
-                            for src in dcs.sources():
-                                bldg = src.to_Building()
-                                if bldg.is_initialized():
-                                    bldg.get().setDefaultConstructionSet(new_dcs)
-                                story = src.to_BuildingStory()
-                                if story.is_initialized():
-                                    story.get().setDefaultConstructionSet(new_dcs)
-                                stype = src.to_SpaceType()
-                                if stype.is_initialized():
-                                    stype.get().setDefaultConstructionSet(new_dcs)
-                                sp = src.to_Space()
-                                if sp.is_initialized():
-                                    sp.get().setDefaultConstructionSet(new_dcs)
+                        # Collect sources BEFORE we modify them
+                        sources_to_update = list(dcs.sources())
+                        
+                        # Replace on sources
+                        for src in sources_to_update:
+                            bldg = src.to_Building()
+                            if bldg.is_initialized():
+                                bldg.get().setDefaultConstructionSet(new_dcs)
+                                runner.registerInfo(f"Updated Building with new construction set '{new_dcs.nameString()}'")
+                            story = src.to_BuildingStory()
+                            if story.is_initialized():
+                                story.get().setDefaultConstructionSet(new_dcs)
+                                runner.registerInfo(f"Updated BuildingStory with new construction set '{new_dcs.nameString()}'")
+                            stype = src.to_SpaceType()
+                            if stype.is_initialized():
+                                stype.get().setDefaultConstructionSet(new_dcs)
+                                runner.registerInfo(f"Updated SpaceType '{stype.get().nameString()}' with new construction set '{new_dcs.nameString()}'")
+                            sp = src.to_Space()
+                            if sp.is_initialized():
+                                sp.get().setDefaultConstructionSet(new_dcs)
+                                runner.registerInfo(f"Updated Space '{sp.get().nameString()}' with new construction set '{new_dcs.nameString()}'")
 
         # ===================== EC3 embodied carbon =====================
         # 1) Pull EPDs for the selected insulation material type once

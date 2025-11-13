@@ -3,152 +3,201 @@ Shadowing Combinations
 ..In the following, only the first 10 reference surfaces will be shown.
 ..But all surfaces are used in the calculations.
 ==================================
-Surface=SURFACE 2 is used as Receiving Surface in calculations and is convex.
+Surface=CORE SPACE - STORY GROUND WALL 1 is not used as Receiving Surface in calculations.
 Number of general casting surfaces=0
 Number of back surfaces=0
 Number of receiving sub surfaces=0
 ==================================
-Surface=SURFACE 3 is not used as Receiving Surface in calculations.
+Surface=CORE SPACE - STORY GROUND WALL 2 is not used as Receiving Surface in calculations.
 Number of general casting surfaces=0
 Number of back surfaces=0
 Number of receiving sub surfaces=0
 ==================================
-Surface=SURFACE 4 is used as Receiving Surface in calculations and is convex.
+Surface=CORE SPACE - STORY GROUND WALL 3 is not used as Receiving Surface in calculations.
+Number of general casting surfaces=0
+Number of back surfaces=0
+Number of receiving sub surfaces=0
+==================================
+Surface=CORE SPACE - STORY GROUND WALL 4 is not used as Receiving Surface in calculations.
+Number of general casting surfaces=0
+Number of back surfaces=0
+Number of receiving sub surfaces=0
+==================================
+Surface=CORE SPACE - STORY GROUND FLOOR 1 is not used as Receiving Surface in calculations.
+Number of general casting surfaces=0
+Number of back surfaces=0
+Number of receiving sub surfaces=0
+==================================
+Surface=CORE SPACE - STORY GROUND ROOFCEILING 1 is used as Receiving Surface in calculations and is convex.
+Number of general casting surfaces=0
+Number of back surfaces=0
+Number of receiving sub surfaces=0
+==================================
+Surface=CORE SPACE - STORY GROUND MASS is not used as Receiving Surface in calculations.
+Number of general casting surfaces=0
+Number of back surfaces=0
+Number of receiving sub surfaces=0
+==================================
+Surface=EAST PERIMETER SPACE - STORY GROUND WALL 1 is used as Receiving Surface in calculations and is convex.
 Number of general casting surfaces=0
 Number of back surfaces=0
 Number of receiving sub surfaces=1
-....Surface=SUB SURFACE 1
+....Surface=EAST PERIMETER SPACE - STORY GROUND WALL 1 FIXEDWINDOW 1
 ==================================
-Surface=SUB SURFACE 1 is not used as Receiving Surface in calculations.
+Surface=EAST PERIMETER SPACE - STORY GROUND WALL 1 FIXEDWINDOW 1 is not used as Receiving Surface in calculations.
 Number of general casting surfaces=0
 Number of back surfaces=0
 Number of receiving sub surfaces=0
 ==================================
-Surface=SURFACE 5 is used as Receiving Surface in calculations and is convex.
+Surface=EAST PERIMETER SPACE - STORY GROUND WALL 2 is not used as Receiving Surface in calculations.
 Number of general casting surfaces=0
 Number of back surfaces=0
 Number of receiving sub surfaces=0
 ==================================
-Surface=SURFACE 1 is not used as Receiving Surface in calculations.
+Surface=EAST PERIMETER SPACE - STORY GROUND WALL 3 is not used as Receiving Surface in calculations.
 Number of general casting surfaces=0
 Number of back surfaces=0
 Number of receiving sub surfaces=0
 ==================================
-Surface=SURFACE 6 is used as Receiving Surface in calculations and is convex.
+Surface=EAST PERIMETER SPACE - STORY GROUND WALL 4 is not used as Receiving Surface in calculations.
 Number of general casting surfaces=0
 Number of back surfaces=0
 Number of receiving sub surfaces=0
 ==================================
-Surface=SURFACE 10 is used as Receiving Surface in calculations and is convex.
+Surface=EAST PERIMETER SPACE - STORY GROUND FLOOR 1 is not used as Receiving Surface in calculations.
+Number of general casting surfaces=0
+Number of back surfaces=0
+Number of receiving sub surfaces=0
+==================================
+Surface=EAST PERIMETER SPACE - STORY GROUND ROOFCEILING 1 is used as Receiving Surface in calculations and is convex.
+Number of general casting surfaces=0
+Number of back surfaces=0
+Number of receiving sub surfaces=0
+==================================
+Surface=EAST PERIMETER SPACE - STORY GROUND MASS is not used as Receiving Surface in calculations.
+Number of general casting surfaces=0
+Number of back surfaces=0
+Number of receiving sub surfaces=0
+==================================
+Surface=NORTH PERIMETER SPACE - STORY GROUND WALL 1 is used as Receiving Surface in calculations and is convex.
 Number of general casting surfaces=0
 Number of back surfaces=0
 Number of receiving sub surfaces=1
-....Surface=SUB SURFACE 2
+....Surface=NORTH PERIMETER SPACE - STORY GROUND WALL 1 FIXEDWINDOW 1
 ==================================
-Surface=SUB SURFACE 2 is not used as Receiving Surface in calculations.
+Surface=NORTH PERIMETER SPACE - STORY GROUND WALL 1 FIXEDWINDOW 1 is not used as Receiving Surface in calculations.
 Number of general casting surfaces=0
 Number of back surfaces=0
 Number of receiving sub surfaces=0
 ==================================
-Surface=SURFACE 11 is not used as Receiving Surface in calculations.
+Surface=NORTH PERIMETER SPACE - STORY GROUND WALL 2 is not used as Receiving Surface in calculations.
 Number of general casting surfaces=0
 Number of back surfaces=0
 Number of receiving sub surfaces=0
 ==================================
-Surface=SURFACE 8 is used as Receiving Surface in calculations and is convex.
+Surface=NORTH PERIMETER SPACE - STORY GROUND WALL 3 is not used as Receiving Surface in calculations.
 Number of general casting surfaces=0
 Number of back surfaces=0
 Number of receiving sub surfaces=0
 ==================================
-Surface=SURFACE 9 is not used as Receiving Surface in calculations.
+Surface=NORTH PERIMETER SPACE - STORY GROUND WALL 4 is not used as Receiving Surface in calculations.
 Number of general casting surfaces=0
 Number of back surfaces=0
 Number of receiving sub surfaces=0
 ==================================
-Surface=SURFACE 7 is not used as Receiving Surface in calculations.
+Surface=NORTH PERIMETER SPACE - STORY GROUND FLOOR 1 is not used as Receiving Surface in calculations.
 Number of general casting surfaces=0
 Number of back surfaces=0
 Number of receiving sub surfaces=0
 ==================================
-Surface=SURFACE 12 is used as Receiving Surface in calculations and is convex.
+Surface=NORTH PERIMETER SPACE - STORY GROUND ROOFCEILING 1 is used as Receiving Surface in calculations and is convex.
 Number of general casting surfaces=0
 Number of back surfaces=0
 Number of receiving sub surfaces=0
 ==================================
-Surface=SURFACE 14 is used as Receiving Surface in calculations and is convex.
+Surface=NORTH PERIMETER SPACE - STORY GROUND MASS is not used as Receiving Surface in calculations.
 Number of general casting surfaces=0
 Number of back surfaces=0
 Number of receiving sub surfaces=0
 ==================================
-Surface=SURFACE 15 is not used as Receiving Surface in calculations.
-Number of general casting surfaces=0
-Number of back surfaces=0
-Number of receiving sub surfaces=0
-==================================
-Surface=SURFACE 16 is used as Receiving Surface in calculations and is convex.
+Surface=SOUTH PERIMETER SPACE - STORY GROUND WALL 1 is used as Receiving Surface in calculations and is convex.
 Number of general casting surfaces=0
 Number of back surfaces=0
 Number of receiving sub surfaces=1
-....Surface=SUB SURFACE 3
+....Surface=SOUTH PERIMETER SPACE - STORY GROUND WALL 1 FIXEDWINDOW 1
 ==================================
-Surface=SUB SURFACE 3 is not used as Receiving Surface in calculations.
+Surface=SOUTH PERIMETER SPACE - STORY GROUND WALL 1 FIXEDWINDOW 1 is not used as Receiving Surface in calculations.
 Number of general casting surfaces=0
 Number of back surfaces=0
 Number of receiving sub surfaces=0
 ==================================
-Surface=SURFACE 17 is not used as Receiving Surface in calculations.
+Surface=SOUTH PERIMETER SPACE - STORY GROUND WALL 2 is not used as Receiving Surface in calculations.
 Number of general casting surfaces=0
 Number of back surfaces=0
 Number of receiving sub surfaces=0
 ==================================
-Surface=SURFACE 13 is not used as Receiving Surface in calculations.
+Surface=SOUTH PERIMETER SPACE - STORY GROUND WALL 3 is not used as Receiving Surface in calculations.
 Number of general casting surfaces=0
 Number of back surfaces=0
 Number of receiving sub surfaces=0
 ==================================
-Surface=SURFACE 18 is used as Receiving Surface in calculations and is convex.
+Surface=SOUTH PERIMETER SPACE - STORY GROUND WALL 4 is not used as Receiving Surface in calculations.
+Number of general casting surfaces=0
+Number of back surfaces=0
+Number of receiving sub surfaces=0
+==================================
+Surface=SOUTH PERIMETER SPACE - STORY GROUND FLOOR 1 is not used as Receiving Surface in calculations.
+Number of general casting surfaces=0
+Number of back surfaces=0
+Number of receiving sub surfaces=0
+==================================
+Surface=SOUTH PERIMETER SPACE - STORY GROUND ROOFCEILING 1 is used as Receiving Surface in calculations and is convex.
+Number of general casting surfaces=0
+Number of back surfaces=0
+Number of receiving sub surfaces=0
+==================================
+Surface=SOUTH PERIMETER SPACE - STORY GROUND MASS is not used as Receiving Surface in calculations.
+Number of general casting surfaces=0
+Number of back surfaces=0
+Number of receiving sub surfaces=0
+==================================
+Surface=WEST PERIMETER SPACE - STORY GROUND WALL 1 is not used as Receiving Surface in calculations.
+Number of general casting surfaces=0
+Number of back surfaces=0
+Number of receiving sub surfaces=0
+==================================
+Surface=WEST PERIMETER SPACE - STORY GROUND WALL 2 is not used as Receiving Surface in calculations.
+Number of general casting surfaces=0
+Number of back surfaces=0
+Number of receiving sub surfaces=0
+==================================
+Surface=WEST PERIMETER SPACE - STORY GROUND WALL 3 is not used as Receiving Surface in calculations.
+Number of general casting surfaces=0
+Number of back surfaces=0
+Number of receiving sub surfaces=0
+==================================
+Surface=WEST PERIMETER SPACE - STORY GROUND WALL 4 is used as Receiving Surface in calculations and is convex.
 Number of general casting surfaces=0
 Number of back surfaces=0
 Number of receiving sub surfaces=1
-....Surface=SUB SURFACE 4
+....Surface=WEST PERIMETER SPACE - STORY GROUND WALL 4 FIXEDWINDOW 1
 ==================================
-Surface=SUB SURFACE 4 is not used as Receiving Surface in calculations.
+Surface=WEST PERIMETER SPACE - STORY GROUND WALL 4 FIXEDWINDOW 1 is not used as Receiving Surface in calculations.
 Number of general casting surfaces=0
 Number of back surfaces=0
 Number of receiving sub surfaces=0
 ==================================
-Surface=SURFACE 20 is used as Receiving Surface in calculations and is convex.
-Number of general casting surfaces=0
-Number of back surfaces=0
-Number of receiving sub surfaces=1
-....Surface=SUB SURFACE 5
-==================================
-Surface=SUB SURFACE 5 is not used as Receiving Surface in calculations.
+Surface=WEST PERIMETER SPACE - STORY GROUND FLOOR 1 is not used as Receiving Surface in calculations.
 Number of general casting surfaces=0
 Number of back surfaces=0
 Number of receiving sub surfaces=0
 ==================================
-Surface=SURFACE 21 is not used as Receiving Surface in calculations.
+Surface=WEST PERIMETER SPACE - STORY GROUND ROOFCEILING 1 is used as Receiving Surface in calculations and is convex.
 Number of general casting surfaces=0
 Number of back surfaces=0
 Number of receiving sub surfaces=0
 ==================================
-Surface=SURFACE 22 is used as Receiving Surface in calculations and is convex.
-Number of general casting surfaces=0
-Number of back surfaces=0
-Number of receiving sub surfaces=0
-==================================
-Surface=SURFACE 23 is used as Receiving Surface in calculations and is convex.
-Number of general casting surfaces=0
-Number of back surfaces=0
-Number of receiving sub surfaces=0
-==================================
-Surface=SURFACE 19 is not used as Receiving Surface in calculations.
-Number of general casting surfaces=0
-Number of back surfaces=0
-Number of receiving sub surfaces=0
-==================================
-Surface=SURFACE 24 is used as Receiving Surface in calculations and is convex.
+Surface=WEST PERIMETER SPACE - STORY GROUND MASS is not used as Receiving Surface in calculations.
 Number of general casting surfaces=0
 Number of back surfaces=0
 Number of receiving sub surfaces=0
