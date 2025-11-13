@@ -100,29 +100,29 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
         space_infiltration_reduction_percent.setUnits("%")
         args.append(space_infiltration_reduction_percent)
 
-        # make an argument for constant_coefficient
-        constant_coefficient = openstudio.measure.OSArgument.makeDoubleArgument('constant_coefficient', True)
-        constant_coefficient.setDisplayName('Constant Coefficient')
-        constant_coefficient.setDefaultValue(1.0)
-        args.append(constant_coefficient)
+        # DISABLED: make an argument for constant_coefficient
+        # constant_coefficient = openstudio.measure.OSArgument.makeDoubleArgument('constant_coefficient', False)
+        # constant_coefficient.setDisplayName('Constant Coefficient')
+        # constant_coefficient.setDefaultValue(1.0)
+        # args.append(constant_coefficient)
 
-        # make an argument for temperature_coefficient
-        temperature_coefficient = openstudio.measure.OSArgument.makeDoubleArgument('temperature_coefficient', True)
-        temperature_coefficient.setDisplayName('Temperature Coefficient')
-        temperature_coefficient.setDefaultValue(0.0)
-        args.append(temperature_coefficient)
+        # DISABLED: make an argument for temperature_coefficient
+        # temperature_coefficient = openstudio.measure.OSArgument.makeDoubleArgument('temperature_coefficient', False)
+        # temperature_coefficient.setDisplayName('Temperature Coefficient')
+        # temperature_coefficient.setDefaultValue(0.0)
+        # args.append(temperature_coefficient)
 
-        # make an argument for wind_speed_coefficient
-        wind_speed_coefficient = openstudio.measure.OSArgument.makeDoubleArgument('wind_speed_coefficient', True)
-        wind_speed_coefficient.setDisplayName('Wind Speed Coefficient')
-        wind_speed_coefficient.setDefaultValue(0.0)
-        args.append(wind_speed_coefficient)
+        # DISABLED: make an argument for wind_speed_coefficient
+        # wind_speed_coefficient = openstudio.measure.OSArgument.makeDoubleArgument('wind_speed_coefficient', False)
+        # wind_speed_coefficient.setDisplayName('Wind Speed Coefficient')
+        # wind_speed_coefficient.setDefaultValue(0.0)
+        # args.append(wind_speed_coefficient)
 
-        # make an argument for wind_speed_squared_coefficient
-        wind_speed_squared_coefficient = openstudio.measure.OSArgument.makeDoubleArgument('wind_speed_squared_coefficient', True)
-        wind_speed_squared_coefficient.setDisplayName('Wind Speed Squared Coefficient')
-        wind_speed_squared_coefficient.setDefaultValue(0.0)
-        args.append(wind_speed_squared_coefficient)
+        # DISABLED: make an argument for wind_speed_squared_coefficient
+        # wind_speed_squared_coefficient = openstudio.measure.OSArgument.makeDoubleArgument('wind_speed_squared_coefficient', False)
+        # wind_speed_squared_coefficient.setDisplayName('Wind Speed Squared Coefficient')
+        # wind_speed_squared_coefficient.setDefaultValue(0.0)
+        # args.append(wind_speed_squared_coefficient)
 
         # make an argument for alter_coef
         alter_coef = openstudio.measure.OSArgument.makeBoolArgument('alter_coef', True)
@@ -296,10 +296,11 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
         # for infiltration reduction
         object = runner.getOptionalWorkspaceObjectChoiceValue('space_type', user_arguments, model)
         space_infiltration_reduction_percent = runner.getDoubleArgumentValue("space_infiltration_reduction_percent", user_arguments)
-        constant_coefficient = runner.getDoubleArgumentValue('constant_coefficient', user_arguments)
-        temperature_coefficient = runner.getDoubleArgumentValue('temperature_coefficient', user_arguments)
-        wind_speed_coefficient = runner.getDoubleArgumentValue('wind_speed_coefficient', user_arguments)
-        wind_speed_squared_coefficient = runner.getDoubleArgumentValue('wind_speed_squared_coefficient', user_arguments)
+        # DISABLED: coefficient arguments - using existing values from infiltration objects
+        # constant_coefficient = runner.getDoubleArgumentValue('constant_coefficient', user_arguments)
+        # temperature_coefficient = runner.getDoubleArgumentValue('temperature_coefficient', user_arguments)
+        # wind_speed_coefficient = runner.getDoubleArgumentValue('wind_speed_coefficient', user_arguments)
+        # wind_speed_squared_coefficient = runner.getDoubleArgumentValue('wind_speed_squared_coefficient', user_arguments)
         alter_coef = runner.getBoolArgumentValue('alter_coef', user_arguments)
         # for EC calculation
         caulking_thickness = runner.getDoubleArgumentValue("caulking_thickness", user_arguments)
@@ -400,8 +401,7 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
             affected_area_si = space_type.floorArea()
 
         # Function to alter performance of objects
-        def alter_performance(instance, space_infiltration_reduction_percent, constant_coefficient, temperature_coefficient,
-                      wind_speed_coefficient, wind_speed_squared_coefficient, alter_coef, runner):
+        def alter_performance(instance, space_infiltration_reduction_percent, alter_coef, runner):
             # Edit instance based on percentage reduction
             if instance.designFlowRate().is_initialized():
                 new_value = instance.designFlowRate().get() - (instance.designFlowRate().get() * space_infiltration_reduction_percent * 0.01)
@@ -421,14 +421,13 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
             else:
                 runner.registerWarning(f"'{instance.nameString()}' is used by one or more instances and has no load values.")
 
-            # Only alter coefficients if requested
-            if not alter_coef:
-                return
-
-            instance.setConstantTermCoefficient(constant_coefficient)
-            instance.setTemperatureTermCoefficient(temperature_coefficient)
-            instance.setVelocityTermCoefficient(wind_speed_coefficient)
-            instance.setVelocitySquaredTermCoefficient(wind_speed_squared_coefficient)
+            # DISABLED: Coefficient modification removed - existing coefficients are preserved
+            # if not alter_coef:
+            #     return
+            # instance.setConstantTermCoefficient(constant_coefficient)
+            # instance.setTemperatureTermCoefficient(temperature_coefficient)
+            # instance.setVelocityTermCoefficient(wind_speed_coefficient)
+            # instance.setVelocitySquaredTermCoefficient(wind_speed_squared_coefficient)
 
         # loop through space types
         for space_type in space_types:
@@ -441,10 +440,6 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
                 alter_performance(
                     space_type_infiltration_object,
                     space_infiltration_reduction_percent,
-                    constant_coefficient,
-                    temperature_coefficient,
-                    wind_speed_coefficient,
-                    wind_speed_squared_coefficient,
                     alter_coef,
                     runner
                 )
@@ -476,10 +471,6 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
                 alter_performance(
                     space_infiltration_object,
                     space_infiltration_reduction_percent,
-                    constant_coefficient,
-                    temperature_coefficient,
-                    wind_speed_coefficient,
-                    wind_speed_squared_coefficient,
                     alter_coef,
                     runner
                 )
