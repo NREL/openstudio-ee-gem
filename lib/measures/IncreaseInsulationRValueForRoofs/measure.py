@@ -72,13 +72,13 @@ class IncreaseInsulationRValueForRoofs(openstudio.measure.ModelMeasure):
         elif material_type == "Extruded Polystyrene (XPS) Foam Board":
             return generate_url_byname(category="56f3c898f94b459eb18feadeb792ab88", name_like="xps insulation")
         elif material_type == "Mineral Wool Heavy Density Blanket":
-            return generate_url_byname(category="56f3c898f94b459eb18feadeb792ab88", name_like="mineral wool heavy density")
+            return generate_url_byname(category="53a5d5bee64545f1bdd60e102a4a6ddf", name_like="mineral wool heavy density")
         elif material_type == "Mineral Wool Light Density Blanket":
-            return generate_url_byname(category="56f3c898f94b459eb18feadeb792ab88", name_like="mineral wool light density")
+            return generate_url_byname(category="53a5d5bee64545f1bdd60e102a4a6ddf", name_like="mineral wool light density")
         elif material_type == "Fiberglass Batts":
-            return generate_url_byname(category="56f3c898f94b459eb18feadeb792ab88", name_like="fiber glass batts")
+            return generate_url_byname(category="53a5d5bee64545f1bdd60e102a4a6ddf", name_like="fiber glass batts")
         elif material_type == "Pure Wool Batts":
-            return generate_url_byname(category="56f3c898f94b459eb18feadeb792ab88", name_like="batts insulation wool")
+            return generate_url_byname(category="53a5d5bee64545f1bdd60e102a4a6ddf", name_like="batts insulation wool")
         
         else:
             return None
