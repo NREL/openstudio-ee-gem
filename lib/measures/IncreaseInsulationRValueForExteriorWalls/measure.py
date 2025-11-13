@@ -32,14 +32,18 @@ class IncreaseInsulationRValueForExteriorWalls(openstudio.measure.ModelMeasure):
     @staticmethod
     def insulation_material_types():
         return [
-            "Mineral Wool",
-            "Cellulose",
-            "Fiberglass",
-            "Expanded Polystyrene (EPS)",
-            "Extruded Polystyrene (XPS)",
-            "Graphite Polystyrene (GPS)",
-            "Polyiso (ISO)",
-            "Expanded Polyethylene"]  
+            "Blown Cellulose",
+            "Blown Fiberglass",
+            "Blown Mineral Wool",
+            "Polyiso Insulation Foam Board",
+            "Graphite Polystyrene (GPS) Foam Board",
+            "Expanded Polystyrene (EPS) Foam Board",
+            "Extruded Polystyrene (XPS) Foam Board",
+            "Mineral Wool Heavy Density Blanket",
+            "Mineral Wool Light Density Blanket",
+            "Fiberglass Batts",
+            "Pure Wool Batts"
+        ]  
     
     def arguments(self, model):
         args = openstudio.measure.OSArgumentVector()
@@ -114,27 +118,32 @@ class IncreaseInsulationRValueForExteriorWalls(openstudio.measure.ModelMeasure):
         return args
 
     def generate_url_by_material_type(self, material_type):
-        url = None
-        if material_type == "Mineral Wool":
-            url = generate_url_byname(category="bf1c8882d7784db4b10d9d5698b8b5cc",name_like='mineral wool')
-        elif material_type == "Cellulose":
-            url = generate_url_byname(category="bf1c8882d7784db4b10d9d5698b8b5cc",name_like='cellulose')
-        elif material_type == "Fiberglass":
-            url = generate_url_byname(category="bf1c8882d7784db4b10d9d5698b8b5cc",name_like='fiber glass')
-        elif material_type == "Expanded Polystyrene (EPS)":
-            url = generate_url_byname(category="bf1c8882d7784db4b10d9d5698b8b5cc",name_like='eps')
-        elif material_type == "Extruded Polystyrene (XPS)":
-            url = generate_url_byname(category="bf1c8882d7784db4b10d9d5698b8b5cc",name_like='xps')
-        elif material_type == "Graphite Polystyrene (GPS)":
-            url = generate_url_byname(category="56f3c898f94b459eb18feadeb792ab88",name_like='Graphite Polystyrene')
-        elif material_type == "Polyiso (ISO)":
-            url = generate_url_byname(category="bf1c8882d7784db4b10d9d5698b8b5cc",name_like='polyiso')
-        elif material_type == "Expanded Polyethylene":
-            url = generate_url_byname(category="56f3c898f94b459eb18feadeb792ab88",name_like='ArmaPET')
-        else:
-            url = None
-        return url
 
+        if material_type == "Blown Cellulose":
+            return generate_url_byname(category="6fd418c8ff92415c833e6327638d8482", name_like="cellulose")
+        elif material_type == "Blown Fiberglass":
+            return generate_url_byname(category="6fd418c8ff92415c833e6327638d8482", name_like="fiber glass")
+        elif material_type == "Blown Mineral Wool":
+            return generate_url_byname(category="6fd418c8ff92415c833e6327638d8482", name_like="mineral wool")
+        elif material_type == "Polyiso Insulation Foam Board":
+            return generate_url_byname(category="56f3c898f94b459eb18feadeb792ab88", name_like="polyiso roof insulation board")
+        elif material_type == "Graphite Polystyrene (GPS) Foam Board":
+            return generate_url_byname(category="56f3c898f94b459eb18feadeb792ab88", name_like="Graphite Polystyrene")
+        elif material_type == "Expanded Polystyrene (EPS) Foam Board":
+            return generate_url_byname(category="56f3c898f94b459eb18feadeb792ab88", name_like="eps insulation")
+        elif material_type == "Extruded Polystyrene (XPS) Foam Board":
+            return generate_url_byname(category="56f3c898f94b459eb18feadeb792ab88", name_like="xps insulation")
+        elif material_type == "Mineral Wool Heavy Density Blanket":
+            return generate_url_byname(category="53a5d5bee64545f1bdd60e102a4a6ddf", name_like="mineral wool heavy density")
+        elif material_type == "Mineral Wool Light Density Blanket":
+            return generate_url_byname(category="53a5d5bee64545f1bdd60e102a4a6ddf", name_like="mineral wool light density")
+        elif material_type == "Fiberglass Batts":
+            return generate_url_byname(category="53a5d5bee64545f1bdd60e102a4a6ddf", name_like="fiber glass batts")
+        elif material_type == "Pure Wool Batts":
+            return generate_url_byname(category="53a5d5bee64545f1bdd60e102a4a6ddf", name_like="batts insulation wool")
+        
+        else:
+            return None
     def run(self, model, runner, user_arguments):
         if not runner.validateUserArguments(self.arguments(model), user_arguments):
             return False
@@ -174,28 +183,32 @@ class IncreaseInsulationRValueForExteriorWalls(openstudio.measure.ModelMeasure):
 
         # Define typical thermal conductivity (k) values in W/m-K for each material
         material_k_dict = {
-            "Mineral Wool": 0.032,                     # range: 0.032–0.044 W/m·K :https://www.buyinsulationonline.co.uk/blog/the-ultimate-guide-to-insulation-values
-            "Cellulose": 0.040,                        # range: 0.036–0.042 W/m·K :https://www.engineeringtoolbox.com/thermal-conductivity-d_429.html
-            "Fiberglass": 0.033,                       # range: 0.032–0.044 W/m·K :https://www.buyinsulationonline.co.uk/blog/pir-vs-mineral-wool-insulation
-            "Expanded Polystyrene (EPS)": 0.034,       # 0.032–0.038 (up to ~0.046) :https://www.engineeringtoolbox.com/thermal-conductivity-d_429.html
-            "Extruded Polystyrene (XPS)": 0.033,       # 0.029–0.039 W/m·K :https://en.wikipedia.org/wiki/List_of_thermal_conductivities
-            "Graphite Polystyrene (GPS)": 0.030,       # enhanced EPS: ~0.029–0.034 W/m·K :https://www.neopor.basf.com/global/en/performance.html
-            "Polyiso (ISO)": 0.025,                    # polyiso/PIR: 0.022–0.028 W/m·K :https://www.buyinsulationonline.co.uk/blog/the-ultimate-guide-to-insulation-values
-            "Expanded Polyethylene": 0.032,           # PE foam: 0.032–0.034 W/m·K :https://pmc.ncbi.nlm.nih.gov/articles/PMC9658328/
-            "Other": 0.030                             # placeholder (e.g., phenolic, aerogel; 0.018–0.060+ W/m·K) :https://www.ashrae.org/technical-resources/ashrae-handbook
+            "Blown Cellulose": 0.040, # source: https://www.energy.gov/energysaver/weatherize/insulation/types-insulation
+            "Blown Fiberglass": 0.033, # source: https://www.energy.gov/energysaver/weatherize/insulation/types-insulation
+            "Blown Mineral Wool": 0.032, # source: https://www.energy.gov/energysaver/weatherize/insulation/types-insulation
+            "Polyiso Insulation Foam Board": 0.025, # source: https://www.polyiso.org/
+            "Graphite Polystyrene (GPS) Foam Board": 0.030, # source: https://www.epsmolders.org/graphite-enhanced-eps/
+            "Expanded Polystyrene (EPS) Foam Board": 0.034, # source: https://www.epsmolders.org/what-is-eps/
+            "Extruded Polystyrene (XPS) Foam Board": 0.033, # source: https://www.owenscorning.com/en-us/insulation/foamular
+            "Mineral Wool Heavy Density Blanket": 0.032, # source: https://www.energy.gov/energysaver/weatherize/insulation/types-insulation
+            "Mineral Wool Light Density Blanket": 0.032, # source: https://www.energy.gov/energysaver/weatherize/insulation/types-insulation
+            "Fiberglass Batts": 0.033, # source: https://www.energy.gov/energysaver/weatherize/insulation/types-insulation
+            "Pure Wool Batts": 0.040 # source: https://www.energy.gov/energysaver/weatherize/insulation/types-insulation
         }
 
         # Define typical density (ρ) values in kg/m³ for each material
         material_density_dict = {
-            "Mineral Wool": 90,                   # range: 60–100 kg/m³ (batts) :https://www.engineeringtoolbox.com/thermal-insulation-d_922.html
-            "Cellulose": 50,                      # loose fill: 45–60 kg/m³ :https://www.cellulose.org/HomeOwners/Technical-Information
-            "Fiberglass": 30,                     # loose fill: 10–30 kg/m³, batts ~30–40 :https://www.engineeringtoolbox.com/thermal-insulation-d_922.html
-            "Expanded Polystyrene (EPS)": 20,     # 15–30 kg/m³ :https://www.epsindustry.org/insulation/eps-insulation-properties
-            "Extruded Polystyrene (XPS)": 35,     # 30–45 kg/m³ :https://www.foam-tech.com/theory/foam_properties.htm
-            "Graphite Polystyrene (GPS)": 20,     # similar to EPS with graphite ~15–30 kg/m³ :https://www.neopor.basf.com/global/en/performance.html
-            "Polyiso (ISO)": 35,                  # polyiso rigid foam board: ~30–40 kg/m³ :https://www.rdh.com/wp-content/uploads/2018/04/Polyisocyanurate-Insulation.pdf
-            "Expanded Polyethylene": 25,          # ~25–35 kg/m³ :https://pmc.ncbi.nlm.nih.gov/articles/PMC9658328/
-            "Other": 30                           # placeholder generic (phenolic ~35 kg/m³, aerogel 3–100) :https://www.ashrae.org/technical-resources/ashrae-handbook
+            "Blown Cellulose": 50, #source: https://www.energy.gov/energysaver/weatherize/insulation/types-insulation
+            "Blown Fiberglass": 30, # source: https://www.energy.gov/energysaver/weatherize/insulation/types-insulation
+            "Blown Mineral Wool": 90, # source: https://www.energy.gov/energysaver/weatherize/insulation/types-insulation
+            "Polyiso Insulation Foam Board": 35, # source: https://www.polyiso.org/
+            "Graphite Polystyrene (GPS) Foam Board": 20, # source: https://www.epsmolders.org/graphite-enhanced-eps/
+            "Expanded Polystyrene (EPS) Foam Board": 20, # source: https://www.epsmolders.org/what-is-eps/
+            "Extruded Polystyrene (XPS) Foam Board": 35, # source: https://www.owenscorning.com/en-us/insulation/foamular
+            "Mineral Wool Heavy Density Blanket": 90, # source: https://www.energy.gov/energysaver/weatherize/insulation/types-insulation
+            "Mineral Wool Light Density Blanket": 90, # source: https://www.energy.gov/energysaver/weatherize/insulation/types-insulation
+            "Fiberglass Batts": 30, # source: https://www.energy.gov/energysaver/weatherize/insulation/types-insulation
+            "Pure Wool Batts": 40 # source: https://www.energy.gov/energysaver/weatherize/insulation/types-insulation
         }
 
         # Lookup selected material's thermal conductivity
@@ -318,11 +331,14 @@ class IncreaseInsulationRValueForExteriorWalls(openstudio.measure.ModelMeasure):
             print(f"Total Area: {item['total_area_m2']:.2f} m²")
             print(f"Added Thickness: {item['added_thickness_m']:.4f} m")
 
-        #######################  EC3 stuff ###################
+        #######################  EC3 fetch data ###################
 
         # Pull EC3 data for the chosen insulation type once
         ec3_url = self.generate_url_by_material_type(insulation_material_type)
+        print("Generated EC3 URL:", ec3_url)
         insulation_product_epd = fetch_epd_data(ec3_url, api_key)
+
+
 
         # Create a dictionary to hold GWP results with different functional units
         gwp_values = {}
@@ -391,6 +407,7 @@ class IncreaseInsulationRValueForExteriorWalls(openstudio.measure.ModelMeasure):
                 "added_total_volume_m3": item["added_thickness_m"] * item["total_area_m2"],
                 "added_total_area_m2": total_area_m2,
                 "added_thickness_m": added_thickness_m,
+                "added_total_mass_kg": insulation_material_density * item["added_thickness_m"] * item["total_area_m2"],
                 "total_gwp_kg_co2_eq": total_gwp
             })
 
@@ -414,6 +431,7 @@ class IncreaseInsulationRValueForExteriorWalls(openstudio.measure.ModelMeasure):
             props.setFeature("total_volume_m3", added_thickness_m * total_area_m2)
             props.setFeature("total_area_m2", total_area_m2)
             props.setFeature("added_thickness_m", added_thickness_m)
+            props.setFeature("added_total_mass_kg", insulation_material_density * added_thickness_m * total_area_m2)
             props.setFeature("insulation_material_density_kg_per_m3", insulation_material_density)
             props.setFeature("insulation_material_lifetime_years", insulation_material_lifetime)
             props.setFeature("insulation_material_gwp_per_kg", item["gwp_per_kg"])

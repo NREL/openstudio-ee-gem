@@ -49,7 +49,7 @@ def run_measure():
     # Set required and optional inputs
     set_arg("r_value", 60.0)
     set_arg("api_key", API_TOKEN)
-    set_arg("insulation_material_type", "Fiberglass")
+    set_arg("insulation_material_type", "Pure Wool Batts")
     set_arg("insulation_material_lifetime", 30)
     set_arg("insulation_thermal_conductivity", 0.0)
     set_arg('gwp_statistic', 'median')
