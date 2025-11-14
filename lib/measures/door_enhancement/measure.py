@@ -47,6 +47,46 @@ class DoorEnhancement(openstudio.measure.ModelMeasure):
     def door_options():
         return ['none','wooden door','garage door','glass door','polystyrene core steel door', 'polyurethane core steel door','fiberglass core steel door','honeycomb core steel door','stiffened core steel door','defined by model']
 
+    @staticmethod
+    def door_r_values():
+        """Return typical R-values (m²·K/W) for different door types.
+        Sources: 
+        - Wooden door: https://www.energystar.gov/products/building_products/doors
+        - Steel core doors: https://www.dasma.com/garage-door-r-values/
+        - Glass door: https://www.nfrc.org/
+        """
+        return {
+            'none': 0.0,  # no change
+            'wooden door': 0.53,  # 1-3/4" solid wood door (R-3 IP), source: ASHRAE Handbook
+            'garage door': 2.99,  # insulated garage door (R-17 IP), source: DASMA standards
+            'glass door': 0.35,  # single glazed (R-2 IP), source: NFRC typical values
+            'polystyrene core steel door': 1.76,  # (R-10 IP), source: Steel Door Institute
+            'polyurethane core steel door': 2.64,  # (R-15 IP), source: Steel Door Institute
+            'fiberglass core steel door': 2.11,  # (R-12 IP), source: manufacturer data
+            'honeycomb core steel door': 1.41,  # (R-8 IP), source: manufacturer data
+            'stiffened core steel door': 0.88,  # (R-5 IP), source: manufacturer data
+            'defined by model': 0.0  # preserve existing
+        }
+
+    @staticmethod
+    def door_material_properties():
+        """Return material properties (conductivity W/m·K, density kg/m³, thickness m) for different door types.
+        Properties are typical values used to achieve the R-values specified in door_r_values().
+        Sources: ASHRAE Handbook, Steel Door Institute, manufacturer data
+        """
+        return {
+            'none': {'conductivity': 0.0, 'density': 0.0, 'thickness': 0.0},
+            'wooden door': {'conductivity': 0.14, 'density': 600, 'thickness': 0.044},  # 1-3/4" solid wood
+            'garage door': {'conductivity': 0.028, 'density': 100, 'thickness': 0.084},  # insulated, ~3.3" thick
+            'glass door': {'conductivity': 0.96, 'density': 2500, 'thickness': 0.006},  # 6mm glass
+            'polystyrene core steel door': {'conductivity': 0.035, 'density': 150, 'thickness': 0.062},  # steel+foam core
+            'polyurethane core steel door': {'conductivity': 0.045, 'density': 490, 'thickness': 0.0445},  # steel+PU foam manufactured by DE LA FONTAINE
+            'fiberglass core steel door': {'conductivity': 0.035, 'density': 180, 'thickness': 0.074},  # steel+fiberglass
+            'honeycomb core steel door': {'conductivity': 0.05, 'density': 120, 'thickness': 0.071},  # steel+honeycomb
+            'stiffened core steel door': {'conductivity': 0.06, 'density': 250, 'thickness': 0.053},  # steel+stiffeners
+            'defined by model': {'conductivity': 0.0, 'density': 0.0, 'thickness': 0.0}
+        }
+
     def generate_sealing_url(self,option):
         url = None
         if option == "brush weatherstrip":
@@ -126,7 +166,7 @@ class DoorEnhancement(openstudio.measure.ModelMeasure):
         # make an argument for air infiltration reduction percentage
         space_infiltration_reduction_percent = openstudio.measure.OSArgument.makeDoubleArgument("space_infiltration_reduction_percent", True)
         space_infiltration_reduction_percent.setDisplayName("Space Infiltration Power Reduction")
-        space_infiltration_reduction_percent.setDefaultValue(50.0)
+        space_infiltration_reduction_percent.setDefaultValue(30.0)
         space_infiltration_reduction_percent.setUnits("%")
         args.append(space_infiltration_reduction_percent)
 
@@ -225,6 +265,27 @@ class DoorEnhancement(openstudio.measure.ModelMeasure):
         length_per_unit_other_sides.setDefaultValue(5.1816)
         args.append(length_per_unit_other_sides)
 
+        # make an argument for door thermal conductivity
+        door_thermal_conductivity = openstudio.measure.OSArgument.makeDoubleArgument("door_thermal_conductivity", True)
+        door_thermal_conductivity.setDisplayName("Door Thermal Conductivity (W/m·K)")
+        door_thermal_conductivity.setDescription("Thermal conductivity of the door material. Skip if no door replacement required. Enter 0.0 to use default values based on selected door type.")
+        door_thermal_conductivity.setDefaultValue(0.0)
+        args.append(door_thermal_conductivity)
+
+        # make an argument for door density
+        door_density = openstudio.measure.OSArgument.makeDoubleArgument("door_density", True)
+        door_density.setDisplayName("Door Material Density (kg/m³)")
+        door_density.setDescription("Density of the door material. Skip if no door replacement required. Enter 0.0 to use default values based on selected door type.")
+        door_density.setDefaultValue(0.0)
+        args.append(door_density)
+
+        # make an argument for door thickness
+        door_thickness = openstudio.measure.OSArgument.makeDoubleArgument("door_thickness", True)
+        door_thickness.setDisplayName("Door Thickness (m)")
+        door_thickness.setDescription("Thickness of the door. Skip if no door replacement required. Enter 0.0 to use default values based on selected door type.")
+        door_thickness.setDefaultValue(0.0)
+        args.append(door_thickness)
+
         return args
 
     def run(self, model: openstudio.model.Model, runner: openstudio.measure.OSRunner, user_arguments: openstudio.measure.OSArgumentMap):
@@ -256,6 +317,9 @@ class DoorEnhancement(openstudio.measure.ModelMeasure):
         door_lifetime = runner.getIntegerArgumentValue("door_lifetime",user_arguments)
         api_key = runner.getStringArgumentValue("api_key", user_arguments)
         door_area_per_unit = runner.getDoubleArgumentValue("door_area_per_unit", user_arguments)
+        door_thermal_conductivity = runner.getDoubleArgumentValue("door_thermal_conductivity", user_arguments)
+        door_density = runner.getDoubleArgumentValue("door_density", user_arguments)
+        door_thickness = runner.getDoubleArgumentValue("door_thickness", user_arguments)
 
         # Create a dictionary mapping seal options to their default lengths
         length_per_unit_dict = {
@@ -290,6 +354,12 @@ class DoorEnhancement(openstudio.measure.ModelMeasure):
             runner.registerError("Choose a numeric value larger than 0 for length per unit of door bottom sealing strip.")
         if length_per_unit_other_sides <= 0:
             runner.registerError("Choose a numeric value larger than 0 for length per unit of door other sides sealing strip.")
+        if door_thermal_conductivity < 0:
+            runner.registerError("Door thermal conductivity must be non-negative.")
+        if door_density < 0:
+            runner.registerError("Door material density must be non-negative.")
+        if door_thickness < 0:
+            runner.registerError("Door thickness must be non-negative.")
 
         ###################### Change model's space infiltration################
         # check the space_type for reasonableness and see if measure should run on space type or on the entire building
@@ -573,12 +643,112 @@ class DoorEnhancement(openstudio.measure.ModelMeasure):
 
             runner.registerInfo(f"Embodied carbon in this subsurface in kg CO2 eq: {subsurface_dict[subsurface_name]['door_renovation_embodied_carbon_kg_co2_eq']}")
 
+            # Modify door construction R-value if entire door replacement is selected
+            if door_option != 'none' and door_option != 'defined by model':
+                # Get target R-value for selected door type (already in SI units)
+                door_r_value_si = self.door_r_values()[door_option]
+                
+                # Get current construction
+                if subsurface.construction().is_initialized():
+                    old_construction = subsurface.construction().get()
+                    old_construction_name = old_construction.nameString()
+                    
+                    # Get current R-value for comparison
+                    old_r_value_si = 0.0
+                    if old_construction.to_LayeredConstruction().is_initialized():
+                        lc = old_construction.to_LayeredConstruction().get()
+                        if lc.thermalConductance().is_initialized():
+                            old_r_value_si = 1.0 / lc.thermalConductance().get()
+                    
+                    old_r_value_ip = openstudio.convert(old_r_value_si, "m^2*K/W", "ft^2*h*R/Btu").get()
+                    
+                    # Get material properties for selected door type
+                    mat_props = self.door_material_properties()[door_option]
+                    
+                    # Override with user-provided values if non-zero
+                    if door_thermal_conductivity > 0.0:
+                        mat_props['conductivity'] = door_thermal_conductivity
+                    if door_density > 0.0:
+                        mat_props['density'] = door_density
+                    if door_thickness > 0.0:
+                        mat_props['thickness'] = door_thickness
+                    
+                    # Clone construction for modification
+                    new_construction = old_construction.clone(model).to_Construction().get()
+                    new_construction.setName(f"{old_construction_name} - {door_option} R-{door_r_value_si:.2f}")
+                    
+                    # Create a new standard opaque material with physical properties
+                    new_door_material = openstudio.model.StandardOpaqueMaterial(model)
+                    new_door_material.setName(f"{door_option} R-{door_r_value_si:.2f}")
+                    new_door_material.setThickness(mat_props['thickness'])
+                    new_door_material.setConductivity(mat_props['conductivity'])
+                    new_door_material.setDensity(mat_props['density'])
+                    new_door_material.setSpecificHeat(1000)  # J/kg·K, typical for building materials
+                    
+                    # Set the construction to use only the new material
+                    new_construction.setLayers([new_door_material])
+                    
+                    # Apply new construction to subsurface
+                    subsurface.setConstruction(new_construction)
+                    
+                    # Store R-value and material properties in subsurface dict
+                    subsurface_dict[subsurface_name]['old_r_value_si'] = old_r_value_si
+                    subsurface_dict[subsurface_name]['new_r_value_si'] = door_r_value_si
+                    subsurface_dict[subsurface_name]['new_construction_name'] = new_construction.nameString()
+                    subsurface_dict[subsurface_name]['material_thickness_m'] = mat_props['thickness']
+                    subsurface_dict[subsurface_name]['material_conductivity_W_per_mK'] = mat_props['conductivity']
+                    subsurface_dict[subsurface_name]['material_density_kg_per_m3'] = mat_props['density']
+                    
+                    runner.registerInfo(
+                        f"Door construction updated for {subsurface_name}: "
+                        f"Old R-value: {old_r_value_si:.2f} m²·K/W (R-{old_r_value_ip:.1f} IP), "
+                        f"New R-value: {door_r_value_si:.2f} m²·K/W ({door_option}), "
+                        f"Thickness: {mat_props['thickness']*1000:.1f} mm, "
+                        f"Conductivity: {mat_props['conductivity']:.3f} W/m·K"
+                    )
+                else:
+                    runner.registerWarning(f"No construction found for {subsurface_name}, R-value not modified.")
+
             # attach additional properties to openstudio material
             additional_properties = subsurface_dict[subsurface_name]["subsurface object"].additionalProperties()
             additional_properties.setFeature("Subsurface name", subsurface_name)
             additional_properties.setFeature("embodied_carbon_kg_co2_eq", subsurface_dict[subsurface_name]["door_renovation_embodied_carbon_kg_co2_eq"])
+            if door_option != 'none' and door_option != 'defined by model':
+                additional_properties.setFeature("door_type", door_option)
+                additional_properties.setFeature("old_r_value_si_m2KperW", subsurface_dict[subsurface_name].get('old_r_value_si', 0.0))
+                additional_properties.setFeature("new_r_value_si_m2KperW", subsurface_dict[subsurface_name].get('new_r_value_si', 0.0))
    
         pp.pprint(subsurface_dict)
+
+        # Calculate total embodied carbon and count door replacements
+        total_embodied_carbon = sum(
+            subsurface_dict[name]["door_renovation_embodied_carbon_kg_co2_eq"] 
+            for name in subsurface_dict.keys()
+        )
+        
+        # Count doors with R-value changes
+        doors_with_r_value_change = sum(
+            1 for name in subsurface_dict.keys() 
+            if 'new_r_value_si' in subsurface_dict[name]
+        )
+
+        # Report final condition
+        if doors_with_r_value_change > 0:
+            runner.registerFinalCondition(
+                f"Door enhancement measure completed. "
+                f"Modified {altered_infiltration_instances} infiltration objects affecting {affected_area_si:.2f} m^2 ({affected_area_ip:.2f} ft^2). "
+                f"Processed {len(sub_surfaces_to_change)} door subsurfaces. "
+                f"Updated R-values for {doors_with_r_value_change} door(s) with '{door_option}' (R-{self.door_r_values()[door_option]:.2f} m²·K/W). "
+                f"Total embodied carbon from door renovations: {total_embodied_carbon:.2f} kg CO2 eq."
+            )
+        else:
+            runner.registerFinalCondition(
+                f"Door enhancement measure completed. "
+                f"Modified {altered_infiltration_instances} infiltration objects affecting {affected_area_si:.2f} m^2 ({affected_area_ip:.2f} ft^2). "
+                f"Processed {len(sub_surfaces_to_change)} door subsurfaces. "
+                f"No door R-value changes (sealing only or 'none' option selected). "
+                f"Total embodied carbon from door renovations: {total_embodied_carbon:.2f} kg CO2 eq."
+            )
 
         return True
 

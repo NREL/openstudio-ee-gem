@@ -18,7 +18,7 @@ config.read(config_path)
 API_TOKEN= config["EC3_API_TOKEN"]["API_TOKEN"]
 
 CURRENT_DIR_PATH = Path(__file__).parent.absolute()
-model_path = Path(CURRENT_DIR_PATH / "tests/example_model.osm")
+model_path = Path(CURRENT_DIR_PATH / "tests/ReverseTranslatedModel.osm")
 
 translator = openstudio.osversion.VersionTranslator()
 model = translator.loadModel(openstudio.toPath(str(model_path))).get()
@@ -43,8 +43,9 @@ set_arg("length_per_unit_bottom_side", 5.1816)
 set_arg("strip_lifetime", 15)
 set_arg('door_lifetime',30)
 set_arg('door_area_per_unit', 1.95)
-set_arg('door_option','honeycomb core steel door')
+set_arg('door_option','polyurethane core steel door')
 set_arg("gwp_statistic", "median")
+set_arg("space_infiltration_reduction_percent", 0)
 set_arg("api_key", API_TOKEN)
 
 # Run the measure
@@ -60,7 +61,7 @@ for error in runner.result().errors():
     print("ERROR:", error.logMessage())
 
 # Save the modified model
-save_path = Path(CURRENT_DIR_PATH/"tests/output/example_model_2_with_AdditionalProperties.osm")
+save_path = Path(CURRENT_DIR_PATH/"tests/output/ReverseTranslatedModel_with_AdditionalProperties.osm")
 model.save(openstudio.toPath(str(save_path)), True)
 
 del model
