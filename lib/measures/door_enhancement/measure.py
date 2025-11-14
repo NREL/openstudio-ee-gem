@@ -91,6 +91,52 @@ class DoorEnhancement(openstudio.measure.ModelMeasure):
         """Define the arguments that user will input."""
         args = openstudio.measure.OSArgumentVector()
 
+        # make a choice argument for model objects
+        space_type_handles = openstudio.StringVector()
+        space_type_display_names = openstudio.StringVector()
+
+        # putting model object and names into dict
+        space_type_args = model.getSpaceTypes()
+        space_type_args_dict = {}
+        for space_type_arg in space_type_args:
+            space_type_args_dict[space_type_arg.nameString()] = space_type_arg
+
+        # looping through sorted dict of model objects
+        for key, value in sorted(space_type_args_dict.items()):
+        # only include if space type is used in the model
+            if value.spaces():  # if there is at least one space assigned to this space type
+                space_type_handles.append(str(value.handle()))
+                space_type_display_names.append(key)
+
+        # add building to string vector with space type
+        building = model.getBuilding()
+        space_type_handles.append(str(building.handle()))
+        space_type_display_names.append("*Entire Building*")
+
+        # make a choice argument for space type
+        space_type = openstudio.measure.OSArgument.makeChoiceArgument(
+            "space_type",
+            space_type_handles,
+            space_type_display_names
+            )
+        space_type.setDisplayName("Apply the Measure to a Specific Space Type or to the Entire Model.")
+        space_type.setDefaultValue("*Entire Building*")  # if no selection, apply to entire building
+        args.append(space_type)
+
+        # make an argument for air infiltration reduction percentage
+        space_infiltration_reduction_percent = openstudio.measure.OSArgument.makeDoubleArgument("space_infiltration_reduction_percent", True)
+        space_infiltration_reduction_percent.setDisplayName("Space Infiltration Power Reduction")
+        space_infiltration_reduction_percent.setDefaultValue(50.0)
+        space_infiltration_reduction_percent.setUnits("%")
+        args.append(space_infiltration_reduction_percent)
+
+        # make an argument for alter_coef
+        alter_coef = openstudio.measure.OSArgument.makeBoolArgument('alter_coef', True)
+        alter_coef.setDisplayName('Alter constant temperature and wind speed coefficients.')
+        alter_coef.setDescription('Setting this to false will result in infiltration objects that maintain the coefficients from the initial model. This option is disabled for this measure and coefficients are always preserved.')
+        alter_coef.setDefaultValue(False)
+        args.append(alter_coef)
+
         #As per the guiding Product Category Rule (PCR), the declared unit is defined as 21 sq.ft. (1.95m2) of door leaf at a nominal 44.45 mm (1-3/4 in.) thickness.
         door_area_per_unit = openstudio.measure.OSArgument.makeDoubleArgument("door_area_per_unit", True)
         door_area_per_unit.setDisplayName("Door Area per Unit")
@@ -194,6 +240,11 @@ class DoorEnhancement(openstudio.measure.ModelMeasure):
             return False
 
         # Retrieve user inputs
+        # for infiltration reduction
+        object = runner.getOptionalWorkspaceObjectChoiceValue('space_type', user_arguments, model)
+        space_infiltration_reduction_percent = runner.getDoubleArgumentValue("space_infiltration_reduction_percent", user_arguments)
+        alter_coef = runner.getBoolArgumentValue('alter_coef', user_arguments)
+        # for EC calculation
         gwp_statistic = runner.getStringArgumentValue("gwp_statistic", user_arguments)
         door_bottom_seal_option = runner.getStringArgumentValue("door_bottom_seal_option", user_arguments)
         door_top_side_seal_option = runner.getStringArgumentValue("door_top_side_seal_option", user_arguments)
@@ -240,8 +291,154 @@ class DoorEnhancement(openstudio.measure.ModelMeasure):
         if length_per_unit_other_sides <= 0:
             runner.registerError("Choose a numeric value larger than 0 for length per unit of door other sides sealing strip.")
 
+        ###################### Change model's space infiltration################
+        # check the space_type for reasonableness and see if measure should run on space type or on the entire building
+        apply_to_building = False
+        space_type = None
+
+        if not object.is_initialized():
+            handle = runner.getStringArgumentValue('space_type', user_arguments)
+            if not handle:
+                runner.registerError('Space type argument is empty.')
+            else:
+                runner.registerError(f"Space type with handle '{handle}' not found.")
+            return False
+        elif object.get().to_SpaceType().is_initialized():
+            space_type = object.get().to_SpaceType().get()
+        elif object.get().to_Building().is_initialized():
+            apply_to_building = True
+        else:
+            runner.registerError('Script Error - argument not showing up as space type or building.')
+            return False
+        
+        # check the space_infiltration_reduction_percent and for reasonableness
+        if space_infiltration_reduction_percent > 100:
+            runner.registerError('Please enter a value less than or equal to 100 for the Space Infiltration reduction percentage.')
+            return False
+        elif space_infiltration_reduction_percent == 0:
+            runner.registerInfo('No Space Infiltration adjustment requested, but infiltration coefficients may still be affected.')
+        elif abs(space_infiltration_reduction_percent) < 1:
+            runner.registerWarning(f"A Space Infiltration reduction percentage of {space_infiltration_reduction_percent} percent is abnormally low.")
+        elif space_infiltration_reduction_percent > 90:
+            runner.registerWarning(f"A Space Infiltration reduction percentage of {space_infiltration_reduction_percent} percent is abnormally high.")
+        elif space_infiltration_reduction_percent < 0:
+            runner.registerInfo('The requested value for Space Infiltration reduction percentage was negative. This will result in an increase in Space Infiltration.')
+
+        # get space infiltration objects used in the model
+        space_infiltration_objects = model.getSpaceInfiltrationDesignFlowRates()
+
+        # counters needed for measure
+        altered_infiltration_instances = 0
+        affected_area_si = 0
+
+         # reporting initial condition of model
+        if len(space_infiltration_objects) == 0:
+            runner.registerInfo('The initial model did not contain any space infiltration objects.')
+        else:
+            runner.registerInfo(f"The initial model contained {len(space_infiltration_objects)} space infiltration objects.")
+
+        # get space types in model
+        building = model.getBuilding()
+        if apply_to_building:
+            space_types = model.getSpaceTypes()
+            affected_area_si = building.floorArea()
+        else:
+            space_types = []
+            space_types.append(space_type)  # only run on a single space type
+            affected_area_si = space_type.floorArea()
+
+        # Function to alter performance of objects
+        def alter_performance(instance, space_infiltration_reduction_percent, alter_coef, runner):
+            # Edit instance based on percentage reduction
+            if instance.designFlowRate().is_initialized():
+                new_value = instance.designFlowRate().get() - (instance.designFlowRate().get() * space_infiltration_reduction_percent * 0.01)
+                instance.setDesignFlowRate(new_value)
+            elif instance.flowperSpaceFloorArea().is_initialized():
+                new_value = instance.flowperSpaceFloorArea().get() - (instance.flowperSpaceFloorArea().get() * space_infiltration_reduction_percent * 0.01)
+                instance.setFlowperSpaceFloorArea(new_value)
+            elif instance.flowperExteriorSurfaceArea().is_initialized():
+                new_value = instance.flowperExteriorSurfaceArea().get() - (instance.flowperExteriorSurfaceArea().get() * space_infiltration_reduction_percent * 0.01)
+                instance.setFlowperExteriorSurfaceArea(new_value)
+            elif instance.flowperExteriorWallArea().is_initialized():
+                new_value = instance.flowperExteriorWallArea().get() - (instance.flowperExteriorWallArea().get() * space_infiltration_reduction_percent * 0.01)
+                instance.setFlowperExteriorWallArea(new_value)
+            elif instance.airChangesperHour().is_initialized():
+                new_value = instance.airChangesperHour().get() - (instance.airChangesperHour().get() * space_infiltration_reduction_percent * 0.01)
+                instance.setAirChangesperHour(new_value)
+            else:
+                runner.registerWarning(f"'{instance.nameString()}' is used by one or more instances and has no load values.")
+
+            # DISABLED: Coefficient modification removed - existing coefficients are preserved
+            # Coefficients are not modified in door enhancement measure
+
+        # loop through space types
+        for space_type in space_types:
+            if len(space_type.spaces()) <= 0:
+                continue
+
+            space_type_infiltration_objects = space_type.spaceInfiltrationDesignFlowRates()
+            for space_type_infiltration_object in space_type_infiltration_objects:
+                # call function to alter performance
+                alter_performance(
+                    space_type_infiltration_object,
+                    space_infiltration_reduction_percent,
+                    alter_coef,
+                    runner
+                )
+
+                # rename
+                updated_instance_name = space_type_infiltration_object.setName(
+                    f"{space_type_infiltration_object.nameString()} {space_infiltration_reduction_percent} percent reduction"
+                )
+                runner.registerInfo(f"Altered space infiltration object: {updated_instance_name} in space type: {space_type.nameString()}")
+                altered_infiltration_instances += 1
+
+        # Get spaces in the model
+        spaces = model.getSpaces()
+
+        # Get space types in model
+        if apply_to_building:
+            spaces = model.getSpaces()
+        # this handles the case where we are applying to a specific space type
+        elif space_type is not None and len(space_type.spaces()) > 0:
+            spaces = space_type.spaces()
+        else:
+            spaces = []
+
+        for space in spaces:
+
+            space_infiltration_objects = space.spaceInfiltrationDesignFlowRates()
+            for space_infiltration_object in space_infiltration_objects:
+                # Call function to alter performance
+                alter_performance(
+                    space_infiltration_object,
+                    space_infiltration_reduction_percent,
+                    alter_coef,
+                    runner
+                )
+
+                # Rename
+                updated_instance_name = space_infiltration_object.setName(
+                    f"{space_infiltration_object.nameString()} {space_infiltration_reduction_percent} percent reduction"
+                )
+                runner.registerInfo(f"Altered space infiltration object: {updated_instance_name} in space: {space.nameString()}")
+                altered_infiltration_instances += 1
+
+        if altered_infiltration_instances == 0:
+            runner.registerInfo("No space infiltration objects were altered.")
+
+        affected_area_ip = openstudio.convert(affected_area_si, 'm^2', 'ft^2').get()
+
+        #report infiltration modification condition
+        runner.registerInfo(f'{altered_infiltration_instances} space infiltration objects were altered affecting a total area of {affected_area_si:.2f} m^2 ({affected_area_ip:.2f} ft^2).')
+        
+        ####################### Calculate Embodied Carbon################
+        sub_surfaces = []
+        for space in spaces:
+            for surface in space.surfaces():
+                for subsurface in surface.subSurfaces():
+                    sub_surfaces.append(subsurface)
         # Print the number of sub-surfaces before processing
-        sub_surfaces = model.getSubSurfaces()
         runner.registerInfo(f"Total sub-surfaces found: {len(sub_surfaces)}")
         # List storing subsurface object subject to change
         sub_surfaces_to_change = []

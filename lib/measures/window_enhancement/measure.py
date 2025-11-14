@@ -491,13 +491,12 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
         runner.registerFinalCondition(f'{altered_instances} space infiltration objects were altered affecting a total area of {affected_area_si:.2f} m^2 ({affected_area_ip:.2f} ft^2).')
         
         ####################### Calculate Embodied Carbon################
-
-        # Print the number of sub-surfaces before processing
         sub_surfaces = []
         for space in spaces:
             for surface in space.surfaces():
                 for subsurface in surface.subSurfaces():
                     sub_surfaces.append(subsurface)
+        runner.registerInfo(f"Total sub-surfaces found: {len(sub_surfaces)}")
         # List storing subsurface object subject to change, here we want to catch "Name: Sub Surface 2, Surface Type: FixedWindow, Space Name: Space 2"
         sub_surfaces_to_change = []
         # loop through sub surfaces
