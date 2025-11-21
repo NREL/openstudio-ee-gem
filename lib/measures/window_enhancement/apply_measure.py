@@ -18,7 +18,7 @@ config.read(config_path)
 API_TOKEN= config["EC3_API_TOKEN"]["API_TOKEN"]
 
 CURRENT_DIR_PATH = Path(__file__).parent.absolute()
-model_path = Path(CURRENT_DIR_PATH / "tests/example_model_2.osm")
+model_path = Path(CURRENT_DIR_PATH / "tests/new_example_model.osm")
 
 translator = openstudio.osversion.VersionTranslator()
 model = translator.loadModel(openstudio.toPath(str(model_path))).get()
@@ -43,9 +43,10 @@ set_arg("caulking_option","acrylic")
 set_arg("film_option","solar control film")
 set_arg("weatherstrip_option","silicone adhesive smoke gasket")
 set_arg("glass_option","provide user_num_panes")
-set_arg('user_num_panes', 2)
+set_arg('user_num_panes', 1)
 set_arg("window_option","none")
 set_arg("gwp_statistic", "median")
+set_arg("secondary_glazing_option", "install secondary glazing")
 set_arg("api_key", API_TOKEN)
 
 # Run the measure
@@ -61,7 +62,7 @@ for error in runner.result().errors():
     print("ERROR:", error.logMessage())
 
 # Save the modified model
-save_path = Path(CURRENT_DIR_PATH/"tests/output/example_model_2_with_AdditionalProperties.osm")
+save_path = Path(CURRENT_DIR_PATH/"tests/output/new_example_model_with_AdditionalProperties.osm")
 model.save(openstudio.toPath(str(save_path)), True)
 
 del model

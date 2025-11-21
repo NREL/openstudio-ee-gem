@@ -1,8 +1,8 @@
 ExpandObjects Started.
 No expanded file generated.
-ExpandObjects Finished. Time:     0.047
+ExpandObjects Finished. Time:     0.031
 EnergyPlus Starting
-EnergyPlus, Version 24.1.0-9d7789a3ac, YMD=2025.11.12 12:58
+EnergyPlus, Version 24.1.0-9d7789a3ac, YMD=2025.11.20 16:04
 Adjusting Air System Sizing
 Adjusting Standard 62.1 Ventilation Sizing
 Initializing Simulation
@@ -120,5 +120,5 @@ Updating Shadowing Calculations, Start Date=12/31/2006
 Writing tabular output file results using HTML format.
 Computing Life Cycle Costs and Reporting
 Writing final SQL reports
-EnergyPlus Run Time=00hr 00min  1.42sec
+EnergyPlus Run Time=00hr 00min  1.35sec
 EnergyPlus Completed Successfully.

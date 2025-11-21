@@ -56,6 +56,10 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
     @staticmethod
     def glass_options():
         return ["none","provide user_num_panes"]
+    
+    @staticmethod
+    def secondary_glazing_options():
+        return ["none", "install secondary glazing"]
 
     def arguments(self, model: typing.Optional[openstudio.model.Model] = None):
         """Define the arguments that user will input."""
@@ -240,6 +244,16 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
         weatherstrip_option.setDefaultValue("none")
         args.append(weatherstrip_option)
 
+        # make an argument for secondary glazing options
+        secondary_glazing_options_chs = openstudio.StringVector()
+        for option in self.secondary_glazing_options():
+            secondary_glazing_options_chs.append(option)
+        secondary_glazing_option = openstudio.measure.OSArgument.makeChoiceArgument("secondary_glazing_option", secondary_glazing_options_chs, True)
+        secondary_glazing_option.setDisplayName("Secondary Glazing Option")
+        secondary_glazing_option.setDescription("Select 'install secondary glazing' to add a second glazing layer to single-pane windows. NOTE: This option only applies to single-pane standard layered constructions, not simple glazing systems.")
+        secondary_glazing_option.setDefaultValue("none")
+        args.append(secondary_glazing_option)
+
         # make an argument for caulking material thickness applied
         caulking_thickness = openstudio.measure.OSArgument.makeDoubleArgument("caulking_thickness", True)
         caulking_thickness.setDisplayName("Caulking Material Thickness (m)")
@@ -253,6 +267,20 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
         user_num_panes.setDescription("When glass option is not none, this is the number of glass panes to be installed as determined by user. Otherwise, the number of panes will be derived from the model. Valid values are 0, 1, 2, or 3. 0 means do not install any new glass panes. 1 means single pane, 2 means double pane, and 3 means triple pane. If the value provided is more than 3, it will be changed to 3 because currently the measure is unable to handle more complex scenarios due to the lack of EPD data.")
         user_num_panes.setDefaultValue(0) # 0 means do not install any new glass panes
         args.append(user_num_panes)
+
+        # make an argument for glass pane thickness
+        glass_pane_thickness = openstudio.measure.OSArgument.makeDoubleArgument("glass_pane_thickness", True)
+        glass_pane_thickness.setDisplayName("Individual Glass Pane Thickness (m)")
+        glass_pane_thickness.setDescription("Thickness of an individual glass pane in meters. This value is used to calculate embodied carbon using gwp_per_m3 for glass installations. Default value is 0.003 m (3 mm), which is typical for standard glass panes.")
+        glass_pane_thickness.setDefaultValue(0.003) # 3 mm typical glass thickness
+        args.append(glass_pane_thickness)
+
+        # make an argument for gap thickness between glass panes
+        gap_thickness = openstudio.measure.OSArgument.makeDoubleArgument("gap_thickness", True)
+        gap_thickness.setDisplayName("Gap Thickness Between Glass Panes (m)")
+        gap_thickness.setDescription("Thickness of the air/gas gap between glass panes in meters. This is used when creating new multi-pane window constructions. Default value is 0.013 m (13 mm), which is typical for double and triple pane windows.")
+        gap_thickness.setDefaultValue(0.013) # 13 mm typical gap thickness
+        args.append(gap_thickness)
 
         # make an argument for selecting which gwp statistic to use for embodied carbon calculation
         gwp_statistics_chs = openstudio.StringVector()
@@ -311,6 +339,7 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
         window_option = runner.getStringArgumentValue("window_option", user_arguments)
         weatherstrip_option = runner.getStringArgumentValue("weatherstrip_option", user_arguments)
         glass_option = runner.getStringArgumentValue("glass_option", user_arguments)
+        secondary_glazing_option = runner.getStringArgumentValue("secondary_glazing_option", user_arguments)
         analysis_period = runner.getIntegerArgumentValue("analysis_period",user_arguments)
         glass_lifetime = runner.getIntegerArgumentValue("glass_lifetime",user_arguments)
         wf_lifetime = runner.getIntegerArgumentValue("wf_lifetime",user_arguments)
@@ -320,6 +349,8 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
         window_lifetime = runner.getIntegerArgumentValue("window_lifetime",user_arguments)
         api_key = runner.getStringArgumentValue("api_key", user_arguments)
         user_num_panes = runner.getIntegerArgumentValue("user_num_panes", user_arguments)
+        glass_pane_thickness = runner.getDoubleArgumentValue("glass_pane_thickness", user_arguments)
+        gap_thickness = runner.getDoubleArgumentValue("gap_thickness", user_arguments)
         length_per_unit = runner.getDoubleArgumentValue("length_per_unit", user_arguments)
 
         # Debug: Print all user arguments received
@@ -544,7 +575,7 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
                     runner.registerError(f"Number of layers in {subsurface.nameString()} is {layered_construction.numLayers()}, which is not typical for window construction. Please check the model and provide user_num_panes to avoid ambiguity.")
                 else:
                     num_panes = 3 # assign triple pane as the maximum number of panes
-                    runner.registerInfo(f"Number of panes derived from model is {layered_construction.numLayers()}, changed to 3 because currently the measure is unable to handle more complex scenarios due to the lack of EPD data.")
+                    runner.registerWarning(f"Number of panes derived from model is {layered_construction.numLayers()}, changed to 3 because currently the measure is unable to handle more complex scenarios due to the lack of EPD data.")
             elif user_num_panes < 0:
                 runner.registerError("Number of panes provided by user is less than 0, please provide a valid integer.")
                 return False
@@ -565,6 +596,7 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
             subsurface_dict[subsurface_name]["film"] = {}
             subsurface_dict[subsurface_name]["weatherstrip"] = {}
             subsurface_dict[subsurface_name]["window"] = {}
+            subsurface_dict[subsurface_name]["second_glazing"] = {}
 
             #assign openstudio model
             subsurface_dict[subsurface_name]["subsurface_object"] = subsurface
@@ -576,6 +608,7 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
             subsurface_dict[subsurface_name]["film"]["lifetime"] = film_lifetime
             subsurface_dict[subsurface_name]["weatherstrip"]["lifetime"] = weatherstrip_lifetime
             subsurface_dict[subsurface_name]["window"]["lifetime"] = window_lifetime
+            subsurface_dict[subsurface_name]["second_glazing"]["lifetime"] = glass_lifetime
             #assign renovation options
             subsurface_dict[subsurface_name]["glass"]["renovation_option"] = num_panes
             subsurface_dict[subsurface_name]["frame"]["renovation_option"] = wf_option
@@ -585,6 +618,7 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
             if weatherstrip_option != "none" and subsurface.subSurfaceType() != "OperableWindow":
                 runner.registerInfo(f"Weatherstrip option is selected but {subsurface.nameString()} is not an operable window, skip applying weatherstrip to this subsurface.")
             subsurface_dict[subsurface_name]["window"]["renovation_option"] = window_option
+            subsurface_dict[subsurface_name]["second_glazing"]["renovation_option"] = secondary_glazing_option
 
             #calculate and store subsurface dimension
             subsurface_dict[subsurface_name]["dimension"] = calculate_geometry(self, subsurface)
@@ -618,30 +652,40 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
             subsurface_dict[subsurface_name]["window"]["area_m2"] = window_area
             subsurface_dict[subsurface_name]["glass"]["area_m2"] = subsurface_dict[subsurface_name]["film"]["area_m2"]
             subsurface_dict[subsurface_name]["frame"]["area_m2"] = window_area
+            subsurface_dict[subsurface_name]["second_glazing"]["area_m2"] = subsurface_dict[subsurface_name]["film"]["area_m2"]
+
+            # Create new window construction if glass_option is not none
+            if glass_option != "none" and num_panes > 0:
+                runner.registerInfo(f"Creating new {num_panes}-pane window construction for {subsurface_name}")
+                new_construction = self.create_new_window_construction(model, runner, subsurface, num_panes, glass_pane_thickness, gap_thickness)
+                if new_construction is not None:
+                    subsurface.setConstruction(new_construction)
+                    subsurface_dict[subsurface_name]["glass"]["object"] = new_construction
+                    runner.registerInfo(f"Applied new window construction '{new_construction.nameString()}' to {subsurface_name}")
 
             # fetch EPD data from EC3 database
             epd_datalist = {}
 
             # window frame EPD
             frame_product_url = None
-            if wf_option != "none" and window_option == "none": # if window_option is selected, glass and frame option will be ignored to avoid double counting
+            if wf_option != "none":
+                if window_option != "none":
+                    runner.registerWarning("Both window option and frame option are selected. Glass and frame options cannot be used with window option to avoid double counting. Ignoring window option.")
                 frame_product_url = generate_url_byname(name_like = wf_option, plant_geography = '150') # '150' means Europe, there is no EPDs in NA region
-            elif wf_option != "none" and window_option != "none":
-                runner.registerInfo("Both window option and frame option are selected, to avoid double counting, window option is ignored in the calculation.")
             else:
                 runner.registerInfo("No window frame renovation option selected, skip fetching window frame EPD data.")
 
             # glass pane EPD
             glass_product_url = None
-            if glass_option != "none" and window_option == "none": # if window_option is selected, glass and frame option will be ignored to avoid double counting
+            if glass_option != "none":
+                if window_option != "none":
+                    runner.registerWarning("Both window option and glass option are selected. Glass and frame options cannot be used with window option to avoid double counting. Ignoring window option.")
                 if num_panes == 1:
                     glass_product_url = generate_url_byname(category = '6daae3d967104f5c8c85199b259f58c8', name_like = 'monolithic glass')
                 elif num_panes == 2:
                     glass_product_url = generate_url_byname(category = 'ade3ad3405124279955e7d3085f59383', name_like = 'double pane')
                 elif num_panes == 3:
                     glass_product_url = generate_url_byname(category = 'ade3ad3405124279955e7d3085f59383', name_like = 'triple pane')
-            elif glass_option != "none" and window_option != "none":
-                runner.registerInfo("Both window option and glass option are selected, to avoid double counting, window option is ignored in the calculation.")
             else:
                 runner.registerInfo("No glass pane renovation option selected, skip fetching glass pane EPD data.")
 
@@ -654,12 +698,55 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
             else:
                 runner.registerInfo("No caulking renovation option selected, skip fetching caulking EPD data.")
 
-            # glazing film EPD
+            # glazing film EPD and window construction modification
             film_product_url = None
             if film_option != "none":
                 film_product_url = generate_url_byname(category = '3aa3a34fae9a400fa297339ba88e1fab', name_like = film_option)
+                
+                # Check if construction needs conversion and apply glazing film
+                if subsurface.construction().is_initialized():
+                    current_construction = subsurface.construction().get()
+                    
+                    # Check if it's a simple glazing system that was NOT replaced by glass_option
+                    if self.is_simple_glazing_system(runner, current_construction) and glass_option == "none":
+                        runner.registerWarning(f"Simple glazing system detected in {subsurface_name}, unable to model the attachment of glazing film layer. Skipping glazing film addition for this subsurface.")
+                        film_product_url = None
+                    else:
+                        # For standard layered constructions (including newly created ones from glass_option), add film effects
+                        if glass_option != "none":
+                            runner.registerInfo(f"Adding glazing film effects to newly created construction for {subsurface_name}")
+                        else:
+                            runner.registerInfo(f"Adding glazing film effects to existing layered construction for {subsurface_name}")
+                        new_construction = self.convert_to_equivalent_layer(model, runner, subsurface, current_construction, film_option)
+                        subsurface_dict[subsurface_name]["glass"]["object"] = new_construction
             else:
                 runner.registerInfo("No glazing film renovation option selected, skip fetching glazing film EPD data.")
+
+            # secondary glazing installation for single-pane windows
+            if secondary_glazing_option == "install secondary glazing":
+                # Check for conflict with glass_option
+                if glass_option != "none":
+                    runner.registerWarning(f"Both secondary glazing and glass option are selected for {subsurface_name}. Secondary glazing adds a layer to existing windows, while glass option replaces all glass panes. These options conflict. Skipping secondary glazing installation.")
+                elif subsurface.construction().is_initialized():
+                    current_construction = subsurface.construction().get()
+                    
+                    # Check if it's a simple glazing system - skip if true
+                    if self.is_simple_glazing_system(runner, current_construction):
+                        runner.registerWarning(f"Simple glazing system detected in {subsurface_name}, skipping secondary glazing installation for this subsurface.")
+                    else:
+                        # Count glazing layers using helper function
+                        glazing_count = self.count_glazing_layers(current_construction)
+                        
+                        if glazing_count == 1:
+                            runner.registerInfo(f"Single-pane construction detected in {subsurface_name}, installing secondary glazing")
+                            new_construction = self.add_secondary_glazing(model, runner, subsurface, current_construction)
+                            subsurface_dict[subsurface_name]["glass"]["object"] = new_construction
+                        elif glazing_count > 1:
+                            runner.registerWarning(f"Construction in {subsurface_name} has {glazing_count} glazing layers, skipping secondary glazing installation (only applies to single-pane)")
+                        else:
+                            runner.registerWarning(f"Unable to determine glazing layers in {subsurface_name}, skipping secondary glazing installation")
+            else:
+                runner.registerInfo("No secondary glazing option selected.")
 
             # weatherstrip EPD
             weatherstrip_product_url = None
@@ -670,26 +757,51 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
 
             # window product EPD
             window_product_url = None
-            # handle not "none" options when glass or frame option is none
-            if window_option != "none" and glass_option == "none" and wf_option == "none": # if window_option is selected, glass and frame option will be ignored to avoid double counting
-                # assign different types of windows based on model information
-                if window_option != "defined by model":
-                    window_product_url = generate_url_byname(name_like = window_option)
+            if window_option != "none":
+                # Check for conflicts with glass or frame options
+                if glass_option != "none" or wf_option != "none":
+                    runner.registerWarning("Window option cannot be used with glass or frame options to avoid double counting. Ignoring window option.")
                 else:
-                    model_window_type = None
-                    if subsurface.subSurfaceType() in["FixedWindow","Skylight"]:
-                        model_window_type = "fixed window"
-                    elif subsurface.subSurfaceType() == "OperableWindow":
-                        model_window_type = "sliding window"
+                    # assign different types of windows based on model information
+                    if window_option != "defined by model":
+                        window_product_url = generate_url_byname(name_like = window_option)
                     else:
-                        runner.registerError("Window type not recognized, unable to fetch window product EPD data.")
-                    window_product_url = generate_url_byname(name_like = model_window_type) 
-            # handle not "none" options when glass or frame option is not none
-            elif window_option != "none" and (glass_option != "none" or wf_option != "none"):
-                runner.registerInfo("Both window option and glass or frame option are selected, to avoid double counting, window option is ignored in the calculation.")
-            # handle "none" options
+                        model_window_type = None
+                        if subsurface.subSurfaceType() in["FixedWindow","Skylight"]:
+                            model_window_type = "fixed window"
+                        elif subsurface.subSurfaceType() == "OperableWindow":
+                            model_window_type = "sliding window"
+                        else:
+                            runner.registerError("Window type not recognized, unable to fetch window product EPD data.")
+                        window_product_url = generate_url_byname(name_like = model_window_type)
             else:
                 runner.registerInfo("No window renovation option selected, skip fetching window product EPD data.")
+
+            # secondary glazing EPD
+            second_glazing_product_url = None
+            if secondary_glazing_option == "install secondary glazing":
+                # Check for conflict with glass_option
+                if glass_option != "none":
+                    runner.registerWarning(f"Both secondary glazing and glass option are selected. Skipping secondary glazing EPD fetch to avoid conflict.")
+                # Check if it's a simple glazing system or not single-pane - skip EPD if so
+                elif subsurface.construction().is_initialized():
+                    current_construction = subsurface.construction().get()
+                    
+                    if self.is_simple_glazing_system(runner, current_construction):
+                        runner.registerWarning(f"Simple glazing system detected in {subsurface_name}, skipping secondary glazing EPD fetch.")
+                    else:
+                        # Count glazing layers using helper function
+                        glazing_count = self.count_glazing_layers(current_construction)
+                        
+                        if glazing_count == 1:
+                            second_glazing_product_url = generate_url_byname(category = '6daae3d967104f5c8c85199b259f58c8', name_like = 'monolithic glass')
+                            runner.registerInfo(f"Fetching EPD data for secondary glazing for {subsurface_name}")
+                        elif glazing_count > 1:
+                            runner.registerWarning(f"Construction in {subsurface_name} has {glazing_count} glazing layers, skipping secondary glazing EPD fetch.")
+                        else:
+                            runner.registerWarning(f"Unable to determine glazing layers in {subsurface_name}, skipping secondary glazing EPD fetch.")
+            else:
+                runner.registerInfo("No secondary glazing option selected, skip fetching secondary glazing EPD data.")
 
             # fetch EPD data using generated url
             glass_product_epd = fetch_epd_data(url = glass_product_url, api_token = api_key)
@@ -698,6 +810,7 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
             film_product_epd = fetch_epd_data(url = film_product_url, api_token = api_key)
             weatherstrip_product_epd = fetch_epd_data(url = weatherstrip_product_url, api_token = api_key)
             window_product_epd = fetch_epd_data(url = window_product_url, api_token = api_key)
+            second_glazing_product_epd = fetch_epd_data(url = second_glazing_product_url, api_token = api_key)
 
             # store EPD data in a dictionary
             epd_datalist = {}
@@ -707,6 +820,7 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
             epd_datalist["film"] = film_product_epd
             epd_datalist["weatherstrip"] = weatherstrip_product_epd
             epd_datalist["window"] = window_product_epd
+            epd_datalist["second_glazing"] = second_glazing_product_epd
 
             # process EPD data to extract GWP values
             for material_name, epd_data in epd_datalist.items():
@@ -745,34 +859,56 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
                 multiplier = lifetime_multiplier(subsurface_dict[subsurface_name][material_name]["lifetime"], analysis_period)
 
                 embodied_carbon = 0.0
-                if material_name in ["glass","film","frame","window"]: # functional unit is area, 1 m2
+                if material_name == "glass": # use gwp_per_m3 with glass pane thickness
+                    if subsurface_dict[subsurface_name][material_name]["gwp_per_m3"] is None:
+                        embodied_carbon = 0.0
+                        runner.registerWarning(f"No gwp_per_m3 data found for {material_name} in {subsurface_name}, assigning 0 embodied carbon.")
+                    else:
+                        # Calculate based on number of panes
+                        num_panes_installed = subsurface_dict[subsurface_name][material_name]["renovation_option"]
+                        embodied_carbon = float(subsurface_dict[subsurface_name][material_name]["gwp_per_m3"] * 
+                                               subsurface_dict[subsurface_name][material_name]["area_m2"] * 
+                                               glass_pane_thickness * num_panes_installed * multiplier)
+                        runner.registerInfo(f"Calculating embodied carbon for glass using {num_panes_installed} pane(s) with thickness {glass_pane_thickness} m")
+                elif material_name == "second_glazing": # use gwp_per_m3 with glass pane thickness (single pane)
+                    if subsurface_dict[subsurface_name][material_name]["gwp_per_m3"] is None:
+                        embodied_carbon = 0.0
+                        runner.registerWarning(f"No gwp_per_m3 data found for {material_name} in {subsurface_name}, assigning 0 embodied carbon.")
+                    else:
+                        embodied_carbon = float(subsurface_dict[subsurface_name][material_name]["gwp_per_m3"] * 
+                                               subsurface_dict[subsurface_name][material_name]["area_m2"] * 
+                                               glass_pane_thickness * multiplier)
+                        runner.registerInfo(f"Calculating embodied carbon for secondary glazing using thickness {glass_pane_thickness} m")
+                elif material_name in ["window","film","frame"]: # functional unit is area, 1 m2
                     if subsurface_dict[subsurface_name][material_name]["gwp_per_m2"] is None:
                         embodied_carbon = 0.0
-                        runner.registerInfo(f"No GWP data found for {material_name} in {subsurface_name}, assigning 0 embodied carbon.")
+                        runner.registerWarning(f"No GWP data found for {material_name} in {subsurface_name}, assigning 0 embodied carbon.")
                     else:
                         embodied_carbon = float(subsurface_dict[subsurface_name][material_name]["gwp_per_m2"] * subsurface_dict[subsurface_name][material_name]["area_m2"] * multiplier)
                 elif material_name == "caulking": # functional unit is volume, 1 m3
                     if subsurface_dict[subsurface_name][material_name]["gwp_per_m3"] is None:
                         embodied_carbon = 0.0
-                        runner.registerInfo(f"No GWP data found for {material_name} in {subsurface_name}, assigning 0 embodied carbon.")
+                        runner.registerWarning(f"No GWP data found for {material_name} in {subsurface_name}, assigning 0 embodied carbon.")
                     else:
                         embodied_carbon = float(subsurface_dict[subsurface_name][material_name]["gwp_per_m3"] * subsurface_dict[subsurface_name][material_name]["volume_m3"] * multiplier)
                 elif material_name == "weatherstrip": # functional unit is length, 1 m
                     if subsurface_dict[subsurface_name][material_name]["gwp_per_m"] is None:
                         embodied_carbon = 0.0
-                        runner.registerInfo(f"No GWP data found for {material_name} in {subsurface_name}, assigning 0 embodied carbon.")
+                        runner.registerWarning(f"No GWP data found for {material_name} in {subsurface_name}, assigning 0 embodied carbon.")
                     else:
                         embodied_carbon = float(subsurface_dict[subsurface_name][material_name]["gwp_per_m"] * subsurface_dict[subsurface_name][material_name]["length_m"] * multiplier)
 
                 # assign embodied carbon
                 subsurface_dict[subsurface_name][material_name]["embodied_carbon_kg_co2_eq"] = embodied_carbon
-                runner.registerInfo(f"Embodied carbon of {material_name} in {subsurface_name} (kg CO2 eq): {subsurface_dict[subsurface_name][material_name]['embodied_carbon_kg_co2_eq']}")
+                runner.registerValue(f"{material_name}_embodied_carbon_kg_co2_eq", embodied_carbon, "kg CO2 eq")
+                runner.registerInfo(f"Embodied carbon of {material_name} in {subsurface_name}: {embodied_carbon:.2f} kg CO2 eq")
 
                 # if parsed_data["thickness"]:# provide thickness of the product if available
                 #     subsurface_dict[subsurface_name][material_name]["thickness"] = parsed_data["thickness"]
                 subsurface_dict[subsurface_name]["window_renovation_embodied_carbon_kg_co2_eq"] +=  subsurface_dict[subsurface_name][material_name]["embodied_carbon_kg_co2_eq"]
 
-            runner.registerInfo(f"Embodied carbon of window renovation in this subsurface (kg CO2 eq): {subsurface_dict[subsurface_name]['window_renovation_embodied_carbon_kg_co2_eq']}")
+            runner.registerValue(f"{subsurface_name}_total_embodied_carbon_kg_co2_eq", subsurface_dict[subsurface_name]['window_renovation_embodied_carbon_kg_co2_eq'], "kg CO2 eq")
+            runner.registerInfo(f"Total embodied carbon for {subsurface_name}: {subsurface_dict[subsurface_name]['window_renovation_embodied_carbon_kg_co2_eq']:.2f} kg CO2 eq")
 
             # attach additional properties to openstudio material
             additional_properties = subsurface_dict[subsurface_name]["subsurface_object"].additionalProperties()
@@ -781,6 +917,27 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
 
         pp.pprint(subsurface_dict)
         return True
+
+    def remove_outliers_iqr(self, data):
+        """Remove outliers from a list of numerical values using the IQR method.
+        Returns the filtered list without outliers.
+        """
+        if len(data) < 4:  # Need at least 4 data points for meaningful IQR calculation
+            return data
+        
+        data_array = np.array(data)
+        q1 = np.percentile(data_array, 25)
+        q3 = np.percentile(data_array, 75)
+        iqr = q3 - q1
+        
+        # Define outlier bounds
+        lower_bound = q1 - 1.5 * iqr
+        upper_bound = q3 + 1.5 * iqr
+        
+        # Filter out outliers
+        filtered_data = [x for x in data if lower_bound <= x <= upper_bound]
+        
+        return filtered_data
 
     def extract_gwp_and_thickness_from_epd(self, length_per_unit, epd_data):
         gwp_values = {}
@@ -811,8 +968,323 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
 
             thickness = parsed_data["thickness"]
             if thickness != None:
-                thickness_summary.append(thickness)
-        return gwp_values,thickness_summary
+                # Convert thickness to numerical value if it's a string
+                if isinstance(thickness, str):
+                    thickness_value = extract_numeric_value(thickness)
+                    if thickness_value is not None:
+                        thickness_summary.append(float(thickness_value))
+                else:
+                    thickness_summary.append(float(thickness))
+        
+        # Remove outliers from GWP values
+        for key in ["gwp_per_m2", "gwp_per_kg", "gwp_per_m3", "gwp_per_m"]:
+            if len(gwp_values[key]) > 0:
+                original_count = len(gwp_values[key])
+                gwp_values[key] = self.remove_outliers_iqr(gwp_values[key])
+                filtered_count = len(gwp_values[key])
+                if original_count != filtered_count:
+                    print(f"Removed {original_count - filtered_count} outliers from {key}: {original_count} -> {filtered_count} values")
+        
+        # Remove outliers from thickness values (now numerical)
+        if len(thickness_summary) > 0:
+            original_thickness_count = len(thickness_summary)
+            thickness_summary = self.remove_outliers_iqr(thickness_summary)
+            filtered_thickness_count = len(thickness_summary)
+            if original_thickness_count != filtered_thickness_count:
+                print(f"Removed {original_thickness_count - filtered_thickness_count} outliers from thickness: {original_thickness_count} -> {filtered_thickness_count} values")
+        
+        return gwp_values, thickness_summary
+
+    def get_film_properties(self, film_option):
+        """Return optical and thermal properties for different film types.
+        Returns: (visible_transmittance, solar_transmittance, thermal_emissivity, thermal_resistance)
+        """
+        # Default properties based on typical film characteristics
+        film_properties = {
+            'safety film': (0.88, 0.75, 0.84, 0.0),
+            'solar control film': (0.50, 0.30, 0.84, 0.0),
+            'anti-graffiti film': (0.90, 0.80, 0.84, 0.0),
+            'decorative film': (0.70, 0.65, 0.84, 0.0),
+            'low-e film': (0.75, 0.65, 0.15, 0.05)
+        }
+        return film_properties.get(film_option, (0.85, 0.70, 0.84, 0.0))
+
+    def count_glazing_layers(self, construction):
+        """Count the number of glazing layers in a construction.
+        Returns: number of glazing layers, or -1 if not a layered construction
+        """
+        if construction.to_LayeredConstruction().is_initialized():
+            layered = construction.to_LayeredConstruction().get()
+            glazing_count = 0
+            for i in range(layered.numLayers()):
+                material = layered.getLayer(i)
+                if (material.to_StandardGlazing().is_initialized() or 
+                    material.to_RefractionExtinctionGlazing().is_initialized()):
+                    glazing_count += 1
+            return glazing_count
+        return -1
+
+    def is_simple_glazing_system(self, runner, construction):
+        """Check if the construction uses SimpleGlazing material."""
+        if construction.to_LayeredConstruction().is_initialized():
+            layered = construction.to_LayeredConstruction().get()
+            for i in range(layered.numLayers()):
+                material = layered.getLayer(i)
+                if material.to_SimpleGlazing().is_initialized():
+                    runner.registerInfo(f"Simple glazing system detected in layer {i+1}")
+                    return True
+        return False
+
+    def create_new_window_construction(self, model, runner, subsurface, num_panes, glass_thickness, gap_thickness):
+        """Create a new window construction with specified number of panes and dimensions.
+        
+        Args:
+            model: OpenStudio model
+            runner: Measure runner for logging
+            subsurface: The subsurface to create construction for
+            num_panes: Number of glass panes (1, 2, or 3)
+            glass_thickness: Thickness of each glass pane in meters
+            gap_thickness: Thickness of air gap between panes in meters
+            
+        Returns:
+            New Construction object or None if creation fails
+        """
+        subsurface_name = subsurface.nameString()
+        
+        # Create construction name
+        construction_name = f"{subsurface_name}_New_{num_panes}Pane_Construction"
+        
+        # Create glass pane materials
+        layers = openstudio.model.MaterialVector()
+        
+        for pane_num in range(1, num_panes + 1):
+            # Create glass layer with typical clear glass properties
+            glass_pane = openstudio.model.StandardGlazing(model)
+            glass_pane.setName(f"{subsurface_name}_Glass_Pane_{pane_num}")
+            glass_pane.setThickness(glass_thickness)
+            
+            # Set optical and thermal properties for typical clear glass
+            glass_pane.setSolarTransmittance(0.775)
+            glass_pane.setVisibleTransmittance(0.881)
+            glass_pane.setFrontSideSolarReflectanceatNormalIncidence(0.071)
+            glass_pane.setBackSideSolarReflectanceatNormalIncidence(0.071)
+            glass_pane.setFrontSideVisibleReflectanceatNormalIncidence(0.080)
+            glass_pane.setBackSideVisibleReflectanceatNormalIncidence(0.080)
+            glass_pane.setInfraredTransmittanceatNormalIncidence(0.0)
+            glass_pane.setFrontSideInfraredHemisphericalEmissivity(0.84)
+            glass_pane.setBackSideInfraredHemisphericalEmissivity(0.84)
+            glass_pane.setThermalConductivity(0.9)  # W/m-K for typical glass
+            
+            # Add glass layer
+            layers.append(glass_pane)
+            
+            # Add air gap after each glass pane except the last one
+            if pane_num < num_panes:
+                air_gap = openstudio.model.Gas(model)
+                air_gap.setName(f"{subsurface_name}_Air_Gap_{pane_num}")
+                air_gap.setThickness(gap_thickness)
+                air_gap.setGasType("Air")
+                layers.append(air_gap)
+        
+        # Create new construction
+        new_construction = openstudio.model.Construction(model)
+        new_construction.setName(construction_name)
+        new_construction.setLayers(layers)
+        
+        runner.registerInfo(f"Created {num_panes}-pane construction: glass thickness={glass_thickness*1000:.1f}mm, gap thickness={gap_thickness*1000:.1f}mm")
+        
+        return new_construction
+
+    def add_secondary_glazing(self, model, runner, subsurface, original_construction):
+        """Add a secondary glazing layer to single-pane window construction.
+        This function only handles standard layered constructions with a single glazing layer.
+        """
+        subsurface_name = subsurface.nameString()
+        
+        # Create new construction name
+        new_construction_name = f"{original_construction.nameString()}_with_secondary_glazing"
+        
+        # Create secondary glazing layer (typical clear glass properties)
+        secondary_glazing = openstudio.model.StandardGlazing(model)
+        secondary_glazing.setName("Secondary_Glazing_3mm_Clear")
+        secondary_glazing.setThickness(0.003)  # 3mm typical glass thickness
+        secondary_glazing.setSolarTransmittance(0.775)
+        secondary_glazing.setVisibleTransmittance(0.881)
+        secondary_glazing.setFrontSideInfraredHemisphericalEmissivity(0.84)
+        secondary_glazing.setBackSideInfraredHemisphericalEmissivity(0.84)
+        
+        # Create air gap between panes (typical 13mm air gap)
+        air_gap = openstudio.model.Gas(model)
+        air_gap.setName("Air_Gap_13mm")
+        air_gap.setThickness(0.013)  # 13mm air gap
+        air_gap.setGasType("Air")
+        
+        # Build new layer assembly
+        layers = openstudio.model.MaterialVector()
+        
+        # Copy existing layers from original construction
+        if original_construction.to_LayeredConstruction().is_initialized():
+            layered = original_construction.to_LayeredConstruction().get()
+            for i in range(layered.numLayers()):
+                original_material = layered.getLayer(i)
+                layers.append(original_material)
+        
+        # Add air gap and secondary glazing to interior side
+        layers.append(air_gap)
+        layers.append(secondary_glazing)
+        
+        # Create new layered construction
+        new_layered_construction = openstudio.model.Construction(model)
+        new_layered_construction.setName(new_construction_name)
+        new_layered_construction.setLayers(layers)
+        
+        # Assign new construction to subsurface
+        subsurface.setConstruction(new_layered_construction)
+        
+        runner.registerInfo(f"Created new construction '{new_construction_name}' with secondary glazing for {subsurface_name}")
+        runner.registerInfo(f"Added 13mm air gap and 3mm clear glass as secondary glazing")
+        
+        return new_layered_construction
+
+    def convert_to_equivalent_layer(self, model, runner, subsurface, original_construction, film_option):
+        """Integrate glazing film effects into the innermost glass pane.
+        This function modifies the interior glass layer to account for film properties.
+        """
+        subsurface_name = subsurface.nameString()
+        
+        # Create new construction name
+        new_construction_name = f"{original_construction.nameString()}_with_{film_option.replace(' ', '_')}"
+        
+        # Get film properties
+        film_vis_trans, film_sol_trans, film_emissivity, thermal_resistance = self.get_film_properties(film_option)
+        
+        # Build new layers, modifying the innermost glass pane
+        layers = openstudio.model.MaterialVector()
+        
+        if original_construction.to_LayeredConstruction().is_initialized():
+            layered = original_construction.to_LayeredConstruction().get()
+            num_layers = layered.numLayers()
+            
+            # Find the innermost (last) glazing layer
+            innermost_glass_index = -1
+            for i in range(num_layers - 1, -1, -1):
+                material = layered.getLayer(i)
+                if material.to_StandardGlazing().is_initialized():
+                    innermost_glass_index = i
+                    break
+            
+            if innermost_glass_index == -1:
+                runner.registerWarning(f"No StandardGlazing layer found in {subsurface_name}, cannot apply film effects")
+                return original_construction
+            
+            # Copy layers and modify the innermost glass pane
+            for i in range(num_layers):
+                original_material = layered.getLayer(i)
+                
+                if i == innermost_glass_index:
+                    # Modify the innermost glass pane to integrate film effects
+                    original_glass = original_material.to_StandardGlazing().get()
+                    
+                    # Create modified glass pane with film effects
+                    modified_glass = openstudio.model.StandardGlazing(model)
+                    modified_glass.setName(f"{original_glass.nameString()}_with_{film_option.replace(' ', '_')}")
+                    modified_glass.setThickness(original_glass.thickness())
+                    
+                    # Get original optical properties (with defaults if not available)
+                    orig_sol_trans = 0.837
+                    orig_vis_trans = 0.898
+                    
+                    # Try to get actual values from original glass
+                    try:
+                        opt_sol = original_glass.solarTransmittance()
+                        if opt_sol.is_initialized():
+                            orig_sol_trans = opt_sol.get()
+                    except:
+                        pass
+                    
+                    try:
+                        opt_vis = original_glass.visibleTransmittance()
+                        if opt_vis.is_initialized():
+                            orig_vis_trans = opt_vis.get()
+                    except:
+                        pass
+                    
+                    # Combine optical properties (multiply transmittances)
+                    modified_glass.setSolarTransmittance(orig_sol_trans * film_sol_trans)
+                    modified_glass.setVisibleTransmittance(orig_vis_trans * film_vis_trans)
+                    
+                    # Copy front side properties from original glass (if available)
+                    try:
+                        opt_val = original_glass.frontSideSolarReflectanceatNormalIncidence()
+                        if opt_val.is_initialized():
+                            modified_glass.setFrontSideSolarReflectanceatNormalIncidence(opt_val.get())
+                    except:
+                        pass
+                    
+                    try:
+                        opt_val = original_glass.frontSideVisibleReflectanceatNormalIncidence()
+                        if opt_val.is_initialized():
+                            modified_glass.setFrontSideVisibleReflectanceatNormalIncidence(opt_val.get())
+                    except:
+                        pass
+                    
+                    try:
+                        opt_val = original_glass.frontSideInfraredHemisphericalEmissivity()
+                        if opt_val.is_initialized():
+                            modified_glass.setFrontSideInfraredHemisphericalEmissivity(opt_val.get())
+                    except:
+                        pass
+                    
+                    # Copy back side properties (except emissivity which gets film value)
+                    try:
+                        opt_val = original_glass.backSideSolarReflectanceatNormalIncidence()
+                        if opt_val.is_initialized():
+                            modified_glass.setBackSideSolarReflectanceatNormalIncidence(opt_val.get())
+                    except:
+                        pass
+                    
+                    try:
+                        opt_val = original_glass.backSideVisibleReflectanceatNormalIncidence()
+                        if opt_val.is_initialized():
+                            modified_glass.setBackSideVisibleReflectanceatNormalIncidence(opt_val.get())
+                    except:
+                        pass
+                    
+                    # Apply film emissivity to back (interior) side
+                    modified_glass.setBackSideInfraredHemisphericalEmissivity(film_emissivity)
+                    
+                    # Copy other thermal properties
+                    try:
+                        opt_val = original_glass.infraredTransmittanceatNormalIncidence()
+                        if opt_val.is_initialized():
+                            modified_glass.setInfraredTransmittanceatNormalIncidence(opt_val.get())
+                    except:
+                        pass
+                    
+                    try:
+                        opt_val = original_glass.thermalConductivity()
+                        if opt_val.is_initialized():
+                            modified_glass.setThermalConductivity(opt_val.get())
+                    except:
+                        pass
+                    
+                    layers.append(modified_glass)
+                    runner.registerInfo(f"Modified innermost glass pane with film properties: Vis Trans {orig_vis_trans:.3f}→{orig_vis_trans * film_vis_trans:.3f}, Sol Trans {orig_sol_trans:.3f}→{orig_sol_trans * film_sol_trans:.3f}, Back Emissivity→{film_emissivity:.3f}")
+                else:
+                    # Copy other layers unchanged
+                    layers.append(original_material)
+        
+        # Create new layered construction
+        new_layered_construction = openstudio.model.Construction(model)
+        new_layered_construction.setName(new_construction_name)
+        new_layered_construction.setLayers(layers)
+        
+        # Assign new construction to subsurface
+        subsurface.setConstruction(new_layered_construction)
+        
+        runner.registerInfo(f"Created new construction '{new_construction_name}' with glazing film integrated into innermost glass pane for {subsurface_name}")
+        
+        return new_layered_construction
 
     def get_frame_and_divider_dimension(self, runner, subsurface):
         if subsurface.windowPropertyFrameAndDivider().is_initialized(): # check if frame_and_divider exist in selected subsurface

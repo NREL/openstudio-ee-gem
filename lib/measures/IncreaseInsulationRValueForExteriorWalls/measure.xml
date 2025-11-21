@@ -3,8 +3,8 @@
   <schema_version>3.1</schema_version>
   <name>increase_insulation_r_value_for_exterior_walls</name>
   <uid>3fdf9c39-d305-449b-a4b5-077166af5a67</uid>
-  <version_id>2bacf32c-52d7-4e42-aa72-1c0e925b0ab1</version_id>
-  <version_modified>2025-11-12T19:53:46Z</version_modified>
+  <version_id>9861a99e-fea4-4336-965f-f4049f22a8c8</version_id>
+  <version_modified>2025-11-20T21:58:18Z</version_modified>
   <xml_checksum>0F858D9E</xml_checksum>
   <class_name>IncreaseInsulationRValueForExteriorWalls</class_name>
   <display_name>Increase R-value of Insulation for Exterior Walls to a Specific Value</display_name>
@@ -141,7 +141,7 @@ The resulting construction will retain the cost data from the source constructio
       <filename>__pycache__/EC3_lookup.cpython-313.pyc</filename>
       <filetype>pyc</filetype>
       <usage_type>resource</usage_type>
-      <checksum>CD30C3F0</checksum>
+      <checksum>604E45BB</checksum>
     </file>
     <file>
       <filename>EnvelopeAndLoadTestModel_01.osm</filename>

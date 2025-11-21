@@ -588,6 +588,30 @@ class DoorEnhancement(openstudio.measure.ModelMeasure):
                         gwp_per_m = gwp_per_unit / length_per_unit_dict[door_top_side_seal_option]
                         gwp_values["gwp_per_m"].append(float(gwp_per_m))
 
+                # Remove outliers using IQR method
+                for functional_unit, values_list in gwp_values.items():
+                    if len(values_list) >= 4:  # Only remove outliers if we have enough data points
+                        original_count = len(values_list)
+                        q1 = np.percentile(values_list, 25)
+                        q3 = np.percentile(values_list, 75)
+                        iqr = q3 - q1
+                        lower_bound = q1 - 1.5 * iqr
+                        upper_bound = q3 + 1.5 * iqr
+                        filtered_list = [x for x in values_list if lower_bound <= x <= upper_bound]
+                        
+                        if len(filtered_list) < original_count:
+                            runner.registerInfo(
+                                f"Removed {original_count - len(filtered_list)} outlier(s) from {functional_unit} "
+                                f"for {material_name} (original: {original_count}, filtered: {len(filtered_list)})"
+                            )
+                            # Only use filtered list if it's not empty
+                            if len(filtered_list) > 0:
+                                gwp_values[functional_unit] = filtered_list
+                            else:
+                                runner.registerWarning(
+                                    f"All values were outliers for {functional_unit}, using original data"
+                                )
+
                 # extract gwp statistics by user input
                 gwp = None
                 for functional_unit, list in gwp_values.items():

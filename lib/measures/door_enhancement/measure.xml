@@ -4,8 +4,8 @@
   <error>Failed to infer measure name from 'C:/All repos/openstudio-ee-gem/lib/measures/door_enhancement/measure.py'</error>
   <name>window_enhancment</name>
   <uid>0ad8e761-8624-4d9d-a7d6-ebf30cce243b</uid>
-  <version_id>fb9841e1-ce78-4f72-9869-00306fc2faa7</version_id>
-  <version_modified>2025-11-12T19:53:46Z</version_modified>
+  <version_id>402c5ce7-4a48-4c08-84f0-9806fdf1178e</version_id>
+  <version_modified>2025-11-20T21:58:15Z</version_modified>
   <xml_checksum>7DADF7C5</xml_checksum>
   <class_name>WindowEnhancment</class_name>
   <display_name>Window Enhancment</display_name>
@@ -86,7 +86,7 @@
       <filename>measure.py</filename>
       <filetype>py</filetype>
       <usage_type>script</usage_type>
-      <checksum>886BD8E0</checksum>
+      <checksum>283DB03C</checksum>
     </file>
     <file>
       <filename>EC3_lookup.py</filename>
@@ -104,7 +104,7 @@
       <filename>__pycache__/EC3_lookup.cpython-313.pyc</filename>
       <filetype>pyc</filetype>
       <usage_type>resource</usage_type>
-      <checksum>C0F4511E</checksum>
+      <checksum>664CDCB0</checksum>
     </file>
     <file>
       <filename>__pycache__/EC3_lookup.cpython-39.pyc</filename>
@@ -155,28 +155,382 @@
       <checksum>0D4CBB29</checksum>
     </file>
     <file>
+      <filename>ReverseTranslatedModel/files/srrl_2013_amy.epw</filename>
+      <filetype>epw</filetype>
+      <usage_type>test</usage_type>
+      <checksum>7AC1BB48</checksum>
+    </file>
+    <file>
+      <filename>ReverseTranslatedModel/out.osw</filename>
+      <filetype>osw</filetype>
+      <usage_type>test</usage_type>
+      <checksum>9311C100</checksum>
+    </file>
+    <file>
+      <filename>ReverseTranslatedModel/reports/eplustbl.html</filename>
+      <filetype>html</filetype>
+      <usage_type>test</usage_type>
+      <checksum>BDE2A706</checksum>
+    </file>
+    <file>
+      <filename>ReverseTranslatedModel/run/data_point.zip</filename>
+      <filetype>zip</filetype>
+      <usage_type>test</usage_type>
+      <checksum>1B76B721</checksum>
+    </file>
+    <file>
+      <filename>ReverseTranslatedModel/run/data_point_out.json</filename>
+      <filetype>json</filetype>
+      <usage_type>test</usage_type>
+      <checksum>A3A6BF43</checksum>
+    </file>
+    <file>
+      <filename>ReverseTranslatedModel/run/eplusout.audit</filename>
+      <filetype>audit</filetype>
+      <usage_type>test</usage_type>
+      <checksum>C0A8A2B9</checksum>
+    </file>
+    <file>
+      <filename>ReverseTranslatedModel/run/eplusout.bnd</filename>
+      <filetype>bnd</filetype>
+      <usage_type>test</usage_type>
+      <checksum>720BEAE2</checksum>
+    </file>
+    <file>
+      <filename>ReverseTranslatedModel/run/eplusout.eio</filename>
+      <filetype>eio</filetype>
+      <usage_type>test</usage_type>
+      <checksum>570A11EF</checksum>
+    </file>
+    <file>
+      <filename>ReverseTranslatedModel/run/eplusout.end</filename>
+      <filetype>end</filetype>
+      <usage_type>test</usage_type>
+      <checksum>FD058640</checksum>
+    </file>
+    <file>
+      <filename>ReverseTranslatedModel/run/eplusout.err</filename>
+      <filetype>err</filetype>
+      <usage_type>test</usage_type>
+      <checksum>EFD96133</checksum>
+    </file>
+    <file>
+      <filename>ReverseTranslatedModel/run/eplusout.eso</filename>
+      <filetype>eso</filetype>
+      <usage_type>test</usage_type>
+      <checksum>8112D2AC</checksum>
+    </file>
+    <file>
+      <filename>ReverseTranslatedModel/run/eplusout.mdd</filename>
+      <filetype>mdd</filetype>
+      <usage_type>test</usage_type>
+      <checksum>57FCC3DF</checksum>
+    </file>
+    <file>
+      <filename>ReverseTranslatedModel/run/eplusout.mtd</filename>
+      <filetype>mtd</filetype>
+      <usage_type>test</usage_type>
+      <checksum>F8121FC5</checksum>
+    </file>
+    <file>
+      <filename>ReverseTranslatedModel/run/eplusout.rdd</filename>
+      <filetype>rdd</filetype>
+      <usage_type>test</usage_type>
+      <checksum>B486B1DA</checksum>
+    </file>
+    <file>
+      <filename>ReverseTranslatedModel/run/eplusout.shd</filename>
+      <filetype>shd</filetype>
+      <usage_type>test</usage_type>
+      <checksum>33D2580A</checksum>
+    </file>
+    <file>
+      <filename>ReverseTranslatedModel/run/eplusout.sql</filename>
+      <filetype>sql</filetype>
+      <usage_type>test</usage_type>
+      <checksum>7D32300D</checksum>
+    </file>
+    <file>
+      <filename>ReverseTranslatedModel/run/eplusssz.csv</filename>
+      <filetype>csv</filetype>
+      <usage_type>test</usage_type>
+      <checksum>1D9F2801</checksum>
+    </file>
+    <file>
+      <filename>ReverseTranslatedModel/run/eplustbl.htm</filename>
+      <filetype>htm</filetype>
+      <usage_type>test</usage_type>
+      <checksum>BDE2A706</checksum>
+    </file>
+    <file>
+      <filename>ReverseTranslatedModel/run/epluszsz.csv</filename>
+      <filetype>csv</filetype>
+      <usage_type>test</usage_type>
+      <checksum>BF8B62D9</checksum>
+    </file>
+    <file>
+      <filename>ReverseTranslatedModel/run/finished.job</filename>
+      <filetype>job</filetype>
+      <usage_type>test</usage_type>
+      <checksum>B4D0D8BC</checksum>
+    </file>
+    <file>
+      <filename>ReverseTranslatedModel/run/in.idf</filename>
+      <filetype>idf</filetype>
+      <usage_type>test</usage_type>
+      <checksum>98F35291</checksum>
+    </file>
+    <file>
+      <filename>ReverseTranslatedModel/run/in.osm</filename>
+      <filetype>osm</filetype>
+      <usage_type>test</usage_type>
+      <checksum>C732BAE6</checksum>
+    </file>
+    <file>
+      <filename>ReverseTranslatedModel/run/measure_attributes.json</filename>
+      <filetype>json</filetype>
+      <usage_type>test</usage_type>
+      <checksum>A3A6BF43</checksum>
+    </file>
+    <file>
+      <filename>ReverseTranslatedModel/run/pre-preprocess.idf</filename>
+      <filetype>idf</filetype>
+      <usage_type>test</usage_type>
+      <checksum>35E5601A</checksum>
+    </file>
+    <file>
+      <filename>ReverseTranslatedModel/run/results.json</filename>
+      <filetype>json</filetype>
+      <usage_type>test</usage_type>
+      <checksum>A3A6BF43</checksum>
+    </file>
+    <file>
+      <filename>ReverseTranslatedModel/run/run.log</filename>
+      <filetype>log</filetype>
+      <usage_type>test</usage_type>
+      <checksum>10679843</checksum>
+    </file>
+    <file>
+      <filename>ReverseTranslatedModel/run/sqlite.err</filename>
+      <filetype>err</filetype>
+      <usage_type>test</usage_type>
+      <checksum>D834FBC1</checksum>
+    </file>
+    <file>
+      <filename>ReverseTranslatedModel/run/started.job</filename>
+      <filetype>job</filetype>
+      <usage_type>test</usage_type>
+      <checksum>ECCA83A3</checksum>
+    </file>
+    <file>
+      <filename>ReverseTranslatedModel/run/stdout-energyplus</filename>
+      <filetype></filetype>
+      <usage_type>test</usage_type>
+      <checksum>23B905D2</checksum>
+    </file>
+    <file>
+      <filename>ReverseTranslatedModel/stderr</filename>
+      <filetype></filetype>
+      <usage_type>test</usage_type>
+      <checksum>00000000</checksum>
+    </file>
+    <file>
+      <filename>ReverseTranslatedModel/stdout</filename>
+      <filetype></filetype>
+      <usage_type>test</usage_type>
+      <checksum>B965254E</checksum>
+    </file>
+    <file>
+      <filename>ReverseTranslatedModel/workflow.osw</filename>
+      <filetype>osw</filetype>
+      <usage_type>test</usage_type>
+      <checksum>D0DA37B4</checksum>
+    </file>
+    <file>
+      <filename>ReverseTranslatedModel.osm</filename>
+      <filetype>osm</filetype>
+      <usage_type>test</usage_type>
+      <checksum>B17C4A27</checksum>
+    </file>
+    <file>
       <filename>complex_example_model/workflow.osw</filename>
       <filetype>osw</filetype>
       <usage_type>test</usage_type>
       <checksum>8D75ED36</checksum>
     </file>
     <file>
-      <filename>example_model/files/USA_CO_Denver.Intl.AP.725650_TMY3.epw</filename>
+      <filename>example_model/files/srrl_2013_amy.epw</filename>
       <filetype>epw</filetype>
       <usage_type>test</usage_type>
-      <checksum>E23378AA</checksum>
+      <checksum>7AC1BB48</checksum>
     </file>
     <file>
       <filename>example_model/out.osw</filename>
       <filetype>osw</filetype>
       <usage_type>test</usage_type>
-      <checksum>EB37A6D2</checksum>
+      <checksum>E1CFE2B3</checksum>
     </file>
     <file>
       <filename>example_model/reports/eplustbl.html</filename>
       <filetype>html</filetype>
       <usage_type>test</usage_type>
-      <checksum>23F41217</checksum>
+      <checksum>2E9BD97C</checksum>
+    </file>
+    <file>
+      <filename>example_model/run/data_point.zip</filename>
+      <filetype>zip</filetype>
+      <usage_type>test</usage_type>
+      <checksum>0F94C4F8</checksum>
+    </file>
+    <file>
+      <filename>example_model/run/data_point_out.json</filename>
+      <filetype>json</filetype>
+      <usage_type>test</usage_type>
+      <checksum>A3A6BF43</checksum>
+    </file>
+    <file>
+      <filename>example_model/run/eplusout.audit</filename>
+      <filetype>audit</filetype>
+      <usage_type>test</usage_type>
+      <checksum>28D46038</checksum>
+    </file>
+    <file>
+      <filename>example_model/run/eplusout.bnd</filename>
+      <filetype>bnd</filetype>
+      <usage_type>test</usage_type>
+      <checksum>B8C55AD6</checksum>
+    </file>
+    <file>
+      <filename>example_model/run/eplusout.eio</filename>
+      <filetype>eio</filetype>
+      <usage_type>test</usage_type>
+      <checksum>6DD91C96</checksum>
+    </file>
+    <file>
+      <filename>example_model/run/eplusout.end</filename>
+      <filetype>end</filetype>
+      <usage_type>test</usage_type>
+      <checksum>88E42A85</checksum>
+    </file>
+    <file>
+      <filename>example_model/run/eplusout.err</filename>
+      <filetype>err</filetype>
+      <usage_type>test</usage_type>
+      <checksum>000463F9</checksum>
+    </file>
+    <file>
+      <filename>example_model/run/eplusout.eso</filename>
+      <filetype>eso</filetype>
+      <usage_type>test</usage_type>
+      <checksum>EB6860A7</checksum>
+    </file>
+    <file>
+      <filename>example_model/run/eplusout.mdd</filename>
+      <filetype>mdd</filetype>
+      <usage_type>test</usage_type>
+      <checksum>1B0BA99D</checksum>
+    </file>
+    <file>
+      <filename>example_model/run/eplusout.mtd</filename>
+      <filetype>mtd</filetype>
+      <usage_type>test</usage_type>
+      <checksum>E114B2B3</checksum>
+    </file>
+    <file>
+      <filename>example_model/run/eplusout.rdd</filename>
+      <filetype>rdd</filetype>
+      <usage_type>test</usage_type>
+      <checksum>205391A8</checksum>
+    </file>
+    <file>
+      <filename>example_model/run/eplusout.shd</filename>
+      <filetype>shd</filetype>
+      <usage_type>test</usage_type>
+      <checksum>ED1E0A5A</checksum>
+    </file>
+    <file>
+      <filename>example_model/run/eplusout.sql</filename>
+      <filetype>sql</filetype>
+      <usage_type>test</usage_type>
+      <checksum>9BF44CCA</checksum>
+    </file>
+    <file>
+      <filename>example_model/run/eplusssz.csv</filename>
+      <filetype>csv</filetype>
+      <usage_type>test</usage_type>
+      <checksum>EB7E503A</checksum>
+    </file>
+    <file>
+      <filename>example_model/run/eplustbl.htm</filename>
+      <filetype>htm</filetype>
+      <usage_type>test</usage_type>
+      <checksum>2E9BD97C</checksum>
+    </file>
+    <file>
+      <filename>example_model/run/epluszsz.csv</filename>
+      <filetype>csv</filetype>
+      <usage_type>test</usage_type>
+      <checksum>C181D836</checksum>
+    </file>
+    <file>
+      <filename>example_model/run/finished.job</filename>
+      <filetype>job</filetype>
+      <usage_type>test</usage_type>
+      <checksum>54CD5E76</checksum>
+    </file>
+    <file>
+      <filename>example_model/run/in.idf</filename>
+      <filetype>idf</filetype>
+      <usage_type>test</usage_type>
+      <checksum>D4A13E6C</checksum>
+    </file>
+    <file>
+      <filename>example_model/run/in.osm</filename>
+      <filetype>osm</filetype>
+      <usage_type>test</usage_type>
+      <checksum>5D0DBF2C</checksum>
+    </file>
+    <file>
+      <filename>example_model/run/measure_attributes.json</filename>
+      <filetype>json</filetype>
+      <usage_type>test</usage_type>
+      <checksum>A3A6BF43</checksum>
+    </file>
+    <file>
+      <filename>example_model/run/pre-preprocess.idf</filename>
+      <filetype>idf</filetype>
+      <usage_type>test</usage_type>
+      <checksum>C3F6FA04</checksum>
+    </file>
+    <file>
+      <filename>example_model/run/results.json</filename>
+      <filetype>json</filetype>
+      <usage_type>test</usage_type>
+      <checksum>A3A6BF43</checksum>
+    </file>
+    <file>
+      <filename>example_model/run/run.log</filename>
+      <filetype>log</filetype>
+      <usage_type>test</usage_type>
+      <checksum>1704AD64</checksum>
+    </file>
+    <file>
+      <filename>example_model/run/sqlite.err</filename>
+      <filetype>err</filetype>
+      <usage_type>test</usage_type>
+      <checksum>D834FBC1</checksum>
+    </file>
+    <file>
+      <filename>example_model/run/started.job</filename>
+      <filetype>job</filetype>
+      <usage_type>test</usage_type>
+      <checksum>9311DF4B</checksum>
+    </file>
+    <file>
+      <filename>example_model/run/stdout-energyplus</filename>
+      <filetype></filetype>
+      <usage_type>test</usage_type>
+      <checksum>E1C3214B</checksum>
     </file>
     <file>
       <filename>example_model/stderr</filename>
@@ -188,19 +542,19 @@
       <filename>example_model/stdout</filename>
       <filetype></filetype>
       <usage_type>test</usage_type>
-      <checksum>8F2C9F19</checksum>
+      <checksum>A178E9F1</checksum>
     </file>
     <file>
       <filename>example_model/workflow.osw</filename>
       <filetype>osw</filetype>
       <usage_type>test</usage_type>
-      <checksum>869145E0</checksum>
+      <checksum>7E114508</checksum>
     </file>
     <file>
       <filename>example_model.osm</filename>
       <filetype>osm</filetype>
       <usage_type>test</usage_type>
-      <checksum>4EF63042</checksum>
+      <checksum>74CF9F0C</checksum>
     </file>
     <file>
       <filename>example_model_2/files/USA_CO_Denver.Intl.AP.725650_TMY3.epw</filename>
@@ -387,6 +741,192 @@
       <filetype>osw</filetype>
       <usage_type>test</usage_type>
       <checksum>710BD353</checksum>
+    </file>
+    <file>
+      <filename>old_example_model/files/srrl_2013_amy.epw</filename>
+      <filetype>epw</filetype>
+      <usage_type>test</usage_type>
+      <checksum>7AC1BB48</checksum>
+    </file>
+    <file>
+      <filename>old_example_model/out.osw</filename>
+      <filetype>osw</filetype>
+      <usage_type>test</usage_type>
+      <checksum>AE120657</checksum>
+    </file>
+    <file>
+      <filename>old_example_model/reports/eplustbl.html</filename>
+      <filetype>html</filetype>
+      <usage_type>test</usage_type>
+      <checksum>C34B10C7</checksum>
+    </file>
+    <file>
+      <filename>old_example_model/run/data_point.zip</filename>
+      <filetype>zip</filetype>
+      <usage_type>test</usage_type>
+      <checksum>745AE167</checksum>
+    </file>
+    <file>
+      <filename>old_example_model/run/data_point_out.json</filename>
+      <filetype>json</filetype>
+      <usage_type>test</usage_type>
+      <checksum>A3A6BF43</checksum>
+    </file>
+    <file>
+      <filename>old_example_model/run/eplusout.audit</filename>
+      <filetype>audit</filetype>
+      <usage_type>test</usage_type>
+      <checksum>0B61556B</checksum>
+    </file>
+    <file>
+      <filename>old_example_model/run/eplusout.bnd</filename>
+      <filetype>bnd</filetype>
+      <usage_type>test</usage_type>
+      <checksum>548A8E14</checksum>
+    </file>
+    <file>
+      <filename>old_example_model/run/eplusout.eio</filename>
+      <filetype>eio</filetype>
+      <usage_type>test</usage_type>
+      <checksum>3ED0C679</checksum>
+    </file>
+    <file>
+      <filename>old_example_model/run/eplusout.end</filename>
+      <filetype>end</filetype>
+      <usage_type>test</usage_type>
+      <checksum>A8C754AF</checksum>
+    </file>
+    <file>
+      <filename>old_example_model/run/eplusout.err</filename>
+      <filetype>err</filetype>
+      <usage_type>test</usage_type>
+      <checksum>26D572ED</checksum>
+    </file>
+    <file>
+      <filename>old_example_model/run/eplusout.eso</filename>
+      <filetype>eso</filetype>
+      <usage_type>test</usage_type>
+      <checksum>8A46A16B</checksum>
+    </file>
+    <file>
+      <filename>old_example_model/run/eplusout.mdd</filename>
+      <filetype>mdd</filetype>
+      <usage_type>test</usage_type>
+      <checksum>05E8EE08</checksum>
+    </file>
+    <file>
+      <filename>old_example_model/run/eplusout.mtd</filename>
+      <filetype>mtd</filetype>
+      <usage_type>test</usage_type>
+      <checksum>60B8B136</checksum>
+    </file>
+    <file>
+      <filename>old_example_model/run/eplusout.rdd</filename>
+      <filetype>rdd</filetype>
+      <usage_type>test</usage_type>
+      <checksum>0AA075E7</checksum>
+    </file>
+    <file>
+      <filename>old_example_model/run/eplusout.shd</filename>
+      <filetype>shd</filetype>
+      <usage_type>test</usage_type>
+      <checksum>1735B316</checksum>
+    </file>
+    <file>
+      <filename>old_example_model/run/eplusout.sql</filename>
+      <filetype>sql</filetype>
+      <usage_type>test</usage_type>
+      <checksum>D1F61918</checksum>
+    </file>
+    <file>
+      <filename>old_example_model/run/eplustbl.htm</filename>
+      <filetype>htm</filetype>
+      <usage_type>test</usage_type>
+      <checksum>C34B10C7</checksum>
+    </file>
+    <file>
+      <filename>old_example_model/run/finished.job</filename>
+      <filetype>job</filetype>
+      <usage_type>test</usage_type>
+      <checksum>AA7CD9C2</checksum>
+    </file>
+    <file>
+      <filename>old_example_model/run/in.idf</filename>
+      <filetype>idf</filetype>
+      <usage_type>test</usage_type>
+      <checksum>4D4CDC33</checksum>
+    </file>
+    <file>
+      <filename>old_example_model/run/in.osm</filename>
+      <filetype>osm</filetype>
+      <usage_type>test</usage_type>
+      <checksum>559B2D03</checksum>
+    </file>
+    <file>
+      <filename>old_example_model/run/measure_attributes.json</filename>
+      <filetype>json</filetype>
+      <usage_type>test</usage_type>
+      <checksum>A3A6BF43</checksum>
+    </file>
+    <file>
+      <filename>old_example_model/run/pre-preprocess.idf</filename>
+      <filetype>idf</filetype>
+      <usage_type>test</usage_type>
+      <checksum>5CFDBBB8</checksum>
+    </file>
+    <file>
+      <filename>old_example_model/run/results.json</filename>
+      <filetype>json</filetype>
+      <usage_type>test</usage_type>
+      <checksum>A3A6BF43</checksum>
+    </file>
+    <file>
+      <filename>old_example_model/run/run.log</filename>
+      <filetype>log</filetype>
+      <usage_type>test</usage_type>
+      <checksum>28BD9494</checksum>
+    </file>
+    <file>
+      <filename>old_example_model/run/sqlite.err</filename>
+      <filetype>err</filetype>
+      <usage_type>test</usage_type>
+      <checksum>D834FBC1</checksum>
+    </file>
+    <file>
+      <filename>old_example_model/run/started.job</filename>
+      <filetype>job</filetype>
+      <usage_type>test</usage_type>
+      <checksum>44CBB565</checksum>
+    </file>
+    <file>
+      <filename>old_example_model/run/stdout-energyplus</filename>
+      <filetype></filetype>
+      <usage_type>test</usage_type>
+      <checksum>11750162</checksum>
+    </file>
+    <file>
+      <filename>old_example_model/stderr</filename>
+      <filetype></filetype>
+      <usage_type>test</usage_type>
+      <checksum>00000000</checksum>
+    </file>
+    <file>
+      <filename>old_example_model/stdout</filename>
+      <filetype></filetype>
+      <usage_type>test</usage_type>
+      <checksum>721A8550</checksum>
+    </file>
+    <file>
+      <filename>old_example_model/workflow.osw</filename>
+      <filetype>osw</filetype>
+      <usage_type>test</usage_type>
+      <checksum>45D9174A</checksum>
+    </file>
+    <file>
+      <filename>old_example_model.osm</filename>
+      <filetype>osm</filetype>
+      <usage_type>test</usage_type>
+      <checksum>C9BFD1D3</checksum>
     </file>
     <file>
       <filename>test_results/pytest/junit.xml</filename>
