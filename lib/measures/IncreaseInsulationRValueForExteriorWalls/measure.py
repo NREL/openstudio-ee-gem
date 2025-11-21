@@ -144,6 +144,28 @@ class IncreaseInsulationRValueForExteriorWalls(openstudio.measure.ModelMeasure):
         
         else:
             return None
+
+    def remove_outliers_iqr(self, data):
+        """Remove outliers from a list of numerical values using the IQR method.
+        Returns the filtered list without outliers.
+        """
+        if len(data) < 4:  # Need at least 4 data points for meaningful IQR calculation
+            return data
+        
+        data_array = np.array(data)
+        q1 = np.percentile(data_array, 25)
+        q3 = np.percentile(data_array, 75)
+        iqr = q3 - q1
+        
+        # Define outlier bounds
+        lower_bound = q1 - 1.5 * iqr
+        upper_bound = q3 + 1.5 * iqr
+        
+        # Filter out outliers
+        filtered_data = [x for x in data if lower_bound <= x <= upper_bound]
+        
+        return filtered_data
+
     def run(self, model, runner, user_arguments):
         if not runner.validateUserArguments(self.arguments(model), user_arguments):
             return False
@@ -362,6 +384,15 @@ class IncreaseInsulationRValueForExteriorWalls(openstudio.measure.ModelMeasure):
             gwp_per_m2 = parsed_data["gwp_per_m2 (kg CO2 eq/m2)"]
             if gwp_per_m2 != 0.0:
                 gwp_values["gwp_per_m2"].append(float(gwp_per_m2))
+
+        # Remove outliers from GWP values using IQR method
+        for key in ["gwp_per_kg", "gwp_per_m3", "gwp_per_m2"]:
+            if len(gwp_values[key]) > 0:
+                original_count = len(gwp_values[key])
+                gwp_values[key] = self.remove_outliers_iqr(gwp_values[key])
+                filtered_count = len(gwp_values[key])
+                if original_count != filtered_count:
+                    runner.registerInfo(f"Removed {original_count - filtered_count} outliers from {key}: {original_count} -> {filtered_count} values")
 
         # multipliers for calculating embodied carbon over analysis period
         multiplier = lifetime_multiplier(insulation_material_lifetime, analysis_period)
