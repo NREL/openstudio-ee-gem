@@ -50,37 +50,44 @@ class DoorEnhancement(openstudio.measure.ModelMeasure):
     @staticmethod
     def door_r_values():
         """Return typical R-values (m²·K/W) for different door types.
+        These are calculated from material properties: R = thickness / conductivity
         Sources: 
         - Wooden door: https://www.energystar.gov/products/building_products/doors
         - Steel core doors: https://www.dasma.com/garage-door-r-values/
         - Glass door: https://www.nfrc.org/
         """
-        return {
-            'none': 0.0,  # no change
-            'wooden door': 0.53,  # 1-3/4" solid wood door (R-3 IP), source: ASHRAE Handbook
-            'garage door': 2.99,  # insulated garage door (R-17 IP), source: DASMA standards
-            'glass door': 0.35,  # single glazed (R-2 IP), source: NFRC typical values
-            'polystyrene core steel door': 1.76,  # (R-10 IP), source: Steel Door Institute
-            'polyurethane core steel door': 2.64,  # (R-15 IP), source: Steel Door Institute
-            'fiberglass core steel door': 2.11,  # (R-12 IP), source: manufacturer data
-            'honeycomb core steel door': 1.41,  # (R-8 IP), source: manufacturer data
-            'stiffened core steel door': 0.88,  # (R-5 IP), source: manufacturer data
-            'defined by model': 0.0  # preserve existing
-        }
+        mat_props = DoorEnhancement.door_material_properties()
+        r_values = {}
+        for door_type, props in mat_props.items():
+            if props['conductivity'] > 0.0 and props['thickness'] > 0.0:
+                r_values[door_type] = props['thickness'] / props['conductivity']
+            else:
+                r_values[door_type] = 0.0
+        return r_values
 
     @staticmethod
     def door_material_properties():
         """Return material properties (conductivity W/m·K, density kg/m³, thickness m) for different door types.
-        Properties are typical values used to achieve the R-values specified in door_r_values().
+        R-value is calculated as: R = thickness / conductivity
         Sources: ASHRAE Handbook, Steel Door Institute, manufacturer data
+        
+        Material property notes:
+        - Wooden door: 1-3/4" (0.044m) solid wood, k=0.14 W/m·K → R=0.31 m²·K/W
+        - Garage door: Insulated 3.3" (0.084m), k=0.028 W/m·K → R=3.0 m²·K/W  
+        - Glass door: 6mm single pane, k=0.96 W/m·K → R=0.006 m²·K/W (low insulation)
+        - Polystyrene core: Steel+EPS foam, k=0.035 W/m·K, 62mm → R=1.77 m²·K/W
+        - Polyurethane core: Steel+PU foam, k=0.026 W/m·K, 45mm → R=1.73 m²·K/W
+        - Fiberglass core: Steel+fiberglass, k=0.035 W/m·K, 74mm → R=2.11 m²·K/W
+        - Honeycomb core: Steel+honeycomb, k=0.05 W/m·K, 71mm → R=1.42 m²·K/W
+        - Stiffened core: Steel+stiffeners, k=0.06 W/m·K, 53mm → R=0.88 m²·K/W
         """
         return {
             'none': {'conductivity': 0.0, 'density': 0.0, 'thickness': 0.0},
             'wooden door': {'conductivity': 0.14, 'density': 600, 'thickness': 0.044},  # 1-3/4" solid wood
             'garage door': {'conductivity': 0.028, 'density': 100, 'thickness': 0.084},  # insulated, ~3.3" thick
-            'glass door': {'conductivity': 0.96, 'density': 2500, 'thickness': 0.006},  # 6mm glass
-            'polystyrene core steel door': {'conductivity': 0.035, 'density': 150, 'thickness': 0.062},  # steel+foam core
-            'polyurethane core steel door': {'conductivity': 0.045, 'density': 490, 'thickness': 0.0445},  # steel+PU foam manufactured by DE LA FONTAINE
+            'glass door': {'conductivity': 0.96, 'density': 2500, 'thickness': 0.006},  # 6mm glass (low R-value)
+            'polystyrene core steel door': {'conductivity': 0.035, 'density': 150, 'thickness': 0.062},  # steel+EPS foam
+            'polyurethane core steel door': {'conductivity': 0.026, 'density': 490, 'thickness': 0.045},  # steel+PU foam (better insulation)
             'fiberglass core steel door': {'conductivity': 0.035, 'density': 180, 'thickness': 0.074},  # steel+fiberglass
             'honeycomb core steel door': {'conductivity': 0.05, 'density': 120, 'thickness': 0.071},  # steel+honeycomb
             'stiffened core steel door': {'conductivity': 0.06, 'density': 250, 'thickness': 0.053},  # steel+stiffeners
@@ -268,21 +275,21 @@ class DoorEnhancement(openstudio.measure.ModelMeasure):
         # make an argument for door thermal conductivity
         door_thermal_conductivity = openstudio.measure.OSArgument.makeDoubleArgument("door_thermal_conductivity", True)
         door_thermal_conductivity.setDisplayName("Door Thermal Conductivity (W/m·K)")
-        door_thermal_conductivity.setDescription("Thermal conductivity of the door material. Skip if no door replacement required. Enter 0.0 to use default values based on selected door type.")
+        door_thermal_conductivity.setDescription("Thermal conductivity of the door material (only applies when door option is not 'none'). Enter 0.0 to use default values. Defaults: wooden=0.14, garage=0.028, glass=0.96, polystyrene core=0.035, polyurethane core=0.026, fiberglass core=0.035, honeycomb core=0.05, stiffened core=0.06 W/m·K")
         door_thermal_conductivity.setDefaultValue(0.0)
         args.append(door_thermal_conductivity)
 
         # make an argument for door density
         door_density = openstudio.measure.OSArgument.makeDoubleArgument("door_density", True)
         door_density.setDisplayName("Door Material Density (kg/m³)")
-        door_density.setDescription("Density of the door material. Skip if no door replacement required. Enter 0.0 to use default values based on selected door type.")
+        door_density.setDescription("Density of the door material (only applies when door option is not 'none'). Enter 0.0 to use default values. Defaults: wooden=600, garage=100, glass=2500, polystyrene core=150, polyurethane core=490, fiberglass core=180, honeycomb core=120, stiffened core=250 kg/m³")
         door_density.setDefaultValue(0.0)
         args.append(door_density)
 
         # make an argument for door thickness
         door_thickness = openstudio.measure.OSArgument.makeDoubleArgument("door_thickness", True)
         door_thickness.setDisplayName("Door Thickness (m)")
-        door_thickness.setDescription("Thickness of the door. Skip if no door replacement required. Enter 0.0 to use default values based on selected door type.")
+        door_thickness.setDescription("Thickness of the door (only applies when door option is not 'none'). Enter 0.0 to use default values. Defaults: wooden=0.044, garage=0.084, glass=0.006, polystyrene core=0.062, polyurethane core=0.045, fiberglass core=0.074, honeycomb core=0.071, stiffened core=0.053 m")
         door_thickness.setDefaultValue(0.0)
         args.append(door_thickness)
 
@@ -667,10 +674,25 @@ class DoorEnhancement(openstudio.measure.ModelMeasure):
 
             runner.registerInfo(f"Embodied carbon in this subsurface in kg CO2 eq: {subsurface_dict[subsurface_name]['door_renovation_embodied_carbon_kg_co2_eq']}")
 
-            # Modify door construction R-value if entire door replacement is selected
+            # Modify door construction based on material properties if door replacement is selected
             if door_option != 'none' and door_option != 'defined by model':
-                # Get target R-value for selected door type (already in SI units)
-                door_r_value_si = self.door_r_values()[door_option]
+                # Get material properties for selected door type
+                mat_props = self.door_material_properties()[door_option].copy()
+                
+                # Override with user-provided values if non-zero
+                if door_thermal_conductivity > 0.0:
+                    mat_props['conductivity'] = door_thermal_conductivity
+                if door_density > 0.0:
+                    mat_props['density'] = door_density
+                if door_thickness > 0.0:
+                    mat_props['thickness'] = door_thickness
+                
+                # Calculate R-value from material properties: R = thickness / conductivity
+                if mat_props['conductivity'] > 0.0 and mat_props['thickness'] > 0.0:
+                    new_r_value_si = mat_props['thickness'] / mat_props['conductivity']
+                else:
+                    runner.registerWarning(f"Invalid material properties for {door_option}, skipping R-value calculation.")
+                    new_r_value_si = 0.0
                 
                 # Get current construction
                 if subsurface.construction().is_initialized():
@@ -685,25 +707,15 @@ class DoorEnhancement(openstudio.measure.ModelMeasure):
                             old_r_value_si = 1.0 / lc.thermalConductance().get()
                     
                     old_r_value_ip = openstudio.convert(old_r_value_si, "m^2*K/W", "ft^2*h*R/Btu").get()
-                    
-                    # Get material properties for selected door type
-                    mat_props = self.door_material_properties()[door_option]
-                    
-                    # Override with user-provided values if non-zero
-                    if door_thermal_conductivity > 0.0:
-                        mat_props['conductivity'] = door_thermal_conductivity
-                    if door_density > 0.0:
-                        mat_props['density'] = door_density
-                    if door_thickness > 0.0:
-                        mat_props['thickness'] = door_thickness
+                    new_r_value_ip = openstudio.convert(new_r_value_si, "m^2*K/W", "ft^2*h*R/Btu").get()
                     
                     # Clone construction for modification
                     new_construction = old_construction.clone(model).to_Construction().get()
-                    new_construction.setName(f"{old_construction_name} - {door_option} R-{door_r_value_si:.2f}")
+                    new_construction.setName(f"{old_construction_name} - {door_option} R-{new_r_value_si:.2f}")
                     
                     # Create a new standard opaque material with physical properties
                     new_door_material = openstudio.model.StandardOpaqueMaterial(model)
-                    new_door_material.setName(f"{door_option} R-{door_r_value_si:.2f}")
+                    new_door_material.setName(f"{door_option} R-{new_r_value_si:.2f}")
                     new_door_material.setThickness(mat_props['thickness'])
                     new_door_material.setConductivity(mat_props['conductivity'])
                     new_door_material.setDensity(mat_props['density'])
@@ -717,7 +729,7 @@ class DoorEnhancement(openstudio.measure.ModelMeasure):
                     
                     # Store R-value and material properties in subsurface dict
                     subsurface_dict[subsurface_name]['old_r_value_si'] = old_r_value_si
-                    subsurface_dict[subsurface_name]['new_r_value_si'] = door_r_value_si
+                    subsurface_dict[subsurface_name]['new_r_value_si'] = new_r_value_si
                     subsurface_dict[subsurface_name]['new_construction_name'] = new_construction.nameString()
                     subsurface_dict[subsurface_name]['material_thickness_m'] = mat_props['thickness']
                     subsurface_dict[subsurface_name]['material_conductivity_W_per_mK'] = mat_props['conductivity']
@@ -726,7 +738,7 @@ class DoorEnhancement(openstudio.measure.ModelMeasure):
                     runner.registerInfo(
                         f"Door construction updated for {subsurface_name}: "
                         f"Old R-value: {old_r_value_si:.2f} m²·K/W (R-{old_r_value_ip:.1f} IP), "
-                        f"New R-value: {door_r_value_si:.2f} m²·K/W ({door_option}), "
+                        f"New R-value: {new_r_value_si:.2f} m²·K/W (R-{new_r_value_ip:.1f} IP) from {door_option}, "
                         f"Thickness: {mat_props['thickness']*1000:.1f} mm, "
                         f"Conductivity: {mat_props['conductivity']:.3f} W/m·K"
                     )
