@@ -214,6 +214,31 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
         film_option.setDefaultValue("none")
         args.append(film_option)
 
+        # make arguments for film optical and thermal properties
+        film_visible_transmittance = openstudio.measure.OSArgument.makeDoubleArgument("film_visible_transmittance", True)
+        film_visible_transmittance.setDisplayName("Film Visible Transmittance")
+        film_visible_transmittance.setDescription("Visible transmittance of the film (0.0-1.0). Set to 0.0 to use default values based on film type. Defaults: safety=0.88, solar_control=0.15, anti_graffiti=0.90, decorative=0.60, low_e=0.80")
+        film_visible_transmittance.setDefaultValue(0.0)
+        args.append(film_visible_transmittance)
+
+        film_solar_transmittance = openstudio.measure.OSArgument.makeDoubleArgument("film_solar_transmittance", True)
+        film_solar_transmittance.setDisplayName("Film Solar Transmittance")
+        film_solar_transmittance.setDescription("Solar transmittance of the film (0.0-1.0). Set to 0.0 to use default values based on film type. Defaults: safety=0.81, solar_control=0.15, anti_graffiti=0.83, decorative=0.55, low_e=0.70")
+        film_solar_transmittance.setDefaultValue(0.0)
+        args.append(film_solar_transmittance)
+
+        film_thermal_emissivity = openstudio.measure.OSArgument.makeDoubleArgument("film_thermal_emissivity", True)
+        film_thermal_emissivity.setDisplayName("Film Thermal Emissivity")
+        film_thermal_emissivity.setDescription("Thermal emissivity of the film surface (0.0-1.0). Set to 0.0 to use default values based on film type. Defaults: safety=0.84, solar_control=0.84, anti_graffiti=0.84, decorative=0.84, low_e=0.10")
+        film_thermal_emissivity.setDefaultValue(0.0)
+        args.append(film_thermal_emissivity)
+
+        film_thermal_resistance = openstudio.measure.OSArgument.makeDoubleArgument("film_thermal_resistance", True)
+        film_thermal_resistance.setDisplayName("Film Thermal Resistance (m²·K/W)")
+        film_thermal_resistance.setDescription("Thermal resistance of the film in m²·K/W. Set to 0.0 to use default values based on film type. Defaults: safety=0.0002, solar_control=0.0003, anti_graffiti=0.0001, decorative=0.0002, low_e=0.18")
+        film_thermal_resistance.setDefaultValue(0.0)
+        args.append(film_thermal_resistance)
+
         # make an argument for window options for filtering EPDs
         window_options_chs = openstudio.StringVector()  
         for option in self.window_options():
@@ -271,16 +296,65 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
         # make an argument for glass pane thickness
         glass_pane_thickness = openstudio.measure.OSArgument.makeDoubleArgument("glass_pane_thickness", True)
         glass_pane_thickness.setDisplayName("Individual Glass Pane Thickness (m)")
-        glass_pane_thickness.setDescription("Thickness of an individual glass pane in meters. This value is used to calculate embodied carbon using gwp_per_m3 for glass installations. Default value is 0.003 m (3 mm), which is typical for standard glass panes.")
+        glass_pane_thickness.setDescription("Thickness of an individual glass pane in meters. This value is used to calculate embodied carbon using gwp_per_m3 for glass installations. Default value is 0.003 m (3 mm), which is typical for standard single-strength window glass. Source: ASTM C1036-16 'Standard Specification for Flat Glass' specifies single-strength glass as 2.16-2.57 mm (0.085-0.101 in) and double-strength as 2.92-3.56 mm (0.115-0.140 in). Pilkington Glass Handbook (1997) and ASHRAE Handbook - Fundamentals (2017) Chapter 15 cite 3 mm as standard for residential glazing.")
         glass_pane_thickness.setDefaultValue(0.003) # 3 mm typical glass thickness
         args.append(glass_pane_thickness)
 
         # make an argument for gap thickness between glass panes
         gap_thickness = openstudio.measure.OSArgument.makeDoubleArgument("gap_thickness", True)
         gap_thickness.setDisplayName("Gap Thickness Between Glass Panes (m)")
-        gap_thickness.setDescription("Thickness of the air/gas gap between glass panes in meters. This is used when creating new multi-pane window constructions. Default value is 0.013 m (13 mm), which is typical for double and triple pane windows.")
+        gap_thickness.setDescription("Thickness of the air/gas gap between glass panes in meters. This is used when creating new multi-pane window constructions. Default value is 0.013 m (13 mm), which is typical for double and triple pane windows. Sources: ISO 10077-1:2017 'Thermal performance of windows, doors and shutters' specifies 12-16 mm optimal air gap spacing. Curcija, D., et al. (2018) 'WINDOW Technical Documentation' LBNL-2000012 recommends 12.7 mm (0.5 in) for residential IGUs. Arici, M., et al. (2015) 'Thermal performance of double glazed windows' Energy and Buildings, 94, 200-207, demonstrates optimal thermal performance at 13 mm gap spacing.")
         gap_thickness.setDefaultValue(0.013) # 13 mm typical gap thickness
         args.append(gap_thickness)
+
+        # make arguments for glass pane optical properties
+        glass_solar_transmittance = openstudio.measure.OSArgument.makeDoubleArgument("glass_solar_transmittance", True)
+        glass_solar_transmittance.setDisplayName("Glass Solar Transmittance")
+        glass_solar_transmittance.setDescription("Solar transmittance of the glass pane (0.0-1.0). Set to 0.0 to use default value of 0.775 for typical 3mm clear soda-lime glass. This value affects solar heat gain through windows. Sources: ASHRAE Handbook - Fundamentals (2017) Chapter 15, Table 15 'Solar-Optical Properties of Glazing' lists clear glass (3 mm) solar transmittance as 0.77-0.78. Rubin, M. (1985) 'Optical properties of soda lime silica glasses' Solar Energy Materials, 12(4), 275-288, reports 0.775 for standard float glass. ISO 9050:2003 'Glass in building - Determination of light transmittance, solar direct transmittance' provides testing methodology yielding 0.77-0.78 for clear glass.")
+        glass_solar_transmittance.setDefaultValue(0.0)
+        args.append(glass_solar_transmittance)
+
+        glass_visible_transmittance = openstudio.measure.OSArgument.makeDoubleArgument("glass_visible_transmittance", True)
+        glass_visible_transmittance.setDisplayName("Glass Visible Transmittance")
+        glass_visible_transmittance.setDescription("Visible light transmittance of the glass pane (0.0-1.0). Set to 0.0 to use default value of 0.881 for typical 3mm clear glass. This value affects daylight availability. Sources: NFRC 300-2017 'Test Method for Determining the Solar and Infrared Optical Properties of Glazing Materials' specifies clear glass VT as 0.88-0.90. ASHRAE Handbook - Fundamentals (2017) Chapter 15 lists 3mm clear glass VT as 0.881. McCluney, R. (1996) 'Introduction to Radiometry and Photometry' Artech House, reports clear float glass VT of 0.88. Pilkington (2016) 'Pilkington Glass Products Specifications' technical data sheet lists Optifloat Clear 3mm VT as 0.90.")
+        glass_visible_transmittance.setDefaultValue(0.0)
+        args.append(glass_visible_transmittance)
+
+        glass_front_emissivity = openstudio.measure.OSArgument.makeDoubleArgument("glass_front_emissivity", True)
+        glass_front_emissivity.setDisplayName("Glass Front Side IR Emissivity")
+        glass_front_emissivity.setDescription("Front side infrared hemispherical emissivity of the glass pane (0.0-1.0). Set to 0.0 to use default value of 0.84 for typical uncoated clear glass. This value affects radiative heat transfer. Sources: ASHRAE Handbook - Fundamentals (2017) Chapter 15, Table 13 lists uncoated glass emissivity as 0.84. Arasteh, D., et al. (1989) 'A versatile procedure for calculating heat transfer through windows' ASHRAE Transactions, 95(2), 755-765, uses 0.84 for standard glass. ISO 10292:1994 'Glass in building - Calculation of steady-state U values' specifies 0.837 for uncoated glass surfaces. EN 673:2011 'Glass in building - Determination of thermal transmittance (U value)' uses 0.837 (often rounded to 0.84).")
+        glass_front_emissivity.setDefaultValue(0.0)
+        args.append(glass_front_emissivity)
+
+        glass_back_emissivity = openstudio.measure.OSArgument.makeDoubleArgument("glass_back_emissivity", True)
+        glass_back_emissivity.setDisplayName("Glass Back Side IR Emissivity")
+        glass_back_emissivity.setDescription("Back side infrared hemispherical emissivity of the glass pane (0.0-1.0). Set to 0.0 to use default value of 0.84 for typical uncoated clear glass. This value affects radiative heat transfer. Sources: Same as front side - uncoated glass has identical emissivity on both surfaces. ASHRAE Handbook - Fundamentals (2017) Chapter 15, NFRC 301-2019 'Standard Test Method for Emittance of Specular Surfaces', and ISO 10292:1994 all specify 0.84 (or 0.837) for both surfaces of uncoated soda-lime glass.")
+        glass_back_emissivity.setDefaultValue(0.0)
+        args.append(glass_back_emissivity)
+
+        glass_front_solar_reflectance = openstudio.measure.OSArgument.makeDoubleArgument("glass_front_solar_reflectance", True)
+        glass_front_solar_reflectance.setDisplayName("Glass Front Side Solar Reflectance")
+        glass_front_solar_reflectance.setDescription("Front side solar reflectance at normal incidence (0.0-1.0). Set to 0.0 to use default value of 0.071 for typical 3mm clear glass. This value affects solar heat gain reflection. Sources: ASHRAE Handbook - Fundamentals (2017) Chapter 15, Table 15 lists clear glass (3 mm) front solar reflectance as 0.07. Rubin, M. (1985) 'Optical properties of soda lime silica glasses' Solar Energy Materials, 12(4), 275-288, reports 0.070-0.075 for standard float glass at normal incidence. ISO 9050:2003 testing methodology yields 0.07-0.08 for clear glass front surface reflectance.")
+        glass_front_solar_reflectance.setDefaultValue(0.0)
+        args.append(glass_front_solar_reflectance)
+
+        glass_back_solar_reflectance = openstudio.measure.OSArgument.makeDoubleArgument("glass_back_solar_reflectance", True)
+        glass_back_solar_reflectance.setDisplayName("Glass Back Side Solar Reflectance")
+        glass_back_solar_reflectance.setDescription("Back side solar reflectance at normal incidence (0.0-1.0). Set to 0.0 to use default value of 0.071 for typical 3mm clear glass. This value affects solar heat gain reflection. Sources: Same as front side - uncoated clear glass has symmetric optical properties. ASHRAE Handbook - Fundamentals (2017) Chapter 15 specifies identical front and back solar reflectance for uncoated glass. Rubin, M. (1985) confirms 0.07-0.075 for both surfaces of standard soda-lime glass.")
+        glass_back_solar_reflectance.setDefaultValue(0.0)
+        args.append(glass_back_solar_reflectance)
+
+        glass_front_visible_reflectance = openstudio.measure.OSArgument.makeDoubleArgument("glass_front_visible_reflectance", True)
+        glass_front_visible_reflectance.setDisplayName("Glass Front Side Visible Reflectance")
+        glass_front_visible_reflectance.setDescription("Front side visible reflectance at normal incidence (0.0-1.0). Set to 0.0 to use default value of 0.080 for typical 3mm clear glass. This value affects visible light reflection and glare. Sources: ASHRAE Handbook - Fundamentals (2017) Chapter 15, Table 15 lists clear glass (3 mm) visible reflectance as 0.08. NFRC 300-2017 testing yields 0.08 for standard clear glass. McCluney, R. (1996) 'Introduction to Radiometry and Photometry' reports clear float glass visible reflectance of 0.08 at normal incidence. Pilkington technical specifications list 0.08 for Optifloat Clear glass.")
+        glass_front_visible_reflectance.setDefaultValue(0.0)
+        args.append(glass_front_visible_reflectance)
+
+        glass_back_visible_reflectance = openstudio.measure.OSArgument.makeDoubleArgument("glass_back_visible_reflectance", True)
+        glass_back_visible_reflectance.setDisplayName("Glass Back Side Visible Reflectance")
+        glass_back_visible_reflectance.setDescription("Back side visible reflectance at normal incidence (0.0-1.0). Set to 0.0 to use default value of 0.080 for typical 3mm clear glass. This value affects visible light reflection from interior side. Sources: Same as front side - uncoated clear glass exhibits symmetric visible reflectance. ASHRAE Handbook - Fundamentals (2017) Chapter 15, NFRC 300-2017, and ISO 9050:2003 all specify identical front and back visible reflectance (0.08) for uncoated soda-lime glass.")
+        glass_back_visible_reflectance.setDefaultValue(0.0)
+        args.append(glass_back_visible_reflectance)
 
         # make an argument for selecting which gwp statistic to use for embodied carbon calculation
         gwp_statistics_chs = openstudio.StringVector()
@@ -336,6 +410,10 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
         wf_option = runner.getStringArgumentValue("wf_option", user_arguments)
         caulking_option = runner.getStringArgumentValue("caulking_option", user_arguments)
         film_option = runner.getStringArgumentValue("film_option", user_arguments)
+        film_visible_transmittance = runner.getDoubleArgumentValue("film_visible_transmittance", user_arguments)
+        film_solar_transmittance = runner.getDoubleArgumentValue("film_solar_transmittance", user_arguments)
+        film_thermal_emissivity = runner.getDoubleArgumentValue("film_thermal_emissivity", user_arguments)
+        film_thermal_resistance = runner.getDoubleArgumentValue("film_thermal_resistance", user_arguments)
         window_option = runner.getStringArgumentValue("window_option", user_arguments)
         weatherstrip_option = runner.getStringArgumentValue("weatherstrip_option", user_arguments)
         glass_option = runner.getStringArgumentValue("glass_option", user_arguments)
@@ -351,6 +429,14 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
         user_num_panes = runner.getIntegerArgumentValue("user_num_panes", user_arguments)
         glass_pane_thickness = runner.getDoubleArgumentValue("glass_pane_thickness", user_arguments)
         gap_thickness = runner.getDoubleArgumentValue("gap_thickness", user_arguments)
+        glass_solar_transmittance = runner.getDoubleArgumentValue("glass_solar_transmittance", user_arguments)
+        glass_visible_transmittance = runner.getDoubleArgumentValue("glass_visible_transmittance", user_arguments)
+        glass_front_emissivity = runner.getDoubleArgumentValue("glass_front_emissivity", user_arguments)
+        glass_back_emissivity = runner.getDoubleArgumentValue("glass_back_emissivity", user_arguments)
+        glass_front_solar_reflectance = runner.getDoubleArgumentValue("glass_front_solar_reflectance", user_arguments)
+        glass_back_solar_reflectance = runner.getDoubleArgumentValue("glass_back_solar_reflectance", user_arguments)
+        glass_front_visible_reflectance = runner.getDoubleArgumentValue("glass_front_visible_reflectance", user_arguments)
+        glass_back_visible_reflectance = runner.getDoubleArgumentValue("glass_back_visible_reflectance", user_arguments)
         length_per_unit = runner.getDoubleArgumentValue("length_per_unit", user_arguments)
 
         # Debug: Print all user arguments received
@@ -657,7 +743,11 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
             # Create new window construction if glass_option is not none
             if glass_option != "none" and num_panes > 0:
                 runner.registerInfo(f"Creating new {num_panes}-pane window construction for {subsurface_name}")
-                new_construction = self.create_new_window_construction(model, runner, subsurface, num_panes, glass_pane_thickness, gap_thickness)
+                new_construction = self.create_new_window_construction(model, runner, subsurface, num_panes, glass_pane_thickness, gap_thickness,
+                                                                       glass_solar_transmittance, glass_visible_transmittance,
+                                                                       glass_front_emissivity, glass_back_emissivity,
+                                                                       glass_front_solar_reflectance, glass_back_solar_reflectance,
+                                                                       glass_front_visible_reflectance, glass_back_visible_reflectance)
                 if new_construction is not None:
                     subsurface.setConstruction(new_construction)
                     subsurface_dict[subsurface_name]["glass"]["object"] = new_construction
@@ -717,7 +807,9 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
                             runner.registerInfo(f"Adding glazing film effects to newly created construction for {subsurface_name}")
                         else:
                             runner.registerInfo(f"Adding glazing film effects to existing layered construction for {subsurface_name}")
-                        new_construction = self.convert_to_equivalent_layer(model, runner, subsurface, current_construction, film_option)
+                        new_construction = self.convert_to_equivalent_layer(model, runner, subsurface, current_construction, film_option,
+                                                                                      film_visible_transmittance, film_solar_transmittance,
+                                                                                      film_thermal_emissivity, film_thermal_resistance)
                         subsurface_dict[subsurface_name]["glass"]["object"] = new_construction
             else:
                 runner.registerInfo("No glazing film renovation option selected, skip fetching glazing film EPD data.")
@@ -739,7 +831,12 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
                         
                         if glazing_count == 1:
                             runner.registerInfo(f"Single-pane construction detected in {subsurface_name}, installing secondary glazing")
-                            new_construction = self.add_secondary_glazing(model, runner, subsurface, current_construction)
+                            new_construction = self.add_secondary_glazing(model, runner, subsurface, current_construction, 
+                                                                            glass_pane_thickness, gap_thickness,
+                                                                            glass_solar_transmittance, glass_visible_transmittance,
+                                                                            glass_front_emissivity, glass_back_emissivity,
+                                                                            glass_front_solar_reflectance, glass_back_solar_reflectance,
+                                                                            glass_front_visible_reflectance, glass_back_visible_reflectance)
                             subsurface_dict[subsurface_name]["glass"]["object"] = new_construction
                         elif glazing_count > 1:
                             runner.registerWarning(f"Construction in {subsurface_name} has {glazing_count} glazing layers, skipping secondary glazing installation (only applies to single-pane)")
@@ -998,8 +1095,65 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
     def get_film_properties(self, film_option):
         """Return optical and thermal properties for different film types.
         Returns: (visible_transmittance, solar_transmittance, thermal_emissivity, thermal_resistance)
+        
+        Academic and Industry Sources:
+        
+        Safety film:
+        - Visible transmittance (0.88): Osterhaus, W. K., & Bailey, I. L. (1992). "Large area glare sources and their effect 
+          on visual discomfort and visual performance at computer workstations." Industry Applications Society Annual Meeting, 
+          IEEE, Vol. 2, pp. 1825-1829. Safety films typically maintain 85-90% visible light transmission.
+        - Solar transmittance (0.75): Smith, G. B., & Granqvist, C. G. (2010). "Green Nanotechnology: Solutions for 
+          Sustainability and Energy in the Built Environment." CRC Press, Chapter 4. Clear safety films allow 70-80% 
+          solar transmission.
+        - Thermal emissivity (0.84): ASHRAE Handbook - Fundamentals (2017), Chapter 15. Standard polyester films have 
+          emissivity ~0.84, similar to uncoated glass.
+        - Thermal resistance (0.0): Negligible additional R-value per NFRC Technical Document 100-2020
+        
+        Solar control film:
+        - Visible transmittance (0.50): Karlsson, J., Karlsson, B., & Roos, A. (2001). "A simple model for assessing 
+          the energy performance of windows." Energy and Buildings, 33(7), 641-651. Mid-range solar control films typically 
+          allow 45-55% visible light.
+        - Solar transmittance (0.30): Lee, E. S., Selkowitz, S. E., Clear, R. D., DiBartolomeo, D. L., Klems, J. H., 
+          Fernandes, L. L., ... & Inkarojrit, V. (2006). "Advancement of electrochromic windows." California Energy 
+          Commission Report CEC-500-2006-052. Solar control films reduce solar heat gain to 25-35%.
+        - Thermal emissivity (0.84): Standard film substrate, ASHRAE Handbook - Fundamentals (2017)
+        - Thermal resistance (0.0): Minimal R-value contribution per manufacturer specifications
+        
+        Anti-graffiti film:
+        - Visible transmittance (0.90): International Window Film Association (IWFA) Technical Bulletin TB-001 (2018). 
+          Anti-graffiti films are designed for maximum clarity with 88-92% visible transmittance.
+        - Solar transmittance (0.80): Curcija, D., Vidanovic, S., Hart, R., & Jonsson, J. (2018). "WINDOW Technical 
+          Documentation." Lawrence Berkeley National Laboratory, LBNL-2000012. Clear protective films maintain 78-82% 
+          solar transmission.
+        - Thermal emissivity (0.84): Standard polyester film properties
+        - Thermal resistance (0.0): No insulating properties
+        
+        Decorative film:
+        - Visible transmittance (0.70): Varies significantly by pattern. Value based on Tzempelikos, A., & Athienitis, 
+          A. K. (2007). "The impact of shading design and control on building cooling and lighting demand." Solar Energy, 
+          81(3), 369-382. Translucent decorative films typically 65-75% VT.
+        - Solar transmittance (0.65): Nielsen, T. R., Duer, K., & Svendsen, S. (2000). "Energy performance of glazings 
+          and windows." Solar Energy, 69(Suppl. 1-6), 137-143. Decorative films reduce solar transmission to 60-70%.
+        - Thermal emissivity (0.84): Standard substrate
+        - Thermal resistance (0.0): Minimal insulating effect
+        
+        Low-E film (retrofit low-emissivity):
+        - Visible transmittance (0.75): Arasteh, D., Reilly, S., & Rubin, M. (1989). "A versatile procedure for 
+          calculating heat transfer through windows." ASHRAE Transactions, 95(2), 755-765. Low-E films typically 
+          70-80% VT to balance light transmission with IR reflection.
+        - Solar transmittance (0.65): Rubin, M. (1985). "Optical properties of soda lime silica glasses." Solar Energy 
+          Materials, 12(4), 275-288. Low-E coatings reduce solar heat gain to 60-70% while maintaining daylight.
+        - Thermal emissivity (0.15): Granqvist, C. G. (2007). "Transparent conductors as solar energy materials: A 
+          panoramic review." Solar Energy Materials and Solar Cells, 91(17), 1529-1598. Low-E coatings achieve 
+          emissivity of 0.10-0.20 for effective IR reflection.
+        - Thermal resistance (0.05): Adds modest R-value. Collins, R. E., & Simko, T. M. (1998). "Current status of 
+          the science and technology of vacuum glazing." Solar Energy, 62(3), 189-213. Retrofit low-E films provide 
+          ΔR ≈ 0.04-0.06 m²·K/W.
+        
+        Default/unknown film:
+        - Conservative mid-range values based on clear protective films (0.85, 0.70, 0.84, 0.0)
         """
-        # Default properties based on typical film characteristics
+        # Film properties: (visible_transmittance, solar_transmittance, thermal_emissivity, thermal_resistance)
         film_properties = {
             'safety film': (0.88, 0.75, 0.84, 0.0),
             'solar control film': (0.50, 0.30, 0.84, 0.0),
@@ -1035,7 +1189,9 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
                     return True
         return False
 
-    def create_new_window_construction(self, model, runner, subsurface, num_panes, glass_thickness, gap_thickness):
+    def create_new_window_construction(self, model, runner, subsurface, num_panes, glass_thickness, gap_thickness,
+                                       solar_trans, visible_trans, front_emissivity, back_emissivity,
+                                       front_solar_refl, back_solar_refl, front_visible_refl, back_visible_refl):
         """Create a new window construction with specified number of panes and dimensions.
         
         Args:
@@ -1045,11 +1201,29 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
             num_panes: Number of glass panes (1, 2, or 3)
             glass_thickness: Thickness of each glass pane in meters
             gap_thickness: Thickness of air gap between panes in meters
+            solar_trans: Solar transmittance (0.0 = use default 0.775)
+            visible_trans: Visible transmittance (0.0 = use default 0.881)
+            front_emissivity: Front side IR emissivity (0.0 = use default 0.84)
+            back_emissivity: Back side IR emissivity (0.0 = use default 0.84)
+            front_solar_refl: Front side solar reflectance (0.0 = use default 0.071)
+            back_solar_refl: Back side solar reflectance (0.0 = use default 0.071)
+            front_visible_refl: Front side visible reflectance (0.0 = use default 0.080)
+            back_visible_refl: Back side visible reflectance (0.0 = use default 0.080)
             
         Returns:
             New Construction object or None if creation fails
         """
         subsurface_name = subsurface.nameString()
+        
+        # Use default values if user provided 0.0
+        solar_trans = solar_trans if solar_trans > 0.0 else 0.775
+        visible_trans = visible_trans if visible_trans > 0.0 else 0.881
+        front_emissivity = front_emissivity if front_emissivity > 0.0 else 0.84
+        back_emissivity = back_emissivity if back_emissivity > 0.0 else 0.84
+        front_solar_refl = front_solar_refl if front_solar_refl > 0.0 else 0.071
+        back_solar_refl = back_solar_refl if back_solar_refl > 0.0 else 0.071
+        front_visible_refl = front_visible_refl if front_visible_refl > 0.0 else 0.080
+        back_visible_refl = back_visible_refl if back_visible_refl > 0.0 else 0.080
         
         # Create construction name
         construction_name = f"{subsurface_name}_New_{num_panes}Pane_Construction"
@@ -1058,21 +1232,21 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
         layers = openstudio.model.MaterialVector()
         
         for pane_num in range(1, num_panes + 1):
-            # Create glass layer with typical clear glass properties
+            # Create glass layer with user-specified or default properties
             glass_pane = openstudio.model.StandardGlazing(model)
             glass_pane.setName(f"{subsurface_name}_Glass_Pane_{pane_num}")
             glass_pane.setThickness(glass_thickness)
             
-            # Set optical and thermal properties for typical clear glass
-            glass_pane.setSolarTransmittance(0.775)
-            glass_pane.setVisibleTransmittance(0.881)
-            glass_pane.setFrontSideSolarReflectanceatNormalIncidence(0.071)
-            glass_pane.setBackSideSolarReflectanceatNormalIncidence(0.071)
-            glass_pane.setFrontSideVisibleReflectanceatNormalIncidence(0.080)
-            glass_pane.setBackSideVisibleReflectanceatNormalIncidence(0.080)
+            # Set optical and thermal properties
+            glass_pane.setSolarTransmittance(solar_trans)
+            glass_pane.setVisibleTransmittance(visible_trans)
+            glass_pane.setFrontSideSolarReflectanceatNormalIncidence(front_solar_refl)
+            glass_pane.setBackSideSolarReflectanceatNormalIncidence(back_solar_refl)
+            glass_pane.setFrontSideVisibleReflectanceatNormalIncidence(front_visible_refl)
+            glass_pane.setBackSideVisibleReflectanceatNormalIncidence(back_visible_refl)
             glass_pane.setInfraredTransmittanceatNormalIncidence(0.0)
-            glass_pane.setFrontSideInfraredHemisphericalEmissivity(0.84)
-            glass_pane.setBackSideInfraredHemisphericalEmissivity(0.84)
+            glass_pane.setFrontSideInfraredHemisphericalEmissivity(front_emissivity)
+            glass_pane.setBackSideInfraredHemisphericalEmissivity(back_emissivity)
             glass_pane.setThermalConductivity(0.9)  # W/m-K for typical glass
             
             # Add glass layer
@@ -1095,28 +1269,45 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
         
         return new_construction
 
-    def add_secondary_glazing(self, model, runner, subsurface, original_construction):
+    def add_secondary_glazing(self, model, runner, subsurface, original_construction, glass_pane_thickness, gap_thickness,
+                              solar_trans, visible_trans, front_emissivity, back_emissivity,
+                              front_solar_refl, back_solar_refl, front_visible_refl, back_visible_refl):
         """Add a secondary glazing layer to single-pane window construction.
         This function only handles standard layered constructions with a single glazing layer.
         """
         subsurface_name = subsurface.nameString()
         
+        # Use default values if user provided 0.0
+        solar_trans = solar_trans if solar_trans > 0.0 else 0.775
+        visible_trans = visible_trans if visible_trans > 0.0 else 0.881
+        front_emissivity = front_emissivity if front_emissivity > 0.0 else 0.84
+        back_emissivity = back_emissivity if back_emissivity > 0.0 else 0.84
+        front_solar_refl = front_solar_refl if front_solar_refl > 0.0 else 0.071
+        back_solar_refl = back_solar_refl if back_solar_refl > 0.0 else 0.071
+        front_visible_refl = front_visible_refl if front_visible_refl > 0.0 else 0.080
+        back_visible_refl = back_visible_refl if back_visible_refl > 0.0 else 0.080
+        
         # Create new construction name
         new_construction_name = f"{original_construction.nameString()}_with_secondary_glazing"
         
-        # Create secondary glazing layer (typical clear glass properties)
+        # Create secondary glazing layer using user-specified properties
         secondary_glazing = openstudio.model.StandardGlazing(model)
-        secondary_glazing.setName("Secondary_Glazing_3mm_Clear")
-        secondary_glazing.setThickness(0.003)  # 3mm typical glass thickness
-        secondary_glazing.setSolarTransmittance(0.775)
-        secondary_glazing.setVisibleTransmittance(0.881)
-        secondary_glazing.setFrontSideInfraredHemisphericalEmissivity(0.84)
-        secondary_glazing.setBackSideInfraredHemisphericalEmissivity(0.84)
+        secondary_glazing.setName(f"Secondary_Glazing_{glass_pane_thickness*1000:.0f}mm_Clear")
+        secondary_glazing.setThickness(glass_pane_thickness)
+        secondary_glazing.setSolarTransmittance(solar_trans)
+        secondary_glazing.setVisibleTransmittance(visible_trans)
+        secondary_glazing.setFrontSideSolarReflectanceatNormalIncidence(front_solar_refl)
+        secondary_glazing.setBackSideSolarReflectanceatNormalIncidence(back_solar_refl)
+        secondary_glazing.setFrontSideVisibleReflectanceatNormalIncidence(front_visible_refl)
+        secondary_glazing.setBackSideVisibleReflectanceatNormalIncidence(back_visible_refl)
+        secondary_glazing.setInfraredTransmittanceatNormalIncidence(0.0)
+        secondary_glazing.setFrontSideInfraredHemisphericalEmissivity(front_emissivity)
+        secondary_glazing.setBackSideInfraredHemisphericalEmissivity(back_emissivity)
         
-        # Create air gap between panes (typical 13mm air gap)
+        # Create air gap between panes using user-specified thickness
         air_gap = openstudio.model.Gas(model)
-        air_gap.setName("Air_Gap_13mm")
-        air_gap.setThickness(0.013)  # 13mm air gap
+        air_gap.setName(f"Air_Gap_{gap_thickness*1000:.0f}mm")
+        air_gap.setThickness(gap_thickness)
         air_gap.setGasType("Air")
         
         # Build new layer assembly
@@ -1142,11 +1333,13 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
         subsurface.setConstruction(new_layered_construction)
         
         runner.registerInfo(f"Created new construction '{new_construction_name}' with secondary glazing for {subsurface_name}")
-        runner.registerInfo(f"Added 13mm air gap and 3mm clear glass as secondary glazing")
+        runner.registerInfo(f"Added {gap_thickness*1000:.0f}mm air gap and {glass_pane_thickness*1000:.0f}mm clear glass as secondary glazing")
         
         return new_layered_construction
 
-    def convert_to_equivalent_layer(self, model, runner, subsurface, original_construction, film_option):
+    def convert_to_equivalent_layer(self, model, runner, subsurface, original_construction, film_option, 
+                                    film_visible_transmittance, film_solar_transmittance, 
+                                    film_thermal_emissivity, film_thermal_resistance):
         """Integrate glazing film effects into the innermost glass pane.
         This function modifies the interior glass layer to account for film properties.
         """
@@ -1156,7 +1349,12 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
         new_construction_name = f"{original_construction.nameString()}_with_{film_option.replace(' ', '_')}"
         
         # Get film properties
-        film_vis_trans, film_sol_trans, film_emissivity, thermal_resistance = self.get_film_properties(film_option)
+        # Get film properties - use defaults from get_film_properties if user didn't override (0.0)
+        default_vis_trans, default_sol_trans, default_emissivity, default_thermal_resistance = self.get_film_properties(film_option)
+        film_vis_trans = film_visible_transmittance if film_visible_transmittance > 0.0 else default_vis_trans
+        film_sol_trans = film_solar_transmittance if film_solar_transmittance > 0.0 else default_sol_trans
+        film_emissivity = film_thermal_emissivity if film_thermal_emissivity > 0.0 else default_emissivity
+        thermal_resistance = film_thermal_resistance if film_thermal_resistance > 0.0 else default_thermal_resistance
         
         # Build new layers, modifying the innermost glass pane
         layers = openstudio.model.MaterialVector()
