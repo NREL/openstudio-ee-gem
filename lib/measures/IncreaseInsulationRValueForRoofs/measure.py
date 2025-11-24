@@ -16,13 +16,22 @@ class IncreaseInsulationRValueForRoofs(openstudio.measure.ModelMeasure):
 
     def description(self):
         return ("Adjusts insulation layers in roof/ceiling constructions exposed to outdoors "
-                "to reach a target R-value, with optional costs and EC3-based embodied carbon tagging.")
+                "to reach a target R-value, with embodied carbon tagging.")
 
     def modeler_description(self):
-        return ("Finds the roof insulation layer (preferring massless; else highest R/thickness), "
-                "clones the construction, and edits that layer to hit the target R. Adds/adjusts LCCs. "
-                "Also computes embodied carbon for *added* insulation using EC3 (EPDs) and saves results "
-                "on the construction via additionalProperties.")
+        return ("This measure modifies insulation layers in roof/ceiling constructions exposed to "
+                "outdoors to reach a user-defined target R-value. The measure identifies the existing "
+                "insulation layer by preferring massless opaque materials (e.g., R-value only layers) "
+                "or selecting the material with the highest R-value to thickness ratio. It clones the "
+                "original construction and adjusts the insulation layer properties to meet the target. "
+                "Supports various insulation types including blown materials (cellulose, fiberglass, "
+                "mineral wool), foam boards (polyiso, EPS, XPS, GPS), and batts (fiberglass, mineral wool, "
+                "pure wool). The measure fetches Environmental Product Declaration (EPD) data from the EC3 "
+                "database to calculate embodied carbon (GWP) for the added insulation over a specified "
+                "analysis period. Outlier removal using the IQR method is applied to GWP values to improve "
+                "data accuracy. Results including embodied carbon, material quantities, density, thermal "
+                "properties, and GWP metrics are stored as additional properties on each modified "
+                "construction for downstream reporting.")
 
     @staticmethod
     def gwp_statistics():
@@ -44,7 +53,6 @@ class IncreaseInsulationRValueForRoofs(openstudio.measure.ModelMeasure):
             "Pure Wool Batts"
         ]
 
-    # ---- Helpers ----
     @staticmethod
     def _unit_convert(value, from_u, to_u):
         return openstudio.convert(value, from_u, to_u).get()
@@ -83,7 +91,27 @@ class IncreaseInsulationRValueForRoofs(openstudio.measure.ModelMeasure):
         else:
             return None
 
-    # ---- Arguments ----
+    def remove_outliers_iqr(self, data):
+        """Remove outliers from a list of numerical values using the IQR method.
+        Returns the filtered list without outliers.
+        """
+        if len(data) < 4:  # Need at least 4 data points for meaningful IQR calculation
+            return data
+        
+        data_array = np.array(data)
+        q1 = np.percentile(data_array, 25)
+        q3 = np.percentile(data_array, 75)
+        iqr = q3 - q1
+        
+        # Define outlier bounds
+        lower_bound = q1 - 1.5 * iqr
+        upper_bound = q3 + 1.5 * iqr
+        
+        # Filter out outliers
+        filtered_data = [x for x in data if lower_bound <= x <= upper_bound]
+        
+        return filtered_data
+
     def arguments(self, model):
         args = openstudio.measure.OSArgumentVector()
 
@@ -137,7 +165,6 @@ class IncreaseInsulationRValueForRoofs(openstudio.measure.ModelMeasure):
 
         return args
 
-    # ---- Core ----
     def run(self, model, runner, user_arguments):
         super(type(self), self).run(model, runner, user_arguments)
         if not runner.validateUserArguments(self.arguments(model), user_arguments):
@@ -156,6 +183,9 @@ class IncreaseInsulationRValueForRoofs(openstudio.measure.ModelMeasure):
         # Reasonableness checks
         if (r_value_ip < 0.0) or (r_value_ip > 500.0):
             runner.registerError("R-value must be between 0 and 500 ft²·h·°F/Btu.")
+            return False
+        if analysis_period <= 0:
+            runner.registerError("Analysis period must be greater than 0 years.")
             return False
         if insulation_material_lifetime <= 0:
             runner.registerError("Choose an integer larger than 0 for insulation material lifetime.")
@@ -197,27 +227,6 @@ class IncreaseInsulationRValueForRoofs(openstudio.measure.ModelMeasure):
 
         selected_k = insulation_thermal_conductivity if insulation_thermal_conductivity > 0.0 else material_k_dict[insulation_material_type]
         selected_rho = insulation_material_density if insulation_material_density > 0.0 else material_density_dict[insulation_material_type]
-
-    def remove_outliers_iqr(self, data):
-        """Remove outliers from a list of numerical values using the IQR method.
-        Returns the filtered list without outliers.
-        """
-        if len(data) < 4:  # Need at least 4 data points for meaningful IQR calculation
-            return data
-        
-        data_array = np.array(data)
-        q1 = np.percentile(data_array, 25)
-        q3 = np.percentile(data_array, 75)
-        iqr = q3 - q1
-        
-        # Define outlier bounds
-        lower_bound = q1 - 1.5 * iqr
-        upper_bound = q3 + 1.5 * iqr
-        
-        # Filter out outliers
-        filtered_data = [x for x in data if lower_bound <= x <= upper_bound]
-        
-        return filtered_data
 
         # Conversions
         r_value_si = self._unit_convert(r_value_ip, "ft^2*h*R/Btu", "m^2*K/W")
@@ -543,7 +552,6 @@ class IncreaseInsulationRValueForRoofs(openstudio.measure.ModelMeasure):
                 "total_gwp_kg_co2_eq": total_gwp
             })
 
-
             # Tag onto construction as additionalProperties
             c = item["construction"]
             props = c.additionalProperties()
@@ -563,8 +571,6 @@ class IncreaseInsulationRValueForRoofs(openstudio.measure.ModelMeasure):
                 f"{total_gwp:.2f} kg CO₂ eq over {area_m2:.2f} m²"
             )
 
-            
-            
         # Pretty print or save
         print("\n==== GWP Summary for Modified Constructions ====")
         pp.pprint(gwp_summary_rows)
