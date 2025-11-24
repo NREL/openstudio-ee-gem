@@ -38,3 +38,10 @@ lib/measures/window_enhancement/tests/.pytest_cache
 lib/measures/window_enhancement/tests/example_model/run
 **/__pycache__/
 config.ini
+
+# Ignore Python virtual environments
+venv/
+.venv/
+env/
+.env/
+config.env
