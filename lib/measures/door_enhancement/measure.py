@@ -3,8 +3,6 @@
 # See also https://openstudio.net/license
 # *******************************************************************************
 
-from atexit import register
-from re import sub
 import openstudio
 import typing
 import numpy as np
@@ -25,12 +23,31 @@ class DoorEnhancement(openstudio.measure.ModelMeasure):
 
     def description(self):
         """Brief description of the measure."""
-        return "Calculates embodied emissions for door enhancements using EC3 database lookup. This measure only functions if you have an EC3 key and the required Python libraries installed. In addition to getting embodied car value it does also alter the thermal performance of the doors based on the selections made"
+        return ("Improves door performance by adding weatherstripping seals (bottom, top, and side) "
+                "and optionally replacing doors with more thermally efficient options. The measure "
+                "calculates the embodied carbon impact using Environmental Product Declaration (EPD) "
+                "data from the EC3 database and adjusts space infiltration rates to reflect improved "
+                "air sealing. Requires an EC3 API key and Python libraries (numpy, pandas, urllib3).")
 
     def modeler_description(self):
         """Detailed description of the measure."""
-        return ("This measure evaluates the embodied carbon impact of adding an strip or storm door "
-                "to an existing structure by analyzing frame material data from EC3.")
+        return ("This measure performs two main functions:\n\n"
+                "1. **Infiltration Reduction**: Reduces space infiltration rates by a user-specified "
+                "percentage (default 30%) to simulate improved air sealing from weatherstripping. "
+                "The reduction applies to all door-containing spaces in the selected space type or "
+                "entire building.\n\n"
+                "2. **Embodied Carbon Calculation**: Calculates life-cycle embodied carbon (kg CO2 eq) "
+                "for door enhancement materials over the analysis period, including:\n"
+                "   - Bottom seals: brush weatherstrip, automatic door bottom, or silicone smoke gasket\n"
+                "   - Top/side seals: silicone smoke gasket or jamb weatherstrip\n"
+                "   - Optional door replacement: wood, glass, garage, or various insulated steel core doors\n\n"
+                "3. **Thermal Performance Update**: When replacing doors, the measure updates door "
+                "constructions with new R-values based on material properties (thickness, conductivity, "
+                "density) from literature sources or user inputs.\n\n"
+                "The measure retrieves EPD data from the EC3 database via API, calculates statistical "
+                "GWP values (min/max/mean/median), removes outliers, and accounts for product lifetimes "
+                "and replacement cycles over the analysis period. Results are attached as additional "
+                "properties to each modified door subsurface.")
     @staticmethod
     def gwp_statistics():
         return ["minimum","maximum","mean","median"]
@@ -404,6 +421,8 @@ class DoorEnhancement(openstudio.measure.ModelMeasure):
             runner.registerError("Choose an integer larger than 0 for analysis period of embodied carbon calculation.")
         if strip_lifetime <= 0:
             runner.registerError("Choose an integer larger than 0 for product lifetime of door bottom strip.")
+        if door_area_per_unit <= 0:
+            runner.registerError("Choose a numeric value larger than 0 for door area per unit.")
         if door_lifetime <= 0:
             runner.registerError("Choose an integer larger than 0 for product lifetime of door.")
         if length_per_unit_bottom_side <= 0:
@@ -416,8 +435,17 @@ class DoorEnhancement(openstudio.measure.ModelMeasure):
             runner.registerError("Door material density must be non-negative.")
         if door_thickness < 0:
             runner.registerError("Door thickness must be non-negative.")
-
-        ###################### Change model's space infiltration################
+        
+        # Check for conflicting door options
+        if door_option != 'none' and door_option != 'defined by model':
+            if door_thermal_conductivity > 0.0 and door_density > 0.0 and door_thickness > 0.0:
+                # All three custom properties provided - this is fine
+                runner.registerInfo(f"Using custom door material properties for {door_option}")
+            elif door_thermal_conductivity > 0.0 or door_density > 0.0 or door_thickness > 0.0:
+                # Only some properties provided - warning
+                runner.registerWarning(f"Only some door material properties provided. Missing properties will use defaults for {door_option}")
+        
+        ####################### Change model's space infiltration#######################
         # check the space_type for reasonableness and see if measure should run on space type or on the entire building
         apply_to_building = False
         space_type = None
@@ -442,13 +470,13 @@ class DoorEnhancement(openstudio.measure.ModelMeasure):
             runner.registerError('Please enter a value less than or equal to 100 for the Space Infiltration reduction percentage.')
             return False
         elif space_infiltration_reduction_percent == 0:
-            runner.registerInfo('No Space Infiltration adjustment requested, but infiltration coefficients may still be affected.')
+            runner.registerInfo('  ℹ No Space Infiltration adjustment requested (infiltration coefficients may still be affected)')
         elif abs(space_infiltration_reduction_percent) < 1:
             runner.registerWarning(f"A Space Infiltration reduction percentage of {space_infiltration_reduction_percent} percent is abnormally low.")
         elif space_infiltration_reduction_percent > 90:
             runner.registerWarning(f"A Space Infiltration reduction percentage of {space_infiltration_reduction_percent} percent is abnormally high.")
         elif space_infiltration_reduction_percent < 0:
-            runner.registerInfo('The requested value for Space Infiltration reduction percentage was negative. This will result in an increase in Space Infiltration.')
+            runner.registerInfo('  ℹ Space Infiltration reduction percentage is negative (will increase infiltration)')
 
         # get space infiltration objects used in the model
         space_infiltration_objects = model.getSpaceInfiltrationDesignFlowRates()
@@ -458,10 +486,13 @@ class DoorEnhancement(openstudio.measure.ModelMeasure):
         affected_area_si = 0
 
          # reporting initial condition of model
+        runner.registerInfo("\n" + "=" * 80)
+        runner.registerInfo("INFILTRATION PROCESSING")
+        runner.registerInfo("=" * 80)
         if len(space_infiltration_objects) == 0:
-            runner.registerInfo('The initial model did not contain any space infiltration objects.')
+            runner.registerInfo('  ℹ Initial model contained no space infiltration objects')
         else:
-            runner.registerInfo(f"The initial model contained {len(space_infiltration_objects)} space infiltration objects.")
+            runner.registerInfo(f"  ℹ Initial model contained {len(space_infiltration_objects)} space infiltration objects")
 
         # get space types in model
         building = model.getBuilding()
@@ -516,7 +547,7 @@ class DoorEnhancement(openstudio.measure.ModelMeasure):
                 updated_instance_name = space_type_infiltration_object.setName(
                     f"{space_type_infiltration_object.nameString()} {space_infiltration_reduction_percent} percent reduction"
                 )
-                runner.registerInfo(f"Altered space infiltration object: {updated_instance_name} in space type: {space_type.nameString()}")
+                runner.registerInfo(f"  ✓ Altered: {updated_instance_name} (Space Type: {space_type.nameString()})")
                 altered_infiltration_instances += 1
 
         # Get spaces in the model
@@ -547,25 +578,32 @@ class DoorEnhancement(openstudio.measure.ModelMeasure):
                 updated_instance_name = space_infiltration_object.setName(
                     f"{space_infiltration_object.nameString()} {space_infiltration_reduction_percent} percent reduction"
                 )
-                runner.registerInfo(f"Altered space infiltration object: {updated_instance_name} in space: {space.nameString()}")
+                runner.registerInfo(f"  ✓ Altered: {updated_instance_name} (Space: {space.nameString()})")
                 altered_infiltration_instances += 1
 
         if altered_infiltration_instances == 0:
-            runner.registerInfo("No space infiltration objects were altered.")
+            runner.registerInfo("  ℹ No space infiltration objects were altered")
 
         affected_area_ip = openstudio.convert(affected_area_si, 'm^2', 'ft^2').get()
 
         #report infiltration modification condition
         runner.registerInfo(f'{altered_infiltration_instances} space infiltration objects were altered affecting a total area of {affected_area_si:.2f} m^2 ({affected_area_ip:.2f} ft^2).')
         
-        ####################### Calculate Embodied Carbon################
+        ####################### Calculate Embodied Carbon#######################
         sub_surfaces = []
         for space in spaces:
             for surface in space.surfaces():
                 for subsurface in surface.subSurfaces():
                     sub_surfaces.append(subsurface)
-        # Print the number of sub-surfaces before processing
+        
+        runner.registerInfo("\n" + "=" * 80)
+        runner.registerInfo("SUBSURFACE DISCOVERY")
+        runner.registerInfo("=" * 80)
         runner.registerInfo(f"Total sub-surfaces found: {len(sub_surfaces)}")
+        
+        runner.registerInfo("-" * 80)
+        runner.registerInfo("Filtering door subsurfaces...")
+        runner.registerInfo("-" * 80)
         # List storing subsurface object subject to change
         sub_surfaces_to_change = []
         # loop through sub surfaces
@@ -574,15 +612,22 @@ class DoorEnhancement(openstudio.measure.ModelMeasure):
             if subsurface.subSurfaceType() in ["Door","GlassDoor","OverheadDoor"]:
                 # append the subsurface objects carrying doors into list
                 sub_surfaces_to_change.append(subsurface) 
-                runner.registerInfo(f"Processing door construction in {subsurface.nameString()}")           
+                runner.registerInfo(f"  ✓ Processing door: {subsurface.nameString()}")           
             else:# if sub_surface.subSurfaceType() not in ["Fixeddoor", "Operabledoor"]:
-                runner.registerInfo(f"Skipping non-door surface: {subsurface.nameString()}")
+                runner.registerInfo(f"  ✗ Skipping non-door surface: {subsurface.nameString()}")
                 continue
 
         # dictionary storing properties of subsurfaces containing door construcitons
+        runner.registerInfo("\n" + "=" * 80)
+        runner.registerInfo("DOOR RENOVATION PROCESSING")
+        runner.registerInfo("=" * 80)
+        
         subsurface_dict = {}
         for subsurface in sub_surfaces_to_change:
             subsurface_name = subsurface.nameString()
+            runner.registerInfo(f"\n{'─' * 80}")
+            runner.registerInfo(f"Processing: {subsurface_name}")
+            runner.registerInfo(f"{'─' * 80}")
             subsurface_dict[subsurface_name] = {}
             subsurface_dict[subsurface_name]["subsurface object"] = subsurface
             subsurface_dict[subsurface_name]["Door type"] = subsurface.subSurfaceType()
@@ -591,14 +636,12 @@ class DoorEnhancement(openstudio.measure.ModelMeasure):
 
             subsurface_dict[subsurface_name]["door_bottom_sealing"] = {}
             subsurface_dict[subsurface_name]["door_bottom_sealing"]["lifetime"] = strip_lifetime
-            
 
             subsurface_dict[subsurface_name]["door_side_sealing"] = {}
             subsurface_dict[subsurface_name]["door_side_sealing"]["lifetime"] = strip_lifetime
 
             subsurface_dict[subsurface_name]['door'] = {}
             subsurface_dict[subsurface_name]['door']['lifetime'] = door_lifetime
-
 
             epd_datalist = {}
             bottom_sealing_product_url = self.generate_sealing_url(door_bottom_seal_option)
@@ -657,8 +700,8 @@ class DoorEnhancement(openstudio.measure.ModelMeasure):
                         
                         if len(filtered_list) < original_count:
                             runner.registerInfo(
-                                f"Removed {original_count - len(filtered_list)} outlier(s) from {functional_unit} "
-                                f"for {material_name} (original: {original_count}, filtered: {len(filtered_list)})"
+                                f"    • Removed {original_count - len(filtered_list)} outlier(s) from {functional_unit} "
+                                f"({material_name}: {original_count} → {len(filtered_list)} values)"
                             )
                             # Only use filtered list if it's not empty
                             if len(filtered_list) > 0:
@@ -673,7 +716,7 @@ class DoorEnhancement(openstudio.measure.ModelMeasure):
                 for functional_unit, list in gwp_values.items():
                     if len(list) == 0:
                         gwp = None
-                        runner.registerInfo(f"No GWP values returned from {functional_unit}")
+                        runner.registerInfo(f"    ⚠ No GWP values available for {functional_unit}")
                     elif len(list) == 1:
                         gwp = list[0]
                     elif gwp_statistic == "minimum":
@@ -705,23 +748,26 @@ class DoorEnhancement(openstudio.measure.ModelMeasure):
                                                 multiplier)
                     else:
                         embodied_carbon = 0.0
-                        runner.registerInfo(f"Skipping door side sealing for {subsurface_name} as it is an overhead door.")
+                        runner.registerInfo(f"  ○ Door side sealing skipped for {subsurface_name} (overhead door)")
                     
                 elif material_name == "door" and gwp_per_m2 != 0.0:
                     embodied_carbon = float(subsurface_dict[subsurface_name][material_name]["gwp_per_m2"] *
                                                 door_area *
                                                 multiplier)
                 else:
-                    runner.registerInfo(f"No GWP value available for {subsurface_name} to implement door renovation option: {material_name}, skipping embodied carbon calculation and enter 0.0.")
+                    runner.registerInfo(f"  ○ {material_name}: No GWP data available, entering 0.0")
                     embodied_carbon = 0.0
 
                 # store embodied carbon value for this renovation option on this subsurface
                 subsurface_dict[subsurface_name][material_name]["embodied_carbon_kg_co2_eq"] = embodied_carbon
-                runner.registerInfo(f"Embodied carbon of {material_name} in {subsurface_name} (kg CO2 eq): {subsurface_dict[subsurface_name][material_name]['embodied_carbon_kg_co2_eq']}")
+                runner.registerInfo(f"    ✓ {material_name.replace('_', ' ').title()}: {embodied_carbon:.2f} kg CO2 eq")
                 
                 subsurface_dict[subsurface_name]["door_renovation_embodied_carbon_kg_co2_eq"] +=  subsurface_dict[subsurface_name][material_name]["embodied_carbon_kg_co2_eq"]
 
-            runner.registerInfo(f"Embodied carbon in this subsurface in kg CO2 eq: {subsurface_dict[subsurface_name]['door_renovation_embodied_carbon_kg_co2_eq']}")
+            runner.registerInfo(f"\n{'─' * 80}")
+            runner.registerInfo(f"  TOTAL EMBODIED CARBON FOR {subsurface_name}:")
+            runner.registerInfo(f"  {subsurface_dict[subsurface_name]['door_renovation_embodied_carbon_kg_co2_eq']:.2f} kg CO2 eq")
+            runner.registerInfo(f"{'─' * 80}")
 
             # Modify door construction based on material properties if door replacement is selected
             if door_option != 'none' and door_option != 'defined by model':
@@ -784,13 +830,10 @@ class DoorEnhancement(openstudio.measure.ModelMeasure):
                     subsurface_dict[subsurface_name]['material_conductivity_W_per_mK'] = mat_props['conductivity']
                     subsurface_dict[subsurface_name]['material_density_kg_per_m3'] = mat_props['density']
                     
-                    runner.registerInfo(
-                        f"Door construction updated for {subsurface_name}: "
-                        f"Old R-value: {old_r_value_si:.2f} m²·K/W (R-{old_r_value_ip:.1f} IP), "
-                        f"New R-value: {new_r_value_si:.2f} m²·K/W (R-{new_r_value_ip:.1f} IP) from {door_option}, "
-                        f"Thickness: {mat_props['thickness']*1000:.1f} mm, "
-                        f"Conductivity: {mat_props['conductivity']:.3f} W/m·K"
-                    )
+                    runner.registerInfo(f"\n  → Door construction updated for {subsurface_name}:")
+                    runner.registerInfo(f"    Material: {door_option}")
+                    runner.registerInfo(f"    R-value: {old_r_value_si:.2f} → {new_r_value_si:.2f} m²·K/W (R-{old_r_value_ip:.1f} → R-{new_r_value_ip:.1f} IP)")
+                    runner.registerInfo(f"    Thickness: {mat_props['thickness']*1000:.1f} mm | Conductivity: {mat_props['conductivity']:.3f} W/m·K")
                 else:
                     runner.registerWarning(f"No construction found for {subsurface_name}, R-value not modified.")
 
@@ -818,25 +861,32 @@ class DoorEnhancement(openstudio.measure.ModelMeasure):
         )
 
         # Report final condition
+        runner.registerInfo("\n" + "=" * 80)
+        runner.registerInfo("MEASURE SUMMARY")
+        runner.registerInfo("=" * 80)
+        runner.registerInfo(f"Infiltration: Modified {altered_infiltration_instances} objects affecting {affected_area_si:.2f} m² ({affected_area_ip:.2f} ft²)")
+        runner.registerInfo(f"Doors processed: {len(sub_surfaces_to_change)} subsurfaces")
+        if doors_with_r_value_change > 0:
+            runner.registerInfo(f"R-value updates: {doors_with_r_value_change} door(s) upgraded with '{door_option}' (R-{self.door_r_values()[door_option]:.2f} m²·K/W)")
+        else:
+            runner.registerInfo(f"R-value updates: None (sealing only or 'none' option)")
+        runner.registerInfo(f"Total embodied carbon: {total_embodied_carbon:.2f} kg CO2 eq")
+        runner.registerInfo("=" * 80)
+        
         if doors_with_r_value_change > 0:
             runner.registerFinalCondition(
-                f"Door enhancement measure completed. "
-                f"Modified {altered_infiltration_instances} infiltration objects affecting {affected_area_si:.2f} m^2 ({affected_area_ip:.2f} ft^2). "
-                f"Processed {len(sub_surfaces_to_change)} door subsurfaces. "
-                f"Updated R-values for {doors_with_r_value_change} door(s) with '{door_option}' (R-{self.door_r_values()[door_option]:.2f} m²·K/W). "
-                f"Total embodied carbon from door renovations: {total_embodied_carbon:.2f} kg CO2 eq."
+                f"Door enhancement completed: {altered_infiltration_instances} infiltration objects modified, "
+                f"{len(sub_surfaces_to_change)} doors processed, {doors_with_r_value_change} R-value(s) updated, "
+                f"Total EC: {total_embodied_carbon:.2f} kg CO2 eq"
             )
         else:
             runner.registerFinalCondition(
-                f"Door enhancement measure completed. "
-                f"Modified {altered_infiltration_instances} infiltration objects affecting {affected_area_si:.2f} m^2 ({affected_area_ip:.2f} ft^2). "
-                f"Processed {len(sub_surfaces_to_change)} door subsurfaces. "
-                f"No door R-value changes (sealing only or 'none' option selected). "
-                f"Total embodied carbon from door renovations: {total_embodied_carbon:.2f} kg CO2 eq."
+                f"Door enhancement completed: {altered_infiltration_instances} infiltration objects modified, "
+                f"{len(sub_surfaces_to_change)} doors processed (sealing only), "
+                f"Total EC: {total_embodied_carbon:.2f} kg CO2 eq"
             )
 
         return True
-
 
 # Register the measure
 DoorEnhancement().registerWithApplication()
