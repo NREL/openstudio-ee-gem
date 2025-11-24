@@ -3,6 +3,9 @@ from typing import Optional, Dict, Any
 import json
 import urllib3
 from sys import argv
+from dotenv import load_dotenv
+import os
+
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 
@@ -224,9 +227,13 @@ def main():
     """
     Use of the RSMeans API client with NREL credentials.
     """
-    #pull in client id and client secret from CLI arguments
-    client_id = argv[1]
-    client_secret = argv[2]
+    #---------------------------------------------------------
+    #load credentials
+
+    load_dotenv()
+
+    client_id = os.getenv('client_id')
+    client_secret = os.getenv('client_secret')
 
     # Initialize client with credentials
     client = RSMeansAPIClient(client_id, client_secret, use_sandbox=True)  # Set to False for production
@@ -235,7 +242,7 @@ def main():
     if not client.authenticate():
         print("Failed to authenticate")
         return
-
+    #----------------------------------------------------------
     # Example: Get available cost data releases
     # print("\n=== Cost Data Releases ===")
     # releases = client.get_cost_data_releases()
