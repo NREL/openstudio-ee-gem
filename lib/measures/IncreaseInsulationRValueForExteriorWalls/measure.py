@@ -3,16 +3,11 @@
 # See also https://openstudio.net/license
 # *******************************************************************************
 
-from atexit import register
 import openstudio
 import numpy as np
-import pprint as pp
 from resources.EC3_lookup import *
-import urllib3
-import pprint as pp
 import pandas as pd
-
-urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+import pprint as pp
 
 class IncreaseInsulationRValueForExteriorWalls(openstudio.measure.ModelMeasure):
     def name(self):
@@ -23,7 +18,16 @@ class IncreaseInsulationRValueForExteriorWalls(openstudio.measure.ModelMeasure):
 
     def modeler_description(self):
         return ("This measure modifies insulation materials in exterior wall constructions to reach "
-                "a user-defined R-value, adjusting thermal resistance and optionally accounting for costs.")
+                "a user-defined R-value target by adding supplemental insulation layers. The measure "
+                "identifies the existing insulation layer with the highest R-value in each exterior wall "
+                "construction and calculates the additional thickness needed to meet the target. "
+                "It supports various insulation types including blown materials (cellulose, fiberglass, "
+                "mineral wool), foam boards (polyiso, EPS, XPS, GPS), and batts (fiberglass, mineral wool, "
+                "pure wool). The measure fetches Environmental Product Declaration (EPD) data from the EC3 "
+                "database to calculate embodied carbon (GWP) for the added insulation over a specified "
+                "analysis period. Outlier removal using the IQR method is applied to GWP values to improve "
+                "accuracy. Results including embodied carbon, material quantities, and GWP metrics are "
+                "stored as additional properties on each modified construction for downstream reporting.")
 
     @staticmethod
     def gwp_statistics():
@@ -106,13 +110,13 @@ class IncreaseInsulationRValueForExteriorWalls(openstudio.measure.ModelMeasure):
         insulation_thermal_conductivity = openstudio.measure.OSArgument.makeDoubleArgument("insulation_thermal_conductivity", True)
         insulation_thermal_conductivity.setDisplayName("Thermal Conductivity of Insulation Material (W/m·K)")
         insulation_thermal_conductivity.setDescription("Thermal conductivity of the insulation material, if 0.0 is entered, typical conductivity will be used based on material type.")
-        insulation_thermal_conductivity.setDefaultValue(0.0) # use mineral wool as default
+        insulation_thermal_conductivity.setDefaultValue(0.0) 
         args.append(insulation_thermal_conductivity)
 
         insulation_material_density = openstudio.measure.OSArgument.makeDoubleArgument("insulation_material_density", True)
         insulation_material_density.setDisplayName("Density of Insulation Material (kg/m³)")
         insulation_material_density.setDescription("Density of the insulation material, if 0.0 is entered, typical density will be used based on material type.")
-        insulation_material_density.setDefaultValue(0.0) # use mineral wool as default
+        insulation_material_density.setDefaultValue(0.0) 
         args.append(insulation_material_density)
 
         return args
@@ -360,8 +364,6 @@ class IncreaseInsulationRValueForExteriorWalls(openstudio.measure.ModelMeasure):
         print("Generated EC3 URL:", ec3_url)
         insulation_product_epd = fetch_epd_data(ec3_url, api_key)
 
-
-
         # Create a dictionary to hold GWP results with different functional units
         gwp_values = {}
         gwp_values["gwp_per_kg"] = []
@@ -403,7 +405,6 @@ class IncreaseInsulationRValueForExteriorWalls(openstudio.measure.ModelMeasure):
             added_thickness_m = item["added_thickness_m"]
 
             # Use the first EPD from your pull_EC3_data dataframe for simplicity
-            # (you could also apply median or your own filtering)
             for functional_unit, list in gwp_values.items():
                 gwp = 0.0
                 if len(list) == 0:
@@ -436,19 +437,15 @@ class IncreaseInsulationRValueForExteriorWalls(openstudio.measure.ModelMeasure):
                 "insulation_material_density_kg_per_m3": insulation_material_density,
                 "construction_name": item["construction"].nameString(),
                 "added_total_volume_m3": item["added_thickness_m"] * item["total_area_m2"],
+                "added_total_volume_m3": item["added_thickness_m"] * item["total_area_m2"],
                 "added_total_area_m2": total_area_m2,
                 "added_thickness_m": added_thickness_m,
                 "added_total_mass_kg": insulation_material_density * item["added_thickness_m"] * item["total_area_m2"],
                 "total_gwp_kg_co2_eq": total_gwp
             })
 
-
-        # Convert to DataFrame for reporting
-        df_gwp_summary = pd.DataFrame(gwp_summary)
-
-        # Pretty print or save
-        print("\n==== GWP Summary for Modified Constructions ====")
-        print(df_gwp_summary)
+        # Print GWP summary for debugging
+        pp.pprint(gwp_summary)
 
         for idx, item in enumerate(modified_constructions):
             construction = item["construction"]
@@ -473,7 +470,8 @@ class IncreaseInsulationRValueForExteriorWalls(openstudio.measure.ModelMeasure):
                 f"Tagged '{construction.nameString()}' with embodied carbon: "
                 f"{total_gwp:.2f} kg CO₂ eq over {total_area_m2:.2f} m²"
             )
-
+            
+        # Debug: print all additional properties
         for prop in model.getAdditionalPropertiess():
             print(prop)
 
