@@ -20,10 +20,10 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
 
     def description(self):
         """Brief description of the measure."""
-        return ("Improves window performance through six retrofit enhancement options: (1) frame replacement, "
-                "(2) glass pane upgrades (single/double/triple pane), (3) caulking/sealant application, "
-                "(4) glazing film installation (safety, solar control, low-e, etc.), (5) weatherstripping, "
-                "and (6) secondary glazing for single-pane windows. The measure calculates embodied carbon impact "
+        return ("Improves window performance through multiple retrofit options including frame replacement, "
+                "glass pane upgrades (single/double/triple pane), caulking/sealant application, glazing film "
+                "installation (safety, solar control, low-e, etc.), weatherstripping, complete window replacement, "
+                "and secondary glazing for single-pane windows. The measure calculates embodied carbon impact "
                 "using Environmental Product Declaration (EPD) data from the EC3 database, modifies window "
                 "thermal and optical properties based on selected enhancements, and adjusts space infiltration "
                 "rates to reflect improved air sealing. Requires an EC3 API key and Python libraries (numpy, "
@@ -35,36 +35,33 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
                 "1. **Infiltration Reduction**: Reduces space infiltration rates by a user-specified percentage "
                 "(default 50%) to simulate improved air sealing from window enhancements. The reduction applies "
                 "to all window-containing spaces in the selected space type or entire building.\n\n"
-                "2. **Embodied Carbon Calculation**: Calculates life-cycle embodied carbon (kg CO2 eq) for six "
-                "window enhancement options over the analysis period:\n"
-                "   - **Glass pane replacement**: Single, double, or triple pane configurations with customizable "
-                "optical and thermal properties\n"
-                "   - **Frame replacement**: Vinyl, aluminum, wood, or fiberglass frame materials\n"
-                "   - **Glazing film application**: Safety, solar control, anti-graffiti, decorative, or low-e films\n"
-                "   - **Caulking**: Acrylic or polyurethane sealants for perimeter air sealing\n"
-                "   - **Weatherstripping**: Felt, foam, V-strip, vinyl, or silicone gaskets (operable windows only)\n"
-                "   - **Secondary glazing**: Additional interior glass pane for single-pane windows\n\n"
-                "3. **Thermal and Optical Property Updates**: The measure modifies window constructions:\n"
-                "   - Glass replacement: Creates new multi-pane layered constructions with user-specified or "
-                "default glass properties (transmittance, reflectance, emissivity, thickness)\n"
-                "   - Film application: Modifies the innermost glass pane to simulate combined glass+film optical "
-                "and thermal performance\n"
-                "   - Secondary glazing: Adds additional glass pane with air gap to existing single-pane windows\n\n"
+                "2. **Embodied Carbon Calculation**: Calculates life-cycle embodied carbon (kg CO2 eq) for window "
+                "enhancement materials over the analysis period, including:\n"
+                "   - Frame replacement: wood or wood-aluminum frames\n"
+                "   - Glass pane replacement: single, double, or triple pane configurations\n"
+                "   - Caulking/sealant: acrylic or polyurethane for perimeter sealing\n"
+                "   - Glazing films: safety, solar control, anti-graffiti, decorative, or low-e films\n"
+                "   - Weatherstripping: silicone adhesive smoke gasket (operable windows only)\n"
+                "   - Complete window replacement: fixed, project, sliding, casement, or storefront windows\n"
+                "   - Secondary glazing: additional glazing layer for single-pane windows\n\n"
+                "3. **Thermal and Optical Property Updates**: When upgrading windows, the measure modifies:\n"
+                "   - Window constructions: creates new multi-pane layered constructions with user-specified or "
+                "default glass properties (transmittance, reflectance, emissivity)\n"
+                "   - Film effects: converts constructions to equivalent layer models to simulate optical/thermal "
+                "impacts of applied films\n"
+                "   - Secondary glazing: adds additional glass pane with air gap to existing single-pane windows\n\n"
                 "The measure retrieves EPD data from the EC3 database via API, calculates statistical GWP values "
                 "(min/max/mean/median), removes outliers using the IQR method, and accounts for product lifetimes "
                 "and replacement cycles over the analysis period. Material quantities are calculated based on window "
                 "dimensions, including areas (glass, film, frame), lengths (weatherstrip, perimeter), and volumes "
-                "(caulking). Users can override the number of horizontal and vertical dividers (muntins) to calculate "
-                "accurate glazing areas, or use default values from the model. Results including embodied carbon values, "
-                "material quantities, and renovation details are reported in a comprehensive summary showing infiltration "
-                "reduction, windows processed, renovations applied, and total embodied carbon.\n\n"
+                "(caulking). Results including embodied carbon values, material quantities, and renovation details "
+                "are stored as additional properties on each modified window subsurface for downstream reporting and "
+                "analysis.\n\n"
                 "**Important Notes**:\n"
-                "- Users can select multiple enhancement options simultaneously\n"
-                "- Users can specify custom number of horizontal and vertical dividers (default: -1 uses model values)\n"
+                "- Frame/glass replacement cannot be combined with complete window replacement (to avoid double counting)\n"
                 "- Weatherstripping only applies to operable windows\n"
-                "- Secondary glazing requires single-pane layered constructions (not simple glazing systems)\n"
-                "- Glass replacement with secondary glazing will skip secondary glazing to avoid conflicts\n"
-                "- Film application requires layered constructions with StandardGlazing materials")
+                "- Secondary glazing only applies to single-pane layered constructions (not simple glazing systems)\n"
+                "- Film application requires layered constructions and converts them to equivalent layer models")
     @staticmethod
     def gwp_statistics():
         return ["minimum", "maximum", "mean", "median"]
@@ -80,6 +77,10 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
     @staticmethod
     def film_options():
         return ["none", 'safety film', 'solar control film', 'anti-graffiti film', 'decorative film', 'low-e film']
+
+    @staticmethod
+    def window_options():
+        return ["none", "fixed window", "project window", "sliding window", "casement window", "storefront window", "defined by model"]
 
     @staticmethod
     def weatherstrip_options():
@@ -209,6 +210,13 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
         weatherstrip_lifetime.setDefaultValue(10)
         args.append(weatherstrip_lifetime)
 
+        # make an argument for product life time of window
+        window_lifetime = openstudio.measure.OSArgument.makeIntegerArgument("window_lifetime",True)
+        window_lifetime.setDisplayName("Product Lifetime of Window")
+        window_lifetime.setDescription("Life expectancy of window. Default value is provided based on data from the Certified Commercial Property Inspectors Association (CCPIA).")
+        window_lifetime.setDefaultValue(30)
+        args.append(window_lifetime)
+
         # make an argument for window frame options for filtering EPDs 
         wf_options_chs = openstudio.StringVector()
         for option in self.wf_options():
@@ -263,6 +271,16 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
         film_thermal_resistance.setDescription("Thermal resistance of the film only in m²·K/W. This represents the insulating value of the film layer itself. Set to 0.0 to use default values based on film type. Defaults: safety=0.0002, solar_control=0.0003, anti_graffiti=0.0001, decorative=0.0002, low_e=0.18")
         film_thermal_resistance.setDefaultValue(0.0)
         args.append(film_thermal_resistance)
+
+        # make an argument for window options for filtering EPDs
+        window_options_chs = openstudio.StringVector()  
+        for option in self.window_options():
+            window_options_chs.append(option)
+        window_option = openstudio.measure.OSArgument.makeChoiceArgument("window_option", window_options_chs, True)
+        window_option.setDisplayName("Window Type Option")
+        window_option.setDescription("Select none if no new window is to be installed, otherwise provide window type. NOTE: When not none, this renovation option can not work with window frame or window glass replacement in the same time to avoid double counting.")
+        window_option.setDefaultValue("none")
+        args.append(window_option)
 
         # make an argument for glass option for filtering EPDs and decide whether to renovate
         glass_options_chs = openstudio.StringVector()
@@ -435,6 +453,7 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
         film_solar_transmittance = runner.getDoubleArgumentValue("film_solar_transmittance", user_arguments)
         film_thermal_emissivity = runner.getDoubleArgumentValue("film_thermal_emissivity", user_arguments)
         film_thermal_resistance = runner.getDoubleArgumentValue("film_thermal_resistance", user_arguments)
+        window_option = runner.getStringArgumentValue("window_option", user_arguments)
         weatherstrip_option = runner.getStringArgumentValue("weatherstrip_option", user_arguments)
         glass_option = runner.getStringArgumentValue("glass_option", user_arguments)
         secondary_glazing_option = runner.getStringArgumentValue("secondary_glazing_option", user_arguments)
@@ -444,6 +463,7 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
         caulking_lifetime = runner.getIntegerArgumentValue("caulking_lifetime",user_arguments)
         film_lifetime = runner.getIntegerArgumentValue("film_lifetime",user_arguments)
         weatherstrip_lifetime = runner.getIntegerArgumentValue("weatherstrip_lifetime",user_arguments)
+        window_lifetime = runner.getIntegerArgumentValue("window_lifetime",user_arguments)
         api_key = runner.getStringArgumentValue("api_key", user_arguments)
         user_num_panes = runner.getIntegerArgumentValue("user_num_panes", user_arguments)
         glass_pane_thickness = runner.getDoubleArgumentValue("glass_pane_thickness", user_arguments)
@@ -463,7 +483,7 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
         # Validate all user arguments
         if not self.validate_user_arguments_values(runner, analysis_period, glass_lifetime, wf_lifetime, 
                                                      caulking_lifetime, film_lifetime, weatherstrip_lifetime, 
-                                                     caulking_thickness, glass_pane_thickness, 
+                                                     window_lifetime, caulking_thickness, glass_pane_thickness, 
                                                      gap_thickness, length_per_unit, film_visible_transmittance, 
                                                      film_solar_transmittance, film_thermal_emissivity, 
                                                      film_thermal_resistance, glass_solar_transmittance, 
@@ -534,8 +554,8 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
             subsurface_dict[subsurface_name] = self.initialize_subsurface_data(
                 subsurface_name, subsurface, layered_construction, num_panes,
                 glass_lifetime, wf_lifetime, caulking_lifetime, film_lifetime,
-                weatherstrip_lifetime, wf_option, caulking_option,
-                film_option, weatherstrip_option, secondary_glazing_option, runner)
+                weatherstrip_lifetime, window_lifetime, wf_option, caulking_option,
+                film_option, weatherstrip_option, window_option, secondary_glazing_option, runner)
             
             # Calculate material dimensions and quantities
             self.calculate_material_dimensions(runner, subsurface, subsurface_dict[subsurface_name], caulking_thickness, 
@@ -600,7 +620,7 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
                             subsurface_dict[subsurface_name]["second_glazing"]["renovation_option"] = "none"
 
             # Fetch EPD URLs for all materials
-            epd_urls = self.fetch_epd_urls(runner, subsurface_name, wf_option, glass_option, num_panes,
+            epd_urls = self.fetch_epd_urls(runner, subsurface_name, wf_option, window_option, glass_option, num_panes,
                                            caulking_option, film_option, weatherstrip_option, secondary_glazing_option,
                                            subsurface, glass_option)
             
@@ -611,6 +631,7 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
                 "caulking": fetch_epd_data(url=epd_urls["caulking"], api_token=api_key),
                 "film": fetch_epd_data(url=epd_urls["film"], api_token=api_key),
                 "weatherstrip": fetch_epd_data(url=epd_urls["weatherstrip"], api_token=api_key),
+                "window": fetch_epd_data(url=epd_urls["window"], api_token=api_key),
                 "second_glazing": fetch_epd_data(url=epd_urls["second_glazing"], api_token=api_key)
             }
 
@@ -657,6 +678,10 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
             1 for name in subsurface_dict.keys() 
             if subsurface_dict[name]["weatherstrip"]["renovation_option"] != "none"
         )
+        windows_with_replacement = sum(
+            1 for name in subsurface_dict.keys() 
+            if subsurface_dict[name]["window"]["renovation_option"] != "none"
+        )
         windows_with_secondary_glazing = sum(
             1 for name in subsurface_dict.keys() 
             if subsurface_dict[name]["second_glazing"]["renovation_option"] != "none"
@@ -674,6 +699,8 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
             renovation_summary.append(f"{windows_with_caulking} caulking application(s)")
         if windows_with_weatherstrip > 0:
             renovation_summary.append(f"{windows_with_weatherstrip} weatherstrip installation(s)")
+        if windows_with_replacement > 0:
+            renovation_summary.append(f"{windows_with_replacement} complete window replacement(s)")
         if windows_with_secondary_glazing > 0:
             renovation_summary.append(f"{windows_with_secondary_glazing} secondary glazing installation(s)")
         
@@ -746,8 +773,8 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
 
     def initialize_subsurface_data(self, subsurface_name, subsurface, layered_construction, num_panes,
                                    glass_lifetime, wf_lifetime, caulking_lifetime, film_lifetime,
-                                   weatherstrip_lifetime, wf_option, caulking_option,
-                                   film_option, weatherstrip_option, secondary_glazing_option,
+                                   weatherstrip_lifetime, window_lifetime, wf_option, caulking_option,
+                                   film_option, weatherstrip_option, window_option, secondary_glazing_option,
                                    runner):
         """Set up data storage for one window with all renovation details.
         
@@ -764,6 +791,7 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
         data["caulking"] = {}
         data["film"] = {}
         data["weatherstrip"] = {}
+        data["window"] = {}
         data["second_glazing"] = {}
         
         # Assign openstudio model
@@ -776,6 +804,7 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
         data["caulking"]["lifetime"] = caulking_lifetime
         data["film"]["lifetime"] = film_lifetime
         data["weatherstrip"]["lifetime"] = weatherstrip_lifetime
+        data["window"]["lifetime"] = window_lifetime
         data["second_glazing"]["lifetime"] = glass_lifetime
         
         # Assign renovation options
@@ -788,6 +817,7 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
         if weatherstrip_option != "none" and subsurface.subSurfaceType() != "OperableWindow":
             runner.registerInfo(f"  ⚠ Weatherstrip skipped for {subsurface.nameString()} (not an operable window)")
         
+        data["window"]["renovation_option"] = window_option
         data["second_glazing"]["renovation_option"] = secondary_glazing_option
         
         return data
@@ -841,12 +871,13 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
             strip_length = min(window_length, window_width)
         subsurface_data["weatherstrip"]["length_m"] = float(strip_length)
         
-        # Assign window area to glass and window frame
+        # Assign window area to window, glass, and window frame
+        subsurface_data["window"]["area_m2"] = window_area
         subsurface_data["glass"]["area_m2"] = subsurface_data["film"]["area_m2"]
         subsurface_data["frame"]["area_m2"] = window_area
         subsurface_data["second_glazing"]["area_m2"] = subsurface_data["film"]["area_m2"]
 
-    def fetch_epd_urls(self, runner, subsurface_name, wf_option, glass_option, num_panes,
+    def fetch_epd_urls(self, runner, subsurface_name, wf_option, window_option, glass_option, num_panes,
                        caulking_option, film_option, weatherstrip_option, secondary_glazing_option,
                        subsurface, glass_option_input):
         """Build EC3 database URLs to fetch environmental data for each material.
@@ -859,6 +890,8 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
         # Window frame EPD
         urls["frame"] = None
         if wf_option != "none":
+            if window_option != "none":
+                runner.registerWarning("Both window option and frame option are selected. Glass and frame options cannot be used with window option to avoid double counting. Ignoring window option.")
             urls["frame"] = generate_url_byname(name_like=wf_option, plant_geography='150')
         else:
             runner.registerInfo("  ○ Window frame: No renovation selected, skipping EPD fetch")
@@ -866,6 +899,8 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
         # Glass pane EPD
         urls["glass"] = None
         if glass_option != "none":
+            if window_option != "none":
+                runner.registerWarning("Both window option and glass option are selected. Glass and frame options cannot be used with window option to avoid double counting. Ignoring window option.")
             if num_panes == 1:
                 urls["glass"] = generate_url_byname(category='6daae3d967104f5c8c85199b259f58c8', name_like='monolithic glass')
             elif num_panes == 2:
@@ -897,6 +932,26 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
             urls["weatherstrip"] = generate_url_byname(category='ca54e842c0fc4bf2b4f3a8564c3b1a4d', name_like=weatherstrip_option)
         else:
             runner.registerInfo("  ○ Weatherstrip: No renovation selected, skipping EPD fetch")
+        
+        # Window product EPD
+        urls["window"] = None
+        if window_option != "none":
+            if glass_option != "none" or wf_option != "none":
+                runner.registerWarning("Window option cannot be used with glass or frame options to avoid double counting. Ignoring window option.")
+            else:
+                if window_option != "defined by model":
+                    urls["window"] = generate_url_byname(name_like=window_option)
+                else:
+                    model_window_type = None
+                    if subsurface.subSurfaceType() in ["FixedWindow","Skylight"]:
+                        model_window_type = "fixed window"
+                    elif subsurface.subSurfaceType() == "OperableWindow":
+                        model_window_type = "sliding window"
+                    else:
+                        runner.registerError("Window type not recognized, unable to fetch window product EPD data.")
+                    urls["window"] = generate_url_byname(name_like=model_window_type)
+        else:
+            runner.registerInfo("  ○ Window product: No renovation selected, skipping EPD fetch")
         
         # Secondary glazing EPD
         urls["second_glazing"] = None
@@ -1009,7 +1064,7 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
 
     def validate_user_arguments_values(self, runner, analysis_period, glass_lifetime, wf_lifetime, 
                                         caulking_lifetime, film_lifetime, weatherstrip_lifetime, 
-                                        caulking_thickness, glass_pane_thickness, 
+                                        window_lifetime, caulking_thickness, glass_pane_thickness, 
                                         gap_thickness, length_per_unit, film_visible_transmittance, 
                                         film_solar_transmittance, film_thermal_emissivity, 
                                         film_thermal_resistance, glass_solar_transmittance, 
@@ -1058,6 +1113,12 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
             return False
         if weatherstrip_lifetime > 50:
             runner.registerError("Weatherstrip lifetime must be 50 years or less.")
+            return False
+        if window_lifetime <= 0:
+            runner.registerError("Window lifetime must be greater than 0 years.")
+            return False
+        if window_lifetime > 100:
+            runner.registerError("Window lifetime must be 100 years or less.")
             return False
         
         # Check geometric parameters
