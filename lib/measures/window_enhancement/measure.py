@@ -12,7 +12,10 @@ from resources.EC3_lookup import *
 
 class WindowEnhancement(openstudio.measure.ModelMeasure):
 
-    """A ModelMeasure for window enhancement, calculating embodied carbon. EC3 data fetched through categorization and keywords."""
+    """A ModelMeasure for window enhancement, calculating embodied carbon.
+    
+    EC3 data fetched through categorization and keywords.
+    """
 
     def name(self):
         """Measure name."""
@@ -130,7 +133,8 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
         args.append(space_type)
 
         # make an argument for air infiltration reduction percentage
-        space_infiltration_reduction_percent = openstudio.measure.OSArgument.makeDoubleArgument("space_infiltration_reduction_percent", True)
+        space_infiltration_reduction_percent = openstudio.measure.OSArgument.makeDoubleArgument(
+            "space_infiltration_reduction_percent", True)
         space_infiltration_reduction_percent.setDisplayName("Space Infiltration Power Reduction")
         space_infiltration_reduction_percent.setDefaultValue(50.0)
         space_infiltration_reduction_percent.setUnits("%")
@@ -160,52 +164,57 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
         # wind_speed_squared_coefficient.setDefaultValue(0.0)
         # args.append(wind_speed_squared_coefficient)
 
-        # make an argument for alter_coef
-        alter_coef = openstudio.measure.OSArgument.makeBoolArgument('alter_coef', True)
-        alter_coef.setDisplayName('Alter constant temperature and wind speed coefficients.')
-        alter_coef.setDescription('Setting this to false will result in infiltration objects that maintain the coefficients from the initial model. Setting this to true replaces the existing coefficients with the values entered for the coefficient arguments in this measure')
-        alter_coef.setDefaultValue(True)
-        args.append(alter_coef)
-
         #make an argument for analysis period
         analysis_period = openstudio.measure.OSArgument.makeIntegerArgument("analysis_period",True)
         analysis_period.setDisplayName("Analysis Period")
-        analysis_period.setDescription("Analysis period of embodied carbon calculation in years. This parameter and product life expectancy will affect the number of replacements during the analysis period.")
+        analysis_period.setDescription(
+            "Analysis period of embodied carbon calculation in years. This parameter and product life "
+            "expectancy will affect the number of replacements during the analysis period.")
         analysis_period.setDefaultValue(30)
         args.append(analysis_period)
 
         # make an argument for product life time of glass pane
         glass_lifetime = openstudio.measure.OSArgument.makeIntegerArgument("glass_lifetime",True)
         glass_lifetime.setDisplayName("Product Lifetime of Glass pane")
-        glass_lifetime.setDescription("Life expectancy of glass pane. Default value is provided based on data from the Certified Commercial Property Inspectors Association (CCPIA).")
+        glass_lifetime.setDescription(
+            "Life expectancy of glass pane. Default value is provided based on data from the "
+            "Certified Commercial Property Inspectors Association (CCPIA).")
         glass_lifetime.setDefaultValue(15)
         args.append(glass_lifetime)
 
         # make an argument for product life time of window frame
         wf_lifetime = openstudio.measure.OSArgument.makeIntegerArgument("wf_lifetime",True)
         wf_lifetime.setDisplayName("Product Lifetime of Window Frame")
-        wf_lifetime.setDescription("Life expectancy of window frame. Default value is provided based on data from the Certified Commercial Property Inspectors Association (CCPIA).")
+        wf_lifetime.setDescription(
+            "Life expectancy of window frame. Default value is provided based on data from the "
+            "Certified Commercial Property Inspectors Association (CCPIA).")
         wf_lifetime.setDefaultValue(15)
         args.append(wf_lifetime)
 
         # make an argument for product life time of caulking sealant
         caulking_lifetime = openstudio.measure.OSArgument.makeIntegerArgument("caulking_lifetime",True)
         caulking_lifetime.setDisplayName("Product Lifetime of Caulking Sealant")
-        caulking_lifetime.setDescription("Life expectancy of caulking sealant. Default value is provided based on data from the Certified Commercial Property Inspectors Association (CCPIA).")
+        caulking_lifetime.setDescription(
+            "Life expectancy of caulking sealant. Default value is provided based on data from the "
+            "Certified Commercial Property Inspectors Association (CCPIA).")
         caulking_lifetime.setDefaultValue(10)
         args.append(caulking_lifetime)
 
         # make an argument for product life time of glazing film
         film_lifetime = openstudio.measure.OSArgument.makeIntegerArgument("film_lifetime",True)
         film_lifetime.setDisplayName("Product Lifetime of Glazing Film")
-        film_lifetime.setDescription("Life expectancy of glazing film. Default value is provided based on data from the Certified Commercial Property Inspectors Association (CCPIA).")
+        film_lifetime.setDescription(
+            "Life expectancy of glazing film. Default value is provided based on data from the "
+            "Certified Commercial Property Inspectors Association (CCPIA).")
         film_lifetime.setDefaultValue(10)
         args.append(film_lifetime)
 
         #make an argument for product life time of weatherstrip
         weatherstrip_lifetime = openstudio.measure.OSArgument.makeIntegerArgument("weatherstrip_lifetime",True)
         weatherstrip_lifetime.setDisplayName("Product Lifetime of Weatherstrip")
-        weatherstrip_lifetime.setDescription("Life expectancy of weatherstrip. Default value is provided based on data from the Certified Commercial Property Inspectors Association (CCPIA).")
+        weatherstrip_lifetime.setDescription(
+            "Life expectancy of weatherstrip. Default value is provided based on data from the "
+            "Certified Commercial Property Inspectors Association (CCPIA).")
         weatherstrip_lifetime.setDefaultValue(10)
         args.append(weatherstrip_lifetime)
 
@@ -215,7 +224,10 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
             wf_options_chs.append(option)
         wf_option = openstudio.measure.OSArgument.makeChoiceArgument("wf_option",wf_options_chs, True)
         wf_option.setDisplayName("Window frame option")
-        wf_option.setDescription("Select none if no window frame is to be installed, otherwise provide frame type. NOTE: When not none, this renovation option can not work with the entire window replacement at the same time to avoid double counting.")
+        wf_option.setDescription(
+            "Select none if no window frame is to be installed, otherwise provide frame type. NOTE: "
+            "When not none, this renovation option can not work with the entire window replacement at "
+            "the same time to avoid double counting.")
         wf_option.setDefaultValue("none")
         args.append(wf_option)
 
@@ -223,9 +235,12 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
         caulking_options_chs = openstudio.StringVector()
         for option in self.caulking_options():
             caulking_options_chs.append(option)
-        caulking_option = openstudio.measure.OSArgument.makeChoiceArgument("caulking_option", caulking_options_chs, True)
+        caulking_option = openstudio.measure.OSArgument.makeChoiceArgument(
+            "caulking_option", caulking_options_chs, True)
         caulking_option.setDisplayName("Caulking Material Option")
-        caulking_option.setDescription("Select none if no caulking is to be applied, otherwise provide material type. This renovation option is for the window perimeter joint sealing.")
+        caulking_option.setDescription(
+            "Select none if no caulking is to be applied, otherwise provide material type. This "
+            "renovation option is for the window perimeter joint sealing.")
         caulking_option.setDefaultValue("none")
         args.append(caulking_option)
 
@@ -235,32 +250,53 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
             film_options_chs.append(option)
         film_option = openstudio.measure.OSArgument.makeChoiceArgument("film_option", film_options_chs, True)
         film_option.setDisplayName("Glazing Film Option")
-        film_option.setDescription("Select none if no glazing film is to be installed, otherwise provide film type. This renovation option is for the window glazing.")
+        film_option.setDescription(
+            "Select none if no glazing film is to be installed, otherwise provide film type. This "
+            "renovation option is for the window glazing.")
         film_option.setDefaultValue("none")
         args.append(film_option)
 
         # make arguments for film optical and thermal properties
-        film_visible_transmittance = openstudio.measure.OSArgument.makeDoubleArgument("film_visible_transmittance", True)
+        film_visible_transmittance = openstudio.measure.OSArgument.makeDoubleArgument(
+            "film_visible_transmittance", True)
         film_visible_transmittance.setDisplayName("Film Visible Transmittance")
-        film_visible_transmittance.setDescription("Visible transmittance of the film only (0.0-1.0). This value is multiplied with existing glass transmittance to calculate combined glass+film performance. Set to 0.0 to use default values based on film type. Defaults: safety=0.88, solar_control=0.15, anti_graffiti=0.90, decorative=0.60, low_e=0.80")
+        film_visible_transmittance.setDescription(
+            "Visible transmittance of the film only (0.0-1.0). This value is multiplied with existing "
+            "glass transmittance to calculate combined glass+film performance. Set to 0.0 to use default "
+            "values based on film type. Defaults: safety=0.88, solar_control=0.15, anti_graffiti=0.90, "
+            "decorative=0.60, low_e=0.80")
         film_visible_transmittance.setDefaultValue(0.0)
         args.append(film_visible_transmittance)
 
-        film_solar_transmittance = openstudio.measure.OSArgument.makeDoubleArgument("film_solar_transmittance", True)
+        film_solar_transmittance = openstudio.measure.OSArgument.makeDoubleArgument(
+            "film_solar_transmittance", True)
         film_solar_transmittance.setDisplayName("Film Solar Transmittance")
-        film_solar_transmittance.setDescription("Solar transmittance of the film only (0.0-1.0). This value is multiplied with existing glass transmittance to calculate combined glass+film performance. Set to 0.0 to use default values based on film type. Defaults: safety=0.81, solar_control=0.15, anti_graffiti=0.83, decorative=0.55, low_e=0.70")
+        film_solar_transmittance.setDescription(
+            "Solar transmittance of the film only (0.0-1.0). This value is multiplied with existing "
+            "glass transmittance to calculate combined glass+film performance. Set to 0.0 to use default "
+            "values based on film type. Defaults: safety=0.81, solar_control=0.15, anti_graffiti=0.83, "
+            "decorative=0.55, low_e=0.70")
         film_solar_transmittance.setDefaultValue(0.0)
         args.append(film_solar_transmittance)
 
-        film_thermal_emissivity = openstudio.measure.OSArgument.makeDoubleArgument("film_thermal_emissivity", True)
+        film_thermal_emissivity = openstudio.measure.OSArgument.makeDoubleArgument(
+            "film_thermal_emissivity", True)
         film_thermal_emissivity.setDisplayName("Film Thermal Emissivity")
-        film_thermal_emissivity.setDescription("Thermal emissivity of the film surface only (0.0-1.0). This value replaces the back-side emissivity of the innermost glass pane to simulate film application. Set to 0.0 to use default values based on film type. Defaults: safety=0.84, solar_control=0.84, anti_graffiti=0.84, decorative=0.84, low_e=0.10")
+        film_thermal_emissivity.setDescription(
+            "Thermal emissivity of the film surface only (0.0-1.0). This value replaces the back-side "
+            "emissivity of the innermost glass pane to simulate film application. Set to 0.0 to use default "
+            "values based on film type. Defaults: safety=0.84, solar_control=0.84, anti_graffiti=0.84, "
+            "decorative=0.84, low_e=0.10")
         film_thermal_emissivity.setDefaultValue(0.0)
         args.append(film_thermal_emissivity)
 
-        film_thermal_resistance = openstudio.measure.OSArgument.makeDoubleArgument("film_thermal_resistance", True)
+        film_thermal_resistance = openstudio.measure.OSArgument.makeDoubleArgument(
+            "film_thermal_resistance", True)
         film_thermal_resistance.setDisplayName("Film Thermal Resistance (m²·K/W)")
-        film_thermal_resistance.setDescription("Thermal resistance of the film only in m²·K/W. This represents the insulating value of the film layer itself. Set to 0.0 to use default values based on film type. Defaults: safety=0.0002, solar_control=0.0003, anti_graffiti=0.0001, decorative=0.0002, low_e=0.18")
+        film_thermal_resistance.setDescription(
+            "Thermal resistance of the film only in m²·K/W. This represents the insulating value of the "
+            "film layer itself. Set to 0.0 to use default values based on film type. Defaults: "
+            "safety=0.0002, solar_control=0.0003, anti_graffiti=0.0001, decorative=0.0002, low_e=0.18")
         film_thermal_resistance.setDefaultValue(0.0)
         args.append(film_thermal_resistance)
 
@@ -270,7 +306,10 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
             glass_options_chs.append(option)
         glass_option = openstudio.measure.OSArgument.makeChoiceArgument("glass_option", glass_options_chs, True)
         glass_option.setDisplayName("Glass Option on Renovation")
-        glass_option.setDescription("Select none if no new glass pane is to be installed, otherwise provide user_num_panes. NOTE: When not none, this renovation option can not work with the entire window replacement at the same time to avoid double counting.")
+        glass_option.setDescription(
+            "Select none if no new glass pane is to be installed, otherwise provide user_num_panes. "
+            "NOTE: When not none, this renovation option can not work with the entire window replacement "
+            "at the same time to avoid double counting.")
         glass_option.setDefaultValue("none")
         args.append(glass_option)
 
@@ -278,9 +317,12 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
         weatherstrip_options_chs = openstudio.StringVector()
         for option in self.weatherstrip_options():
             weatherstrip_options_chs.append(option)
-        weatherstrip_option = openstudio.measure.OSArgument.makeChoiceArgument("weatherstrip_option", weatherstrip_options_chs, True)
+        weatherstrip_option = openstudio.measure.OSArgument.makeChoiceArgument(
+            "weatherstrip_option", weatherstrip_options_chs, True)
         weatherstrip_option.setDisplayName("Weatherstrip Option")
-        weatherstrip_option.setDescription("Select none if no weatherstrip is to be applied, otherwise provide material type. NOTE: Weatherstrip is only applicable to operable windows, and will be applied to the sliding edge only.")
+        weatherstrip_option.setDescription(
+            "Select none if no weatherstrip is to be applied, otherwise provide material type. NOTE: "
+            "Weatherstrip is only applicable to operable windows, and will be applied to the sliding edge only.")
         weatherstrip_option.setDefaultValue("none")
         args.append(weatherstrip_option)
 
@@ -288,86 +330,167 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
         secondary_glazing_options_chs = openstudio.StringVector()
         for option in self.secondary_glazing_options():
             secondary_glazing_options_chs.append(option)
-        secondary_glazing_option = openstudio.measure.OSArgument.makeChoiceArgument("secondary_glazing_option", secondary_glazing_options_chs, True)
+        secondary_glazing_option = openstudio.measure.OSArgument.makeChoiceArgument(
+            "secondary_glazing_option", secondary_glazing_options_chs, True)
         secondary_glazing_option.setDisplayName("Secondary Glazing Option")
-        secondary_glazing_option.setDescription("Select 'install secondary glazing' to add a second glazing layer to single-pane windows. NOTE: This option only applies to single-pane standard layered constructions, not simple glazing systems.")
+        secondary_glazing_option.setDescription(
+            "Select 'install secondary glazing' to add a second glazing layer to single-pane windows. "
+            "NOTE: This option only applies to single-pane standard layered constructions, not simple "
+            "glazing systems.")
         secondary_glazing_option.setDefaultValue("none")
         args.append(secondary_glazing_option)
 
         # make an argument for caulking material thickness applied
         caulking_thickness = openstudio.measure.OSArgument.makeDoubleArgument("caulking_thickness", True)
         caulking_thickness.setDisplayName("Caulking Material Thickness (m)")
-        caulking_thickness.setDescription("Thickness of the caulking material applied in meters. This parameter is equivalent to the diameter of the caulking bead. Default value is set to 0.008 m (8 mm).")
+        caulking_thickness.setDescription(
+            "Thickness of the caulking material applied in meters. This parameter is equivalent to the "
+            "diameter of the caulking bead. Default value is set to 0.008 m (8 mm).")
         caulking_thickness.setDefaultValue(0.008) # 8 mm thickness
         args.append(caulking_thickness)
 
         # make an argument for number of panes to be replaced
         user_num_panes = openstudio.measure.OSArgument.makeIntegerArgument("user_num_panes", True)
         user_num_panes.setDisplayName("Number of Glass Panes Provided by User")
-        user_num_panes.setDescription("When glass option is not none, this is the number of glass panes to be installed as determined by user. Otherwise, the number of panes will be derived from the model. Valid values are 0, 1, 2, or 3. 0 means do not install any new glass panes. 1 means single pane, 2 means double pane, and 3 means triple pane. If the value provided is more than 3, it will be changed to 3 because currently the measure is unable to handle more complex scenarios due to the lack of EPD data.")
+        user_num_panes.setDescription(
+            "When glass option is not none, this is the number of glass panes to be installed as determined "
+            "by user. Otherwise, the number of panes will be derived from the model. Valid values are 0, 1, "
+            "2, or 3. 0 means do not install any new glass panes. 1 means single pane, 2 means double pane, "
+            "and 3 means triple pane. If the value provided is more than 3, it will be changed to 3 because "
+            "currently the measure is unable to handle more complex scenarios due to the lack of EPD data.")
         user_num_panes.setDefaultValue(0) # 0 means do not install any new glass panes
         args.append(user_num_panes)
 
         # make an argument for glass pane thickness
         glass_pane_thickness = openstudio.measure.OSArgument.makeDoubleArgument("glass_pane_thickness", True)
         glass_pane_thickness.setDisplayName("Individual Glass Pane Thickness (m)")
-        glass_pane_thickness.setDescription("Thickness of an individual glass pane in meters. This value is used to calculate embodied carbon using gwp_per_m3 for glass installations. Default value is 0.003 m (3 mm), which is typical for standard single-strength window glass. Source: ASTM C1036-16 'Standard Specification for Flat Glass' specifies single-strength glass as 2.16-2.57 mm (0.085-0.101 in) and double-strength as 2.92-3.56 mm (0.115-0.140 in). Pilkington Glass Handbook (1997) and ASHRAE Handbook - Fundamentals (2017) Chapter 15 cite 3 mm as standard for residential glazing.")
+        glass_pane_thickness.setDescription(
+            "Thickness of an individual glass pane in meters. This value is used to calculate embodied "
+            "carbon using gwp_per_m3 for glass installations. Default value is 0.003 m (3 mm), which is "
+            "typical for standard single-strength window glass. Source: ASTM C1036-16 'Standard Specification "
+            "for Flat Glass' specifies single-strength glass as 2.16-2.57 mm (0.085-0.101 in) and "
+            "double-strength as 2.92-3.56 mm (0.115-0.140 in). Pilkington Glass Handbook (1997) and "
+            "ASHRAE Handbook - Fundamentals (2017) Chapter 15 cite 3 mm as standard for residential glazing.")
         glass_pane_thickness.setDefaultValue(0.003) # 3 mm typical glass thickness
         args.append(glass_pane_thickness)
 
         # make an argument for gap thickness between glass panes
         gap_thickness = openstudio.measure.OSArgument.makeDoubleArgument("gap_thickness", True)
         gap_thickness.setDisplayName("Gap Thickness Between Glass Panes (m)")
-        gap_thickness.setDescription("Thickness of the air/gas gap between glass panes in meters. This is used when creating new multi-pane window constructions. Default value is 0.013 m (13 mm), which is typical for double and triple pane windows. Sources: ISO 10077-1:2017 'Thermal performance of windows, doors and shutters' specifies 12-16 mm optimal air gap spacing. Curcija, D., et al. (2018) 'WINDOW Technical Documentation' LBNL-2000012 recommends 12.7 mm (0.5 in) for residential IGUs. Arici, M., et al. (2015) 'Thermal performance of double glazed windows' Energy and Buildings, 94, 200-207, demonstrates optimal thermal performance at 13 mm gap spacing.")
+        gap_thickness.setDescription(
+            "Thickness of the air/gas gap between glass panes in meters. This is used when creating new "
+            "multi-pane window constructions. Default value is 0.013 m (13 mm), which is typical for double "
+            "and triple pane windows. Sources: ISO 10077-1:2017 'Thermal performance of windows, doors and "
+            "shutters' specifies 12-16 mm optimal air gap spacing. Curcija, D., et al. (2018) 'WINDOW "
+            "Technical Documentation' LBNL-2000012 recommends 12.7 mm (0.5 in) for residential IGUs. Arici, "
+            "M., et al. (2015) 'Thermal performance of double glazed windows' Energy and Buildings, 94, "
+            "200-207, demonstrates optimal thermal performance at 13 mm gap spacing.")
         gap_thickness.setDefaultValue(0.013) # 13 mm typical gap thickness
         args.append(gap_thickness)
 
         # make arguments for glass pane optical properties
         glass_solar_transmittance = openstudio.measure.OSArgument.makeDoubleArgument("glass_solar_transmittance", True)
         glass_solar_transmittance.setDisplayName("Glass Solar Transmittance")
-        glass_solar_transmittance.setDescription("Solar transmittance of the glass pane (0.0-1.0). Set to 0.0 to use default value of 0.775 for typical 3mm clear soda-lime glass. This value affects solar heat gain through windows. Sources: ASHRAE Handbook - Fundamentals (2017) Chapter 15, Table 15 'Solar-Optical Properties of Glazing' lists clear glass (3 mm) solar transmittance as 0.77-0.78. Rubin, M. (1985) 'Optical properties of soda lime silica glasses' Solar Energy Materials, 12(4), 275-288, reports 0.775 for standard float glass. ISO 9050:2003 'Glass in building - Determination of light transmittance, solar direct transmittance' provides testing methodology yielding 0.77-0.78 for clear glass.")
+        glass_solar_transmittance.setDescription(
+            "Solar transmittance of the glass pane (0.0-1.0). Set to 0.0 to use default value of 0.775 for "
+            "typical 3mm clear soda-lime glass. This value affects solar heat gain through windows. Sources: "
+            "ASHRAE Handbook - Fundamentals (2017) Chapter 15, Table 15 'Solar-Optical Properties of Glazing' "
+            "lists clear glass (3 mm) solar transmittance as 0.77-0.78. Rubin, M. (1985) 'Optical properties "
+            "of soda lime silica glasses' Solar Energy Materials, 12(4), 275-288, reports 0.775 for standard "
+            "float glass. ISO 9050:2003 'Glass in building - Determination of light transmittance, solar "
+            "direct transmittance' provides testing methodology yielding 0.77-0.78 for clear glass.")
         glass_solar_transmittance.setDefaultValue(0.0)
         args.append(glass_solar_transmittance)
 
-        glass_visible_transmittance = openstudio.measure.OSArgument.makeDoubleArgument("glass_visible_transmittance", True)
+        glass_visible_transmittance = openstudio.measure.OSArgument.makeDoubleArgument(
+            "glass_visible_transmittance", True)
         glass_visible_transmittance.setDisplayName("Glass Visible Transmittance")
-        glass_visible_transmittance.setDescription("Visible light transmittance of the glass pane (0.0-1.0). Set to 0.0 to use default value of 0.881 for typical 3mm clear glass. This value affects daylight availability. Sources: NFRC 300-2017 'Test Method for Determining the Solar and Infrared Optical Properties of Glazing Materials' specifies clear glass VT as 0.88-0.90. ASHRAE Handbook - Fundamentals (2017) Chapter 15 lists 3mm clear glass VT as 0.881. McCluney, R. (1996) 'Introduction to Radiometry and Photometry' Artech House, reports clear float glass VT of 0.88. Pilkington (2016) 'Pilkington Glass Products Specifications' technical data sheet lists Optifloat Clear 3mm VT as 0.90.")
+        glass_visible_transmittance.setDescription(
+            "Visible light transmittance of the glass pane (0.0-1.0). Set to 0.0 to use default value of "
+            "0.881 for typical 3mm clear glass. This value affects daylight availability. Sources: NFRC "
+            "300-2017 'Test Method for Determining the Solar and Infrared Optical Properties of Glazing "
+            "Materials' specifies clear glass VT as 0.88-0.90. ASHRAE Handbook - Fundamentals (2017) Chapter "
+            "15 lists 3mm clear glass VT as 0.881. McCluney, R. (1996) 'Introduction to Radiometry and "
+            "Photometry' Artech House, reports clear float glass VT of 0.88. Pilkington (2016) 'Pilkington "
+            "Glass Products Specifications' technical data sheet lists Optifloat Clear 3mm VT as 0.90.")
         glass_visible_transmittance.setDefaultValue(0.0)
         args.append(glass_visible_transmittance)
 
         glass_front_emissivity = openstudio.measure.OSArgument.makeDoubleArgument("glass_front_emissivity", True)
         glass_front_emissivity.setDisplayName("Glass Front Side IR Emissivity")
-        glass_front_emissivity.setDescription("Front side infrared hemispherical emissivity of the glass pane (0.0-1.0). Set to 0.0 to use default value of 0.84 for typical uncoated clear glass. This value affects radiative heat transfer. Sources: ASHRAE Handbook - Fundamentals (2017) Chapter 15, Table 13 lists uncoated glass emissivity as 0.84. Arasteh, D., et al. (1989) 'A versatile procedure for calculating heat transfer through windows' ASHRAE Transactions, 95(2), 755-765, uses 0.84 for standard glass. ISO 10292:1994 'Glass in building - Calculation of steady-state U values' specifies 0.837 for uncoated glass surfaces. EN 673:2011 'Glass in building - Determination of thermal transmittance (U value)' uses 0.837 (often rounded to 0.84).")
+        glass_front_emissivity.setDescription(
+            "Front side infrared hemispherical emissivity of the glass pane (0.0-1.0). Set to 0.0 to use "
+            "default value of 0.84 for typical uncoated clear glass. This value affects radiative heat "
+            "transfer. Sources: ASHRAE Handbook - Fundamentals (2017) Chapter 15, Table 13 lists uncoated "
+            "glass emissivity as 0.84. Arasteh, D., et al. (1989) 'A versatile procedure for calculating "
+            "heat transfer through windows' ASHRAE Transactions, 95(2), 755-765, uses 0.84 for standard "
+            "glass. ISO 10292:1994 'Glass in building - Calculation of steady-state U values' specifies "
+            "0.837 for uncoated glass surfaces. EN 673:2011 'Glass in building - Determination of thermal "
+            "transmittance (U value)' uses 0.837 (often rounded to 0.84).")
         glass_front_emissivity.setDefaultValue(0.0)
         args.append(glass_front_emissivity)
 
         glass_back_emissivity = openstudio.measure.OSArgument.makeDoubleArgument("glass_back_emissivity", True)
         glass_back_emissivity.setDisplayName("Glass Back Side IR Emissivity")
-        glass_back_emissivity.setDescription("Back side infrared hemispherical emissivity of the glass pane (0.0-1.0). Set to 0.0 to use default value of 0.84 for typical uncoated clear glass. This value affects radiative heat transfer. Sources: Same as front side - uncoated glass has identical emissivity on both surfaces. ASHRAE Handbook - Fundamentals (2017) Chapter 15, NFRC 301-2019 'Standard Test Method for Emittance of Specular Surfaces', and ISO 10292:1994 all specify 0.84 (or 0.837) for both surfaces of uncoated soda-lime glass.")
+        glass_back_emissivity.setDescription(
+            "Back side infrared hemispherical emissivity of the glass pane (0.0-1.0). Set to 0.0 to use "
+            "default value of 0.84 for typical uncoated clear glass. This value affects radiative heat "
+            "transfer. Sources: Same as front side - uncoated glass has identical emissivity on both surfaces. "
+            "ASHRAE Handbook - Fundamentals (2017) Chapter 15, NFRC 301-2019 'Standard Test Method for "
+            "Emittance of Specular Surfaces', and ISO 10292:1994 all specify 0.84 (or 0.837) for both "
+            "surfaces of uncoated soda-lime glass.")
         glass_back_emissivity.setDefaultValue(0.0)
         args.append(glass_back_emissivity)
 
-        glass_front_solar_reflectance = openstudio.measure.OSArgument.makeDoubleArgument("glass_front_solar_reflectance", True)
+        glass_front_solar_reflectance = openstudio.measure.OSArgument.makeDoubleArgument(
+            "glass_front_solar_reflectance", True)
         glass_front_solar_reflectance.setDisplayName("Glass Front Side Solar Reflectance")
-        glass_front_solar_reflectance.setDescription("Front side solar reflectance at normal incidence (0.0-1.0). Set to 0.0 to use default value of 0.071 for typical 3mm clear glass. This value affects solar heat gain reflection. Sources: ASHRAE Handbook - Fundamentals (2017) Chapter 15, Table 15 lists clear glass (3 mm) front solar reflectance as 0.07. Rubin, M. (1985) 'Optical properties of soda lime silica glasses' Solar Energy Materials, 12(4), 275-288, reports 0.070-0.075 for standard float glass at normal incidence. ISO 9050:2003 testing methodology yields 0.07-0.08 for clear glass front surface reflectance.")
+        glass_front_solar_reflectance.setDescription(
+            "Front side solar reflectance at normal incidence (0.0-1.0). Set to 0.0 to use default value "
+            "of 0.071 for typical 3mm clear glass. This value affects solar heat gain reflection. Sources: "
+            "ASHRAE Handbook - Fundamentals (2017) Chapter 15, Table 15 lists clear glass (3 mm) front solar "
+            "reflectance as 0.07. Rubin, M. (1985) 'Optical properties of soda lime silica glasses' Solar "
+            "Energy Materials, 12(4), 275-288, reports 0.070-0.075 for standard float glass at normal "
+            "incidence. ISO 9050:2003 testing methodology yields 0.07-0.08 for clear glass front surface "
+            "reflectance.")
         glass_front_solar_reflectance.setDefaultValue(0.0)
         args.append(glass_front_solar_reflectance)
 
-        glass_back_solar_reflectance = openstudio.measure.OSArgument.makeDoubleArgument("glass_back_solar_reflectance", True)
+        glass_back_solar_reflectance = openstudio.measure.OSArgument.makeDoubleArgument(
+            "glass_back_solar_reflectance", True)
         glass_back_solar_reflectance.setDisplayName("Glass Back Side Solar Reflectance")
-        glass_back_solar_reflectance.setDescription("Back side solar reflectance at normal incidence (0.0-1.0). Set to 0.0 to use default value of 0.071 for typical 3mm clear glass. This value affects solar heat gain reflection. Sources: Same as front side - uncoated clear glass has symmetric optical properties. ASHRAE Handbook - Fundamentals (2017) Chapter 15 specifies identical front and back solar reflectance for uncoated glass. Rubin, M. (1985) confirms 0.07-0.075 for both surfaces of standard soda-lime glass.")
+        glass_back_solar_reflectance.setDescription(
+            "Back side solar reflectance at normal incidence (0.0-1.0). Set to 0.0 to use default value of "
+            "0.071 for typical 3mm clear glass. This value affects solar heat gain reflection. Sources: Same "
+            "as front side - uncoated clear glass has symmetric optical properties. ASHRAE Handbook - "
+            "Fundamentals (2017) Chapter 15 specifies identical front and back solar reflectance for uncoated "
+            "glass. Rubin, M. (1985) confirms 0.07-0.075 for both surfaces of standard soda-lime glass.")
         glass_back_solar_reflectance.setDefaultValue(0.0)
         args.append(glass_back_solar_reflectance)
 
-        glass_front_visible_reflectance = openstudio.measure.OSArgument.makeDoubleArgument("glass_front_visible_reflectance", True)
+        glass_front_visible_reflectance = openstudio.measure.OSArgument.makeDoubleArgument(
+            "glass_front_visible_reflectance", True)
         glass_front_visible_reflectance.setDisplayName("Glass Front Side Visible Reflectance")
-        glass_front_visible_reflectance.setDescription("Front side visible reflectance at normal incidence (0.0-1.0). Set to 0.0 to use default value of 0.080 for typical 3mm clear glass. This value affects visible light reflection and glare. Sources: ASHRAE Handbook - Fundamentals (2017) Chapter 15, Table 15 lists clear glass (3 mm) visible reflectance as 0.08. NFRC 300-2017 testing yields 0.08 for standard clear glass. McCluney, R. (1996) 'Introduction to Radiometry and Photometry' reports clear float glass visible reflectance of 0.08 at normal incidence. Pilkington technical specifications list 0.08 for Optifloat Clear glass.")
+        glass_front_visible_reflectance.setDescription(
+            "Front side visible reflectance at normal incidence (0.0-1.0). Set to 0.0 to use default value "
+            "of 0.080 for typical 3mm clear glass. This value affects visible light reflection and glare. "
+            "Sources: ASHRAE Handbook - Fundamentals (2017) Chapter 15, Table 15 lists clear glass (3 mm) "
+            "visible reflectance as 0.08. NFRC 300-2017 testing yields 0.08 for standard clear glass. "
+            "McCluney, R. (1996) 'Introduction to Radiometry and Photometry' reports clear float glass visible "
+            "reflectance of 0.08 at normal incidence. Pilkington technical specifications list 0.08 for "
+            "Optifloat Clear glass.")
         glass_front_visible_reflectance.setDefaultValue(0.0)
         args.append(glass_front_visible_reflectance)
 
-        glass_back_visible_reflectance = openstudio.measure.OSArgument.makeDoubleArgument("glass_back_visible_reflectance", True)
+        glass_back_visible_reflectance = openstudio.measure.OSArgument.makeDoubleArgument(
+            "glass_back_visible_reflectance", True)
         glass_back_visible_reflectance.setDisplayName("Glass Back Side Visible Reflectance")
-        glass_back_visible_reflectance.setDescription("Back side visible reflectance at normal incidence (0.0-1.0). Set to 0.0 to use default value of 0.080 for typical 3mm clear glass. This value affects visible light reflection from interior side. Sources: Same as front side - uncoated clear glass exhibits symmetric visible reflectance. ASHRAE Handbook - Fundamentals (2017) Chapter 15, NFRC 300-2017, and ISO 9050:2003 all specify identical front and back visible reflectance (0.08) for uncoated soda-lime glass.")
+        glass_back_visible_reflectance.setDescription(
+            "Back side visible reflectance at normal incidence (0.0-1.0). Set to 0.0 to use default value of "
+            "0.080 for typical 3mm clear glass. This value affects visible light reflection from interior side. "
+            "Sources: Same as front side - uncoated clear glass exhibits symmetric visible reflectance. ASHRAE "
+            "Handbook - Fundamentals (2017) Chapter 15, NFRC 300-2017, and ISO 9050:2003 all specify identical "
+            "front and back visible reflectance (0.08) for uncoated soda-lime glass.")
         glass_back_visible_reflectance.setDefaultValue(0.0)
         args.append(glass_back_visible_reflectance)
 
@@ -391,53 +514,68 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
         # 17' = 5.1816 m for silicone adhesive smoke gasket, source: https://buildingtransparency.org/ec3/epds/ec327rq0
         length_per_unit = openstudio.measure.OSArgument.makeDoubleArgument("length_per_unit", True)
         length_per_unit.setDisplayName("Length per Unit of Strip")
-        length_per_unit.setDescription("Length per unit of window sash strip in m. Default value 5.1816 m is provided based on the product 'Silicone Adhesive Smoke Gasket' from EC3 database, which has a length of 17 feet per declared functional unit in EPD.")
+        length_per_unit.setDescription(
+            "Length per unit of window sash strip in m. Default value 5.1816 m is provided based on the "
+            "product 'Silicone Adhesive Smoke Gasket' from EC3 database, which has a length of 17 feet per "
+            "declared functional unit in EPD.")
         length_per_unit.setDefaultValue(5.1816)
         args.append(length_per_unit)
 
         # make an argument for number of horizontal dividers
         num_horizontal_dividers = openstudio.measure.OSArgument.makeIntegerArgument("num_horizontal_dividers", True)
         num_horizontal_dividers.setDisplayName("Number of Horizontal Dividers (Muntins)")
-        num_horizontal_dividers.setDescription("Number of horizontal dividers (muntins) in each window. Set to -1 to use values from the model's WindowPropertyFrameAndDivider objects. When set to a non-negative value, this overrides the model values and applies uniformly to all windows.")
+        num_horizontal_dividers.setDescription(
+            "Number of horizontal dividers (muntins) in each window. Set to -1 to use values from the "
+            "model's WindowPropertyFrameAndDivider objects. When set to a non-negative value, this overrides "
+            "the model values and applies uniformly to all windows.")
         num_horizontal_dividers.setDefaultValue(-1)
         args.append(num_horizontal_dividers)
 
         # make an argument for number of vertical dividers
         num_vertical_dividers = openstudio.measure.OSArgument.makeIntegerArgument("num_vertical_dividers", True)
         num_vertical_dividers.setDisplayName("Number of Vertical Dividers (Muntins)")
-        num_vertical_dividers.setDescription("Number of vertical dividers (muntins) in each window. Set to -1 to use values from the model's WindowPropertyFrameAndDivider objects. When set to a non-negative value, this overrides the model values and applies uniformly to all windows.")
+        num_vertical_dividers.setDescription(
+            "Number of vertical dividers (muntins) in each window. Set to -1 to use values from the model's "
+            "WindowPropertyFrameAndDivider objects. When set to a non-negative value, this overrides the "
+            "model values and applies uniformly to all windows.")
         num_vertical_dividers.setDefaultValue(-1)
         args.append(num_vertical_dividers)
 
         return args
 
-    def run(self, model: openstudio.model.Model, runner: openstudio.measure.OSRunner, user_arguments: openstudio.measure.OSArgumentMap):
+    def run(self, model: openstudio.model.Model, runner: openstudio.measure.OSRunner,
+            user_arguments: openstudio.measure.OSArgumentMap):
         if not runner.validateUserArguments(self.arguments(model), user_arguments):
             return False
 
         # Retrieve user inputs
         # for infiltration reduction
         object = runner.getOptionalWorkspaceObjectChoiceValue('space_type', user_arguments, model)
-        space_infiltration_reduction_percent = runner.getDoubleArgumentValue("space_infiltration_reduction_percent", user_arguments)
+        space_infiltration_reduction_percent = runner.getDoubleArgumentValue(
+            "space_infiltration_reduction_percent", user_arguments)
         # DISABLED: coefficient arguments - using existing values from infiltration objects
         # constant_coefficient = runner.getDoubleArgumentValue('constant_coefficient', user_arguments)
         # temperature_coefficient = runner.getDoubleArgumentValue('temperature_coefficient', user_arguments)
         # wind_speed_coefficient = runner.getDoubleArgumentValue('wind_speed_coefficient', user_arguments)
         # wind_speed_squared_coefficient = runner.getDoubleArgumentValue('wind_speed_squared_coefficient', user_arguments)
-        alter_coef = runner.getBoolArgumentValue('alter_coef', user_arguments)
         # for EC calculation
         caulking_thickness = runner.getDoubleArgumentValue("caulking_thickness", user_arguments)
         gwp_statistic = runner.getStringArgumentValue("gwp_statistic", user_arguments)
         wf_option = runner.getStringArgumentValue("wf_option", user_arguments)
         caulking_option = runner.getStringArgumentValue("caulking_option", user_arguments)
         film_option = runner.getStringArgumentValue("film_option", user_arguments)
-        film_visible_transmittance = runner.getDoubleArgumentValue("film_visible_transmittance", user_arguments)
-        film_solar_transmittance = runner.getDoubleArgumentValue("film_solar_transmittance", user_arguments)
-        film_thermal_emissivity = runner.getDoubleArgumentValue("film_thermal_emissivity", user_arguments)
-        film_thermal_resistance = runner.getDoubleArgumentValue("film_thermal_resistance", user_arguments)
+        film_visible_transmittance = runner.getDoubleArgumentValue(
+            "film_visible_transmittance", user_arguments)
+        film_solar_transmittance = runner.getDoubleArgumentValue(
+            "film_solar_transmittance", user_arguments)
+        film_thermal_emissivity = runner.getDoubleArgumentValue(
+            "film_thermal_emissivity", user_arguments)
+        film_thermal_resistance = runner.getDoubleArgumentValue(
+            "film_thermal_resistance", user_arguments)
         weatherstrip_option = runner.getStringArgumentValue("weatherstrip_option", user_arguments)
         glass_option = runner.getStringArgumentValue("glass_option", user_arguments)
-        secondary_glazing_option = runner.getStringArgumentValue("secondary_glazing_option", user_arguments)
+        secondary_glazing_option = runner.getStringArgumentValue(
+            "secondary_glazing_option", user_arguments)
         analysis_period = runner.getIntegerArgumentValue("analysis_period",user_arguments)
         glass_lifetime = runner.getIntegerArgumentValue("glass_lifetime",user_arguments)
         wf_lifetime = runner.getIntegerArgumentValue("wf_lifetime",user_arguments)
@@ -448,14 +586,20 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
         user_num_panes = runner.getIntegerArgumentValue("user_num_panes", user_arguments)
         glass_pane_thickness = runner.getDoubleArgumentValue("glass_pane_thickness", user_arguments)
         gap_thickness = runner.getDoubleArgumentValue("gap_thickness", user_arguments)
-        glass_solar_transmittance = runner.getDoubleArgumentValue("glass_solar_transmittance", user_arguments)
-        glass_visible_transmittance = runner.getDoubleArgumentValue("glass_visible_transmittance", user_arguments)
+        glass_solar_transmittance = runner.getDoubleArgumentValue(
+            "glass_solar_transmittance", user_arguments)
+        glass_visible_transmittance = runner.getDoubleArgumentValue(
+            "glass_visible_transmittance", user_arguments)
         glass_front_emissivity = runner.getDoubleArgumentValue("glass_front_emissivity", user_arguments)
         glass_back_emissivity = runner.getDoubleArgumentValue("glass_back_emissivity", user_arguments)
-        glass_front_solar_reflectance = runner.getDoubleArgumentValue("glass_front_solar_reflectance", user_arguments)
-        glass_back_solar_reflectance = runner.getDoubleArgumentValue("glass_back_solar_reflectance", user_arguments)
-        glass_front_visible_reflectance = runner.getDoubleArgumentValue("glass_front_visible_reflectance", user_arguments)
-        glass_back_visible_reflectance = runner.getDoubleArgumentValue("glass_back_visible_reflectance", user_arguments)
+        glass_front_solar_reflectance = runner.getDoubleArgumentValue(
+            "glass_front_solar_reflectance", user_arguments)
+        glass_back_solar_reflectance = runner.getDoubleArgumentValue(
+            "glass_back_solar_reflectance", user_arguments)
+        glass_front_visible_reflectance = runner.getDoubleArgumentValue(
+            "glass_front_visible_reflectance", user_arguments)
+        glass_back_visible_reflectance = runner.getDoubleArgumentValue(
+            "glass_back_visible_reflectance", user_arguments)
         length_per_unit = runner.getDoubleArgumentValue("length_per_unit", user_arguments)
         num_horizontal_dividers = runner.getIntegerArgumentValue("num_horizontal_dividers", user_arguments)
         num_vertical_dividers = runner.getIntegerArgumentValue("num_vertical_dividers", user_arguments)
@@ -476,7 +620,7 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
         ###################### Change model's space infiltration################
         # Process infiltration reduction
         success, altered_instances, affected_area_si, spaces = self.process_infiltration_reduction(
-            model, runner, object, space_infiltration_reduction_percent, alter_coef, user_arguments)
+            model, runner, object, space_infiltration_reduction_percent, user_arguments)
         
         if not success:
             return False
@@ -1126,7 +1270,7 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
         
         return True
 
-    def process_infiltration_reduction(self, model, runner, object, space_infiltration_reduction_percent, alter_coef, user_arguments):
+    def process_infiltration_reduction(self, model, runner, object, space_infiltration_reduction_percent, user_arguments):
         """Reduce air infiltration (leakage) in building spaces by specified percentage.
         
         Applies reduction to space infiltration objects to model improved air sealing from
@@ -1190,7 +1334,7 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
             space_types.append(space_type)  # Only run on a single space type
             affected_area_si = space_type.floorArea()
 
-        def alter_performance(instance, space_infiltration_reduction_percent, alter_coef, runner):
+        def alter_performance(instance, space_infiltration_reduction_percent, runner):
             # Edit instance based on percentage reduction
             if instance.designFlowRate().is_initialized():
                 new_value = instance.designFlowRate().get() - (instance.designFlowRate().get() * space_infiltration_reduction_percent * 0.01)
@@ -1221,7 +1365,6 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
                 alter_performance(
                     space_type_infiltration_object,
                     space_infiltration_reduction_percent,
-                    alter_coef,
                     runner
                 )
 
@@ -1247,7 +1390,6 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
                 alter_performance(
                     space_infiltration_object,
                     space_infiltration_reduction_percent,
-                    alter_coef,
                     runner
                 )
 
