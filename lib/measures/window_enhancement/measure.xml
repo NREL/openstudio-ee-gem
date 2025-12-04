@@ -4,8 +4,8 @@
   <error>Failed to infer measure name from 'C:/All repos/openstudio-ee-gem/lib/measures/window_enhancement/measure.py'</error>
   <name>window_enhancment</name>
   <uid>0ad8e761-8624-4d9d-a7d6-ebf30cce243b</uid>
-  <version_id>883b6ea6-1c91-4785-98ca-fd42944ae1c0</version_id>
-  <version_modified>2025-04-17T16:27:52Z</version_modified>
+  <version_id>8b5c6d4d-8b08-4d2f-9dac-2eb5d7e23bbc</version_id>
+  <version_modified>2025-12-03T16:50:48Z</version_modified>
   <xml_checksum>7DADF7C5</xml_checksum>
   <class_name>WindowEnhancment</class_name>
   <display_name>Window Enhancment</display_name>
@@ -86,31 +86,31 @@
       <filename>measure.py</filename>
       <filetype>py</filetype>
       <usage_type>script</usage_type>
-      <checksum>CA670757</checksum>
+      <checksum>2182DB0E</checksum>
     </file>
     <file>
       <filename>EC3_lookup.py</filename>
       <filetype>py</filetype>
       <usage_type>resource</usage_type>
-      <checksum>DAD45298</checksum>
+      <checksum>7CD9342D</checksum>
     </file>
     <file>
       <filename>Test_API.py</filename>
       <filetype>py</filetype>
       <usage_type>resource</usage_type>
-      <checksum>41078C2A</checksum>
+      <checksum>C66A10F8</checksum>
     </file>
     <file>
       <filename>__pycache__/EC3_lookup.cpython-313.pyc</filename>
       <filetype>pyc</filetype>
       <usage_type>resource</usage_type>
-      <checksum>F1150BC3</checksum>
+      <checksum>6DE41662</checksum>
     </file>
     <file>
       <filename>__pycache__/EC3_lookup.cpython-39.pyc</filename>
       <filetype>pyc</filetype>
       <usage_type>resource</usage_type>
-      <checksum>AD24744A</checksum>
+      <checksum>0CF6C4D0</checksum>
     </file>
     <file>
       <filename>__pycache__/Original_EC3_lookup.py</filename>
@@ -128,7 +128,7 @@
       <filename>calculate_perimeter.py</filename>
       <filetype>py</filetype>
       <usage_type>resource</usage_type>
-      <checksum>CED4720F</checksum>
+      <checksum>D7980CA8</checksum>
     </file>
     <file>
       <filename>.pytest_cache/CACHEDIR.TAG</filename>
@@ -161,12 +161,6 @@
       <checksum>8D75ED36</checksum>
     </file>
     <file>
-      <filename>complex_example_model.osm</filename>
-      <filetype>osm</filetype>
-      <usage_type>test</usage_type>
-      <checksum>0C7F4BB9</checksum>
-    </file>
-    <file>
       <filename>example_model/files/USA_CO_Denver.Intl.AP.725650_TMY3.epw</filename>
       <filetype>epw</filetype>
       <usage_type>test</usage_type>
@@ -185,6 +179,18 @@
       <checksum>325D3A17</checksum>
     </file>
     <file>
+      <filename>example_model/stderr</filename>
+      <filetype></filetype>
+      <usage_type>test</usage_type>
+      <checksum>00000000</checksum>
+    </file>
+    <file>
+      <filename>example_model/stdout</filename>
+      <filetype></filetype>
+      <usage_type>test</usage_type>
+      <checksum>0DE6B1C3</checksum>
+    </file>
+    <file>
       <filename>example_model/workflow.osw</filename>
       <filetype>osw</filetype>
       <usage_type>test</usage_type>
@@ -192,6 +198,12 @@
     </file>
     <file>
       <filename>example_model.osm</filename>
+      <filetype>osm</filetype>
+      <usage_type>test</usage_type>
+      <checksum>55E63CBA</checksum>
+    </file>
+    <file>
+      <filename>simple_example_model.osm</filename>
       <filetype>osm</filetype>
       <usage_type>test</usage_type>
       <checksum>94F69031</checksum>

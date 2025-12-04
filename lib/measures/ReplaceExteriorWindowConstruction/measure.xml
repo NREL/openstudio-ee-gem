@@ -3,8 +3,8 @@
   <schema_version>3.1</schema_version>
   <name>replace_exterior_window_construction</name>
   <uid>95116deb-0716-4cdc-af27-09c463befc7c</uid>
-  <version_id>7bff51fe-a83e-449c-954a-25a4bca3b23b</version_id>
-  <version_modified>2025-04-17T16:27:51Z</version_modified>
+  <version_id>1cf0eeee-c9a1-4ebd-a071-d85563de5419</version_id>
+  <version_modified>2025-12-03T16:54:57Z</version_modified>
   <xml_checksum>680C4655</xml_checksum>
   <class_name>ReplaceExteriorWindowConstruction</class_name>
   <display_name>Replace Exterior Window Constructions with a Different Construction from the Model.</display_name>
