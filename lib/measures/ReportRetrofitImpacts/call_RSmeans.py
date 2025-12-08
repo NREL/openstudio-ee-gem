@@ -354,6 +354,7 @@ def main():
         #Extract totalOpCost and save to excel workbook
         total_op_cost =unitcostline.get("items", []).get("localizedCosts", {}).get("totalOpCost")
         item_description = unitcostline.get("items",[]).get("description")
+        item_id = unitcostline.get("items", []).get("id")
         #load excel workbook
         excel_path = "resources/optimization_updated.xlsx"
         wb = openpyxl.load_workbook(excel_path)
@@ -362,7 +363,7 @@ def main():
         wb.save(excel_path)
         print(f"totalOpCost for {item_description} written to {excel_path} cell B4")
     else:
-        print (f" item {item_description} with division code {unitcostline.divisionCode} not found or totalOpCost missing.")
+        print (f" item {item_description} with id number {item_id} not found or totalOpCost missing.")
 
 
 
