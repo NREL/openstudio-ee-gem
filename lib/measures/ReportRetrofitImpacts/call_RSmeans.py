@@ -5,6 +5,7 @@ import urllib3
 from sys import argv
 from dotenv import load_dotenv
 import os
+import openpyxl
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
@@ -301,21 +302,21 @@ def main():
                 json.dumps(locations, f, indent=2)
 
 
-
-    # EXAMPLE: retrieve all available unit cost catalogs for a specific year, location, labor type and measurement system
-    print("\n=== Retrieve all available unit cost catalogs for a specific year, location, labor type and measurement type " \
-    "Return results in API_responses/catalogs.json")
-    catalogs = client.get_unit_catalogs(
-        release_id='2019-an',
-        location_id='us-co-denver',
-        labor_type= 'std',
-        measurement_system= 'imp'
-    )
-    if catalogs:
-        #print(json.dumps(catalogs, indent=2)[:500])# print first 500 char
-        print ("saved as API_responses/catalogs.json")
-        with open("API_responses/catalogs.json", "w") as f:
-            json.dump(catalogs, f, indent=2)
+    def available_catalogs():
+        # EXAMPLE: retrieve all available unit cost catalogs for a specific year, location, labor type and measurement system
+        print("\n=== Retrieve all available unit cost catalogs for a specific year, location, labor type and measurement type " \
+        "Return results in API_responses/catalogs.json")
+        catalogs = client.get_unit_catalogs(
+            release_id='2019-an',
+            location_id='us-co-denver',
+            labor_type= 'std',
+            measurement_system= 'imp'
+        )
+        if catalogs:
+            #print(json.dumps(catalogs, indent=2)[:500])# print first 500 char
+            print ("saved as API_responses/catalogs.json")
+            with open("API_responses/catalogs.json", "w") as f:
+                json.dump(catalogs, f, indent=2)
 
 
     # EXAMPLE: Search for a product, return division codes
@@ -323,12 +324,14 @@ def main():
 
     search_for_unit = client.search_unit_costlines(
         release_id = '2019-an',
-        catalog = 'bc-mf',
-        location_id = 'us-co-denver',
-        labor_type = 'std',
         measurement_system = 'imp',
-        searchTerm =
+        searchTerm = 'continuous strip footing'
     )
+    if search_for_unit:
+        # Save the JSON response to a file
+        print ("saved as search_results.json")
+        with open("API_responses/search_results.json", "w") as f:
+            json.dump(unitcostline, f, indent=2)
 
     # EXAMPLE: Get unit cost line of a product from a catalog
     print("\n=== Retrieve the all of the unit cost information for a product in a catalog."
@@ -344,9 +347,23 @@ def main():
     if unitcostline:
         #print(json.dumps(unitcostlines, indent=2)[:500]) )# print first 500 char
         # Save the JSON response to a file
-        print ("saved as unit_cost_line.json")
-        with open("unit_cost_line.json", "w") as f:
+        print ("saved under API_responses/unit_cost_line.json")
+        with open("API_responses/unit_cost_line.json", "w") as f:
             json.dump(unitcostline, f, indent=2)
+
+        #Extract totalOpCost and save to excel workbook
+        total_op_cost =unitcostline.get("items", []).get("localizedCosts", {}).get("totalOpCost")
+        item_description = unitcostline.get("items",[]).get("description")
+        #load excel workbook
+        excel_path = "resources/optimization_updated.xlsx"
+        wb = openpyxl.load_workbook(excel_path)
+        ws = wb.active
+        ws["B4"] = total_op_cost
+        wb.save(excel_path)
+        print(f"totalOpCost for {item_description} written to {excel_path} cell B4")
+    else:
+        print (f" item {item_description} with division code {unitcostline.divisionCode} not found or totalOpCost missing.")
+
 
 
 if __name__ == "__main__":
