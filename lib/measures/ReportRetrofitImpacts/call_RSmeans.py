@@ -130,7 +130,7 @@ class RSMeansAPIClient:
                         labor_type: str = "std",
                         measurement_system: str = "imp") -> Optional[Dict[str, Any]]:
         """
-        Retrieve unit cost catalogs for given parameters.
+        Retrieve sll unit cost catalogs for given parameters.
 
         Args:
             release_id: Cost data release ID by year and split by annual or quarter.  [year]-[an|q1|q2|q3|q4]
@@ -158,16 +158,57 @@ class RSMeansAPIClient:
             print(f"Error retrieving unit catalogs: {e}")
             return None
 
-    def search_unit_costlines():
+    def search_unit_costlines(self,
+                                release_id: str,
+                                measurement_system: str,
+                                searchTerm: str,
+                                catalog: Optional[str] = 'bc-mf',
+                                location_id: Optional[str] = 'us-us-national',
+                                labor_type: Optional[str] = 'std',
+                                divisionCode: Optional[str] = None
+                                ) -> Optional[Dict[str, Any]]:
+        """
+        Search unit cost lines from a catalog using a keyword.
+
+        Args:
+            release_id: Catalog year and annual or quarterly basis [YYYY]-[an|q1|q2|q3|q4]
+            measurement_system: [met]=metric, [imp]=imperial
+            searchTerm: Item you'd like to seach for
+            catalog: Catalog to retrieve lines from. Default is building construction masterformat
+            location_id: Default is u.s. national data. Format [country]-[state|province]-[city] example: us-co-denver
+            labor_type: [std]=standard union labor, [opn]=Open Shop, [fmr]=Facility Maintenance & Repair, [fed]=Federal, [he]=Higher Education
+
+            divisionCode: the RSmeans line item code
+
+        Returns:
+            dict: JSON response with unit cost lines
+        """
+        catalog_id = f"{catalog}-{measurement_system}-{labor_type}-{release_id}-{location_id}"
+
+        endpoint = f"{self.base_url}/v1/costdata/unit/catalogs/{catalog_id}/costlines/_search"
+        params = {}
+        if searchTerm:
+            params['searchTerm'] = searchTerm
+        if divisionCode:
+            params['divisionCode'] = divisionCode
+        try:
+            response = requests.get(endpoint, headers=self._get_headers(), params=params, verify=False)
+            response.raise_for_status()
+            print (f"Returning unit cost line under {catalog_id} catalog, under division {divisionCode} with search term {searchTerm}")
+            return response.json()
+        except requests.exceptions.RequestException as e:
+            print(f"Error retrieving unit cost line: {e}")
+            return None
         pass
 
     def get_unit_costlines(self,
-                            release_id: str ='2019-an',
+                            release_id: str,
+                            measurement_system: str,
+                            divisionCode: str,
                             catalog: str = 'bc-mf',
                             location_id: str = 'us-us-national',
                             labor_type: str = 'std',
-                            measurement_system: str = 'imp',
-                            divisionCode: str = '033053403920'
+
                             ) -> Optional[Dict[str, Any]]:
         """
         Retrieve unit cost lines from a catalog. this will return all the costs and crew hours associated with a single construction
@@ -179,7 +220,7 @@ class RSMeansAPIClient:
             location_id: [country]-[state|province(2char)]-[city]. Default is u.s. national data
             labor_type: [std]=standard union labor, [opn]=Open Shop, [fmr]=Facility Maintenance & Repair, [fed]=Federal, [he]=Higher Education
             measurement_system: [met]=metric, [imp]=imperial
-            divisionCode: the line item code
+            divisionCode: the line item code ex: '033053403920'
 
         Returns:
             dict: JSON response with unit cost lines
@@ -239,27 +280,31 @@ def main():
         return
 
     #==========================================
-    # Examples of different callable items
+    # Examples of different functions
     #==========================================
 
     def available_cost_data_releases():
         # Example: Get available cost data releases
-        print("\n=== Cost Data Releases ===")
+        print("\n=== Cost Data Releases available in API_responses folder @ releases.json ===")
         releases = client.get_cost_data_releases()
         if releases:
-            print(json.dumps(releases, indent=2))
+            with open("API_responses/release_versions.json", "w") as f:
+                json.dumps(releases, f, indent=2)
+
 
     def available_locations():
         # retrieve all available locations and export results as json
         print("\n=== Locations ===")
         locations = client.get_locations()
         if locations:
-            print(json.dumps(locations, indent=2)[:500])  # Print first 500 chars
+            with open("API_responses/locations.json", "w") as f:
+                json.dumps(locations, f, indent=2)
 
 
 
-    # Example: retrieve all available unit cost catalogs for a specific year, location, labor type and measurement system
-    print("\n=== Retrieve available unit cost catalogs for a specific year, location, labor type and measurement system")
+    # EXAMPLE: retrieve all available unit cost catalogs for a specific year, location, labor type and measurement system
+    print("\n=== Retrieve all available unit cost catalogs for a specific year, location, labor type and measurement type " \
+    "Return results in API_responses/catalogs.json")
     catalogs = client.get_unit_catalogs(
         release_id='2019-an',
         location_id='us-co-denver',
@@ -268,15 +313,27 @@ def main():
     )
     if catalogs:
         #print(json.dumps(catalogs, indent=2)[:500])# print first 500 char
-        print ("saved as catalogs.json")
-        with open("catalogs.json", "w") as f:
+        print ("saved as API_responses/catalogs.json")
+        with open("API_responses/catalogs.json", "w") as f:
             json.dump(catalogs, f, indent=2)
 
 
+    # EXAMPLE: Search for a product, return division codes
+    print("\n=== Search for a product in a catalog. Return results in API_responses/search_unit_costlines.json ")
 
-    # Example: Get unit cost line of a product from a catelog
-    print("\n=== Retrieve the unit cost line for a specific product in a specific catalog , year, location, labor type and measurement system")
-    unitcostlines = client.get_unit_costlines(
+    search_for_unit = client.search_unit_costlines(
+        release_id = '2019-an',
+        catalog = 'bc-mf',
+        location_id = 'us-co-denver',
+        labor_type = 'std',
+        measurement_system = 'imp',
+        searchTerm =
+    )
+
+    # EXAMPLE: Get unit cost line of a product from a catalog
+    print("\n=== Retrieve the all of the unit cost information for a product in a catalog."
+          " Return API_responses/unit_cost_line.json")
+    unitcostline = client.get_unit_costlines(
         release_id = '2019-an',
         catalog = 'bc-mf',
         location_id = 'us-co-denver',
@@ -284,12 +341,12 @@ def main():
         measurement_system = 'imp',
         divisionCode= '033053403920'
     )
-    if unitcostlines:
+    if unitcostline:
         #print(json.dumps(unitcostlines, indent=2)[:500]) )# print first 500 char
         # Save the JSON response to a file
-        print ("saved as unit_cost_lines.json")
-        with open("unit_cost_lines.json", "w") as f:
-            json.dump(unitcostlines, f, indent=2)
+        print ("saved as unit_cost_line.json")
+        with open("unit_cost_line.json", "w") as f:
+            json.dump(unitcostline, f, indent=2)
 
 
 if __name__ == "__main__":
