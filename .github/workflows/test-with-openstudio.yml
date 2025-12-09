@@ -1,0 +1,143 @@
+# Test with OpenStudio container
+name: test_with_openstudio
+on: push
+
+jobs:
+  test-gems-latest:
+    runs-on: ubuntu-latest
+    env:
+      BRANCH_NAME: ${{ github.ref_name }}
+      BUILD_NUMBER: ${{ github.run_number }}
+      DEPLOY_PATH: ${{ github.repository }}/${{ github.ref_name }}/${{ github.run_number }} # Path for S3 deployment
+      S3_BUCKET: ext-gem-dashboard
+
+    steps:
+      - name: Login to Docker Hub
+        # Authenticate with Docker Hub using repository secrets to access nrel/openstudio:develop
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }} # Ensure this secret exists in your repository or organization settings
+          password: ${{ secrets.DOCKERHUB_TOKEN }}    # Ensure this secret exists in your repository or organization settings
+
+      - name: Checkout Repository
+        # Checkout the repository to the runner's workspace
+        uses: actions/checkout@v4
+        with:
+          submodules: true
+
+      - name: Cache Bundle Dependencies
+        # Cache gem dependencies to speed up builds and improve reliability
+        uses: actions/cache@v4
+        with:
+          path: vendor/bundle
+          key: ${{ runner.os }}-gems-${{ hashFiles('**/Gemfile.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-gems-
+
+      - name: Run Tests in OpenStudio Container
+        # Run all tests inside the OpenStudio develop container with proper authentication
+        run: |
+          # Pull the develop image now that we're authenticated
+          docker pull nrel/openstudio:develop
+          
+          # Run the container with all our test commands
+          docker run --rm \
+            -u root \
+            -e "LANG=en_US.UTF-8" \
+            -v "${{ github.workspace }}:/workspace" \
+            -w /workspace \
+            nrel/openstudio:develop \
+            bash -c '
+              set -e
+              
+              echo "Starting OpenStudio EE Gem tests..."
+              echo "Ruby: $(ruby -v)"
+              echo "OpenStudio: $(openstudio openstudio_version)"
+              
+              # Fix git ownership issue in container
+              git config --global --add safe.directory "*"
+              
+              # Install system dependencies
+              apt-get update -qq
+              apt-get install -y -qq curl unzip ca-certificates
+              
+              # Install Node.js and AWS CLI (required for some tests)
+              curl -fsSL https://deb.nodesource.com/setup_20.x | DEBIAN_FRONTEND=noninteractive bash -
+              DEBIAN_FRONTEND=noninteractive apt-get install -y -qq nodejs
+              
+              curl -fsSL "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o /tmp/awscliv2.zip
+              unzip -q /tmp/awscliv2.zip -d /tmp/
+              /tmp/aws/install
+              rm -rf /tmp/aws /tmp/awscliv2.zip
+              
+              # Install gem dependencies
+              echo "Installing gem dependencies..."
+              
+              # Clean up bundler environment
+              unset BUNDLE_GEMFILE BUNDLE_PATH BUNDLE_BIN_PATH
+              
+              # Install bundler and configure
+              gem install bundler -v 2.4.10 --no-document
+              bundle config set --local path vendor/bundle
+              bundle config set --local force_ruby_platform true
+              
+              # Install gems
+              bundle install --retry 3 --jobs 4
+              
+              # Run test suite
+              echo "Running tests..."
+              bundle exec rake
+              bundle exec rake openstudio:list_measures
+              bundle exec rake openstudio:update_measures
+              bundle exec rake openstudio:test_with_openstudio
+              
+              # Archive test results
+              if [ -d "test" ]; then
+                mv test test_with_cli_bundler
+              fi
+              
+              dir_name=$(find . -type d -name "test_results" | head -1)
+              if [ -n "$dir_name" ]; then
+                mv "$dir_name" test_results_dashboard_cli_bundler
+              fi
+              
+              echo "Tests completed successfully!"
+            '
+
+      - name: Configure AWS Credentials
+        # Configure AWS credentials for S3 deployment
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_DEFAULT_REGION }}
+
+      - name: Sync files to S3 with branch and build in path
+        shell: bash
+        run: |
+          echo "Deploying to s3://${{ env.S3_BUCKET }}/${{ env.DEPLOY_PATH }}/"
+          # Use the renamed test_results directory
+          dir_name="test_results_dashboard_cli_bundler"
+          if [ -d "$dir_name" ]; then
+            echo "TEST_RESULTS_DIR=$dir_name" >> $GITHUB_ENV
+            if ! aws s3 sync $dir_name s3://${{ env.S3_BUCKET }}/${{ env.DEPLOY_PATH }}/ \
+              --delete \
+              --acl public-read \
+              --cache-control "max-age=0, no-cache, no-store, must-revalidate"; then
+              echo "::error::Failed to sync results to S3"
+              exit 1
+            fi
+            echo "✅ S3 sync complete."
+            echo "🌐 Dashboard URL: https://${{ env.S3_BUCKET }}.s3.amazonaws.com/${{ env.DEPLOY_PATH }}/dashboard/index.html"
+          else
+            echo "::error::Test results directory $dir_name not found"
+            echo "::error::Available directories:"
+            ls -la
+            exit 1
+          fi
+
+      - name: Archive static site as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: static-html-artifact
+          path: test_results_dashboard_cli_bundler          

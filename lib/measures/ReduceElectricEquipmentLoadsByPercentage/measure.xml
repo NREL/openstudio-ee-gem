@@ -3,8 +3,8 @@
   <schema_version>3.1</schema_version>
   <name>reduce_electric_equipment_loads_by_percentage</name>
   <uid>0902e302-70db-4339-99b0-17f08bc93629</uid>
-  <version_id>5ea57f23-d4f2-464c-92d5-b982ad8f9d04</version_id>
-  <version_modified>2024-11-16T23:47:46Z</version_modified>
+  <version_id>8784867d-d76a-45cd-b157-dd3ae319cc8d</version_id>
+  <version_modified>2025-09-25T15:33:44Z</version_modified>
   <xml_checksum>F9A5B8F0</xml_checksum>
   <class_name>ReduceElectricEquipmentLoadsByPercentage</class_name>
   <display_name>Reduce Electric Equipment Loads by Percentage</display_name>
@@ -18,10 +18,10 @@
       <type>Choice</type>
       <required>true</required>
       <model_dependent>false</model_dependent>
-      <default_value>{a7d74ea1-85ff-4df3-b01d-8a918a8cc5a7}</default_value>
+      <default_value>{dac39ef0-d1a3-4bb2-b9ee-ebbdc6652e53}</default_value>
       <choices>
         <choice>
-          <value>{a7d74ea1-85ff-4df3-b01d-8a918a8cc5a7}</value>
+          <value>{dac39ef0-d1a3-4bb2-b9ee-ebbdc6652e53}</value>
           <display_name>*Entire Building*</display_name>
         </choice>
       </choices>
@@ -140,7 +140,7 @@
       <filename>LICENSE.md</filename>
       <filetype>md</filetype>
       <usage_type>license</usage_type>
-      <checksum>8C5A8023</checksum>
+      <checksum>FFCBFF29</checksum>
     </file>
     <file>
       <filename>README.md</filename>
@@ -163,7 +163,7 @@
       <filename>measure.rb</filename>
       <filetype>rb</filetype>
       <usage_type>script</usage_type>
-      <checksum>2052422C</checksum>
+      <checksum>59BF0D78</checksum>
     </file>
     <file>
       <filename>EnvelopeAndLoadTestModel_01.osm</filename>
@@ -181,7 +181,7 @@
       <filename>ReduceElectricEquipmentLoadsByPercentage_Test.rb</filename>
       <filetype>rb</filetype>
       <usage_type>test</usage_type>
-      <checksum>807BDF94</checksum>
+      <checksum>854E8902</checksum>
     </file>
   </files>
 </measure>

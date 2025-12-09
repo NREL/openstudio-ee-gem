@@ -24,7 +24,7 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
 
     def description(self):
         """Brief description of the measure."""
-        return "Calculates embodied emissions for window frame enhancements using EC3 database lookup."
+        return "Calculates embodied emissions for window frame enhancements using EC3 database lookup. This measure only functions if you have an EC3 key and the required Python libraries installed. In addition to getting embodied car value it does also alter the thermal performance of the windows based on the selections made"
 
     def modeler_description(self):
         """Detailed description of the measure."""
@@ -62,7 +62,7 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
         for option in self.igu_options():
             igu_options_chs.append(option)
         igu_option = openstudio.measure.OSArgument.makeChoiceArgument("igu_option", igu_options_chs, True)
-        igu_option.setDisplayName("IGU option") 
+        igu_option.setDisplayName("IGU option")
         igu_option.setDescription("Type of insulating glazing unit")
         args.append(igu_option)
 
@@ -80,12 +80,12 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
         wf_lifetime.setDefaultValue(15)
         args.append(wf_lifetime)
 
-        #make an argument for window frame options for filtering EPDs 
+        #make an argument for window frame options for filtering EPDs
         wf_options_chs = openstudio.StringVector()
         for option in self.wf_options():
             wf_options_chs.append(option)
         wf_option = openstudio.measure.OSArgument.makeChoiceArgument("wf_option",wf_options_chs, True)
-        wf_option.setDisplayName("Window frame option") 
+        wf_option.setDisplayName("Window frame option")
         wf_option.setDescription("Type of aluminum extrusion")
         args.append(wf_option)
 
@@ -105,20 +105,18 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
         epd_type.setDescription("Type of EPD for searching GWP values, Product EPDs refer to specific products from a manufacturer, while industrial EPDs represent average data across an entire industry sector.")
         args.append(epd_type)
 
-        # make an argument for selcting which gwp statistic to use for embodied carbon calculation
+        # make an argument for selecting which gwp statistic to use for embodied carbon calculation
         gwp_statistics_chs = openstudio.StringVector()
         for gwp_statistic in self.gwp_statistics():
             gwp_statistics_chs.append(gwp_statistic)
-        gwp_statistics_chs.append("single_value")
         gwp_statistic = openstudio.measure.OSArgument.makeChoiceArgument("gwp_statistic",gwp_statistics_chs, True)
         gwp_statistic.setDisplayName("GWP Statistic") 
-        gwp_statistic.setDescription("Statistic type (minimum or maximum or mean or single value) of returned GWP value")
-        gwp_statistic.setDefaultValue("single_value")
+        gwp_statistic.setDescription("Statistic type (minimum or maximum or mean or median) of returned GWP value")
         args.append(gwp_statistic)
 
         # make an argument for total embodied carbon (TEC) of whole construction/building
         total_embodied_carbon = openstudio.measure.OSArgument.makeDoubleArgument("total_embodied_carbon", True)
-        total_embodied_carbon.setDisplayName("Total Embodeid Carbon of Building/Building Assembly")
+        total_embodied_carbon.setDisplayName("Total Embodied Carbon of Building/Building Assembly")
         total_embodied_carbon.setDescription("Total GWP or embodied carbon intensity of the building (assembly) in kg CO2 eq.")
         total_embodied_carbon.setDefaultValue(0.0)
         args.append(total_embodied_carbon)
@@ -320,13 +318,6 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
                 epd_datalist["Frame"] = frame_epd
 
             for material_name, epd_data in epd_datalist.items():
-                # EPD check 
-                if len(epd_data) == 1:
-                    runner.registerInfo("Only one EPD available")
-                    gwp_statistic = "single_value"
-                elif len(epd_data) > 1 and gwp_statistic == "single_value":
-                    runner.registerWarning("Since multiple EPD returned, using a single value is not recommended.")
-
                 # collect  GWP values per functional unit
                 gwp_values = {}
                 gwp_values["gwp_per_m2"] = []
@@ -380,7 +371,7 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
 
                 subsurface_dict[subsurface_name]["window_embodied_carbon"] +=  subsurface_dict[subsurface_name][material_name]["embodied_carbon"]
 
-            runner.registerInfo(f"window's embodied carbon in this subsurface: {subsurface_dict[subsurface_name]["window_embodied_carbon"]}")
+            runner.registerInfo(f"window's embodied carbon in this subsurface: {subsurface_dict[subsurface_name]['window_embodied_carbon']}")
 
             # attach additional properties to openstudio material
             additional_properties = subsurface_dict[subsurface_name]["Subsurface object"].additionalProperties()

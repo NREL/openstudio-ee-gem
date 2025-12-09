@@ -9,11 +9,11 @@
 class IncreaseInsulationRValueForExteriorWalls < OpenStudio::Measure::ModelMeasure
   # define the name that a user will see
   def name
-    return 'Increase R-value of Insulation for Exterior Walls to a Specific Value'
+    'Increase R-value of Insulation for Exterior Walls to a Specific Value'
   end
 
   # define the arguments that the user will input
-  def arguments(model)
+  def arguments(_model)
     args = OpenStudio::Measure::OSArgumentVector.new
 
     # make an argument insulation R-value
@@ -46,7 +46,7 @@ class IncreaseInsulationRValueForExteriorWalls < OpenStudio::Measure::ModelMeasu
     years_until_retrofit_cost.setDefaultValue(0)
     args << years_until_retrofit_cost
 
-    return args
+    args
   end
 
   # define what happens when the measure is run
@@ -54,9 +54,7 @@ class IncreaseInsulationRValueForExteriorWalls < OpenStudio::Measure::ModelMeasu
     super(model, runner, user_arguments)
 
     # use the built-in error checking
-    if !runner.validateUserArguments(arguments(model), user_arguments)
-      return false
-    end
+    return false unless runner.validateUserArguments(arguments(model), user_arguments)
 
     # assign the user inputs to variables
     r_value = runner.getDoubleArgumentValue('r_value', user_arguments)
@@ -85,18 +83,21 @@ class IncreaseInsulationRValueForExteriorWalls < OpenStudio::Measure::ModelMeasu
 
     # short def to make numbers pretty (converts 4125001.25641 to 4,125,001.26 or 4,125,001). The definition be called through this measure
     def neat_numbers(number, roundto = 2) # round to 0 or 2)
-      if roundto == 2
-        number = format '%.2f', number
-      else
-        number = number.round
-      end
+      number = if roundto == 2
+                 format '%.2f', number
+               else
+                 number.round
+               end
       # regex to add commas
       number.to_s.reverse.gsub(/([0-9]{3}(?=([0-9])))/, '\\1,').reverse
     end
 
     # helper to make it easier to do unit conversions on the fly
     def unit_helper(number, from_unit_string, to_unit_string)
-      converted_number = OpenStudio.convert(OpenStudio::Quantity.new(number, OpenStudio.createUnit(from_unit_string).get), OpenStudio.createUnit(to_unit_string).get).get.value
+      converted_number = OpenStudio.convert(
+        OpenStudio::Quantity.new(number,
+                                 OpenStudio.createUnit(from_unit_string).get), OpenStudio.createUnit(to_unit_string).get
+      ).get.value
     end
 
     # convert r_value and material_cost to si for future use
@@ -110,16 +111,16 @@ class IncreaseInsulationRValueForExteriorWalls < OpenStudio::Measure::ModelMeasu
     exterior_surface_construction_names = []
     ext_wall_resistance = []
     surfaces.each do |surface|
-      if (surface.outsideBoundaryCondition == 'Outdoors') && (surface.surfaceType == 'Wall')
-        exterior_surfaces << surface
-        ext_wall_const = surface.construction.get
-        # only add construction if it hasn't been added yet
-        if !exterior_surface_construction_names.include?(ext_wall_const.name.to_s)
-          exterior_surface_constructions << ext_wall_const.to_Construction.get
-        end
-        exterior_surface_construction_names << ext_wall_const.name.to_s
-        ext_wall_resistance << 1 / ext_wall_const.thermalConductance.to_f
+      next unless (surface.outsideBoundaryCondition == 'Outdoors') && (surface.surfaceType == 'Wall')
+
+      exterior_surfaces << surface
+      ext_wall_const = surface.construction.get
+      # only add construction if it hasn't been added yet
+      unless exterior_surface_construction_names.include?(ext_wall_const.name.to_s)
+        exterior_surface_constructions << ext_wall_const.to_Construction.get
       end
+      exterior_surface_construction_names << ext_wall_const.name.to_s
+      ext_wall_resistance << (1 / ext_wall_const.thermalConductance.to_f)
     end
 
     # nothing will be done if there are no exterior surfaces
@@ -132,8 +133,9 @@ class IncreaseInsulationRValueForExteriorWalls < OpenStudio::Measure::ModelMeasu
     initial_string = []
     exterior_surface_constructions.uniq.each do |exterior_surface_construction|
       # unit conversion of wall insulation from SI units (M^2*K/W) to IP units (ft^2*h*R/Btu)
-      initial_conductance_ip = unit_helper(1 / exterior_surface_construction.thermalConductance.to_f, 'm^2*K/W', 'ft^2*h*R/Btu')
-      initial_string << "#{exterior_surface_construction.name} (R-#{(format '%.1f', initial_conductance_ip)})"
+      initial_conductance_ip = unit_helper(1 / exterior_surface_construction.thermalConductance.to_f, 'm^2*K/W',
+                                           'ft^2*h*R/Btu')
+      initial_string << "#{exterior_surface_construction.name} (R-#{format '%.1f', initial_conductance_ip})"
     end
     runner.registerInitialCondition("The building had #{initial_string.size} exterior wall constructions: #{initial_string.sort.join(', ')}.")
 
@@ -161,14 +163,16 @@ class IncreaseInsulationRValueForExteriorWalls < OpenStudio::Measure::ModelMeasu
       no_mass_materials = materials_in_construction.select { |mat| mat['nomass'] == true }
       # measure will select the no mass material with the highest r-value as the insulation layer
       # if no mass materials are present, the measure will select the material with the highest r-value per inch
-      if !no_mass_materials.empty?
-        thermal_resistance_values = no_mass_materials.map { |mat| mat['r_value'] }
-        max_mat_hash = no_mass_materials.select { |mat| mat['r_value'] >= thermal_resistance_values.max }
-      else
-        thermal_resistance_per_thickness_values = materials_in_construction.map { |mat| mat['r_value'] / mat['mat'].thickness }
+      if no_mass_materials.empty?
+        thermal_resistance_per_thickness_values = materials_in_construction.map do |mat|
+          mat['r_value'] / mat['mat'].thickness
+        end
         target_index = thermal_resistance_per_thickness_values.index(thermal_resistance_per_thickness_values.max)
         max_mat_hash = materials_in_construction.select { |mat| mat['index'] == target_index }
         thermal_resistance_values = materials_in_construction.map { |mat| mat['r_value'] }
+      else
+        thermal_resistance_values = no_mass_materials.map { |mat| mat['r_value'] }
+        max_mat_hash = no_mass_materials.select { |mat| mat['r_value'] >= thermal_resistance_values.max }
       end
       max_thermal_resistance_material = max_mat_hash[0]['mat']
       max_thermal_resistance_material_index = max_mat_hash[0]['index']
@@ -191,33 +195,39 @@ class IncreaseInsulationRValueForExteriorWalls < OpenStudio::Measure::ModelMeasu
         const_LCC_cat_const = false
         updated_cost_si = 0
         const_LCCs.each do |const_LCC|
-          if (const_LCC.category == 'Construction') && (material_cost_increase_si != 0)
-            const_LCC_cat_const = true # need this test to add proper lcc if it didn't exist to start with
-            # if multiple LCC objects associated with construction only adjust the cost of one of them.
-            if !cost_added
-              const_LCC.setCost(const_LCC.cost + material_cost_increase_si)
-            else
-              runner.registerInfo("More than one LifeCycleCost object with a category of Construction was associated with #{final_construction.name}. Cost was only adjusted for one of the LifeCycleCost objects.")
-            end
-            updated_cost_si += const_LCC.cost
+          next unless (const_LCC.category == 'Construction') && (material_cost_increase_si != 0)
+
+          const_LCC_cat_const = true # need this test to add proper lcc if it didn't exist to start with
+          # if multiple LCC objects associated with construction only adjust the cost of one of them.
+          if cost_added
+            runner.registerInfo("More than one LifeCycleCost object with a category of Construction was associated with #{final_construction.name}. Cost was only adjusted for one of the LifeCycleCost objects.")
+          else
+            const_LCC.setCost(const_LCC.cost + material_cost_increase_si)
           end
+          updated_cost_si += const_LCC.cost
         end
 
         if cost_added
-          runner.registerInfo("Adjusting material and installation cost for #{final_construction.name} to #{neat_numbers(unit_helper(updated_cost_si, '1/m^2', '1/ft^2'))} ($/ft^2).")
+          runner.registerInfo("Adjusting material and installation cost for #{final_construction.name} to #{neat_numbers(unit_helper(
+                                                                                                                           updated_cost_si, '1/m^2', '1/ft^2'
+                                                                                                                         ))} ($/ft^2).")
         end
 
         # add construction object if it didnt exist to start with and a cost increase was requested
         if (const_LCC_cat_const == false) && (material_cost_increase_si != 0)
-          lcc_for_uncosted_const = OpenStudio::Model::LifeCycleCost.createLifeCycleCost('LCC_increase_insulation', final_construction, material_cost_increase_si, 'CostPerArea', 'Construction', 20, 0).get
-          runner.registerInfo("No material or installation costs existed for #{final_construction.name}. Created a new LifeCycleCost object with a material and installation cost of #{neat_numbers(unit_helper(lcc_for_uncosted_const.cost, '1/m^2', '1/ft^2'))} ($/ft^2). Assumed capitol cost in first year, an expected life of 20 years, and no O & M costs.")
+          lcc_for_uncosted_const = OpenStudio::Model::LifeCycleCost.createLifeCycleCost('LCC_increase_insulation',
+                                                                                        final_construction, material_cost_increase_si, 'CostPerArea', 'Construction', 20, 0).get
+          runner.registerInfo("No material or installation costs existed for #{final_construction.name}. Created a new LifeCycleCost object with a material and installation cost of #{neat_numbers(unit_helper(
+                                                                                                                                                                                                      lcc_for_uncosted_const.cost, '1/m^2', '1/ft^2'
+                                                                                                                                                                                                    ))} ($/ft^2). Assumed capitol cost in first year, an expected life of 20 years, and no O & M costs.")
         end
 
         # add one time cost if requested
         if one_time_retrofit_cost_ip > 0
           one_time_retrofit_cost_si = unit_helper(one_time_retrofit_cost_ip, '1/ft^2', '1/m^2')
           lcc_retrofit_specific = OpenStudio::Model::LifeCycleCost.createLifeCycleCost('LCC_retrofit_specific', final_construction, one_time_retrofit_cost_si, 'CostPerArea', 'Construction', 0, years_until_retrofit_cost).get # using 0 for repeat period since one time cost.
-          runner.registerInfo("Adding one time cost of #{neat_numbers(unit_helper(lcc_retrofit_specific.cost, '1/m^2', '1/ft^2'))} ($/ft^2) related to retrofit of wall insulation.")
+          runner.registerInfo("Adding one time cost of #{neat_numbers(unit_helper(lcc_retrofit_specific.cost, '1/m^2',
+                                                                                  '1/ft^2'))} ($/ft^2) related to retrofit of wall insulation.")
         end
 
         # push to hashes
@@ -228,13 +238,13 @@ class IncreaseInsulationRValueForExteriorWalls < OpenStudio::Measure::ModelMeasu
         target_material = max_thermal_resistance_material
         found_material = false
         materials_hash.each do |orig, new|
-          if target_material.name.to_s == orig
-            new_material = new
-            materials_hash[max_thermal_resistance_material.name.to_s] = new_material
-            final_construction.eraseLayer(max_thermal_resistance_material_index)
-            final_construction.insertLayer(max_thermal_resistance_material_index, new_material)
-            found_material = true
-          end
+          next unless target_material.name.to_s == orig
+
+          new_material = new
+          materials_hash[max_thermal_resistance_material.name.to_s] = new_material
+          final_construction.eraseLayer(max_thermal_resistance_material_index)
+          final_construction.insertLayer(max_thermal_resistance_material_index, new_material)
+          found_material = true
         end
 
         # clone and edit insulation material and link to construction
@@ -249,17 +259,17 @@ class IncreaseInsulationRValueForExteriorWalls < OpenStudio::Measure::ModelMeasu
 
           # edit insulation material
           new_material_matt = new_material.to_Material
-          if !new_material_matt.empty?
+          unless new_material_matt.empty?
             starting_thickness = new_material_matt.get.thickness
             target_thickness = starting_thickness * r_value_si / thermal_resistance_values.max
             final_thickness = new_material_matt.get.setThickness(target_thickness)
           end
           new_material_massless = new_material.to_MasslessOpaqueMaterial
-          if !new_material_massless.empty?
+          unless new_material_massless.empty?
             final_thermal_resistance = new_material_massless.get.setThermalResistance(r_value_si)
           end
           new_material_airgap = new_material.to_AirGap
-          if !new_material_airgap.empty?
+          unless new_material_airgap.empty?
             final_thermal_resistance = new_material_airgap.get.setThermalResistance(r_value_si)
           end
         end
@@ -269,85 +279,82 @@ class IncreaseInsulationRValueForExteriorWalls < OpenStudio::Measure::ModelMeasu
     # loop through construction sets used in the model
     default_construction_sets = model.getDefaultConstructionSets
     default_construction_sets.each do |default_construction_set|
-      if default_construction_set.directUseCount > 0
-        default_surface_const_set = default_construction_set.defaultExteriorSurfaceConstructions
-        if !default_surface_const_set.empty?
-          starting_construction = default_surface_const_set.get.wallConstruction
+      next unless default_construction_set.directUseCount > 0
 
-          # creating new default construction set
-          new_default_construction_set = default_construction_set.clone(model)
-          new_default_construction_set = new_default_construction_set.to_DefaultConstructionSet.get
-          new_default_construction_set.setName("#{default_construction_set.name} adj ext wall insulation")
+      default_surface_const_set = default_construction_set.defaultExteriorSurfaceConstructions
+      next if default_surface_const_set.empty?
 
-          # create new surface set and link to construction set
-          new_default_surface_const_set = default_surface_const_set.get.clone(model)
-          new_default_surface_const_set = new_default_surface_const_set.to_DefaultSurfaceConstructions.get
-          new_default_surface_const_set.setName("#{default_surface_const_set.get.name} adj ext wall insulation")
-          new_default_construction_set.setDefaultExteriorSurfaceConstructions(new_default_surface_const_set)
+      starting_construction = default_surface_const_set.get.wallConstruction
 
-          # use the hash to find the proper construction and link to new_default_surface_const_set
-          target_const = new_default_surface_const_set.wallConstruction
-          if !target_const.empty?
-            target_const = target_const.get.name.to_s
-            found_const_flag = false
-            constructions_hash_old_new.each do |orig, new|
-              if target_const == orig
-                final_construction = new
-                new_default_surface_const_set.setWallConstruction(final_construction)
-                found_const_flag = true
-              end
-            end
-            if found_const_flag == false # this should never happen but is just an extra test in case something goes wrong with the measure code
-              runner.registerWarning("Measure couldn't find the construction named '#{target_const}' in the exterior surface hash.")
-            end
-          end
+      # creating new default construction set
+      new_default_construction_set = default_construction_set.clone(model)
+      new_default_construction_set = new_default_construction_set.to_DefaultConstructionSet.get
+      new_default_construction_set.setName("#{default_construction_set.name} adj ext wall insulation")
 
-          # swap all uses of the old construction set for the new
-          construction_set_sources = default_construction_set.sources
-          construction_set_sources.each do |construction_set_source|
-            building_source = construction_set_source.to_Building
-            # if statement for each type of object than can use a DefaultConstructionSet
-            if !building_source.empty?
-              building_source = building_source.get
-              building_source.setDefaultConstructionSet(new_default_construction_set)
-            end
-            building_story_source = construction_set_source.to_BuildingStory
-            if !building_story_source.empty?
-              building_story_source = building_story_source.get
-              building_story_source.setDefaultConstructionSet(new_default_construction_set)
-            end
-            space_type_source = construction_set_source.to_SpaceType
-            if !space_type_source.empty?
-              space_type_source = space_type_source.get
-              space_type_source.setDefaultConstructionSet(new_default_construction_set)
-            end
-            space_source = construction_set_source.to_Space
-            if !space_source.empty?
-              space_source = space_source.get
-              space_source.setDefaultConstructionSet(new_default_construction_set)
-            end
-          end
+      # create new surface set and link to construction set
+      new_default_surface_const_set = default_surface_const_set.get.clone(model)
+      new_default_surface_const_set = new_default_surface_const_set.to_DefaultSurfaceConstructions.get
+      new_default_surface_const_set.setName("#{default_surface_const_set.get.name} adj ext wall insulation")
+      new_default_construction_set.setDefaultExteriorSurfaceConstructions(new_default_surface_const_set)
 
+      # use the hash to find the proper construction and link to new_default_surface_const_set
+      target_const = new_default_surface_const_set.wallConstruction
+      unless target_const.empty?
+        target_const = target_const.get.name.to_s
+        found_const_flag = false
+        constructions_hash_old_new.each do |orig, new|
+          next unless target_const == orig
+
+          final_construction = new
+          new_default_surface_const_set.setWallConstruction(final_construction)
+          found_const_flag = true
+        end
+        if found_const_flag == false # this should never happen but is just an extra test in case something goes wrong with the measure code
+          runner.registerWarning("Measure couldn't find the construction named '#{target_const}' in the exterior surface hash.")
+        end
+      end
+
+      # swap all uses of the old construction set for the new
+      construction_set_sources = default_construction_set.sources
+      construction_set_sources.each do |construction_set_source|
+        building_source = construction_set_source.to_Building
+        # if statement for each type of object than can use a DefaultConstructionSet
+        unless building_source.empty?
+          building_source = building_source.get
+          building_source.setDefaultConstructionSet(new_default_construction_set)
+        end
+        building_story_source = construction_set_source.to_BuildingStory
+        unless building_story_source.empty?
+          building_story_source = building_story_source.get
+          building_story_source.setDefaultConstructionSet(new_default_construction_set)
+        end
+        space_type_source = construction_set_source.to_SpaceType
+        unless space_type_source.empty?
+          space_type_source = space_type_source.get
+          space_type_source.setDefaultConstructionSet(new_default_construction_set)
+        end
+        space_source = construction_set_source.to_Space
+        unless space_source.empty?
+          space_source = space_source.get
+          space_source.setDefaultConstructionSet(new_default_construction_set)
         end
       end
     end
 
     # link cloned and edited constructions for surfaces with hard assigned constructions
     exterior_surfaces.each do |exterior_surface|
-      if !exterior_surface.isConstructionDefaulted && !exterior_surface.construction.empty?
+      next unless !exterior_surface.isConstructionDefaulted && !exterior_surface.construction.empty?
 
-        # use the hash to find the proper construction and link to surface
-        target_const = exterior_surface.construction
-        if !target_const.empty?
-          target_const = target_const.get.name.to_s
-          constructions_hash_old_new.each do |orig, new|
-            if target_const == orig
-              final_construction = new
-              exterior_surface.setConstruction(final_construction)
-            end
-          end
+      # use the hash to find the proper construction and link to surface
+      target_const = exterior_surface.construction
+      next if target_const.empty?
+
+      target_const = target_const.get.name.to_s
+      constructions_hash_old_new.each do |orig, new|
+        if target_const == orig
+          final_construction = new
+          exterior_surface.setConstruction(final_construction)
         end
-
       end
     end
 
@@ -359,17 +366,15 @@ class IncreaseInsulationRValueForExteriorWalls < OpenStudio::Measure::ModelMeasu
     final_constructions_array.each do |final_construction|
       # unit conversion of wall insulation from SI units (M^2*K/W) to IP units (ft^2*h*R/Btu)
       final_conductance_ip = unit_helper(1 / final_construction.thermalConductance.to_f, 'm^2*K/W', 'ft^2*h*R/Btu')
-      final_string << "#{final_construction.name} (R-#{(format '%.1f', final_conductance_ip)})"
+      final_string << "#{final_construction.name} (R-#{format '%.1f', final_conductance_ip})"
       affected_area_si += final_construction.getNetArea
 
       # loop through lifecycle costs getting total costs under "Construction" or "Salvage" category and add to counter if occurs during year 0
       const_LCCs = final_construction.lifeCycleCosts
       const_LCCs.each do |const_LCC|
-        if (const_LCC.category == 'Construction') || (const_LCC.category == 'Salvage')
-          if const_LCC.yearsFromStart == 0
-            yr0_capital_totalCosts += const_LCC.totalCost
-          end
-        end
+        next unless (const_LCC.category == 'Construction') || (const_LCC.category == 'Salvage')
+
+        yr0_capital_totalCosts += const_LCC.totalCost if const_LCC.yearsFromStart == 0
       end
     end
 
@@ -384,9 +389,11 @@ class IncreaseInsulationRValueForExteriorWalls < OpenStudio::Measure::ModelMeasu
     end
 
     # report final condition
-    runner.registerFinalCondition("The existing insulation for exterior walls was set to R-#{r_value}. This was accomplished for an initial cost of #{one_time_retrofit_cost_ip} ($/sf) and an increase of #{material_cost_increase_ip} ($/sf) for construction. This was applied to #{neat_numbers(affected_area_ip, 0)} (ft^2) across #{final_string.size} exterior wall constructions: #{final_string.sort.join(', ')}.")
+    runner.registerFinalCondition("The existing insulation for exterior walls was set to R-#{r_value}. This was accomplished for an initial cost of #{one_time_retrofit_cost_ip} ($/sf) and an increase of #{material_cost_increase_ip} ($/sf) for construction. This was applied to #{neat_numbers(
+      affected_area_ip, 0
+    )} (ft^2) across #{final_string.size} exterior wall constructions: #{final_string.sort.join(', ')}.")
 
-    return true
+    true
   end
 end
 

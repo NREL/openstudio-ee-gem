@@ -5,12 +5,4 @@
 # See also https://openstudio.net/license
 # *******************************************************************************
 
-require 'openstudio'
-require 'openstudio/measure/ShowRunnerOutput'
-require 'fileutils'
-
-require_relative '../measure'
-require 'minitest/autorun'
-
-class GLHEProGFunctionImport_Test < Minitest::Test
-end
+require_relative 'openstudio/ee_measures'

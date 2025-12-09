@@ -10,7 +10,7 @@ class ImproveMotorEfficiency < OpenStudio::Measure::ModelMeasure
   # define the name that a user will see, this method may be deprecated as
   # the display name in PAT comes from the name field in measure.xml
   def name
-    return 'Improve Motor Efficiency in Selected Fans and Pumps'
+    'Improve Motor Efficiency in Selected Fans and Pumps'
   end
 
   # define the arguments that the user will input
@@ -33,21 +33,11 @@ class ImproveMotorEfficiency < OpenStudio::Measure::ModelMeasure
       show_loop = false
       components = value.supplyComponents
       components.each do |component|
-        if !component.to_FanConstantVolume.empty?
-          show_loop = true
-        end
-        if !component.to_FanVariableVolume.empty?
-          show_loop = true
-        end
-        if !component.to_FanOnOff.empty?
-          show_loop = true
-        end
-        if !component.to_PumpConstantSpeed.empty?
-          show_loop = true
-        end
-        if !component.to_PumpVariableSpeed.empty?
-          show_loop = true
-        end
+        show_loop = true unless component.to_FanConstantVolume.empty?
+        show_loop = true unless component.to_FanVariableVolume.empty?
+        show_loop = true unless component.to_FanOnOff.empty?
+        show_loop = true unless component.to_PumpConstantSpeed.empty?
+        show_loop = true unless component.to_PumpVariableSpeed.empty?
       end
 
       # if loop as object of correct type then add to hash.
@@ -122,7 +112,7 @@ class ImproveMotorEfficiency < OpenStudio::Measure::ModelMeasure
     om_frequency.setDefaultValue(1)
     args << om_frequency
 
-    return args
+    args
   end
 
   # define what happens when the measure is cop
@@ -130,9 +120,7 @@ class ImproveMotorEfficiency < OpenStudio::Measure::ModelMeasure
     super(model, runner, user_arguments)
 
     # use the built-in error checking
-    if !runner.validateUserArguments(arguments(model), user_arguments)
-      return false
-    end
+    return false unless runner.validateUserArguments(arguments(model), user_arguments)
 
     # assign the user inputs to variables
     object = runner.getOptionalWorkspaceObjectChoiceValue('object', user_arguments, model) # model is passed in because of argument type
@@ -157,15 +145,13 @@ class ImproveMotorEfficiency < OpenStudio::Measure::ModelMeasure
         runner.registerError("The selected loop with handle '#{handle}' was not found in the model. It may have been removed by another measure.")
       end
       return false
+    elsif !object.get.to_Loop.empty?
+      loop = object.get.to_Loop.get
+    elsif !object.get.to_Building.empty?
+      apply_to_all_loops = true
     else
-      if !object.get.to_Loop.empty?
-        loop = object.get.to_Loop.get
-      elsif !object.get.to_Building.empty?
-        apply_to_all_loops = true
-      else
-        runner.registerError('Script Error - argument not showing up as loop.')
-        return false
-      end
+      runner.registerError('Script Error - argument not showing up as loop.')
+      return false
     end
 
     # check the user_name for reasonableness
@@ -198,17 +184,15 @@ class ImproveMotorEfficiency < OpenStudio::Measure::ModelMeasure
     if (expected_life < 1) && (expected_life > 100)
       runner.registerError('Choose an integer greater than 0 and less than or equal to 100 for Expected Life.')
     end
-    if om_frequency < 1
-      runner.registerError('Choose an integer greater than 0 for O & M Frequency.')
-    end
+    runner.registerError('Choose an integer greater than 0 for O & M Frequency.') if om_frequency < 1
 
     # short def to make numbers pretty (converts 4125001.25641 to 4,125,001.26 or 4,125,001). The definition be called through this measure
     def neat_numbers(number, roundto = 2) # round to 0 or 2)
-      if roundto == 2
-        number = format '%.2f', number
-      else
-        number = number.round
-      end
+      number = if roundto == 2
+                 format '%.2f', number
+               else
+                 number.round
+               end
       # regex to add commas
       number.to_s.reverse.gsub(/([0-9]{3}(?=([0-9])))/, '\\1,').reverse
     end
@@ -219,14 +203,12 @@ class ImproveMotorEfficiency < OpenStudio::Measure::ModelMeasure
       objects.each do |object|
         object_LCCs = object.lifeCycleCosts
         object_LCCs.each do |object_LCC|
-          if (object_LCC.category == 'Construction') || (object_LCC.category == 'Salvage')
-            if object_LCC.yearsFromStart == 0
-              counter += object_LCC.totalCost
-            end
-          end
+          next unless (object_LCC.category == 'Construction') || (object_LCC.category == 'Salvage')
+
+          counter += object_LCC.totalCost if object_LCC.yearsFromStart == 0
         end
       end
-      return counter
+      counter
     end
 
     # get loops for measure
@@ -248,61 +230,51 @@ class ImproveMotorEfficiency < OpenStudio::Measure::ModelMeasure
       # find fans and pumps on loop
       supply_components.each do |supply_component|
         hVACComponent = supply_component.to_FanConstantVolume
-        if hVACComponent.empty?
-          hVACComponent = supply_component.to_FanVariableVolume
-        end
-        if hVACComponent.empty?
-          hVACComponent = supply_component.to_FanOnOff
-        end
-        if hVACComponent.empty?
-          hVACComponent = supply_component.to_PumpConstantSpeed
-        end
-        if hVACComponent.empty?
-          hVACComponent = supply_component.to_PumpVariableSpeed
-        end
+        hVACComponent = supply_component.to_FanVariableVolume if hVACComponent.empty?
+        hVACComponent = supply_component.to_FanOnOff if hVACComponent.empty?
+        hVACComponent = supply_component.to_PumpConstantSpeed if hVACComponent.empty?
+        hVACComponent = supply_component.to_PumpVariableSpeed if hVACComponent.empty?
 
         # alter components of correct type
-        if !hVACComponent.empty?
-          hVACComponent = hVACComponent.get
+        next if hVACComponent.empty?
 
-          # change and report changes to fans and motors
-          initial_motor_efficiency = hVACComponent.motorEfficiency
-          runner.registerInfo("Changing the motor efficiency from #{initial_motor_efficiency * 100}% to #{motor_eff}% for '#{hVACComponent.name}' onloop '#{loop.name}.'")
-          initial_motor_efficiency_values << initial_motor_efficiency
-          hVACComponent.setMotorEfficiency(motor_eff * 0.01)
+        hVACComponent = hVACComponent.get
 
-          # get initial year 0 cost
-          yr0_capital_totalCosts_baseline += get_total_costs_for_objects([hVACComponent])
+        # change and report changes to fans and motors
+        initial_motor_efficiency = hVACComponent.motorEfficiency
+        runner.registerInfo("Changing the motor efficiency from #{initial_motor_efficiency * 100}% to #{motor_eff}% for '#{hVACComponent.name}' onloop '#{loop.name}.'")
+        initial_motor_efficiency_values << initial_motor_efficiency
+        hVACComponent.setMotorEfficiency(motor_eff * 0.01)
 
-          # demo value of baseline costs associated with unit
-          demo_LCCs = hVACComponent.lifeCycleCosts
-          demo_LCCs.each do |demo_LCC|
-            if demo_LCC.category == 'Salvage'
-              demo_costs_of_baseline_objects += demo_LCC.totalCost
-            end
-          end
+        # get initial year 0 cost
+        yr0_capital_totalCosts_baseline += get_total_costs_for_objects([hVACComponent])
 
-          # remove all old costs
-          if !hVACComponent.lifeCycleCosts.empty? && (remove_costs == true)
-            runner.registerInfo("Removing existing lifecycle cost objects associated with #{hVACComponent.name}")
-            removed_costs = hVACComponent.removeLifeCycleCosts
-          end
-
-          # add new costs
-          if costs_requested == true
-
-            # adding new cost items
-            lcc_mat = OpenStudio::Model::LifeCycleCost.createLifeCycleCost("LCC_Mat - #{hVACComponent.name}", hVACComponent, material_cost, 'CostPerEach', 'Construction', expected_life, years_until_costs_start)
-            # cost for if demo_initial_Construction == true is added at the end of the measure
-            lcc_demo = OpenStudio::Model::LifeCycleCost.createLifeCycleCost("LCC_Demo - #{hVACComponent.name}", hVACComponent, demolition_cost, 'CostPerEach', 'Salvage', expected_life, years_until_costs_start + expected_life)
-            lcc_om = OpenStudio::Model::LifeCycleCost.createLifeCycleCost("LCC_OM - #{hVACComponent.name}", hVACComponent, om_cost, 'CostPerEach', 'Maintenance', om_frequency, 0)
-
-            # get final year 0 cost
-            yr0_capital_totalCosts_proposed += get_total_costs_for_objects([hVACComponent])
-
-          end
-
+        # demo value of baseline costs associated with unit
+        demo_LCCs = hVACComponent.lifeCycleCosts
+        demo_LCCs.each do |demo_LCC|
+          demo_costs_of_baseline_objects += demo_LCC.totalCost if demo_LCC.category == 'Salvage'
         end
+
+        # remove all old costs
+        if !hVACComponent.lifeCycleCosts.empty? && (remove_costs == true)
+          runner.registerInfo("Removing existing lifecycle cost objects associated with #{hVACComponent.name}")
+          removed_costs = hVACComponent.removeLifeCycleCosts
+        end
+
+        # add new costs
+        next unless costs_requested == true
+
+        # adding new cost items
+        lcc_mat = OpenStudio::Model::LifeCycleCost.createLifeCycleCost("LCC_Mat - #{hVACComponent.name}",
+                                                                       hVACComponent, material_cost, 'CostPerEach', 'Construction', expected_life, years_until_costs_start)
+        # cost for if demo_initial_Construction == true is added at the end of the measure
+        lcc_demo = OpenStudio::Model::LifeCycleCost.createLifeCycleCost("LCC_Demo - #{hVACComponent.name}",
+                                                                        hVACComponent, demolition_cost, 'CostPerEach', 'Salvage', expected_life, years_until_costs_start + expected_life)
+        lcc_om = OpenStudio::Model::LifeCycleCost.createLifeCycleCost("LCC_OM - #{hVACComponent.name}",
+                                                                      hVACComponent, om_cost, 'CostPerEach', 'Maintenance', om_frequency, 0)
+
+        # get final year 0 cost
+        yr0_capital_totalCosts_proposed += get_total_costs_for_objects([hVACComponent])
       end
     end
 
@@ -310,12 +282,11 @@ class ImproveMotorEfficiency < OpenStudio::Measure::ModelMeasure
     if demo_cost_initial_const == true
       building = model.getBuilding
       lcc_baseline_demo = OpenStudio::Model::LifeCycleCost.createLifeCycleCost('LCC_baseline_demo', building, demo_costs_of_baseline_objects, 'CostPerEach', 'Salvage', 0, years_until_costs_start).get # using 0 for repeat period since one time cost.
-      runner.registerInfo("Adding one time cost of $#{neat_numbers(lcc_baseline_demo.totalCost, 0)} related to demolition of baseline objects.")
+      runner.registerInfo("Adding one time cost of $#{neat_numbers(lcc_baseline_demo.totalCost,
+                                                                   0)} related to demolition of baseline objects.")
 
       # if demo occurs on year 0 then add to initial capital cost counter
-      if lcc_baseline_demo.yearsFromStart == 0
-        yr0_capital_totalCosts_proposed += lcc_baseline_demo.totalCost
-      end
+      yr0_capital_totalCosts_proposed += lcc_baseline_demo.totalCost if lcc_baseline_demo.yearsFromStart == 0
     end
 
     if initial_motor_efficiency_values.size + missing_initial_motor_efficiency == 0
@@ -324,12 +295,16 @@ class ImproveMotorEfficiency < OpenStudio::Measure::ModelMeasure
     end
 
     # reporting initial condition of model
-    runner.registerInitialCondition("The starting motor efficiency values in affected loop(s) range from #{initial_motor_efficiency_values.min * 100}% to #{initial_motor_efficiency_values.max * 100}%. Initial year 0 capital costs for affected fans or pumps is $#{neat_numbers(yr0_capital_totalCosts_baseline, 0)}.")
+    runner.registerInitialCondition("The starting motor efficiency values in affected loop(s) range from #{initial_motor_efficiency_values.min * 100}% to #{initial_motor_efficiency_values.max * 100}%. Initial year 0 capital costs for affected fans or pumps is $#{neat_numbers(
+      yr0_capital_totalCosts_baseline, 0
+    )}.")
 
     # reporting final condition of model
-    runner.registerFinalCondition("#{initial_motor_efficiency_values.size + missing_initial_motor_efficiency} fans or pumps had motor efficiency values set to #{motor_eff}%. Final year 0 capital costs for affected fans and pumps is $#{neat_numbers(yr0_capital_totalCosts_proposed, 0)}.")
+    runner.registerFinalCondition("#{initial_motor_efficiency_values.size + missing_initial_motor_efficiency} fans or pumps had motor efficiency values set to #{motor_eff}%. Final year 0 capital costs for affected fans and pumps is $#{neat_numbers(
+      yr0_capital_totalCosts_proposed, 0
+    )}.")
 
-    return true
+    true
   end
 end
 

@@ -1,21 +1,170 @@
 <?xml version="1.0"?>
 <measure>
   <schema_version>3.1</schema_version>
-  <error>Failed to infer measure name from 'C:/All repos/openstudio-ee-gem/lib/measures/window_enhancement/measure.py'</error>
-  <name>window_enhancment</name>
+  <name>window_enhancement</name>
   <uid>0ad8e761-8624-4d9d-a7d6-ebf30cce243b</uid>
-  <version_id>883b6ea6-1c91-4785-98ca-fd42944ae1c0</version_id>
-  <version_modified>2025-04-17T16:27:52Z</version_modified>
+  <version_id>6e806249-5eab-444e-b724-f00dd42c13fb</version_id>
+  <version_modified>2025-09-25T04:50:20Z</version_modified>
   <xml_checksum>7DADF7C5</xml_checksum>
-  <class_name>WindowEnhancment</class_name>
-  <display_name>Window Enhancment</display_name>
+  <class_name>WindowEnhancement</class_name>
+  <display_name>Window Enhancement</display_name>
   <description>Make existing window better by adding film, storm window, or something else.</description>
-  <modeler_description>I'm going to use layred construction and not simple glazing to do this. We have to think about how to address simple glazing with this.</modeler_description>
+  <modeler_description>Using layered construction and not simple glazing to do this. We have to think about how to address simple glazing with this.</modeler_description>
   <arguments>
     <argument>
-      <name>space_name</name>
-      <display_name>New space name</display_name>
-      <description>This name will be used as the name of the new space.</description>
+      <name>analysis_period</name>
+      <display_name>Analysis Period</display_name>
+      <description>Analysis period of embodied carbon of building/building assembly</description>
+      <type>Integer</type>
+      <required>true</required>
+      <model_dependent>false</model_dependent>
+      <default_value>30</default_value>
+    </argument>
+    <argument>
+      <name>igu_option</name>
+      <display_name>IGU Option</display_name>
+      <description>Type of insulating glazing unit</description>
+      <type>Choice</type>
+      <required>true</required>
+      <model_dependent>false</model_dependent>
+      <choices>
+        <choice>
+          <value>electrochromic</value>
+          <display_name>electrochromic</display_name>
+        </choice>
+        <choice>
+          <value>fire_resistant</value>
+          <display_name>fire_resistant</display_name>
+        </choice>
+        <choice>
+          <value>laminated</value>
+          <display_name>laminated</display_name>
+        </choice>
+        <choice>
+          <value>low_emissivity</value>
+          <display_name>low_emissivity</display_name>
+        </choice>
+        <choice>
+          <value>tempered</value>
+          <display_name>tempered</display_name>
+        </choice>
+      </choices>
+    </argument>
+    <argument>
+      <name>igu_lifetime</name>
+      <display_name>IGU Lifetime</display_name>
+      <description>Lifetime of the insulating glazing unit</description>
+      <type>Integer</type>
+      <required>true</required>
+      <model_dependent>false</model_dependent>
+      <default_value>15</default_value>
+    </argument>
+    <argument>
+      <name>wf_lifetime</name>
+      <display_name>Product Lifetime of Window Frame</display_name>
+      <description>Life expectancy of window frame</description>
+      <type>Integer</type>
+      <required>true</required>
+      <model_dependent>false</model_dependent>
+      <default_value>15</default_value>
+    </argument>
+    <argument>
+      <name>wf_option</name>
+      <display_name>Window frame option</display_name>
+      <description>Type of aluminum extrusion</description>
+      <type>Choice</type>
+      <required>true</required>
+      <model_dependent>false</model_dependent>
+      <choices>
+        <choice>
+          <value>anodized</value>
+          <display_name>anodized</display_name>
+        </choice>
+        <choice>
+          <value>painted</value>
+          <display_name>painted</display_name>
+        </choice>
+        <choice>
+          <value>thermally_improved</value>
+          <display_name>thermally_improved</display_name>
+        </choice>
+      </choices>
+    </argument>
+    <argument>
+      <name>frame_cross_section_area</name>
+      <display_name>Frame Cross Section Area (m²)</display_name>
+      <description>Cross-sectional area of the IGU frame in square meters.</description>
+      <type>Double</type>
+      <required>true</required>
+      <model_dependent>false</model_dependent>
+      <default_value>0.0025</default_value>
+    </argument>
+    <argument>
+      <name>epd_type</name>
+      <display_name>EPD Type</display_name>
+      <description>Type of EPD for searching GWP values, Product EPDs refer to specific products from a manufacturer, while industrial EPDs represent average data across an entire industry sector.</description>
+      <type>Choice</type>
+      <required>true</required>
+      <model_dependent>false</model_dependent>
+      <choices>
+        <choice>
+          <value>Product</value>
+          <display_name>Product</display_name>
+        </choice>
+        <choice>
+          <value>Industry</value>
+          <display_name>Industry</display_name>
+        </choice>
+      </choices>
+    </argument>
+    <argument>
+      <name>gwp_statistic</name>
+      <display_name>GWP Statistic</display_name>
+      <description>Type of GWP statistic for searching GWP values, Product GWP statistics refer to specific products from a manufacturer, while industrial GWP statistics represent average data across an entire industry sector.</description>
+      <type>Choice</type>
+      <required>true</required>
+      <model_dependent>false</model_dependent>
+      <choices>
+        <choice>
+          <value>minimum</value>
+          <display_name>minimum</display_name>
+        </choice>
+        <choice>
+          <value>maximum</value>
+          <display_name>maximum</display_name>
+        </choice>
+        <choice>
+          <value>mean</value>
+          <display_name>mean</display_name>
+        </choice>
+        <choice>
+          <value>median</value>
+          <display_name>median</display_name>
+        </choice>
+      </choices>
+    </argument>
+    <argument>
+      <name>total_embodied_carbon</name>
+      <display_name>Total Embodied Carbon (kgCO2e)</display_name>
+      <description>Total embodied carbon of the window frame in kilograms of CO2 equivalent.</description>
+      <type>Double</type>
+      <required>true</required>
+      <model_dependent>false</model_dependent>
+      <default_value>0.0</default_value>
+    </argument>
+    <argument>
+      <name>total_embodied_carbon</name>
+      <display_name>Total Embodied Carbon (kgCO2e)</display_name>
+      <description>Total embodied carbon of the window frame in kilograms of CO2 equivalent.</description>
+      <type>Double</type>
+      <required>true</required>
+      <model_dependent>false</model_dependent>
+      <default_value>0.0</default_value>
+    </argument>
+    <argument>
+      <name>api_key</name>
+      <display_name>API Key</display_name>
+      <description>API key for accessing external services.</description>
       <type>String</type>
       <required>true</required>
       <model_dependent>false</model_dependent>
@@ -63,19 +212,13 @@
       <filename>LICENSE.md</filename>
       <filetype>md</filetype>
       <usage_type>license</usage_type>
-      <checksum>CD7F5672</checksum>
+      <checksum>FFCBFF29</checksum>
     </file>
     <file>
       <filename>README.md</filename>
       <filetype>md</filetype>
       <usage_type>readme</usage_type>
       <checksum>DE9B0464</checksum>
-    </file>
-    <file>
-      <filename>.gitkeep</filename>
-      <filetype>gitkeep</filetype>
-      <usage_type>doc</usage_type>
-      <checksum>00000000</checksum>
     </file>
     <file>
       <version>
@@ -86,199 +229,43 @@
       <filename>measure.py</filename>
       <filetype>py</filetype>
       <usage_type>script</usage_type>
-      <checksum>CA670757</checksum>
+      <checksum>3D0A891D</checksum>
     </file>
     <file>
       <filename>EC3_lookup.py</filename>
       <filetype>py</filetype>
       <usage_type>resource</usage_type>
-      <checksum>DAD45298</checksum>
+      <checksum>2832F008</checksum>
     </file>
     <file>
       <filename>Test_API.py</filename>
       <filetype>py</filetype>
       <usage_type>resource</usage_type>
-      <checksum>41078C2A</checksum>
-    </file>
-    <file>
-      <filename>__pycache__/EC3_lookup.cpython-313.pyc</filename>
-      <filetype>pyc</filetype>
-      <usage_type>resource</usage_type>
-      <checksum>F1150BC3</checksum>
-    </file>
-    <file>
-      <filename>__pycache__/EC3_lookup.cpython-39.pyc</filename>
-      <filetype>pyc</filetype>
-      <usage_type>resource</usage_type>
-      <checksum>AD24744A</checksum>
-    </file>
-    <file>
-      <filename>__pycache__/Original_EC3_lookup.py</filename>
-      <filetype>py</filetype>
-      <usage_type>resource</usage_type>
-      <checksum>12B4F7DC</checksum>
-    </file>
-    <file>
-      <filename>__pycache__/Test_API.cpython-39.pyc</filename>
-      <filetype>pyc</filetype>
-      <usage_type>resource</usage_type>
-      <checksum>817EE4CA</checksum>
+      <checksum>26458C20</checksum>
     </file>
     <file>
       <filename>calculate_perimeter.py</filename>
       <filetype>py</filetype>
       <usage_type>resource</usage_type>
-      <checksum>CED4720F</checksum>
-    </file>
-    <file>
-      <filename>.pytest_cache/CACHEDIR.TAG</filename>
-      <filetype>TAG</filetype>
-      <usage_type>test</usage_type>
-      <checksum>6DC4EC48</checksum>
-    </file>
-    <file>
-      <filename>.pytest_cache/README.md</filename>
-      <filetype>md</filetype>
-      <usage_type>test</usage_type>
-      <checksum>2EF77971</checksum>
-    </file>
-    <file>
-      <filename>.pytest_cache/v/cache/nodeids</filename>
-      <filetype></filetype>
-      <usage_type>test</usage_type>
-      <checksum>A007C1BE</checksum>
-    </file>
-    <file>
-      <filename>.pytest_cache/v/cache/stepwise</filename>
-      <filetype></filetype>
-      <usage_type>test</usage_type>
-      <checksum>0D4CBB29</checksum>
-    </file>
-    <file>
-      <filename>complex_example_model/workflow.osw</filename>
-      <filetype>osw</filetype>
-      <usage_type>test</usage_type>
-      <checksum>8D75ED36</checksum>
-    </file>
-    <file>
-      <filename>complex_example_model.osm</filename>
-      <filetype>osm</filetype>
-      <usage_type>test</usage_type>
-      <checksum>0C7F4BB9</checksum>
-    </file>
-    <file>
-      <filename>example_model/files/USA_CO_Denver.Intl.AP.725650_TMY3.epw</filename>
-      <filetype>epw</filetype>
-      <usage_type>test</usage_type>
-      <checksum>E23378AA</checksum>
-    </file>
-    <file>
-      <filename>example_model/out.osw</filename>
-      <filetype>osw</filetype>
-      <usage_type>test</usage_type>
-      <checksum>87D96F28</checksum>
-    </file>
-    <file>
-      <filename>example_model/reports/eplustbl.html</filename>
-      <filetype>html</filetype>
-      <usage_type>test</usage_type>
-      <checksum>325D3A17</checksum>
-    </file>
-    <file>
-      <filename>example_model/workflow.osw</filename>
-      <filetype>osw</filetype>
-      <usage_type>test</usage_type>
-      <checksum>0C86EC97</checksum>
+      <checksum>D7980CA8</checksum>
     </file>
     <file>
       <filename>example_model.osm</filename>
       <filetype>osm</filetype>
       <usage_type>test</usage_type>
-      <checksum>94F69031</checksum>
+      <checksum>E08CA027</checksum>
     </file>
     <file>
-      <filename>test_results/pytest/junit.xml</filename>
-      <filetype>xml</filetype>
+      <filename>example_model_2.osm</filename>
+      <filetype>osm</filetype>
       <usage_type>test</usage_type>
-      <checksum>314F4526</checksum>
-    </file>
-    <file>
-      <filename>test_results/pytest/python_coverage.json</filename>
-      <filetype>json</filetype>
-      <usage_type>test</usage_type>
-      <checksum>07E72A34</checksum>
-    </file>
-    <file>
-      <filename>test_results/pytest/python_coverage.lcov</filename>
-      <filetype>lcov</filetype>
-      <usage_type>test</usage_type>
-      <checksum>02386FB0</checksum>
-    </file>
-    <file>
-      <filename>test_results/pytest/python_coverage.xml</filename>
-      <filetype>xml</filetype>
-      <usage_type>test</usage_type>
-      <checksum>200DF337</checksum>
-    </file>
-    <file>
-      <filename>test_results/pytest/python_coverage_html/class_index.html</filename>
-      <filetype>html</filetype>
-      <usage_type>test</usage_type>
-      <checksum>3659E069</checksum>
-    </file>
-    <file>
-      <filename>test_results/pytest/python_coverage_html/coverage_html_cb_497bf287.js</filename>
-      <filetype>js</filetype>
-      <usage_type>test</usage_type>
-      <checksum>7F5366F7</checksum>
-    </file>
-    <file>
-      <filename>test_results/pytest/python_coverage_html/favicon_32_cb_58284776.png</filename>
-      <filetype>png</filetype>
-      <usage_type>test</usage_type>
-      <checksum>98D44845</checksum>
-    </file>
-    <file>
-      <filename>test_results/pytest/python_coverage_html/function_index.html</filename>
-      <filetype>html</filetype>
-      <usage_type>test</usage_type>
-      <checksum>AAC10316</checksum>
-    </file>
-    <file>
-      <filename>test_results/pytest/python_coverage_html/index.html</filename>
-      <filetype>html</filetype>
-      <usage_type>test</usage_type>
-      <checksum>6F47A85A</checksum>
-    </file>
-    <file>
-      <filename>test_results/pytest/python_coverage_html/keybd_closed_cb_ce680311.png</filename>
-      <filetype>png</filetype>
-      <usage_type>test</usage_type>
-      <checksum>A24012EE</checksum>
-    </file>
-    <file>
-      <filename>test_results/pytest/python_coverage_html/status.json</filename>
-      <filetype>json</filetype>
-      <usage_type>test</usage_type>
-      <checksum>2BC6BB13</checksum>
-    </file>
-    <file>
-      <filename>test_results/pytest/python_coverage_html/style_cb_718ce007.css</filename>
-      <filetype>css</filetype>
-      <usage_type>test</usage_type>
-      <checksum>B4EE85DF</checksum>
-    </file>
-    <file>
-      <filename>test_results/pytest/python_coverage_html/z_1d16a5c0da9a8485_test_window_enhancement_py.html</filename>
-      <filetype>html</filetype>
-      <usage_type>test</usage_type>
-      <checksum>FAF9FD66</checksum>
+      <checksum>E01ECAD1</checksum>
     </file>
     <file>
       <filename>test_window_enhancement.py</filename>
       <filetype>py</filetype>
       <usage_type>test</usage_type>
-      <checksum>D96B37F0</checksum>
+      <checksum>061487A7</checksum>
     </file>
   </files>
 </measure>
