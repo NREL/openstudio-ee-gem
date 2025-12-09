@@ -3,8 +3,8 @@
   <schema_version>3.1</schema_version>
   <name>increase_insulation_r_value_for_roofs</name>
   <uid>65b798f4-207f-4aed-987a-386c865d0ccd</uid>
-  <version_id>fd1105cb-4e73-46b0-9d4b-58a165e6410c</version_id>
-  <version_modified>2025-09-25T15:33:40Z</version_modified>
+  <version_id>f6a7c967-ef5f-4db4-a2c1-1e0ed397e4fd</version_id>
+  <version_modified>2025-11-20T21:58:42Z</version_modified>
   <xml_checksum>0F858D9E</xml_checksum>
   <class_name>IncreaseInsulationRValueForRoofs</class_name>
   <display_name>Increase R-value of Insulation for Roofs to a Specific Value</display_name>
@@ -135,7 +135,19 @@ The resulting construction will retain the cost data from the source constructio
       <filename>measure.rb</filename>
       <filetype>rb</filetype>
       <usage_type>script</usage_type>
-      <checksum>4819233A</checksum>
+      <checksum>D39BC1EA</checksum>
+    </file>
+    <file>
+      <filename>__pycache__/EC3_lookup.cpython-313.pyc</filename>
+      <filetype>pyc</filetype>
+      <usage_type>resource</usage_type>
+      <checksum>7B4AC9B4</checksum>
+    </file>
+    <file>
+      <filename>__pycache__/Test_API.cpython-312-pytest-8.3.3.pyc</filename>
+      <filetype>pyc</filetype>
+      <usage_type>resource</usage_type>
+      <checksum>999013DF</checksum>
     </file>
     <file>
       <filename>EnvelopeAndLoadTestModel_01.osm</filename>

@@ -1,29 +1,26 @@
 # EC3 API Lookup Script
+import requests
 import json
 import re
-from typing import Dict, Any, List
-from pathlib import Path
+from typing import Dict, Any, Optional
 import configparser
 from datetime import datetime
-import numpy as np
 import os
+import numpy as np
+import urllib.parse
 
 script_dir = os.path.dirname(os.path.abspath(__file__))
 repo_root = os.path.abspath(os.path.join(script_dir, "../../../.."))
 config_path = os.path.join(repo_root, "config.ini")
 
-# this measure doesn't function without EC3 token and required Python libraries installed
 if not os.path.exists(config_path):
-    raise FileNotFoundError(f"Config file not found: {config_path}. Please setup your EC3 token before attempting to run this measure.")
-
-# load custom libraries after confirming if config.ini 
-import requests
+    raise FileNotFoundError(f"Config file not found: {config_path}")
 
 config = configparser.ConfigParser()
 config.read(config_path)
 API_TOKEN= config["EC3_API_TOKEN"]["API_TOKEN"]
 
-# #find material_name by category
+# the dictionary below stores the material_name for generate_url function
 # material_category = {"concrete":{"ReadyMix","PrecastConcrete","CementGrout","FlowableFill"},
 #                      "masonry":{"Brick", "CMU"},
 #                      "steel":{"RebarSteel","WireMeshSteel","ColdFormedSteel","StructuralSteel"},
@@ -38,11 +35,11 @@ API_TOKEN= config["EC3_API_TOKEN"]["API_TOKEN"]
 #                      }
 # for testing use, do not delete
 material_category = {
-                     "test":["InsulatingGlazingUnits"]
+                     "test":["Insulation"]
                      }
-
+# Generate a EC3 API URL with search and filters
 def generate_url(material_name, endpoint ="materials", page_number=1, page_size=250, jurisdiction="021", date=None, option=None, boolean="yes",
-                  glass_panes=None, epd_type="Product"):
+                  glass_panes=None, epd_type="Product", insulation_application = None, insulation_material = None):
     '''
     jurisdiction = "021" means Northern America region
     '''
@@ -65,17 +62,70 @@ def generate_url(material_name, endpoint ="materials", page_number=1, page_size=
 
     if conditions:
         url += "AND%0A%20%20" + "%20AND%0A%20%20".join(conditions) + "%20%0A"
+    
+    if insulation_material:
+        url += f"%20AND%0A%20%20insulating_material%3A%20IN(%22{insulation_material}%22)"
+    
+    if insulation_application:
+        url += f"%20AND%0A%20%20insulation_intended_application%3A%20IN(%22{insulation_application}%22)%20"
 
     url += "!pragma%20eMF(%222.0%2F1%22)%2C%20lcia(%22TRACI%202.1%22)"
     
     return url
 
+def generate_url_byname(
+    query: Optional[str] = None,
+    name_like: Optional[str] = None,
+    description_like: Optional[str] = None,
+    category: Optional[str] = None,
+    page_number: int = 1,
+    page_size: int = 250,
+    declaration_type: str = "Product EPD",
+    plant_geography: str = "021"
+) -> str:
+    """
+    Generate a URL for fetching EPD data based on EPD name or description.
+    jurisdiction = "021" means Northern America region
+    Don't change the order of parameters in the URL, otherwise the API won't work.
+    """
+    base_url = "https://api.buildingtransparency.org/api/epds"
+    params = [
+        ("page_number", page_number),
+        ("page_size", page_size),
+        ("sort_by", "-updated_on"),
+    ]
+        # Place category immediately after sort_by if provided.
+    if category:
+        # e.g., insulation: "bf1c8882d7784db4b10d9d5698b8b5cc"
+        # doors hardware: "ca54e842c0fc4bf2b4f3a8564c3b1a4d"
+        params.append(("category", category))
+
+    # Add the rest
+    if query:
+        params.append(("q", query))
+    if name_like:
+        params.append(("name__like", name_like))
+    if description_like:
+        params.append(("description__like", description_like))
+    if plant_geography:
+        params.append(("plant_geography", plant_geography))
+    if declaration_type:
+        params.append(("declaration_type", declaration_type))
+
+    return f"{base_url}?{urllib.parse.urlencode(params)}"
+
+# this function is sending API call, the response is json format
 def fetch_epd_data(url,api_token):
     """
     input url address generted by generate_url()
     Fetch EPD data from the EC3 API.
     return: Parsed JSON response or empty list on failure.
     """
+
+    # Handle the case when renovation option is "none", return empty list directly
+    if url is None:
+        print("Renovation option is None, fetch_epd_data: URL is None, skipping request.")
+        return None
     try: 
         print(f"Fetching data from URL: {url}")  # Log the URL being fetched
         # API configuration
@@ -90,7 +140,8 @@ def fetch_epd_data(url,api_token):
         else:
             print("No response content available.")
         return []
-
+    
+# process the json response obtained from fetch_epd_data function for product epds
 def parse_product_epd(epd: Dict[str, Any]) -> Dict[str, Any]:
     """
     Parse GWP data for a given EPD.
@@ -102,59 +153,71 @@ def parse_product_epd(epd: Dict[str, Any]) -> Dict[str, Any]:
     gwp_per_m3 = 0.0
     gwp_per_m2 = 0.0
     gwp_per_kg = 0.0
+    gwp_per_unit = 0.0
 
+    # pp.pprint(epd)
     # extract information from EPD's json repsonse
     declared_unit = epd.get("declared_unit")
     thickness = epd.get("thickness")
     gwp_per_declared_unit = epd.get("gwp")
     mass_per_declared_unit = epd.get("mass_per_declared_unit")
     density = epd.get("density")
-    gwp_per_kg = epd.get("gwp_per_kg")
+    # fix the issue that density unit is g/cm3 but parsed as kg/m3 in EC3 json repsonse
+    if density and any(x in density for x in ["kg / m3", "kg / m^3", "kg/m3", "kg/m^3"]) and extract_numeric_value(density) < 10:
+        density_value = extract_numeric_value(density)*1000
+        density = str(density_value) + " kg/m3"
+
+    gwp_per_kg = extract_numeric_value(epd.get("gwp_per_kg"))
     epd_name = epd.get('name')
     description = epd.get('description')
     original_ec3_link = epd['manufacturer']['original_ec3_link']
+    # For the two parameters below, need to confirm the accuracy of data before using; for insulation material, the mass per declared unit is always 2.04 kg,
+    # not sure where this 2.04 kg is from, didn't see it in EPD, better not to use
+    category_mass_per_declared_unit = epd['category']['mass_per_declared_unit']
+    category_declared_unit = epd['category']['declared_unit']
 
-    # Per mass
-    if gwp_per_kg != None:
-        gwp_per_kg = extract_numeric_value(gwp_per_kg)
+    mass_per_area = 0.0
+    if "kg" in category_mass_per_declared_unit and "m2" in category_declared_unit:
+        mass_per_area = divide(category_mass_per_declared_unit, category_declared_unit)
 
-    elif gwp_per_kg == None and "t" in declared_unit:
-        gwp_per_kg = divide(gwp_per_declared_unit, declared_unit)
-        gwp_per_kg = gwp_per_kg/1000 # convert from t to kg
+    if mass_per_declared_unit is None and category_mass_per_declared_unit is not None and any(x in category_declared_unit for x in ["m2", "m^2"]):
+        mass_per_declared_unit = divide(category_mass_per_declared_unit,category_declared_unit)
 
-    elif gwp_per_kg == None and "kg" in declared_unit:
-        gwp_per_kg = divide(gwp_per_declared_unit, declared_unit)
+    # Per kg
+    if gwp_per_kg is None or gwp_per_kg == 0.0:
+        if declared_unit and "t" in declared_unit:
+            gwp_per_kg = divide(gwp_per_declared_unit, declared_unit) / 1000
+        elif declared_unit and "kg" in declared_unit:
+            gwp_per_kg = divide(gwp_per_declared_unit, declared_unit)
+        # handle when mass_per_declared_unit exist
+        elif mass_per_declared_unit:
+            gwp_per_kg = divide(gwp_per_declared_unit, mass_per_declared_unit)
 
-    elif mass_per_declared_unit != None and gwp_per_kg == None and not any(unit in declared_unit for unit in ["kg", "t"]):
-        gwp_per_kg = divide(gwp_per_declared_unit, mass_per_declared_unit)
-
-    # Per volume
-    if "m3" in declared_unit:
+    # Per m3
+    if declared_unit and any(x in declared_unit for x in ["m3", "m^3"]): # these functional units come in differnet expression style, need to incorporate different styles by looking into json reponse
         gwp_per_m3 = divide(gwp_per_declared_unit, declared_unit)
-
-    elif "cf" in declared_unit:
-        gwp_per_m3 = divide(gwp_per_declared_unit, declared_unit)
-        gwp_per_m3 = gwp_per_m3 * 35.3147 # convert from cubic feet to m3
-
-    elif "m2" in declared_unit and thickness and "mm" in thickness:
-        gwp_per_m2 = divide(gwp_per_declared_unit, declared_unit)
-        gwp_per_m3 = gwp_per_m2/(extract_numeric_value(thickness)/1000)
-
-    elif density and "kg / m3" in density and gwp_per_kg:
+    elif declared_unit and "cf" in declared_unit:
+        gwp_per_m3 = divide(gwp_per_declared_unit, declared_unit) * 35.3147 # convert from cubic feet to m3
+    elif declared_unit and any(x in declared_unit for x in ["m\u00b2","m2", "m^2"]) and thickness and "mm" in thickness:
+        gwp_per_m3 = divide(gwp_per_declared_unit, declared_unit)/(extract_numeric_value(thickness)/1000)
+    elif density and any(x in density for x in ["kg / m3", "kg / m^3", "kg/m3", "kg/m^3"]) and gwp_per_kg:
         gwp_per_m3 = multiply(gwp_per_kg, density)
 
-    # Per area
-    if "m2" in declared_unit:
-        gwp_per_m2 = divide(gwp_per_declared_unit, declared_unit)
 
-    elif "sf" in declared_unit:
+    # Per m2
+    if declared_unit and any(x in declared_unit for x in ["m\u00b2","m2", "m^2"]):
         gwp_per_m2 = divide(gwp_per_declared_unit, declared_unit)
-        gwp_per_m2 = gwp_per_m2 * 10.7639 # convert from square feet to m2
+    elif declared_unit and any(x in declared_unit for x in ["ft²","sf", "ft^2"]):
+        gwp_per_m2 = divide(gwp_per_declared_unit, declared_unit) * 10.7639 # convert from square feet to m2
+    elif declared_unit and any(x in declared_unit for x in ["m3", "m^3"]) and thickness and "mm" in thickness:
+        gwp_per_m2 = divide(gwp_per_declared_unit, declared_unit) * (extract_numeric_value(thickness)/1000)
+    if gwp_per_m2 == 0.0 and mass_per_area and gwp_per_kg:
+        gwp_per_m2 = multiply(gwp_per_kg, mass_per_area)
 
-    elif "m3" in declared_unit and thickness and "mm" in thickness:
-        gwp_per_m3 = divide(gwp_per_declared_unit, declared_unit)
-        gwp_per_m2 = gwp_per_m3 * (extract_numeric_value(thickness)/1000)
-    
+    # Per unit
+    if declared_unit and any(x in declared_unit for x in ["unit", "each", "item", 'piece']):
+        gwp_per_unit = divide(gwp_per_declared_unit, declared_unit)
+
     parsed_data["epd_name"] = epd_name
     parsed_data["declared_unit"] = declared_unit
     parsed_data["gwp_per_declared_unit"] = gwp_per_declared_unit
@@ -164,17 +227,26 @@ def parse_product_epd(epd: Dict[str, Any]) -> Dict[str, Any]:
     parsed_data["gwp_per_m3 (kg CO2 eq/m3)"] = gwp_per_m3
     parsed_data["gwp_per_m2 (kg CO2 eq/m2)"] = gwp_per_m2
     parsed_data["gwp_per_kg (kg CO2 eq/kg)"] = gwp_per_kg 
+    parsed_data["category_mass_per_declared_unit"] = category_mass_per_declared_unit
+    parsed_data["category_declared_unit"] = category_declared_unit
+    parsed_data["mass_per_area"] = mass_per_area
     parsed_data["original_ec3_link"] = original_ec3_link
     parsed_data["description"] = description
 
     return parsed_data
-
+# process the json response obtained from fetch_epd_data function for industrial epds
 def parse_industrial_epd(epd: Dict[str, Any]) -> Dict[str, Any]:
     """
     Parse GWP data for a given EPD.
     :param epd: EPD dictionary
     :return: Parsed GWP data
     """
+    # pp.pprint(epd)
+
+    file_path = "my_data.json"
+
+    with open(file_path, 'w') as json_file:
+        json.dump(epd, json_file)
 
     parsed_data = {}
     gwp_per_m3 = 0.0
@@ -189,38 +261,56 @@ def parse_industrial_epd(epd: Dict[str, Any]) -> Dict[str, Any]:
     description = epd.get('description')
     density_min = epd.get('density_min')
     density_max = epd.get('density_max')
+    servicelife_min = epd.get('reference_service_life_min')
+    servicelife_max = epd.get('reference_service_life_max')
+    thickness_per_declared_unit_min = epd.get('thickness_per_declared_unit_min')
+    thickness_per_declared_unit_max = epd.get('thickness_per_declared_unit_max')
+    mass_per_declared_unit = epd.get('mass_per_declared_unit')
     area = epd.get('area')
 
-    if density_min is not None and density_max is not None:
-        density_avg = (extract_numeric_value(density_max) + extract_numeric_value(density_min))/2
-    elif density_min is not None:
-        density_avg = extract_numeric_value(density_min)
-    elif density_max is not None:
-        density_avg = extract_numeric_value(density_max)
-    else:
-        density_avg = None
+    density_avg = compute_average(density_min, density_max)
+    servicelife_avg = compute_average(servicelife_min,servicelife_max)
+    thickness_per_declared_unit_avg = compute_average(thickness_per_declared_unit_min,thickness_per_declared_unit_max)
 
-    # Per area (stop using this becasue the area value is not sensible)
-    # if "m^2" in area:
-    #     gwp_per_m2 = extract_numeric_value(gwp_per_declared_unit)/extract_numeric_value(area)
+    # Per kg
+    if gwp_per_kg is None or gwp_per_kg == 0.0:
+        if declared_unit and "t" in declared_unit:
+            gwp_per_kg = divide(gwp_per_declared_unit, declared_unit) / 1000
+        elif declared_unit and "kg" in declared_unit:
+            gwp_per_kg = divide(gwp_per_declared_unit, declared_unit)
+        # handle when mass_per_declared_unit exist
+        elif mass_per_declared_unit:
+            gwp_per_kg = divide(gwp_per_declared_unit, mass_per_declared_unit)
 
-    # Per mass
-    if "t" in declared_unit:
-        gwp_per_kg = divide(gwp_per_declared_unit, declared_unit)
-        gwp_per_kg = gwp_per_kg / 1000 # convert to kg
-    elif "kg" in declared_unit:
-        gwp_per_kg = divide(gwp_per_declared_unit, declared_unit)
+    # Per m3
+    if declared_unit and any(x in declared_unit for x in ["m3", "m^3"]):
+        gwp_per_m3 = divide(gwp_per_declared_unit, declared_unit)
+    elif declared_unit and "cf" in declared_unit:
+        gwp_per_m3 = divide(gwp_per_declared_unit, declared_unit) * 35.3147 # convert from cubic feet to m3
+    elif declared_unit and any(x in declared_unit for x in ["m\u00b2","m2", "m^2"]) and thickness_per_declared_unit_avg and "mm" in thickness_per_declared_unit_min:
+        gwp_per_m3 = divide(gwp_per_declared_unit, declared_unit)/(extract_numeric_value(thickness_per_declared_unit_avg)/1000)
+    elif density_avg and gwp_per_kg:
+        gwp_per_m3 = multiply(gwp_per_kg, density_avg)
 
-    # Per volume
-    if gwp_per_kg != None and density_avg != None:
-        gwp_per_m3 = gwp_per_kg * density_avg
+    # Per m2
+    if declared_unit and any(x in declared_unit for x in ["m\u00b2","m2", "m^2"]):
+        gwp_per_m2 = divide(gwp_per_declared_unit, declared_unit)
+    elif declared_unit and "sf" in declared_unit:
+        gwp_per_m2 = divide(gwp_per_declared_unit, declared_unit) * 10.7639 # convert from square feet to m2
+    elif declared_unit and any(x in declared_unit for x in ["m3", "m^3"]) and thickness_per_declared_unit_avg and (("mm" in thickness_per_declared_unit_min) or ("mm" in thickness_per_declared_unit_max)):
+        gwp_per_m2 = divide(gwp_per_declared_unit, declared_unit) * (extract_numeric_value(thickness_per_declared_unit_avg)/1000)
         
     parsed_data["epd_name"] = epd_name
     parsed_data["declared_unit"] = declared_unit
     parsed_data["gwp_per_declared_unit"] = gwp_per_declared_unit
     parsed_data["density_min"] = density_min
     parsed_data["density_max"] = density_max
+    parsed_data["reference_service_life_min"] = servicelife_min
+    parsed_data["reference_service_life_max"] = servicelife_max
+    parsed_data["thickness_per_declared_unit_min"] = thickness_per_declared_unit_min
+    parsed_data["thickness_per_declared_unit_max"] = thickness_per_declared_unit_max
     parsed_data["area"] = area
+    parsed_data['lifetime_avg'] = servicelife_avg
     parsed_data["gwp_per_m3 (kg CO2 eq/m3)"] = gwp_per_m3
     parsed_data["gwp_per_m2 (kg CO2 eq/m2)"] = gwp_per_m2
     parsed_data["gwp_per_kg (kg CO2 eq/kg)"] = gwp_per_kg 
@@ -228,6 +318,13 @@ def parse_industrial_epd(epd: Dict[str, Any]) -> Dict[str, Any]:
     parsed_data["description"] = description
 
     return parsed_data
+
+def lifetime_multiplier(lifetime: int, analysis_period: int) -> int:
+    if analysis_period <= lifetime:
+        multiplier = 1
+    else:
+        multiplier = np.ceil(analysis_period/lifetime) # round up to the nearest integer
+    return multiplier
 
 def extract_numeric_value(value: Any) -> float:
     """
@@ -240,20 +337,16 @@ def extract_numeric_value(value: Any) -> float:
 
 # extract numeric values then divide
 def divide(member: Any, denominator: Any) -> float:
-    try:
         member_value = extract_numeric_value(member)
         denominator_value = extract_numeric_value(denominator)
-        return round(member_value/denominator_value, 2)
-    except ZeroDivisionError:
-        return 0.0
+        return member_value/denominator_value
 
 # extract numeric values then multiply
 def multiply(multiplicand: Any, multiplier: Any) -> float:
-
     multiplicand_value = extract_numeric_value(multiplicand)
     multiplier_value = extract_numeric_value(multiplier)
-    return round(multiplicand_value * multiplier_value, 2)
-
+    return multiplicand_value * multiplier_value
+# when vertex coordinates are provided in openstudio model, this function can calculate area, perimeter, width and length
 def calculate_geometry(self, sub_surface):
     """
     Calculate the length, width, perimeter, and area of the window from its vertices.
@@ -287,11 +380,86 @@ def calculate_geometry(self, sub_surface):
     area = length * width
 
     return {
-        "length": length,
-        "width": width,
-        "perimeter": perimeter,
-        "area": area
+        "length_m": length,
+        "width_m": width,
+        "perimeter_m": perimeter,
+        "area_m2": area
     }
+# handle the case when no epd returned from API request 
+def test_empty_epd(primary, fallback):
+    if primary:
+        return True
+    elif fallback:
+        return False
+    else:
+        return None
+
+def compute_gwp_data(keys, epd_list_by_material, epd_type, gwp_statistic):
+    # keys is a list storing material type, e.g., ["brick", "precast concrete", "insulation", "gypsum board"]
+    # epd_list_by_material is the json repsonse of EPDs belonging to certain material type, this is generated using 'fetch_epd_data' function 
+    # epd_type = "product" or "industrial"
+    gwp_data = {}
+    # map use for retrieving gwp per functional unit from parsed_data, which is generated using 'parse_product_epd' and 'parse_industrial_epd' functions
+    mapping = {
+        "gwp_per_m2": "gwp_per_m2 (kg CO2 eq/m2)",
+        "gwp_per_kg": "gwp_per_kg (kg CO2 eq/kg)",
+        "gwp_per_m3": "gwp_per_m3 (kg CO2 eq/m3)"
+    }
+    for key, epds in zip(keys, epd_list_by_material):
+        # print(key)
+        gwp_data[key] = {
+            "gwp_per_m2": 0.0,
+            "gwp_per_kg": 0.0,
+            "gwp_per_m3": 0.0
+        }
+        gwp_values = {
+            "gwp_per_m2": [],
+            "gwp_per_kg": [],
+            "gwp_per_m3": []
+        }
+
+        for epd in epds:
+            if epd_type == "Industrial":
+                parsed_data = parse_industrial_epd(epd)
+            elif epd_type == "Product":
+                parsed_data = parse_product_epd(epd)
+            else:
+                print(f"Unknown epd_type '{epd_type}' for {key}")
+                continue
+
+            for unit_key, json_key in mapping.items():
+                value = extract_numeric_value(parsed_data.get(json_key))
+                if value is not None:
+                    gwp_values[unit_key].append(float(value))
+        for unit_key, values_list in gwp_values.items():
+            if len(values_list) == 0:
+                print(f"No GWP values for {unit_key} in {key} using {epd_type}")
+            elif len(values_list) == 1:
+                gwp_data[key][unit_key] = values_list[0]
+            elif gwp_statistic == "minimum":
+                gwp_data[key][unit_key] = float(np.min(values_list))
+            elif gwp_statistic == "maximum":
+                gwp_data[key][unit_key] = float(np.max(values_list))
+            elif gwp_statistic == "mean":
+                gwp_data[key][unit_key] = float(np.mean(values_list))
+            elif gwp_statistic == "median":
+                gwp_data[key][unit_key] = float(np.median(values_list))
+            else:
+                print(f"Unsupported gwp_statistic: {gwp_statistic}")
+    
+    return gwp_data
+# used for industrial epds, get average values for density, thickness and etc
+def compute_average(min,max):
+    if min is not None and max is not None:
+        avg = (extract_numeric_value(max) + extract_numeric_value(min)) / 2
+    elif min is not None:
+        avg = extract_numeric_value(min)
+    elif max is not None:
+        avg = extract_numeric_value(max)
+    else:
+        avg = None
+
+    return avg
 
 def main():
     """
@@ -299,23 +467,33 @@ def main():
     """
     print("Fetching EC3 EPD data...")
 
-    for category, list in material_category.items():
-        print(material_category[category])
-        for name in list:
-            print(name)
-            product_url = generate_url(name, endpoint="materials", epd_type="Product")
-            industry_url = generate_url(name, endpoint="industry_epds", epd_type="Industry")
-
-            product_epd_data = fetch_epd_data(product_url,API_TOKEN) 
-            industrial_epd_data = fetch_epd_data(industry_url,API_TOKEN)
-            print(f"Number of  product EPDs for {name}: {len(product_epd_data)}")
-            print(f"Number of  industrial EPDs for {name}: {len(industrial_epd_data)}")
-            for idx, epd in enumerate(product_epd_data, start=1):
+    print("Search EPD based on names:")
+    search_url=generate_url_byname(name_like= "sealant",description_like="acrylic")
+    epd_data = fetch_epd_data(search_url, API_TOKEN)
+    
+    for idx, epd in enumerate(epd_data, start=1):
                 parsed_data = parse_product_epd(epd)
                 print(f"Product EPD #{idx}: {json.dumps(parsed_data, indent=4)}")
-            for idx, epd in enumerate(industrial_epd_data, start=1):
-                parsed_data = parse_industrial_epd(epd)
-                print(f"Industrial EPD #{idx}: {json.dumps(parsed_data, indent=4)}")
+    print(f"Number of  product EPDs: {len(epd_data)}")
+
+    # print("Search EPD based on Masterformat divisons:")
+    # for category, list in material_category.items():
+    #     # print(material_category[category])
+    #     for name in list:
+    #         # print(name)
+    #         product_url = generate_url(name, endpoint="materials", epd_type="Product",insulation_application='Exterior%20Wall')
+    #         industry_url = generate_url(name, endpoint="industry_epds", epd_type="Industry")
+
+    #         product_epd_data = fetch_epd_data(product_url,API_TOKEN) 
+    #         industrial_epd_data = fetch_epd_data(industry_url,API_TOKEN)
+    #         # print(f"Number of  product EPDs for {name}: {len(product_epd_data)}")
+    #         # print(f"Number of  industrial EPDs for {name}: {len(industrial_epd_data)}")
+    #         for idx, epd in enumerate(product_epd_data, start=1):
+    #             parsed_data = parse_product_epd(epd)
+    #             # print(f"Product EPD #{idx}: {json.dumps(parsed_data, indent=4)}")
+    #         for idx, epd in enumerate(industrial_epd_data, start=1):
+    #             parsed_data = parse_industrial_epd(epd)
+    #             # print(f"Industrial EPD #{idx}: {json.dumps(parsed_data, indent=4)}")
 
 if __name__ == "__main__":
     main()

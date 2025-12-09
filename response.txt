@@ -1,0 +1,503 @@
+[
+    {
+        "program_operator_fkey": null,
+        "cqd_sync_unlocked": true,
+        "id": "162728b703434780984666cc5aab7c8c",
+        "uncertainty_adjusted_gwp": "102.3026984 kgCO2e",
+        "declared_unit": "1 item",
+        "verifier": {
+            "name": "Tony Favilla",
+            "email": "afavilla@nsf.org",
+            "org": {
+                "cqd_sync_unlocked": true,
+                "id": "a44683606c014062ac954e094362582e",
+                "is_failed": false,
+                "errors": null,
+                "my_capabilities": null,
+                "updated_on": "2024-07-24T17:00:07.818662Z",
+                "name": "NSF International",
+                "warnings": null,
+                "failures": null
+            }
+        },
+        "category": {
+            "id": "3f7247f51cd6432f98bf01d7038233a3",
+            "declared_unit": "1 unit",
+            "short_name": "Wood Doors",
+            "display_name": "Wood Doors",
+            "updated_on": "2025-10-23T08:49:48.724006Z",
+            "name": "WoodDoors",
+            "description": "Wood doors"
+        },
+        "declaration_type": "Product EPD",
+        "language": "en",
+        "pcr": {
+            "cqd_sync_unlocked": true,
+            "id": "6fcb8c1f104a4c3b88b7c673472265d7",
+            "short_name": "Interior Architectural Wood Door Leaves",
+            "is_failed": false,
+            "errors": null,
+            "my_capabilities": null,
+            "date_validity_ends": "2022-12-31",
+            "updated_on": "2023-01-20T00:31:51.938621Z",
+            "name": "Interior Architectural Wood Door Leaves",
+            "open_xpd_uuid": "ec3c6s70",
+            "warnings": null,
+            "date_of_issue": "2015-03-01",
+            "failures": null,
+            "version": "1"
+        },
+        "box_id": "999043858281",
+        "is_failed": false,
+        "developer": {
+            "name": "Vicki Rybl",
+            "email": "vrybl@sphera.com",
+            "org": {
+                "cqd_sync_unlocked": true,
+                "id": "72d41d92d6d741f68ce626557efcc1c0",
+                "is_failed": false,
+                "errors": null,
+                "my_capabilities": null,
+                "updated_on": "2022-02-02T15:47:47.511452Z",
+                "name": "Sphera",
+                "warnings": null,
+                "failures": null
+            }
+        },
+        "is_downloadable": true,
+        "errors": null,
+        "my_capabilities": 1,
+        "date_validity_ends": "2026-03-08",
+        "original_data_format": "pdf_mixed",
+        "gwp": "82.3 kgCO2e",
+        "updated_on": "2025-01-14T20:39:23.889068Z",
+        "matched_plants_count": 0,
+        "name": "Architectural Wood Door Leaf",
+        "manufacturer": {
+            "cqd_sync_unlocked": true,
+            "id": "e6ee933a23534bec8370f7f7ee93b73d",
+            "is_failed": false,
+            "errors": null,
+            "my_capabilities": null,
+            "updated_on": "2023-05-16T13:26:11.539662Z",
+            "name": "VT Industries",
+            "warnings": null,
+            "failures": null
+        },
+        "open_xpd_uuid": "ec3dj2ew",
+        "warnings": {
+            "impacts": [
+                "PCR's required LCIA Method not found in the document",
+                "EP-FRESH impact not specified",
+                "EP-TERRESTRIAL impact not specified"
+            ]
+        },
+        "plant_geography": [
+            "US"
+        ],
+        "date_of_issue": "2021-03-08",
+        "corrections_count": 0,
+        "description": "VT Architectural Wood Door leaves are intended for interior commercial applications: healthcare, hospitality, multi- family,\neducation, and government. Wood door leaves are predominantly composed of engineered wood core; however, core\nmaterials can vary depending on the desired application. Also, surface applications of veneer, laminate, and finishes vary\ndepending on the desired aesthetics.",
+        "plant_or_group": {
+            "cqd_sync_unlocked": true,
+            "id": "f5d6f32d97834497a753e97d4eff1438",
+            "is_failed": false,
+            "errors": {},
+            "my_capabilities": null,
+            "updated_on": "2024-08-13T13:57:54.808593Z",
+            "name": "VT Industries Default for NSF International",
+            "warnings": null,
+            "failures": {},
+            "type": "PlantGroup"
+        },
+        "short_link": "buildingtransparency.org/e/ec3dj2ewza",
+        "failures": null,
+        "program_operator": {
+            "cqd_sync_unlocked": true,
+            "id": "a44683606c014062ac954e094362582e",
+            "is_failed": false,
+            "errors": null,
+            "my_capabilities": null,
+            "updated_on": "2024-07-24T17:00:07.818662Z",
+            "name": "NSF International",
+            "warnings": null,
+            "failures": null
+        }
+    },
+    {
+        "program_operator_fkey": "EPD10536",
+        "cqd_sync_unlocked": true,
+        "id": "370f54fdc7a04bbd9f6b3fb970d72097",
+        "uncertainty_adjusted_gwp": "102.3026984 kgCO2e",
+        "declared_unit": "1 item",
+        "verifier": {
+            "name": "Jack Geibig",
+            "email": "jgeibig@ecoform.com",
+            "org": {
+                "cqd_sync_unlocked": true,
+                "id": "5e03a97e4f8446ffb04a465e1d82c041",
+                "is_failed": false,
+                "errors": null,
+                "my_capabilities": null,
+                "updated_on": "2021-04-21T03:04:58.033587Z",
+                "name": "EcoForm",
+                "warnings": null,
+                "failures": null
+            }
+        },
+        "category": {
+            "id": "3f7247f51cd6432f98bf01d7038233a3",
+            "declared_unit": "1 unit",
+            "short_name": "Wood Doors",
+            "display_name": "Wood Doors",
+            "updated_on": "2025-10-23T08:49:48.724006Z",
+            "name": "WoodDoors",
+            "description": "Wood doors"
+        },
+        "declaration_type": "Product EPD",
+        "language": "en",
+        "pcr": {
+            "cqd_sync_unlocked": true,
+            "id": "6fcb8c1f104a4c3b88b7c673472265d7",
+            "short_name": "Interior Architectural Wood Door Leaves",
+            "is_failed": false,
+            "errors": null,
+            "my_capabilities": null,
+            "date_validity_ends": "2022-12-31",
+            "updated_on": "2023-01-20T00:31:51.938621Z",
+            "name": "Interior Architectural Wood Door Leaves",
+            "open_xpd_uuid": "ec3c6s70",
+            "warnings": null,
+            "date_of_issue": "2015-03-01",
+            "failures": null,
+            "version": "1"
+        },
+        "box_id": "937220987303",
+        "is_failed": false,
+        "developer": {
+            "name": "Vicki Rybl",
+            "email": "vrybl@sphera.com",
+            "org": {
+                "cqd_sync_unlocked": true,
+                "id": "72d41d92d6d741f68ce626557efcc1c0",
+                "is_failed": false,
+                "errors": null,
+                "my_capabilities": null,
+                "updated_on": "2022-02-02T15:47:47.511452Z",
+                "name": "Sphera",
+                "warnings": null,
+                "failures": null
+            }
+        },
+        "is_downloadable": true,
+        "errors": null,
+        "my_capabilities": 1,
+        "date_validity_ends": "2020-03-27",
+        "original_data_format": "pdf",
+        "gwp": "82.3 kgCO2e",
+        "updated_on": "2025-01-14T20:04:46.559284Z",
+        "matched_plants_count": 0,
+        "name": "ARCHITECTURAL WOOD DOOR LEAF",
+        "manufacturer": {
+            "cqd_sync_unlocked": true,
+            "id": "e6ee933a23534bec8370f7f7ee93b73d",
+            "is_failed": false,
+            "errors": null,
+            "my_capabilities": null,
+            "updated_on": "2023-05-16T13:26:11.539662Z",
+            "name": "VT Industries",
+            "warnings": null,
+            "failures": null
+        },
+        "open_xpd_uuid": "ec3q204z",
+        "warnings": {
+            "impacts": [
+                "PCR's required LCIA Method not found in the document",
+                "EP-FRESH impact not specified",
+                "EP-TERRESTRIAL impact not specified"
+            ],
+            "density": [
+                "Not specified"
+            ]
+        },
+        "plant_geography": [
+            "US"
+        ],
+        "date_of_issue": "2015-03-27",
+        "corrections_count": 0,
+        "description": "VT Architectural Wood Door leaves are intended for interior commercial applications: healthcare, hospitality, multi- family,\neducation, and government. Wood door leaves are predominantly composed of engineered wood core; however, core\nmaterials can vary depending on the desired application. Also, surface applications of veneer, laminate, and finishes vary\ndepending on the desired aesthetics.",
+        "plant_or_group": {
+            "cqd_sync_unlocked": true,
+            "id": "f5d6f32d97834497a753e97d4eff1438",
+            "is_failed": false,
+            "errors": {},
+            "my_capabilities": null,
+            "updated_on": "2024-08-13T13:57:54.808593Z",
+            "name": "VT Industries Default for NSF International",
+            "warnings": null,
+            "failures": {},
+            "type": "PlantGroup"
+        },
+        "short_link": "buildingtransparency.org/e/ec3q204z5n",
+        "failures": null,
+        "program_operator": {
+            "cqd_sync_unlocked": true,
+            "id": "a44683606c014062ac954e094362582e",
+            "is_failed": false,
+            "errors": null,
+            "my_capabilities": null,
+            "updated_on": "2024-07-24T17:00:07.818662Z",
+            "name": "NSF International",
+            "warnings": null,
+            "failures": null
+        }
+    },
+    {
+        "program_operator_fkey": "SCS-EPD-04154",
+        "cqd_sync_unlocked": true,
+        "id": "3ab3dbaae11346f49177279a260e3785",
+        "uncertainty_adjusted_gwp": "101.9297846 kgCO2e",
+        "declared_unit": "1 unit",
+        "verifier": {
+            "name": "Thomas Gloria",
+            "email": "t.gloria@industrial-ecology.com",
+            "org": {
+                "cqd_sync_unlocked": true,
+                "id": "e4b1aa444bc74715a09d083b8b926d95",
+                "is_failed": false,
+                "errors": null,
+                "my_capabilities": null,
+                "updated_on": "2021-04-20T03:01:07.510551Z",
+                "name": "Industrial Ecology Consultants",
+                "warnings": null,
+                "failures": null
+            }
+        },
+        "category": {
+            "id": "3f7247f51cd6432f98bf01d7038233a3",
+            "declared_unit": "1 unit",
+            "short_name": "Wood Doors",
+            "display_name": "Wood Doors",
+            "updated_on": "2025-10-23T08:49:48.724006Z",
+            "name": "WoodDoors",
+            "description": "Wood doors"
+        },
+        "declaration_type": "Product EPD",
+        "language": "en",
+        "pcr": {
+            "cqd_sync_unlocked": true,
+            "id": "6fcb8c1f104a4c3b88b7c673472265d7",
+            "short_name": "Interior Architectural Wood Door Leaves",
+            "is_failed": false,
+            "errors": null,
+            "my_capabilities": null,
+            "date_validity_ends": "2022-12-31",
+            "updated_on": "2023-01-20T00:31:51.938621Z",
+            "name": "Interior Architectural Wood Door Leaves",
+            "open_xpd_uuid": "ec3c6s70",
+            "warnings": null,
+            "date_of_issue": "2015-03-01",
+            "failures": null,
+            "version": "1"
+        },
+        "box_id": "869960762802",
+        "is_failed": false,
+        "developer": null,
+        "is_downloadable": true,
+        "errors": null,
+        "my_capabilities": 1,
+        "date_validity_ends": "2021-09-12",
+        "original_data_format": "pdf",
+        "gwp": "82 kgCO2e",
+        "updated_on": "2025-01-14T19:06:47.257586Z",
+        "matched_plants_count": 0,
+        "name": "Production-weighted average wood door leaf",
+        "manufacturer": {
+            "cqd_sync_unlocked": true,
+            "id": "a2b2c7ba34c3496fa4f7415fa474390b",
+            "is_failed": false,
+            "errors": null,
+            "my_capabilities": null,
+            "updated_on": "2023-05-16T12:57:20.175534Z",
+            "name": "Masonite Architectural",
+            "warnings": null,
+            "failures": null
+        },
+        "open_xpd_uuid": "ec3angqa",
+        "warnings": {
+            "developer_org": [
+                "Missing link"
+            ],
+            "developer": [
+                "Missing link"
+            ],
+            "impacts": [
+                "PCR's required LCIA Method not found in the document",
+                "ODP impact not specified",
+                "EP-FRESH impact not specified",
+                "EP-TERRESTRIAL impact not specified"
+            ]
+        },
+        "plant_geography": [
+            "CA-ON",
+            "US-FL",
+            "US-WI",
+            "US-TN",
+            "US-PA",
+            "CA-QC"
+        ],
+        "date_of_issue": "2016-09-13",
+        "corrections_count": 0,
+        "description": "The Masonite Architectural Flush doors and Stile & Rail doors",
+        "plant_or_group": {
+            "cqd_sync_unlocked": true,
+            "id": "98d421a5e9414a7f858d6f28695ea56d",
+            "is_failed": false,
+            "errors": null,
+            "my_capabilities": null,
+            "updated_on": "2021-07-19T23:23:27.137234Z",
+            "name": "Masonite Architectural Plants",
+            "warnings": null,
+            "failures": null,
+            "type": "PlantGroup"
+        },
+        "short_link": "buildingtransparency.org/e/ec3angqab3",
+        "failures": null,
+        "program_operator": {
+            "cqd_sync_unlocked": true,
+            "id": "58769e2d26d84d8f99bd07fda78bf79b",
+            "is_failed": false,
+            "errors": null,
+            "my_capabilities": null,
+            "updated_on": "2024-07-24T17:01:16.978616Z",
+            "name": "SCS Global Services",
+            "warnings": null,
+            "failures": null
+        }
+    },
+    {
+        "program_operator_fkey": "SCS-EPD-04154",
+        "cqd_sync_unlocked": true,
+        "id": "7a74bae25a78431ebd90477a333ce9e2",
+        "uncertainty_adjusted_gwp": "106.2424863 kgCO2e",
+        "declared_unit": "1 unit",
+        "verifier": {
+            "name": "Thomas Gloria",
+            "email": "t.gloria@industrial-ecology.com",
+            "org": {
+                "cqd_sync_unlocked": true,
+                "id": "e4b1aa444bc74715a09d083b8b926d95",
+                "is_failed": false,
+                "errors": null,
+                "my_capabilities": null,
+                "updated_on": "2021-04-20T03:01:07.510551Z",
+                "name": "Industrial Ecology Consultants",
+                "warnings": null,
+                "failures": null
+            }
+        },
+        "category": {
+            "id": "3f7247f51cd6432f98bf01d7038233a3",
+            "declared_unit": "1 unit",
+            "short_name": "Wood Doors",
+            "display_name": "Wood Doors",
+            "updated_on": "2025-10-23T08:49:48.724006Z",
+            "name": "WoodDoors",
+            "description": "Wood doors"
+        },
+        "declaration_type": "Product EPD",
+        "language": "en",
+        "pcr": {
+            "cqd_sync_unlocked": true,
+            "id": "6fcb8c1f104a4c3b88b7c673472265d7",
+            "short_name": "Interior Architectural Wood Door Leaves",
+            "is_failed": false,
+            "errors": null,
+            "my_capabilities": null,
+            "date_validity_ends": "2022-12-31",
+            "updated_on": "2023-01-20T00:31:51.938621Z",
+            "name": "Interior Architectural Wood Door Leaves",
+            "open_xpd_uuid": "ec3c6s70",
+            "warnings": null,
+            "date_of_issue": "2015-03-01",
+            "failures": null,
+            "version": "1"
+        },
+        "box_id": "522472303944",
+        "is_failed": false,
+        "developer": null,
+        "is_downloadable": true,
+        "errors": null,
+        "my_capabilities": 1,
+        "date_validity_ends": "2021-09-12",
+        "original_data_format": "pdf",
+        "gwp": "82 kgCO2e",
+        "updated_on": "2025-01-14T02:20:50.748398Z",
+        "matched_plants_count": 0,
+        "name": "Weighted Average Wood Door Leaf",
+        "manufacturer": {
+            "cqd_sync_unlocked": true,
+            "id": "a2b2c7ba34c3496fa4f7415fa474390b",
+            "is_failed": false,
+            "errors": null,
+            "my_capabilities": null,
+            "updated_on": "2023-05-16T12:57:20.175534Z",
+            "name": "Masonite Architectural",
+            "warnings": null,
+            "failures": null
+        },
+        "open_xpd_uuid": "ec3grawy",
+        "warnings": {
+            "developer_org": [
+                "Missing link"
+            ],
+            "developer": [
+                "Missing link"
+            ],
+            "impacts": [
+                "PCR's required LCIA Method not found in the document",
+                "EP-FRESH impact not specified",
+                "EP-TERRESTRIAL impact not specified"
+            ],
+            "density": [
+                "Not specified"
+            ]
+        },
+        "plant_geography": [
+            "CA-ON",
+            "US-FL",
+            "US-WI",
+            "US-TN",
+            "US-PA",
+            "CA-QC"
+        ],
+        "date_of_issue": "2016-09-13",
+        "corrections_count": 0,
+        "description": "Production-weighted average wood door leaf, manufactured by Masonite Architectural",
+        "plant_or_group": {
+            "cqd_sync_unlocked": true,
+            "id": "98d421a5e9414a7f858d6f28695ea56d",
+            "is_failed": false,
+            "errors": null,
+            "my_capabilities": null,
+            "updated_on": "2021-07-19T23:23:27.137234Z",
+            "name": "Masonite Architectural Plants",
+            "warnings": null,
+            "failures": null,
+            "type": "PlantGroup"
+        },
+        "short_link": "buildingtransparency.org/e/ec3grawykq",
+        "failures": null,
+        "program_operator": {
+            "cqd_sync_unlocked": true,
+            "id": "58769e2d26d84d8f99bd07fda78bf79b",
+            "is_failed": false,
+            "errors": null,
+            "my_capabilities": null,
+            "updated_on": "2024-07-24T17:01:16.978616Z",
+            "name": "SCS Global Services",
+            "warnings": null,
+            "failures": null
+        }
+    }
+]

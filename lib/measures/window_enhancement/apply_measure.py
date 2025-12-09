@@ -18,7 +18,7 @@ config.read(config_path)
 API_TOKEN= config["EC3_API_TOKEN"]["API_TOKEN"]
 
 CURRENT_DIR_PATH = Path(__file__).parent.absolute()
-model_path = Path(CURRENT_DIR_PATH / "tests/example_model.osm")
+model_path = Path(CURRENT_DIR_PATH / "tests/new_example_model.osm")
 
 translator = openstudio.osversion.VersionTranslator()
 model = translator.loadModel(openstudio.toPath(str(model_path))).get()
@@ -37,15 +37,17 @@ def set_arg(name, value):
     arg_map[name] = arg
 
 set_arg("analysis_period", 30)
-set_arg("igu_option", "low_emissivity")
-set_arg("igu_lifetime", 15)
 set_arg("wf_lifetime", 15)
-set_arg("wf_option", "anodized")
-set_arg("frame_cross_section_area", 0.025)
+set_arg("wf_option", "wood window frame")
+set_arg("caulking_option","acrylic")
+set_arg("film_option","solar control film")
+set_arg("weatherstrip_option","silicone adhesive smoke gasket")
+set_arg("glass_option","provide user_num_panes")
+set_arg('user_num_panes', 1)
+set_arg("window_option","none")
 set_arg("gwp_statistic", "median")
-set_arg("total_embodied_carbon", 0.0)
+set_arg("secondary_glazing_option", "install secondary glazing")
 set_arg("api_key", API_TOKEN)
-set_arg("epd_type","Product")
 
 # Run the measure
 result = measure.run(model, runner, arg_map)
@@ -60,7 +62,7 @@ for error in runner.result().errors():
     print("ERROR:", error.logMessage())
 
 # Save the modified model
-save_path = Path(CURRENT_DIR_PATH/"tests/output/example_model_with_enhancements.osm")
+save_path = Path(CURRENT_DIR_PATH/"tests/output/new_example_model_with_AdditionalProperties.osm")
 model.save(openstudio.toPath(str(save_path)), True)
 
 del model

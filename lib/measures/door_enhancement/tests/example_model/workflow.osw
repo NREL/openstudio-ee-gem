@@ -1,0 +1,13 @@
+{
+   "seed_file" : "../example_model.osm",
+   "steps" : 
+   [
+      {
+         "arguments" : {},
+         "measure_dir_name" : "window_enhancement",
+         "name" : "Window Enhancement"
+      }
+   ],
+   "updated_at" : "20251114T213811Z",
+   "weather_file" : "srrl_2013_amy.epw"
+}

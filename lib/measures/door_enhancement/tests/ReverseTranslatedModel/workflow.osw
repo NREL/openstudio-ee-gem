@@ -1,0 +1,7 @@
+{
+   "created_at" : "20251114T224724Z",
+   "seed_file" : "../ReverseTranslatedModel.osm",
+   "steps" : [],
+   "updated_at" : "20251114T224750Z",
+   "weather_file" : "srrl_2013_amy.epw"
+}
