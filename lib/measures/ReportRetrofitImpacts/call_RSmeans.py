@@ -9,6 +9,7 @@ import openpyxl
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
+
 class RSMeansAPIClient:
     """
     Client for interacting with the RSMeans Sandbox API.
