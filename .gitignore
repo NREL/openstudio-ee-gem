@@ -48,6 +48,7 @@ venv/
 .venv/
 env/
 .env/
+lib/measures/ReportRetrofitImpacts/venv
 
 # Act secrets file
 .secrets
