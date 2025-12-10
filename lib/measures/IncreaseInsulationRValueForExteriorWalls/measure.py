@@ -8,6 +8,7 @@ import numpy as np
 from resources.EC3_lookup import *
 import pandas as pd
 import pprint as pp
+import re
 
 class IncreaseInsulationRValueForExteriorWalls(openstudio.measure.ModelMeasure):
     def name(self):
@@ -435,8 +436,8 @@ class IncreaseInsulationRValueForExteriorWalls(openstudio.measure.ModelMeasure):
                 "insulation_material_type": insulation_material_type,
                 "insulation_material_lifetime_years": insulation_material_lifetime,
                 "insulation_material_density_kg_per_m3": insulation_material_density,
+                "insulation_material_thermal_conductivity_W_per_mK": selected_k,
                 "construction_name": item["construction"].nameString(),
-                "added_total_volume_m3": item["added_thickness_m"] * item["total_area_m2"],
                 "added_total_volume_m3": item["added_thickness_m"] * item["total_area_m2"],
                 "added_total_area_m2": total_area_m2,
                 "added_thickness_m": added_thickness_m,
@@ -454,13 +455,18 @@ class IncreaseInsulationRValueForExteriorWalls(openstudio.measure.ModelMeasure):
             total_gwp = gwp_summary[idx]["total_gwp_kg_co2_eq"]
 
             props = construction.additionalProperties()
-            props.setFeature("embodied_carbon_kgCO2eq", total_gwp)
-            props.setFeature("modified_material", insulation_material_type)
+            props.setFeature("construction_name", construction.nameString())
+            props.setFeature("analysis_period_years", analysis_period)
+            props.setFeature("original_insulation_r-value_ip", openstudio.convert(max_r, "m^2*K/W", "ft^2*h*R/Btu").get())
+            props.setFeature("target_insulation_r-value_ip", r_value_ip)
+            props.setFeature("total_embodied_carbon_kgCO2eq", total_gwp) # total embodied carbon for adding insulation layer to all the exterior walls with this construction
+            props.setFeature("insutlation_material_type", insulation_material_type)
             props.setFeature("total_volume_m3", added_thickness_m * total_area_m2)
-            props.setFeature("total_area_m2", total_area_m2)
-            props.setFeature("added_thickness_m", added_thickness_m)
-            props.setFeature("added_total_mass_kg", insulation_material_density * added_thickness_m * total_area_m2)
+            props.setFeature("renovated_exterior_wall_area_m2", total_area_m2)
+            props.setFeature("added_insulation_layer_thickness_m", added_thickness_m)
+            props.setFeature("added_insulation_layer_mass_kg", insulation_material_density * added_thickness_m * total_area_m2)
             props.setFeature("insulation_material_density_kg_per_m3", insulation_material_density)
+            props.setFeature("insulation_material_thermal_conductivity_W_per_mK", selected_k)
             props.setFeature("insulation_material_lifetime_years", insulation_material_lifetime)
             props.setFeature("insulation_material_gwp_per_kg", item["gwp_per_kg"])
             props.setFeature("insulation_material_gwp_per_m2", item["gwp_per_m2"])

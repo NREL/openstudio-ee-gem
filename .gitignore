@@ -38,8 +38,6 @@ lib/measures/window_enhancement/tests/.pytest_cache
 lib/measures/window_enhancement/tests/example_model/run
 **/__pycache__/
 config.ini
-<<<<<<< HEAD
-=======
 
 # Ignore Python virtual environments
 venv/
@@ -47,4 +45,6 @@ venv/
 env/
 .env/
 config.env
->>>>>>> report_retrofit_impacts
+
+# Ignore OSW workflow files with API keys
+lib/measures/workflow_with_reporting.osw

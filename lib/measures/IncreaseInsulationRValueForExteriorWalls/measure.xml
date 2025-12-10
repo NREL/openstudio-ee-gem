@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <measure>
+  <uid>a1b2c3d4-e5f6-7890-abcd-ef1234567890</uid>
+  <version_id>b2c3d4e5-f6a7-8901-bcde-f12345678901</version_id>
   <name>Increase R-value of Insulation for Exterior Walls to a Specific Value</name>
   <description>This measure adjusts the R-value of the insulation layer in all exterior wall constructions to a specified target value.</description>
   <modeler_description>

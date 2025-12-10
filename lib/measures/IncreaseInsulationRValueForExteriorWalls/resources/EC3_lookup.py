@@ -332,7 +332,8 @@ def extract_numeric_value(value: Any) -> float:
     :param value: Value to process
     :return: Extracted numeric value
     """
-    match = re.search(r"[-+]?\d*\.?\d+", str(value))
+    # Extract numbers only; ignore leading '+' or '-' signs
+    match = re.search(r"\d*\.?\d+", str(value))
     return float(match.group()) if match else 0.0
 
 # extract numeric values then divide
