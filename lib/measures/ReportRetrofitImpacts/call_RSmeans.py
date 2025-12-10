@@ -271,6 +271,7 @@ def main():
     load_dotenv()
     client_id = os.getenv('client_id')
     client_secret = os.getenv('client_secret')
+    print(f"client_id: {client_id}, client_secret: {client_secret}")  # For debugging only, remove after checking!
 
     # Initialize client with credentials
     client = RSMeansAPIClient(client_id, client_secret, use_sandbox=True)  # Set to False for production
@@ -333,9 +334,11 @@ def main():
         with open("API_responses/search_results.json", "w") as f:
             json.dump(unitcostline, f, indent=2)
 
+
     # EXAMPLE: Get unit cost line of a product from a catalog
     print("\n=== Retrieve the all of the unit cost information for a product in a catalog."
           " Return API_responses/unit_cost_line.json")
+
     unitcostline = client.get_unit_costlines(
         release_id = '2019-an',
         catalog = 'bc-mf',
@@ -345,25 +348,28 @@ def main():
         divisionCode= '033053403920'
     )
     if unitcostline:
-        #print(json.dumps(unitcostlines, indent=2)[:500]) )# print first 500 char
-        # Save the JSON response to a file
-        print ("saved under API_responses/unit_cost_line.json")
-        with open("API_responses/unit_cost_line.json", "w") as f:
-            json.dump(unitcostline, f, indent=2)
+        # Find the item with the target id
+        target_id = "033053403920"
+        total_op_cost = None
+        item_description = None
+        for item in unitcostline.get("items", []):
+            if item.get("id") == target_id:
+                total_op_cost = item.get("localizedCosts", {}).get("totalOpCost")
+                item_description = item.get("description")
+                break
 
-        #Extract totalOpCost and save to excel workbook
-        total_op_cost =unitcostline.get("items", []).get("localizedCosts", {}).get("totalOpCost")
-        item_description = unitcostline.get("items",[]).get("description")
-        item_id = unitcostline.get("items", []).get("id")
-        #load excel workbook
-        excel_path = "resources/optimization_updated.xlsx"
-        wb = openpyxl.load_workbook(excel_path)
-        ws = wb.active
-        ws["B4"] = total_op_cost
-        wb.save(excel_path)
-        print(f"totalOpCost for {item_description} written to {excel_path} cell B4")
+        if total_op_cost is not None:
+            # Load excel workbook and write to B4
+            excel_path = "resources/optimization_updated.xlsx"
+            wb = openpyxl.load_workbook(excel_path)
+            ws = wb.active
+            ws["B4"] = total_op_cost
+            wb.save(excel_path)
+            print(f"totalOpCost for {item_description} written to {excel_path} cell B4")
+        else:
+            print(f"Item with id {target_id} not found or totalOpCost missing.")
     else:
-        print (f" item {item_description} with id number {item_id} not found or totalOpCost missing.")
+        print (f" item {item_description} with id number {target_id_id} not found or totalOpCost missing.")
 
 
 
