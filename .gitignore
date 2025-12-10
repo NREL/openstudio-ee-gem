@@ -42,13 +42,15 @@ lib/measures/window_enhancement/tests/.pytest_cache
 lib/measures/window_enhancement/tests/example_model/run
 **/__pycache__/
 config.ini
+config.env
 
-# Python virtual environments
+# Environment variables (contains secrets)
 venv/
 .venv/
 env/
 .env/
-config.env
+lib/measures/ReportRetrofitImpacts/venv
+
 # Act secrets file
 .secrets
 
