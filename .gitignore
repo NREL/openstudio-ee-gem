@@ -18,6 +18,7 @@
 
 .rubocop*s3*
 
+
 # rspec failure tracking
 .rspec_status
 
