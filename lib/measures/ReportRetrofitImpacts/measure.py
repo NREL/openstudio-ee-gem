@@ -120,22 +120,6 @@ class ECReport(openstudio.measure.ReportingMeasure):
         else:
             print("No cost found for the given code.")
         return
-    def fetch_rsmeans_results (request):
-        headers = {
-        'grant_type': 'client_credentials',
-        'client_id': 'rsm-api-nrel',
-        'client_secret': '',
-        'scope': 'rsm_api:costdata'
-        }
-
-        base_url = ""
-        calculation_endpoint = base_url + ""
-
-        response = requests.post(calculation_endpoint,
-                                 headers=headers,
-                                 json=request,
-                                 verify=False).json
-        return response
 
 
     def run(self, runner, model):

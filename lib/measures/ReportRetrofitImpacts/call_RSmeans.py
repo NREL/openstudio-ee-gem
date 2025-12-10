@@ -332,7 +332,7 @@ def main():
         # Save the JSON response to a file
         print ("saved as search_results.json")
         with open("API_responses/search_results.json", "w") as f:
-            json.dump(unitcostline, f, indent=2)
+            json.dump(search_for_unit, f, indent=2)
 
 
     # EXAMPLE: Get unit cost line of a product from a catalog
