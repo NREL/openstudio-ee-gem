@@ -290,7 +290,7 @@ def main():
         print("\n=== Cost Data Releases available in API_responses folder @ releases.json ===")
         releases = client.get_cost_data_releases()
         if releases:
-            with open("API_responses/release_versions.json", "w") as f:
+            with open("release_versions.json", "w") as f:
                 json.dumps(releases, f, indent=2)
 
 
@@ -299,7 +299,7 @@ def main():
         print("\n=== Locations ===")
         locations = client.get_locations()
         if locations:
-            with open("API_responses/locations.json", "w") as f:
+            with open("locations.json", "w") as f:
                 json.dumps(locations, f, indent=2)
 
 
@@ -316,7 +316,7 @@ def main():
         if catalogs:
             #print(json.dumps(catalogs, indent=2)[:500])# print first 500 char
             print ("saved as API_responses/catalogs.json")
-            with open("API_responses/catalogs.json", "w") as f:
+            with open("catalogs.json", "w") as f:
                 json.dump(catalogs, f, indent=2)
 
 
@@ -331,7 +331,7 @@ def main():
     if search_for_unit:
         # Save the JSON response to a file
         print ("saved as search_results.json")
-        with open("API_responses/search_results.json", "w") as f:
+        with open("search_results.json", "w") as f:
             json.dump(search_for_unit, f, indent=2)
 
 
