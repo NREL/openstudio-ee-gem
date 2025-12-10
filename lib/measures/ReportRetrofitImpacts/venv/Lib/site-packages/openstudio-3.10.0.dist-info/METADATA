@@ -1,0 +1,38 @@
+Metadata-Version: 2.1
+Name: openstudio
+Version: 3.10.0
+Summary: OpenStudio python bindings.
+Home-page: https://github.com/NREL/OpenStudio
+Author: Alliance for Sustainable Energy, LLC, and other contributors
+Author-email: openstudio@nrel.gov
+Maintainer: Julien Marrec
+Maintainer-email: contact@effibem.com
+License: BSD3
+Project-URL: Bug Tracker, https://github.com/NREL/OpenStudio/issues
+Project-URL: Documentation, https://openstudio.net/
+Project-URL: Source Code, https://github.com/NREL/OpenStudio
+Keywords: openstudio py3 setuptools development
+Platform: any
+Classifier: Development Status :: 4 - Beta
+Classifier: Environment :: Console
+Classifier: Intended Audience :: Science/Research
+Classifier: Topic :: Scientific/Engineering
+Classifier: License :: OSI Approved :: BSD License
+Classifier: Programming Language :: Python
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3.7
+Classifier: Programming Language :: Python :: 3.8
+Classifier: Programming Language :: Python :: 3.9
+Requires-Python: >=3.7.1
+Description-Content-Type: text/markdown
+
+OpenStudio
+==========
+
+OpenStudio is a cross-platform (Windows, Mac, and Linux) collection of software tools to support whole building energy modeling using [EnergyPlus](https://github.com/NREL/EnergyPlus) and advanced daylight analysis using [Radiance](https://github.com/NREL/Radiance/).  OpenStudio is an open source project to facilitate community development, extension, and private sector adoption.
+
+The OpenStudio SDK allows building researchers and software developers to quickly get started through its multiple entry levels, including access through C++, Ruby, Python, and C#.
+
+More information and documentation is available at the [OpenStudio website](https://www.openstudio.net/). User support is available via the community moderated question and answer resource [unmethours.com](https://unmethours.com/questions/).
+
+

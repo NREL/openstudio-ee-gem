@@ -124,7 +124,7 @@ class ECReport(openstudio.measure.ReportingMeasure):
         headers = {
         'grant_type': 'client_credentials',
         'client_id': 'rsm-api-nrel',
-        'client_secret': '8b3bb692-569e-4a69-919c-2e2e1247326a',
+        'client_secret': '',
         'scope': 'rsm_api:costdata'
         }
 
