@@ -1,0 +1,104 @@
+{
+  "offset": 0,
+  "limit": 25,
+  "recordCount": 1,
+  "items": [
+    {
+      "id": "033053403920",
+      "lineNumber": "033053403920",
+      "release": {
+        "id": "2019-an",
+        "href": "http://dataapi-sb.gordian.com/v1/costdata/Releases/2019-an"
+      },
+      "catalog": {
+        "id": "bc-mf-imp-std-2019-an-us-co-denver",
+        "href": "http://dataapi-sb.gordian.com/v1/costdata/unit/Catalogs/bc-mf-imp-std-2019-an-us-co-denver"
+      },
+      "costDataFormat": "mf",
+      "measurementSystem": "imp",
+      "laborType": "std",
+      "hierarchies": [
+        {
+          "id": "03",
+          "level": 1,
+          "divisionCode": "03",
+          "description": "Concrete"
+        },
+        {
+          "id": "0330",
+          "level": 2,
+          "divisionCode": "0330",
+          "description": "Cast-In-Place Concrete"
+        },
+        {
+          "id": "033053",
+          "level": 3,
+          "divisionCode": "033053",
+          "description": "Miscellaneous Cast-In-Place Concrete"
+        },
+        {
+          "id": "03305340",
+          "level": 4,
+          "divisionCode": "03305340",
+          "description": "Concrete In Place"
+        }
+      ],
+      "shortDescription": "18\" x 9\", reinforced",
+      "description": "Structural concrete, in place, continuous strip footing (3000 psi), 18\" wide x 9\" deep, reinforced, includes forms(4 uses), Grade 60 rebar, concrete (Portland cement Type I), placing and finishing",
+      "unitOfMeasure": "C.Y.",
+      "crew": {
+        "crewId": -469,
+        "crewCode": "C14C",
+        "crewDescription": "C14C",
+        "crewQuantity": 7.0,
+        "crewDailyOutput": 35.0,
+        "crewLaborHours": 706.58711
+      },
+      "isDemo": false,
+      "costLineType": "install",
+      "baseCosts": {
+        "exceptionalCost": 0.0,
+        "exceptionalOpCost": 0.0,
+        "materialCost": 1123.8,
+        "materialOpCost": 1236.18,
+        "laborCost": 255.8,
+        "laborOpCost": 281.38,
+        "equipmentCost": 2475.1,
+        "equipmentOpCost": 2722.61,
+        "totalCost": 3854.7,
+        "totalOpCost": 4240.17
+      },
+      "location": {
+        "id": "us-co-denver",
+        "href": "http://dataapi-sb.gordian.com/v1/costdata/Locations/us-co-denver"
+      },
+      "costFactors": {
+        "costFactorKey": "033",
+        "materialCostFactor": 7.477,
+        "equipmentCostFactor": 0.859,
+        "installationCostFactor": 2.426,
+        "totalCostFactor": 4.29
+      },
+      "localizedCosts": {
+        "exceptionalCost": 0.0,
+        "exceptionalOpCost": 0.0,
+        "materialCost": 8402.65,
+        "materialOpCost": 9242.92,
+        "laborCost": 620.57,
+        "laborOpCost": 682.63,
+        "equipmentCost": 2126.11,
+        "equipmentOpCost": 2338.72,
+        "totalCost": 11149.33,
+        "totalOpCost": 12264.27
+      },
+      "modifiers": {
+        "recordCount": 0
+      },
+      "breakpoints": {
+        "recordCount": 0
+      },
+      "href": "http://dataapi-sb.gordian.com/v1/costdata/unit/catalogs/bc-mf-imp-std-2019-an-us-co-denver/CostLines/033053403920"
+    }
+  ],
+  "pageNavigation": {}
+}
