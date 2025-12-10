@@ -43,7 +43,10 @@ lib/measures/window_enhancement/tests/example_model/run
 config.ini
 
 # Environment variables (contains secrets)
-.env
+venv/
+.venv/
+env/
+.env/
 
 # Act secrets file
 .secrets
