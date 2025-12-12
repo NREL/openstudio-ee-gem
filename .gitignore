@@ -42,7 +42,7 @@ lib/measures/window_enhancement/tests/.pytest_cache
 lib/measures/window_enhancement/tests/example_model/run
 **/__pycache__/
 config.ini
-config.env
+
 
 # Environment variables (contains secrets)
 venv/
