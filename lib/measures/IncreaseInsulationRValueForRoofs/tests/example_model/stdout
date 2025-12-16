@@ -1,11 +1,16 @@
 [openstudio.CLI] <-2> Setting Log Level to Debug (-2)
+<<<<<<< HEAD:lib/measures/IncreaseInsulationRValueForRoofs/tests/example_model/stdout
 [openstudio.workflow.OSWorkflow] <Debug> Removing existing run directory: C:/Users/jhu1/AppData/Local/Temp/1/osmodel-df12-5383-4ecb-1954-1763055544-0/resources/run
+=======
+[openstudio.workflow.OSWorkflow] <Debug> Removing existing run directory: C:/Users/pshrest2/AppData/Local/Temp/1/osmodel-d831-dc3b-ad2a-23a1-1749837197-0/resources/run
+>>>>>>> d7161babc79c7a621e6d4d4bc5cdf3ec7af2572f:lib/measures/window_enhancement/tests/example_model/stdout
 [openstudio.workflow.OSWorkflow] <Debug> Registering that the workflow has started with the adapter
 [openstudio.workflow.OSWorkflow] <Debug> Initialization - selected = true
 [38;2;000;128;000m
 ┌────────────────────────────────────────────────────────────────────────────────┐
 │                         Starting State Initialization                          │
 └────────────────────────────────────────────────────────────────────────────────┘[0m
+<<<<<<< HEAD:lib/measures/IncreaseInsulationRValueForRoofs/tests/example_model/stdout
 [openstudio.workflow.OSWorkflow] <Debug> The root_dir for the datapoint is C:/Users/jhu1/AppData/Local/Temp/1/osmodel-df12-5383-4ecb-1954-1763055544-0/resources
 [openstudio.workflow.OSWorkflow] <Debug> Removing existing generated files directory: C:/Users/jhu1/AppData/Local/Temp/1/osmodel-df12-5383-4ecb-1954-1763055544-0/resources/generated_files
 [openstudio.workflow.OSWorkflow] <Debug> Creating generated files directory: C:/Users/jhu1/AppData/Local/Temp/1/osmodel-df12-5383-4ecb-1954-1763055544-0/resources/generated_files
@@ -21,6 +26,24 @@
 [openstudio.workflow.OSWorkflow] <Debug> Search for weather file defined by osw srrl_2013_amy.epw
 [openstudio.EpwFile] <Debug> No Daylightings Saving start Date
 [openstudio.EpwFile] <Info> Header start day of the week and actual start day of the week do not match in EPW file 'C:/Users/jhu1/AppData/Local/Temp/1/osmodel-df12-5383-4ecb-1954-1763055544-0/resources/files/srrl_2013_amy.epw'. Data will be treated as typical (TMY)
+=======
+[openstudio.workflow.OSWorkflow] <Debug> The root_dir for the datapoint is C:/Users/pshrest2/AppData/Local/Temp/1/osmodel-d831-dc3b-ad2a-23a1-1749837197-0/resources
+[openstudio.workflow.OSWorkflow] <Debug> Removing existing generated files directory: C:/Users/pshrest2/AppData/Local/Temp/1/osmodel-d831-dc3b-ad2a-23a1-1749837197-0/resources/generated_files
+[openstudio.workflow.OSWorkflow] <Debug> Creating generated files directory: C:/Users/pshrest2/AppData/Local/Temp/1/osmodel-d831-dc3b-ad2a-23a1-1749837197-0/resources/generated_files
+[openstudio.workflow.OSWorkflow] <Debug> Removing existing reports directory: C:/Users/pshrest2/AppData/Local/Temp/1/osmodel-d831-dc3b-ad2a-23a1-1749837197-0/resources/reports
+[openstudio.workflow.OSWorkflow] <Debug> Finding and loading the seed file
+[openstudio.worklow.Util] <Info> Loading OSM model
+[openstudio.worklow.Util] <Info> Reading in OSM model C:/Users/pshrest2/AppData/Local/Temp/1/osmodel-d831-dc3b-ad2a-23a1-1749837197-0/example_model.osm
+[openstudio.osversion.VersionTranslator] <Debug> Starting translation from Version 3.8.0.
+[openstudio.osversion.VersionTranslator] <Debug> Initial model has 2008 objects.
+[openstudio.osversion.VersionTranslator] <Debug> Final model has 2008 objects in IDF form.
+[utilities.idf.Workspace] <Debug> Workspace::isValid called.
+[openstudio.osversion.VersionTranslator] <Debug> Final model has 2008 objects in Model form.
+[openstudio.workflow.OSWorkflow] <Debug> Initialize the weather file from osw
+[openstudio.workflow.OSWorkflow] <Debug> Search for weather file defined by osw USA_CO_Denver.Intl.AP.725650_TMY3.epw
+[openstudio.EpwFile] <Debug> No Daylightings Saving start Date
+[openstudio.EpwFile] <Info> Successive data points (1995-Jan-31 to 1994-Feb-01, ending on line 753) are greater than 1 day apart in EPW file 'C:/Users/pshrest2/AppData/Local/Temp/1/osmodel-d831-dc3b-ad2a-23a1-1749837197-0/resources/files/USA_CO_Denver.Intl.AP.725650_TMY3.epw'. Data will be treated as typical (TMY)
+>>>>>>> d7161babc79c7a621e6d4d4bc5cdf3ec7af2572f:lib/measures/window_enhancement/tests/example_model/stdout
 [38;2;000;128;000m#######################Returned from State Initialization#######################[0m
 [openstudio.workflow.OSWorkflow] <Debug> OpenStudioMeasures - selected = true
 [38;2;000;128;000m
@@ -37,11 +60,16 @@
 │                           Starting State Translator                            │
 └────────────────────────────────────────────────────────────────────────────────┘[0m
 [openstudio.workflow.OSWorkflow] <Info> Beginning the translation to IDF
+<<<<<<< HEAD:lib/measures/IncreaseInsulationRValueForRoofs/tests/example_model/stdout
 [openstudio.energyplus.ForwardTranslator] <Info> With a Cycling Run Time Control Type set to 'Thermostat', the entered Cycling Run Time of '1800' seconds will be ignored for Object of type 'OS:AvailabilityManager:NightCycle' and named 'Availability Manager Night Cycle 1'
 [openstudio.energyplus.ForwardTranslator] <Info> With a Cycling Run Time Control Type set to 'Thermostat', the entered Cycling Run Time of '1800' seconds will be ignored for Object of type 'OS:AvailabilityManager:NightCycle' and named 'Availability Manager Night Cycle 2'
 [openstudio.energyplus.ForwardTranslator] <Info> With a Cycling Run Time Control Type set to 'Thermostat', the entered Cycling Run Time of '1800' seconds will be ignored for Object of type 'OS:AvailabilityManager:NightCycle' and named 'Availability Manager Night Cycle 3'
 [openstudio.energyplus.ForwardTranslator] <Info> With a Cycling Run Time Control Type set to 'Thermostat', the entered Cycling Run Time of '1800' seconds will be ignored for Object of type 'OS:AvailabilityManager:NightCycle' and named 'Availability Manager Night Cycle 4'
 [openstudio.energyplus.ForwardTranslator] <Info> With a Cycling Run Time Control Type set to 'Thermostat', the entered Cycling Run Time of '1800' seconds will be ignored for Object of type 'OS:AvailabilityManager:NightCycle' and named 'Availability Manager Night Cycle 5'
+=======
+[openstudio.energyplus.ForwardTranslator] <Warn> Space Space with no Geometry Assigned to SpaceType with non is not associated with a ThermalZone, it will not be translated.
+[openstudio.energyplus.ForwardTranslator] <Info> SpaceType Two Lights both LPD same schedule is not referenced by any space, it will not be translated.
+>>>>>>> d7161babc79c7a621e6d4d4bc5cdf3ec7af2572f:lib/measures/window_enhancement/tests/example_model/stdout
 [openstudio.energyplus.ForwardTranslator] <Warn> OS_ProgramControl is not currently translated
 [openstudio.workflow.OSWorkflow] <Info> Successfully translated to IDF
 [38;2;000;128;000m#########################Returned from State Translator#########################[0m
@@ -64,15 +92,24 @@
 [openstudio.workflow.OSWorkflow] <Info> Finished collecting output requests from Reporting measures.
 [openstudio.workflow.OSWorkflow] <Info> Running EnergyPlus Preprocess
 [openstudio.workflow.OSWorkflow] <Info> Finished preprocess job for EnergyPlus simulation
+<<<<<<< HEAD:lib/measures/IncreaseInsulationRValueForRoofs/tests/example_model/stdout
 [openstudio.workflow.OSWorkflow] <Debug> Saved final IDF as C:/Users/jhu1/AppData/Local/Temp/1/osmodel-df12-5383-4ecb-1954-1763055544-0/resources/run/in.idf
+=======
+[openstudio.workflow.OSWorkflow] <Debug> Saved final IDF as C:/Users/pshrest2/AppData/Local/Temp/1/osmodel-d831-dc3b-ad2a-23a1-1749837197-0/resources/run/in.idf
+>>>>>>> d7161babc79c7a621e6d4d4bc5cdf3ec7af2572f:lib/measures/window_enhancement/tests/example_model/stdout
 [38;2;000;128;000m#########################Returned from State PreProcess#########################[0m
 [openstudio.workflow.OSWorkflow] <Debug> EnergyPlus - selected = true
 [38;2;000;128;000m
 ┌────────────────────────────────────────────────────────────────────────────────┐
 │                           Starting State EnergyPlus                            │
 └────────────────────────────────────────────────────────────────────────────────┘[0m
+<<<<<<< HEAD:lib/measures/IncreaseInsulationRValueForRoofs/tests/example_model/stdout
 [openstudio.OSWorkflow.prepareEnergyPlusDir] <Debug> Original Directory: C:/All repos/openstudio-ee-gem/lib/measures/IncreaseInsulationRValueForRoofs/tests
 [openstudio.OSWorkflow.prepareEnergyPlusDir] <Debug> Changing To run directory: C:/Users/jhu1/AppData/Local/Temp/1/osmodel-df12-5383-4ecb-1954-1763055544-0/resources/run
+=======
+[openstudio.OSWorkflow.prepareEnergyPlusDir] <Debug> Original Directory: C:/openstudioapplication-1.8.0/bin
+[openstudio.OSWorkflow.prepareEnergyPlusDir] <Debug> Changing To run directory: C:/Users/pshrest2/AppData/Local/Temp/1/osmodel-d831-dc3b-ad2a-23a1-1749837197-0/resources/run
+>>>>>>> d7161babc79c7a621e6d4d4bc5cdf3ec7af2572f:lib/measures/window_enhancement/tests/example_model/stdout
 [ApplicationPathHelpers] <Debug> getOpenStudioModule, szPath = 'C:\openstudioapplication-1.8.0\bin\openstudiolib.dll'
 [PathHelpers] <Debug> completeAndNormalize: result = C:/openstudioapplication-1.8.0/bin/openstudiolib.dll
 [ApplicationPathHelpers] <Debug> getOpenStudioModule, found 'C:/openstudioapplication-1.8.0/bin/openstudiolib.dll'
@@ -82,6 +119,7 @@
 [PathHelpers] <Debug> completeAndNormalize: result = C:/openstudioapplication-1.8.0/EnergyPlus/energyplus.exe
 [openstudio.OSWorkflow.prepareEnergyPlusDir] <Info> EnergyPlus executable path is C:/openstudioapplication-1.8.0/EnergyPlus/energyplus.exe
 [openstudio.OSWorkflow.prepareEnergyPlusDir] <Info> ExpandObjects executable path is C:/openstudioapplication-1.8.0/EnergyPlus/ExpandObjects.exe
+<<<<<<< HEAD:lib/measures/IncreaseInsulationRValueForRoofs/tests/example_model/stdout
 [openstudio.workflow.OSWorkflow] <Info> Starting simulation in run directory: C:/Users/jhu1/AppData/Local/Temp/1/osmodel-df12-5383-4ecb-1954-1763055544-0/resources/run
 [openstudio.workflow.OSWorkflow] <Info> Running command '"C:/openstudioapplication-1.8.0\EnergyPlus\ExpandObjects.exe"'
 ExpandObjects Started.
@@ -148,6 +186,16 @@ Calculating System sizing
 ...for Sizing Period: #2 DENVER.INTL.AP ANN CLG .4% CONDNS WB=>MDB
 Calculating System sizing
 ...for Sizing Period: #3 DENVER.INTL.AP ANN HTG 99.6% CONDNS DB
+=======
+[openstudio.workflow.OSWorkflow] <Info> Starting simulation in run directory: C:/Users/pshrest2/AppData/Local/Temp/1/osmodel-d831-dc3b-ad2a-23a1-1749837197-0/resources/run
+[openstudio.workflow.OSWorkflow] <Info> Running command '"C:/openstudioapplication-1.8.0\EnergyPlus\ExpandObjects.exe"'
+ExpandObjects Started.
+No expanded file generated.
+ExpandObjects Finished. Time:     0.047
+[openstudio.workflow.OSWorkflow] <Info> Running command '"C:/openstudioapplication-1.8.0\EnergyPlus\energyplus.exe" in.idf'
+EnergyPlus Starting
+EnergyPlus, Version 24.1.0-9d7789a3ac, YMD=2025.06.13 11:53
+>>>>>>> d7161babc79c7a621e6d4d4bc5cdf3ec7af2572f:lib/measures/window_enhancement/tests/example_model/stdout
 Adjusting Air System Sizing
 Adjusting Standard 62.1 Ventilation Sizing
 Initializing Simulation
@@ -158,6 +206,7 @@ Warming up {1}
 Warming up {2}
 Warming up {3}
 Warming up {4}
+<<<<<<< HEAD:lib/measures/IncreaseInsulationRValueForRoofs/tests/example_model/stdout
 Warming up {5}
 Warming up {6}
 Warming up {7}
@@ -208,6 +257,122 @@ RunEnergyPlus: Completed Successfully with [38;2;255;000;000m0 Fatal Errors, [
 [openstudio.workflow.OSWorkflow] <Info> EnergyPlus finished with 212541 warnings and 0 severe errors
 [openstudio.OSWorkflow.prepareEnergyPlusDir] <Info> Removing any copied EnergyPlus files
 [openstudio.OSWorkflow.prepareEnergyPlusDir] <Debug> Changing Current Directory back to: C:/All repos/openstudio-ee-gem/lib/measures/IncreaseInsulationRValueForRoofs/tests
+=======
+Starting Simulation at 01/01/2006 for RUN PERIOD 1
+Updating Shadowing Calculations, Start Date=01/08/2006
+Continuing Simulation at 01/08/2006 for RUN PERIOD 1
+Updating Shadowing Calculations, Start Date=01/15/2006
+Continuing Simulation at 01/15/2006 for RUN PERIOD 1
+Updating Shadowing Calculations, Start Date=01/22/2006
+Continuing Simulation at 01/22/2006 for RUN PERIOD 1
+Updating Shadowing Calculations, Start Date=01/29/2006
+Continuing Simulation at 01/29/2006 for RUN PERIOD 1
+Updating Shadowing Calculations, Start Date=02/05/2006
+Continuing Simulation at 02/05/2006 for RUN PERIOD 1
+Updating Shadowing Calculations, Start Date=02/12/2006
+Continuing Simulation at 02/12/2006 for RUN PERIOD 1
+Updating Shadowing Calculations, Start Date=02/19/2006
+Continuing Simulation at 02/19/2006 for RUN PERIOD 1
+Updating Shadowing Calculations, Start Date=02/26/2006
+Continuing Simulation at 02/26/2006 for RUN PERIOD 1
+Updating Shadowing Calculations, Start Date=03/05/2006
+Continuing Simulation at 03/05/2006 for RUN PERIOD 1
+Updating Shadowing Calculations, Start Date=03/12/2006
+Continuing Simulation at 03/12/2006 for RUN PERIOD 1
+Updating Shadowing Calculations, Start Date=03/19/2006
+Continuing Simulation at 03/19/2006 for RUN PERIOD 1
+Updating Shadowing Calculations, Start Date=03/26/2006
+Continuing Simulation at 03/26/2006 for RUN PERIOD 1
+Updating Shadowing Calculations, Start Date=04/02/2006
+Continuing Simulation at 04/02/2006 for RUN PERIOD 1
+Updating Shadowing Calculations, Start Date=04/09/2006
+Continuing Simulation at 04/09/2006 for RUN PERIOD 1
+Updating Shadowing Calculations, Start Date=04/16/2006
+Continuing Simulation at 04/16/2006 for RUN PERIOD 1
+Updating Shadowing Calculations, Start Date=04/23/2006
+Continuing Simulation at 04/23/2006 for RUN PERIOD 1
+Updating Shadowing Calculations, Start Date=04/30/2006
+Continuing Simulation at 04/30/2006 for RUN PERIOD 1
+Updating Shadowing Calculations, Start Date=05/07/2006
+Continuing Simulation at 05/07/2006 for RUN PERIOD 1
+Updating Shadowing Calculations, Start Date=05/14/2006
+Continuing Simulation at 05/14/2006 for RUN PERIOD 1
+Updating Shadowing Calculations, Start Date=05/21/2006
+Continuing Simulation at 05/21/2006 for RUN PERIOD 1
+Updating Shadowing Calculations, Start Date=05/28/2006
+Continuing Simulation at 05/28/2006 for RUN PERIOD 1
+Updating Shadowing Calculations, Start Date=06/04/2006
+Continuing Simulation at 06/04/2006 for RUN PERIOD 1
+Updating Shadowing Calculations, Start Date=06/11/2006
+Continuing Simulation at 06/11/2006 for RUN PERIOD 1
+Updating Shadowing Calculations, Start Date=06/18/2006
+Continuing Simulation at 06/18/2006 for RUN PERIOD 1
+Updating Shadowing Calculations, Start Date=06/25/2006
+Continuing Simulation at 06/25/2006 for RUN PERIOD 1
+Updating Shadowing Calculations, Start Date=07/02/2006
+Continuing Simulation at 07/02/2006 for RUN PERIOD 1
+Updating Shadowing Calculations, Start Date=07/09/2006
+Continuing Simulation at 07/09/2006 for RUN PERIOD 1
+Updating Shadowing Calculations, Start Date=07/16/2006
+Continuing Simulation at 07/16/2006 for RUN PERIOD 1
+Updating Shadowing Calculations, Start Date=07/23/2006
+Continuing Simulation at 07/23/2006 for RUN PERIOD 1
+Updating Shadowing Calculations, Start Date=07/30/2006
+Continuing Simulation at 07/30/2006 for RUN PERIOD 1
+Updating Shadowing Calculations, Start Date=08/06/2006
+Continuing Simulation at 08/06/2006 for RUN PERIOD 1
+Updating Shadowing Calculations, Start Date=08/13/2006
+Continuing Simulation at 08/13/2006 for RUN PERIOD 1
+Updating Shadowing Calculations, Start Date=08/20/2006
+Continuing Simulation at 08/20/2006 for RUN PERIOD 1
+Updating Shadowing Calculations, Start Date=08/27/2006
+Continuing Simulation at 08/27/2006 for RUN PERIOD 1
+Updating Shadowing Calculations, Start Date=09/03/2006
+Continuing Simulation at 09/03/2006 for RUN PERIOD 1
+Updating Shadowing Calculations, Start Date=09/10/2006
+Continuing Simulation at 09/10/2006 for RUN PERIOD 1
+Updating Shadowing Calculations, Start Date=09/17/2006
+Continuing Simulation at 09/17/2006 for RUN PERIOD 1
+Updating Shadowing Calculations, Start Date=09/24/2006
+Continuing Simulation at 09/24/2006 for RUN PERIOD 1
+Updating Shadowing Calculations, Start Date=10/01/2006
+Continuing Simulation at 10/01/2006 for RUN PERIOD 1
+Updating Shadowing Calculations, Start Date=10/08/2006
+Continuing Simulation at 10/08/2006 for RUN PERIOD 1
+Updating Shadowing Calculations, Start Date=10/15/2006
+Continuing Simulation at 10/15/2006 for RUN PERIOD 1
+Updating Shadowing Calculations, Start Date=10/22/2006
+Continuing Simulation at 10/22/2006 for RUN PERIOD 1
+Updating Shadowing Calculations, Start Date=10/29/2006
+Continuing Simulation at 10/29/2006 for RUN PERIOD 1
+Updating Shadowing Calculations, Start Date=11/05/2006
+Continuing Simulation at 11/05/2006 for RUN PERIOD 1
+Updating Shadowing Calculations, Start Date=11/12/2006
+Continuing Simulation at 11/12/2006 for RUN PERIOD 1
+Updating Shadowing Calculations, Start Date=11/19/2006
+Continuing Simulation at 11/19/2006 for RUN PERIOD 1
+Updating Shadowing Calculations, Start Date=11/26/2006
+Continuing Simulation at 11/26/2006 for RUN PERIOD 1
+Updating Shadowing Calculations, Start Date=12/03/2006
+Continuing Simulation at 12/03/2006 for RUN PERIOD 1
+Updating Shadowing Calculations, Start Date=12/10/2006
+Continuing Simulation at 12/10/2006 for RUN PERIOD 1
+Updating Shadowing Calculations, Start Date=12/17/2006
+Continuing Simulation at 12/17/2006 for RUN PERIOD 1
+Updating Shadowing Calculations, Start Date=12/24/2006
+Continuing Simulation at 12/24/2006 for RUN PERIOD 1
+Updating Shadowing Calculations, Start Date=12/31/2006
+Writing tabular output file results using HTML format.
+Computing Life Cycle Costs and Reporting
+Writing final SQL reports
+EnergyPlus Run Time=00hr 00min  3.44sec
+EnergyPlus Completed Successfully.
+[openstudio.workflow.OSWorkflow] <Info> EnergyPlus returned '0'
+RunEnergyPlus: Completed Successfully with [38;2;255;000;000m0 Fatal Errors, [0m[38;2;255;165;000m0 Severe Errors, [0m[38;2;255;255;000m21 Warnings.[0m
+[openstudio.workflow.OSWorkflow] <Info> EnergyPlus finished with 20 warnings and 0 severe errors
+[openstudio.OSWorkflow.prepareEnergyPlusDir] <Info> Removing any copied EnergyPlus files
+[openstudio.OSWorkflow.prepareEnergyPlusDir] <Debug> Changing Current Directory back to: C:/openstudioapplication-1.8.0/bin
+>>>>>>> d7161babc79c7a621e6d4d4bc5cdf3ec7af2572f:lib/measures/window_enhancement/tests/example_model/stdout
 [38;2;000;128;000m#########################Returned from State EnergyPlus#########################[0m
 [openstudio.workflow.OSWorkflow] <Debug> ReportingMeasures - selected = true
 [38;2;000;128;000m
@@ -224,9 +389,15 @@ RunEnergyPlus: Completed Successfully with [38;2;255;000;000m0 Fatal Errors, [
 │                           Starting State PostProcess                           │
 └────────────────────────────────────────────────────────────────────────────────┘[0m
 [openstudio.workflow.OSWorkflow] <Info> Gathering reports
+<<<<<<< HEAD:lib/measures/IncreaseInsulationRValueForRoofs/tests/example_model/stdout
 [openstudio.workflow.Util] <Info> Run directory: C:/Users/jhu1/AppData/Local/Temp/1/osmodel-df12-5383-4ecb-1954-1763055544-0/resources/run
 [openstudio.workflow.Util] <Info> Reports directoryC:/Users/jhu1/AppData/Local/Temp/1/osmodel-df12-5383-4ecb-1954-1763055544-0/resources
 [openstudio.workflow.Util] <Info> Saving EnergyPlus HTML report to C:/Users/jhu1/AppData/Local/Temp/1/osmodel-df12-5383-4ecb-1954-1763055544-0/resources/reports/eplustbl.html
+=======
+[openstudio.workflow.Util] <Info> Run directory: C:/Users/pshrest2/AppData/Local/Temp/1/osmodel-d831-dc3b-ad2a-23a1-1749837197-0/resources/run
+[openstudio.workflow.Util] <Info> Reports directoryC:/Users/pshrest2/AppData/Local/Temp/1/osmodel-d831-dc3b-ad2a-23a1-1749837197-0/resources
+[openstudio.workflow.Util] <Info> Saving EnergyPlus HTML report to C:/Users/pshrest2/AppData/Local/Temp/1/osmodel-d831-dc3b-ad2a-23a1-1749837197-0/resources/reports/eplustbl.html
+>>>>>>> d7161babc79c7a621e6d4d4bc5cdf3ec7af2572f:lib/measures/window_enhancement/tests/example_model/stdout
 [openstudio.workflow.OSWorkflow] <Info> Finished gathering reports
 [38;2;000;128;000m########################Returned from State PostProcess#########################[0m
 [openstudio.workflow.OSWorkflow] <Debug> Cleanup - selected = true

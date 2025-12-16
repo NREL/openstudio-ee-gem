@@ -21,7 +21,7 @@ config.read(config_path)
 API_TOKEN= config["EC3_API_TOKEN"]["API_TOKEN"]
 
 #change the url below to get different json repsonse
-test_url = ("https://api.buildingtransparency.org/api/materials?page_number=1&page_size=1&mf=!EC3%20search(%22Insulation%22)%20WHERE%20%0A%20%20jurisdiction%3A%20IN(%22019%22)%20AND%0A%20%20epd__date_validity_ends%3A%20%3E%20%222025-05-06%22%20AND%0A%20%20epd_types%3A%20IN(%22Product%20EPDs%22)%20AND%0A%20%20insulation_intended_application%3A%20IN(%22Exterior%20Wall%22)%20%0A!pragma%20eMF(%222.0%2F1%22)%2C%20lcia(%22TRACI%202.1%22)")
+test_url = ("https://api.buildingtransparency.org/api/epds?page_number=1&page_size=250&sort_by=-updated_on&category=56f3c898f94b459eb18feadeb792ab88&name__like=batts+insulation+wool&plant_geography=021&declaration_type=Product+EPD")
 # Headers for the request
 headers = {
     "Accept": "application/json",

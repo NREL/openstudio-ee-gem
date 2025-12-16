@@ -42,12 +42,12 @@ lib/measures/window_enhancement/tests/example_model/run
 **/__pycache__/
 config.ini
 
-# Environment variables (contains secrets)
-.env
+# Ignore Python virtual environments
+venv/
+.venv/
+env/
+.env/
+config.env
 
-# Act secrets file
-.secrets
-
-# Act configuration file
-.actrc
-node_modules
+# Ignore OSW workflow files with API keys
+lib/measures/workflow_with_reporting.osw

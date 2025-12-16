@@ -1,0 +1,14 @@
+# EnergyPlus Simulation Summary
+building_name,Building 1
+environment,RUN PERIOD 1 ** Denver Intl Ap CO USA TMY3 WMO#=725650
+simulation_hours,8760.00
+total_site_energy_GJ,161.61
+net_site_energy_GJ,161.61
+total_source_energy_GJ,426.07
+net_source_energy_GJ,426.07
+total_building_area_m2,400.00
+net_conditioned_building_area_m2,400.00
+
+# Construction AdditionalProperties
+added_insulation_layer_mass_kg,added_insulation_layer_thickness_m,analysis_period_years,construction_name,insulation_material_density_kg_per_m3,insulation_material_gwp_per_kg,insulation_material_gwp_per_m2,insulation_material_gwp_per_m3,insulation_material_lifetime_years,insulation_material_thermal_conductivity_W_per_mK,insutlation_material_type,original_r-value_ip,renovated_exterior_wall_area_m2,target_r-value_ip,total_embodied_carbon_kgCO2eq,total_volume_m3,construction_handle
+1077.4933240119608,0.1004419867210479,30,Typical Insulated Exterior Mass Wall R-8.13 1,40,2.637913741,2.63,0.0,30,0.04,Pure Wool Batts,5.741598722331652,268.18797576267207,20.0,2842.3344452469173,26.937333100299025,{9cd2ff97-2992-4ac6-b891-b84298c1a207}

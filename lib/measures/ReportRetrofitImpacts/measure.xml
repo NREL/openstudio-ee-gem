@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<measure>
+  <uid>c3d4e5f6-a7b8-9012-cdef-123456789012</uid>
+  <version_id>d4e5f6a7-b8c9-0123-def1-234567890123</version_id>
+  <name>Report AdditionalProperties (Python)</name>
+  <description>Reports all AdditionalProperties and their key-value pairs in the model.</description>
+  <modeler_description>Traverse model and extract AdditionalProperties content using Python.</modeler_description>
+  <arguments/>
+  <outputs/>
+</measure>
