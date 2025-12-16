@@ -96,7 +96,7 @@ def run_measure():
     model_path = CURRENT_DIR_PATH / "tests/DOE_small_office.osm"
     
     # Test parameters
-    r_values = [5,10,15,20]
+    r_values = [5,8.1,11.9,13.0,15.6,18.2,20.4,27.0]
     material_types = insulation_material_types()
     
     # Track results

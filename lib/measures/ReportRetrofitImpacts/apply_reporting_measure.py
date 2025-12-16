@@ -262,6 +262,7 @@ def create_scatterplot(props_df, energyplus_data, measure_dir):
         import matplotlib
         matplotlib.use('Agg')  # Use non-interactive backend
         import matplotlib.pyplot as plt
+        import numpy as np
     except ImportError:
         print("✗ matplotlib not found. Installing matplotlib...")
         import subprocess
@@ -270,6 +271,7 @@ def create_scatterplot(props_df, energyplus_data, measure_dir):
             import matplotlib
             matplotlib.use('Agg')
             import matplotlib.pyplot as plt
+            import numpy as np
             print("✓ matplotlib installed successfully")
         except Exception as e:
             print(f"✗ Failed to install matplotlib: {e}")
@@ -337,9 +339,16 @@ def create_scatterplot(props_df, energyplus_data, measure_dir):
     color1 = 'tab:blue'
     ax1.set_xlabel('Target Insulation R-Value (IP)', fontsize=12, fontweight='bold')
     ax1.set_ylabel('Total Site Energy (GJ)', color=color1, fontsize=12, fontweight='bold')
-    ax1.scatter(r_values, energy_values, color=color1, s=100, alpha=0.6, label='Site Energy', marker='o')
+    ax1.scatter(r_values, energy_values, color=color1, s=100, alpha=0.6, label='Site Energy', marker='o', zorder=3)
     ax1.tick_params(axis='y', labelcolor=color1)
     ax1.grid(True, alpha=0.3)
+    
+    # Add trendline for site energy
+    z1 = np.polyfit(r_values, energy_values, 1)  # Linear fit
+    p1 = np.poly1d(z1)
+    r_sorted = np.sort(np.unique(r_values))
+    ax1.plot(r_sorted, p1(r_sorted), color=color1, linestyle='--', linewidth=2, 
+             alpha=0.8, label=f'Energy Trend (slope={z1[0]:.2f})', zorder=2)
     
     # Create second y-axis for total_embodied_carbon_kgCO2eq
     ax2 = ax1.twinx()
@@ -361,7 +370,17 @@ def create_scatterplot(props_df, energyplus_data, measure_dir):
                        label=label, 
                        marker='s', 
                        edgecolors='black', 
-                       linewidths=0.5)
+                       linewidths=0.5,
+                       zorder=3)
+            
+            # Add trendline for each material type if there are at least 2 points
+            if len(r_vals_mat) >= 2:
+                z_mat = np.polyfit(r_vals_mat, carbon_vals_mat, 1)  # Linear fit
+                p_mat = np.poly1d(z_mat)
+                r_mat_sorted = np.sort(r_vals_mat)
+                ax2.plot(r_mat_sorted, p_mat(r_mat_sorted), 
+                        color=material_colors[material], 
+                        linestyle='--', linewidth=1.5, alpha=0.6, zorder=2)
     
     ax2.tick_params(axis='y')
     

@@ -232,10 +232,10 @@ class IncreaseInsulationRValueForExteriorWalls(openstudio.measure.ModelMeasure):
             "Graphite Polystyrene (GPS) Foam Board": 20, # source: https://www.epsmolders.org/graphite-enhanced-eps/
             "Expanded Polystyrene (EPS) Foam Board": 20, # source: https://www.epsmolders.org/what-is-eps/
             "Extruded Polystyrene (XPS) Foam Board": 35, # source: https://www.owenscorning.com/en-us/insulation/foamular
-            "Mineral Wool Heavy Density Blanket": 90, # source: https://www.energy.gov/energysaver/weatherize/insulation/types-insulation
-            "Mineral Wool Light Density Blanket": 90, # source: https://www.energy.gov/energysaver/weatherize/insulation/types-insulation
+            "Mineral Wool Heavy Density Blanket": 103, # source: OWENS CORNING Thermafiber Light and Heavy Density Mineral Wool Insulation EPD
+            "Mineral Wool Light Density Blanket": 48.6, # source: OWENS CORNING Thermafiber Light and Heavy Density Mineral Wool Insulation EPD
             "Fiberglass Batts": 30, # source: https://www.energy.gov/energysaver/weatherize/insulation/types-insulation
-            "Pure Wool Batts": 40 # source: https://www.energy.gov/energysaver/weatherize/insulation/types-insulation
+            "Pure Wool Batts": 24.98 # source: Havelock Wool Batt and Loose-fill Insulation EPD
         }
 
         # Lookup selected material's thermal conductivity
@@ -365,63 +365,75 @@ class IncreaseInsulationRValueForExteriorWalls(openstudio.measure.ModelMeasure):
         print("Generated EC3 URL:", ec3_url)
         insulation_product_epd = fetch_epd_data(ec3_url, api_key)
 
-        # Create a dictionary to hold GWP results with different functional units
-        gwp_values = {}
-        gwp_values["gwp_per_kg"] = []
-        gwp_values["gwp_per_m3"] = []
-        gwp_values["gwp_per_m2"] = []
-
-        gwp_summary = []
-        # loop through each epd
-        for idx, epd in enumerate(insulation_product_epd, start = 1):
-            parsed_data  = parse_product_epd(epd)
-            # per mass
-            gwp_per_kg = parsed_data["gwp_per_kg (kg CO2 eq/kg)"]
-            if gwp_per_kg != 0.0:
-                gwp_values["gwp_per_kg"].append(float(gwp_per_kg))
-            # per volume
-            gwp_per_m3 = parsed_data["gwp_per_m3 (kg CO2 eq/m3)"]
-            if gwp_per_m3 != 0.0:
-                gwp_values["gwp_per_m3"].append(float(gwp_per_m3))
-            # per area
-            gwp_per_m2 = parsed_data["gwp_per_m2 (kg CO2 eq/m2)"]
-            if gwp_per_m2 != 0.0:
-                gwp_values["gwp_per_m2"].append(float(gwp_per_m2))
-
-        # Remove outliers from GWP values using IQR method
-        for key in ["gwp_per_kg", "gwp_per_m3", "gwp_per_m2"]:
-            if len(gwp_values[key]) > 0:
-                original_count = len(gwp_values[key])
-                gwp_values[key] = self.remove_outliers_iqr(gwp_values[key])
-                filtered_count = len(gwp_values[key])
+        # Extract density values from EPD responses
+        density_values = []
+        for epd in insulation_product_epd:
+            parsed_data = parse_product_epd(epd)
+            density_str = parsed_data.get("density")
+            if density_str:
+                density_value = extract_numeric_value(density_str)
+                if density_value > 0.0:
+                    density_values.append(density_value)
+        
+        # Use EPD density if available, applying the same statistic method as GWP
+        if density_values:
+            # Remove outliers from density values
+            if len(density_values) > 0:
+                original_count = len(density_values)
+                density_values = self.remove_outliers_iqr(density_values)
+                filtered_count = len(density_values)
                 if original_count != filtered_count:
-                    runner.registerInfo(f"Removed {original_count - filtered_count} outliers from {key}: {original_count} -> {filtered_count} values")
+                    runner.registerInfo(f"Removed {original_count - filtered_count} density outliers: {original_count} -> {filtered_count} values")
+            
+            # Apply statistic based on user selection
+            if len(density_values) == 1:
+                epd_density = density_values[0]
+            elif gwp_statistic == "minimum":
+                epd_density = float(np.min(density_values))
+            elif gwp_statistic == "maximum":
+                epd_density = float(np.max(density_values))
+            elif gwp_statistic == "mean":
+                epd_density = float(np.mean(density_values))
+            elif gwp_statistic == "median":
+                epd_density = float(np.median(density_values))
+            else:
+                epd_density = float(np.mean(density_values))  # default to mean
+            
+            # Use EPD density if user didn't provide a specific value
+            if insulation_material_density == material_density_dict.get(insulation_material_type, 0.0):
+                insulation_material_density = epd_density
+                runner.registerInfo(f"Using EPD-derived density: {insulation_material_density:.2f} kg/m³ (based on {len(density_values)} EPD values)")
+            else:
+                runner.registerInfo(f"Using user-specified density: {insulation_material_density:.2f} kg/m³ (EPD average: {epd_density:.2f} kg/m³)")
+        else:
+            runner.registerInfo(f"No density data found in EPDs. Using {'user-specified' if insulation_material_density != material_density_dict.get(insulation_material_type, 0.0) else 'default'} density: {insulation_material_density:.2f} kg/m³")
+
+        # Use compute_gwp_data from EC3_lookup to calculate GWP values with outlier removal and statistics
+        keys = [insulation_material_type]
+        epd_list_by_material = [insulation_product_epd]
+        gwp_data = compute_gwp_data(keys, epd_list_by_material, "Product", gwp_statistic)
+        
+        # Extract GWP values for the selected material
+        material_gwp = gwp_data.get(insulation_material_type, {})
+        
+        runner.registerInfo(f"GWP values computed for {insulation_material_type}:")
+        runner.registerInfo(f"  gwp_per_kg: {material_gwp.get('gwp_per_kg', 0.0):.4f} kg CO2 eq/kg")
+        runner.registerInfo(f"  gwp_per_m2: {material_gwp.get('gwp_per_m2', 0.0):.4f} kg CO2 eq/m2")
+        runner.registerInfo(f"  gwp_per_m3: {material_gwp.get('gwp_per_m3', 0.0):.4f} kg CO2 eq/m3")
 
         # multipliers for calculating embodied carbon over analysis period
         multiplier = lifetime_multiplier(insulation_material_lifetime, analysis_period)
 
         # Iterate through all modified constructions to compute embodied carbon
+        gwp_summary = []
         for item in modified_constructions:
             total_area_m2 = item["total_area_m2"]
             added_thickness_m = item["added_thickness_m"]
 
-            # Use the first EPD from your pull_EC3_data dataframe for simplicity
-            for functional_unit, list in gwp_values.items():
-                gwp = 0.0
-                if len(list) == 0:
-                    runner.registerInfo(f"No GWP values returned from {functional_unit}")
-                elif len(list) == 1:
-                    gwp = list[0]
-                elif gwp_statistic == "minimum":
-                    gwp = float(np.min(list))
-                elif gwp_statistic == "maximum":
-                    gwp = float(np.max(list))
-                elif gwp_statistic == "mean":
-                    gwp = float(np.mean(list))
-                elif gwp_statistic == "median":
-                    gwp = float(np.median(list))
-                # store gwp value to modified_constructions dictionary
-                item[functional_unit] = gwp
+            # Store GWP values from compute_gwp_data results
+            item["gwp_per_kg"] = material_gwp.get("gwp_per_kg", 0.0)
+            item["gwp_per_m2"] = material_gwp.get("gwp_per_m2", 0.0)
+            item["gwp_per_m3"] = material_gwp.get("gwp_per_m3", 0.0)
 
             # Calculate total GWP for this added insulation
             total_gwp = item['gwp_per_m3'] * (total_area_m2*added_thickness_m) * multiplier
