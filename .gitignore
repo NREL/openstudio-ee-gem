@@ -44,7 +44,11 @@ lib/measures/ReportRetrofitImpacts/tests/.pytest_cache
 lib/measures/ReportRetrofitImpacts/tests
 lib/measures/ReportRetrofitImpacts/__pycache__/
 **/__pycache__/
+*.pyc
 config.ini
+
+# Ignore OSW workflow files with API keys
+lib/measures/workflow_with_reporting.osw
 
 
 # Environment variables (contains secrets)
