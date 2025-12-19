@@ -1,0 +1,2 @@
+﻿Item,mmBtu per short ton,kg CO2 per mmBtu,g CH4 per mmBtu,g N2O per mmBtu,kgCO2_per_mmBtu,kgCO2_per_GJ,kg CO2 per short ton,g CH4 per short ton,g N2O per short,kgCO2_per_short_ton,GWP100_CH4,GWP100_N2O
+Natural Gas,0.001026,53.06,1,0.1,53.1145,50.3419231,0.05444,0.00103,0.0001,0.05449534,28,265

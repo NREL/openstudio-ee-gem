@@ -10,8 +10,11 @@
 /spec/reports/
 /tmp/
 /test/
+/test_results_dashboard_cli_bundler/
+/test_with_cli_bundler/
 /lib/measures/test_results
 /lib/measures/*/tests/output
+/vendor/bundle/
 
 .rubocop*s3*
 
@@ -38,3 +41,13 @@ lib/measures/window_enhancement/tests/.pytest_cache
 lib/measures/window_enhancement/tests/example_model/run
 **/__pycache__/
 config.ini
+
+# Ignore Python virtual environments
+venv/
+.venv/
+env/
+.env/
+config.env
+
+# Ignore OSW workflow files with API keys
+lib/measures/workflow_with_reporting.osw

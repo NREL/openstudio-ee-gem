@@ -9,7 +9,7 @@ require 'openstudio'
 require 'openstudio/measure/ShowRunnerOutput'
 require 'fileutils'
 
-require_relative '../measure.rb'
+require_relative '../measure'
 require 'minitest/autorun'
 
 class FanAssistNightVentilationTest < Minitest::Test
@@ -46,9 +46,7 @@ class FanAssistNightVentilationTest < Minitest::Test
     # populate argument with specified hash value if specified
     arguments.each do |arg|
       temp_arg_var = arg.clone
-      if args_hash[arg.name]
-        assert(temp_arg_var.setValue(args_hash[arg.name]))
-      end
+      assert(temp_arg_var.setValue(args_hash[arg.name])) if args_hash[arg.name]
       argument_map[arg.name] = temp_arg_var
     end
 
@@ -94,9 +92,7 @@ class FanAssistNightVentilationTest < Minitest::Test
     # populate argument with specified hash value if specified
     arguments.each do |arg|
       temp_arg_var = arg.clone
-      if args_hash[arg.name]
-        assert(temp_arg_var.setValue(args_hash[arg.name]))
-      end
+      assert(temp_arg_var.setValue(args_hash[arg.name])) if args_hash[arg.name]
       argument_map[arg.name] = temp_arg_var
     end
 
@@ -142,9 +138,7 @@ class FanAssistNightVentilationTest < Minitest::Test
     # populate argument with specified hash value if specified
     arguments.each do |arg|
       temp_arg_var = arg.clone
-      if args_hash[arg.name]
-        assert(temp_arg_var.setValue(args_hash[arg.name]))
-      end
+      assert(temp_arg_var.setValue(args_hash[arg.name])) if args_hash[arg.name]
       argument_map[arg.name] = temp_arg_var
     end
 
@@ -190,9 +184,7 @@ class FanAssistNightVentilationTest < Minitest::Test
     # populate argument with specified hash value if specified
     arguments.each do |arg|
       temp_arg_var = arg.clone
-      if args_hash[arg.name]
-        assert(temp_arg_var.setValue(args_hash[arg.name]))
-      end
+      assert(temp_arg_var.setValue(args_hash[arg.name])) if args_hash[arg.name]
       argument_map[arg.name] = temp_arg_var
     end
 
@@ -239,9 +231,7 @@ class FanAssistNightVentilationTest < Minitest::Test
     # populate argument with specified hash value if specified
     arguments.each do |arg|
       temp_arg_var = arg.clone
-      if args_hash[arg.name]
-        assert(temp_arg_var.setValue(args_hash[arg.name]))
-      end
+      assert(temp_arg_var.setValue(args_hash[arg.name])) if args_hash[arg.name]
       argument_map[arg.name] = temp_arg_var
     end
 

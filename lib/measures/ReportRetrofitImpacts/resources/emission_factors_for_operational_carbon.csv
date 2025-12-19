@@ -1,0 +1,4 @@
+﻿Item,Value,Unit,Source
+elec_emission_factor,101.588886,kgCO2e_per_GJ,Egrid
+gas_emission_factor,50.3419231,kgCO2e_per_GJ,EPA
+water_emission_factor,0.46,kgCO2e_per_m3,https://doi.org/10.1016/j.jclepro.2021.128815

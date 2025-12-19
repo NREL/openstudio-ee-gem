@@ -21,6 +21,7 @@ config.read(config_path)
 API_TOKEN= config["EC3_API_TOKEN"]["API_TOKEN"]
 
 # the dictionary below stores the material_name for generate_url function
+# the dictionary below stores the material_name for generate_url function
 # material_category = {"concrete":{"ReadyMix","PrecastConcrete","CementGrout","FlowableFill"},
 #                      "masonry":{"Brick", "CMU"},
 #                      "steel":{"RebarSteel","WireMeshSteel","ColdFormedSteel","StructuralSteel"},
@@ -35,6 +36,7 @@ API_TOKEN= config["EC3_API_TOKEN"]["API_TOKEN"]
 #                      }
 # for testing use, do not delete
 material_category = {
+                     "test":["Insulation"]
                      "test":["Insulation"]
                      }
 # Generate a EC3 API URL with search and filters
@@ -62,6 +64,12 @@ def generate_url(material_name, endpoint ="materials", page_number=1, page_size=
 
     if conditions:
         url += "AND%0A%20%20" + "%20AND%0A%20%20".join(conditions) + "%20%0A"
+    
+    if insulation_material:
+        url += f"%20AND%0A%20%20insulating_material%3A%20IN(%22{insulation_material}%22)"
+    
+    if insulation_application:
+        url += f"%20AND%0A%20%20insulation_intended_application%3A%20IN(%22{insulation_application}%22)%20"
     
     if insulation_material:
         url += f"%20AND%0A%20%20insulating_material%3A%20IN(%22{insulation_material}%22)"
@@ -142,6 +150,8 @@ def fetch_epd_data(url,api_token):
         return []
     
 # process the json response obtained from fetch_epd_data function for product epds
+    
+# process the json response obtained from fetch_epd_data function for product epds
 def parse_product_epd(epd: Dict[str, Any]) -> Dict[str, Any]:
     """
     Parse GWP data for a given EPD.
@@ -195,6 +205,8 @@ def parse_product_epd(epd: Dict[str, Any]) -> Dict[str, Any]:
 
     # Per m3
     if declared_unit and any(x in declared_unit for x in ["m3", "m^3"]): # these functional units come in differnet expression style, need to incorporate different styles by looking into json reponse
+    # Per m3
+    if declared_unit and any(x in declared_unit for x in ["m3", "m^3"]): # these functional units come in differnet expression style, need to incorporate different styles by looking into json reponse
         gwp_per_m3 = divide(gwp_per_declared_unit, declared_unit)
     elif declared_unit and "cf" in declared_unit:
         gwp_per_m3 = divide(gwp_per_declared_unit, declared_unit) * 35.3147 # convert from cubic feet to m3
@@ -235,6 +247,7 @@ def parse_product_epd(epd: Dict[str, Any]) -> Dict[str, Any]:
 
     return parsed_data
 # process the json response obtained from fetch_epd_data function for industrial epds
+# process the json response obtained from fetch_epd_data function for industrial epds
 def parse_industrial_epd(epd: Dict[str, Any]) -> Dict[str, Any]:
     """
     Parse GWP data for a given EPD.
@@ -261,6 +274,11 @@ def parse_industrial_epd(epd: Dict[str, Any]) -> Dict[str, Any]:
     description = epd.get('description')
     density_min = epd.get('density_min')
     density_max = epd.get('density_max')
+    servicelife_min = epd.get('reference_service_life_min')
+    servicelife_max = epd.get('reference_service_life_max')
+    thickness_per_declared_unit_min = epd.get('thickness_per_declared_unit_min')
+    thickness_per_declared_unit_max = epd.get('thickness_per_declared_unit_max')
+    mass_per_declared_unit = epd.get('mass_per_declared_unit')
     servicelife_min = epd.get('reference_service_life_min')
     servicelife_max = epd.get('reference_service_life_max')
     thickness_per_declared_unit_min = epd.get('thickness_per_declared_unit_min')
@@ -309,6 +327,10 @@ def parse_industrial_epd(epd: Dict[str, Any]) -> Dict[str, Any]:
     parsed_data["reference_service_life_max"] = servicelife_max
     parsed_data["thickness_per_declared_unit_min"] = thickness_per_declared_unit_min
     parsed_data["thickness_per_declared_unit_max"] = thickness_per_declared_unit_max
+    parsed_data["reference_service_life_min"] = servicelife_min
+    parsed_data["reference_service_life_max"] = servicelife_max
+    parsed_data["thickness_per_declared_unit_min"] = thickness_per_declared_unit_min
+    parsed_data["thickness_per_declared_unit_max"] = thickness_per_declared_unit_max
     parsed_data["area"] = area
     parsed_data['lifetime_avg'] = servicelife_avg
     parsed_data["gwp_per_m3 (kg CO2 eq/m3)"] = gwp_per_m3
@@ -340,11 +362,14 @@ def divide(member: Any, denominator: Any) -> float:
         member_value = extract_numeric_value(member)
         denominator_value = extract_numeric_value(denominator)
         return member_value/denominator_value
+        return member_value/denominator_value
 
 # extract numeric values then multiply
 def multiply(multiplicand: Any, multiplier: Any) -> float:
     multiplicand_value = extract_numeric_value(multiplicand)
     multiplier_value = extract_numeric_value(multiplier)
+    return multiplicand_value * multiplier_value
+# when vertex coordinates are provided in openstudio model, this function can calculate area, perimeter, width and length
     return multiplicand_value * multiplier_value
 # when vertex coordinates are provided in openstudio model, this function can calculate area, perimeter, width and length
 def calculate_geometry(self, sub_surface):

@@ -12,17 +12,17 @@
 class AddVariableSpeedRTUControlLogic < OpenStudio::Measure::EnergyPlusMeasure
   # human readable name
   def name
-    return 'Add Variable Speed RTU Control Logic'
+    'Add Variable Speed RTU Control Logic'
   end
 
   # human readable description
   def description
-    return 'This measure adds control logic for a variable-speed RTU to the model. The control logic is responsible for staging the fan in response to the amount of heating/cooling required. It is meant to be paired specifically with the Create Variable Speed RTU OpenStudio measure. Users enter the fan flow rate fractions for up to nine different stages: ventilation, up to four cooling stages, and up to four heating stages. The measure examines the amount of heating/cooling required at each time step, identifies which heating/cooling stage is required to supply that amount of heating/cooling, and modifies the fan flow accordingly. This measure allows users to identify the impact of different fan flow control strategies.'
+    'This measure adds control logic for a variable-speed RTU to the model. The control logic is responsible for staging the fan in response to the amount of heating/cooling required. It is meant to be paired specifically with the Create Variable Speed RTU OpenStudio measure. Users enter the fan flow rate fractions for up to nine different stages: ventilation, up to four cooling stages, and up to four heating stages. The measure examines the amount of heating/cooling required at each time step, identifies which heating/cooling stage is required to supply that amount of heating/cooling, and modifies the fan flow accordingly. This measure allows users to identify the impact of different fan flow control strategies.'
   end
 
   # human readable description of modeling approach
   def modeler_description
-    return "This measure inserts EMS code for each airloop found to contain an AirLoopHVAC:UnitarySystem object. It is meant to be paired specifically with the Create Variable Speed RTU OpenStudio measure.
+    "This measure inserts EMS code for each airloop found to contain an AirLoopHVAC:UnitarySystem object. It is meant to be paired specifically with the Create Variable Speed RTU OpenStudio measure.
 
 Users can select the fan mass flow fractions for up to nine stages (ventilation, two or four cooling, and two or four heating). The default control logic is as follows:
 When the unit is ventilating (heating and cooling coil energy is zero), the fan flow rate is set to 40% of nominal.
@@ -35,7 +35,7 @@ The measure is set up so that a separate block of EMS code is inserted for each 
   end
 
   # define the arguments that the user will input
-  def arguments(workspace)
+  def arguments(_workspace)
     args = OpenStudio::Measure::OSArgumentVector.new
 
     # make an argument for ventilation fan speed fraction
@@ -45,54 +45,62 @@ The measure is set up so that a separate block of EMS code is inserted for each 
     args << vent_fan_speed
 
     # make an argument for stage_one cooling fan speed fraction
-    stage_one_cooling_fan_speed = OpenStudio::Measure::OSArgument.makeDoubleArgument('stage_one_cooling_fan_speed', false)
+    stage_one_cooling_fan_speed = OpenStudio::Measure::OSArgument.makeDoubleArgument('stage_one_cooling_fan_speed',
+                                                                                     false)
     stage_one_cooling_fan_speed.setDisplayName('Fan speed fraction during stage one DX cooling.')
     stage_one_cooling_fan_speed.setDefaultValue(0.4)
     args << stage_one_cooling_fan_speed
 
     # make an argument for stage_two cooling fan speed fraction
-    stage_two_cooling_fan_speed = OpenStudio::Measure::OSArgument.makeDoubleArgument('stage_two_cooling_fan_speed', false)
+    stage_two_cooling_fan_speed = OpenStudio::Measure::OSArgument.makeDoubleArgument('stage_two_cooling_fan_speed',
+                                                                                     false)
     stage_two_cooling_fan_speed.setDisplayName('Fan speed fraction during stage two DX cooling.')
     stage_two_cooling_fan_speed.setDefaultValue(0.5)
     args << stage_two_cooling_fan_speed
 
     # make an argument for stage_three cooling fan speed fraction
-    stage_three_cooling_fan_speed = OpenStudio::Measure::OSArgument.makeDoubleArgument('stage_three_cooling_fan_speed', false)
+    stage_three_cooling_fan_speed = OpenStudio::Measure::OSArgument.makeDoubleArgument('stage_three_cooling_fan_speed',
+                                                                                       false)
     stage_three_cooling_fan_speed.setDisplayName('Fan speed fraction during stage three DX cooling. Not used for two-speed systems.')
     stage_three_cooling_fan_speed.setDefaultValue(0.75)
     args << stage_three_cooling_fan_speed
 
     # make an argument for stage_four cooling fan speed fraction
-    stage_four_cooling_fan_speed = OpenStudio::Measure::OSArgument.makeDoubleArgument('stage_four_cooling_fan_speed', false)
+    stage_four_cooling_fan_speed = OpenStudio::Measure::OSArgument.makeDoubleArgument('stage_four_cooling_fan_speed',
+                                                                                      false)
     stage_four_cooling_fan_speed.setDisplayName('Fan speed fraction during stage four DX cooling. Not used for two-speed systems.')
     stage_four_cooling_fan_speed.setDefaultValue(1.0)
     args << stage_four_cooling_fan_speed
 
     # make an argument for stage_one heating fan speed fraction
-    stage_one_heating_fan_speed = OpenStudio::Measure::OSArgument.makeDoubleArgument('stage_one_heating_fan_speed', false)
+    stage_one_heating_fan_speed = OpenStudio::Measure::OSArgument.makeDoubleArgument('stage_one_heating_fan_speed',
+                                                                                     false)
     stage_one_heating_fan_speed.setDisplayName('Fan speed fraction during stage one DX heating.')
     stage_one_heating_fan_speed.setDefaultValue(0.4)
     args << stage_one_heating_fan_speed
 
     # make an argument for stage_two heating fan speed fraction
-    stage_two_heating_fan_speed = OpenStudio::Measure::OSArgument.makeDoubleArgument('stage_two_heating_fan_speed', false)
+    stage_two_heating_fan_speed = OpenStudio::Measure::OSArgument.makeDoubleArgument('stage_two_heating_fan_speed',
+                                                                                     false)
     stage_two_heating_fan_speed.setDisplayName('Fan speed fraction during stage two DX heating.')
     stage_two_heating_fan_speed.setDefaultValue(0.5)
     args << stage_two_heating_fan_speed
 
     # make an argument for stage_three heating fan speed fraction
-    stage_three_heating_fan_speed = OpenStudio::Measure::OSArgument.makeDoubleArgument('stage_three_heating_fan_speed', false)
+    stage_three_heating_fan_speed = OpenStudio::Measure::OSArgument.makeDoubleArgument('stage_three_heating_fan_speed',
+                                                                                       false)
     stage_three_heating_fan_speed.setDisplayName('Fan speed fraction during stage three DX heating. Not used for two-speed systems.')
     stage_three_heating_fan_speed.setDefaultValue(0.75)
     args << stage_three_heating_fan_speed
 
     # make an argument for stage_four heating fan speed fraction
-    stage_four_heating_fan_speed = OpenStudio::Measure::OSArgument.makeDoubleArgument('stage_four_heating_fan_speed', false)
+    stage_four_heating_fan_speed = OpenStudio::Measure::OSArgument.makeDoubleArgument('stage_four_heating_fan_speed',
+                                                                                      false)
     stage_four_heating_fan_speed.setDisplayName('Fan speed fraction during stage four DX heating. Not used for two-speed systems.')
     stage_four_heating_fan_speed.setDefaultValue(1.0)
     args << stage_four_heating_fan_speed
 
-    return args
+    args
   end
 
   # define what happens when the measure is run
@@ -100,19 +108,19 @@ The measure is set up so that a separate block of EMS code is inserted for each 
     super(workspace, runner, user_arguments)
 
     # use the built-in error checking
-    if !runner.validateUserArguments(arguments(workspace), user_arguments)
-      return false
-    end
+    return false unless runner.validateUserArguments(arguments(workspace), user_arguments)
 
     # Assign the user inputs to variables
     vent_fan_speed = runner.getOptionalDoubleArgumentValue('vent_fan_speed', user_arguments)
     stage_one_cooling_fan_speed = runner.getOptionalDoubleArgumentValue('stage_one_cooling_fan_speed', user_arguments)
     stage_two_cooling_fan_speed = runner.getOptionalDoubleArgumentValue('stage_two_cooling_fan_speed', user_arguments)
-    stage_three_cooling_fan_speed = runner.getOptionalDoubleArgumentValue('stage_three_cooling_fan_speed', user_arguments)
+    stage_three_cooling_fan_speed = runner.getOptionalDoubleArgumentValue('stage_three_cooling_fan_speed',
+                                                                          user_arguments)
     stage_four_cooling_fan_speed = runner.getOptionalDoubleArgumentValue('stage_four_cooling_fan_speed', user_arguments)
     stage_one_heating_fan_speed = runner.getOptionalDoubleArgumentValue('stage_one_heating_fan_speed', user_arguments)
     stage_two_heating_fan_speed = runner.getOptionalDoubleArgumentValue('stage_two_heating_fan_speed', user_arguments)
-    stage_three_heating_fan_speed = runner.getOptionalDoubleArgumentValue('stage_three_heating_fan_speed', user_arguments)
+    stage_three_heating_fan_speed = runner.getOptionalDoubleArgumentValue('stage_three_heating_fan_speed',
+                                                                          user_arguments)
     stage_four_heating_fan_speed = runner.getOptionalDoubleArgumentValue('stage_four_heating_fan_speed', user_arguments)
 
     if vent_fan_speed.empty?
@@ -263,7 +271,7 @@ The measure is set up so that a separate block of EMS code is inserted for each 
       selected_heating_coils = workspace.getObjectsByType(air_loop_heating_coil_type.to_s.to_IddObjectType)
       selected_heating_coils.each do |heating_coil|
         hc_name_test = heating_coil.getString(0, true).get
-        puts hc_name_test.to_s
+        puts hc_name_test
         if "#{hc_name_test}.to_s" == "#{air_loop_heating_coil}.to_s"
           if air_loop_heating_coil_type.to_s == 'Coil:Heating:Gas'
             selected_heating_coil_outlet_node = heating_coil.getString(5, true).get
@@ -297,7 +305,7 @@ The measure is set up so that a separate block of EMS code is inserted for each 
       selected_setpoint_manager.each do |setpoint_manager|
         setpoint_manager_setpoint_node_name = setpoint_manager.getString(7, true).get
         if selected_heating_coil_outlet_node.to_s == setpoint_manager_setpoint_node_name
-          puts selected_heating_coil_outlet_node.to_s
+          puts selected_heating_coil_outlet_node
           setpoint_manager.setString(7, "#{revised_air_loop_name}_NodeList")
         end
       end
@@ -490,7 +498,7 @@ The measure is set up so that a separate block of EMS code is inserted for each 
 	      SET #{revised_fan_name}_mass_flow_actuator = Timestep_Fan_Mass_Flow, !- Added for test of two actuator code
 	    ENDIF;
 	    "
-  end
+        end
       end
 
       # Add EMS code to the model
@@ -519,8 +527,8 @@ The measure is set up so that a separate block of EMS code is inserted for each 
       wsObject = workspace.addObject(object)
     end
 
-    return true
-end # end the run method
+    true
+  end # end the run method
 end # end the measure
 
 # register the measure to be used by the application

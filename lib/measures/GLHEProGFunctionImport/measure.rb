@@ -19,7 +19,7 @@ class GLHEProGFunctionImport < OpenStudio::Measure::ModelMeasure
   # define the name that a user will see, this method may be deprecated as
   # the display name in PAT comes from the name field in measure.xml
   def name
-    return 'GLHEProGFunctionImport'
+    'GLHEProGFunctionImport'
   end
 
   # define the arguments that the user will input
@@ -57,7 +57,7 @@ class GLHEProGFunctionImport < OpenStudio::Measure::ModelMeasure
     object.setDisplayName('Select plant loop to add GLHX to')
     args << object
 
-    return args
+    args
   end
 
   # define what happens when the measure is run
@@ -65,16 +65,14 @@ class GLHEProGFunctionImport < OpenStudio::Measure::ModelMeasure
     super(model, runner, user_arguments)
 
     # Use the built-in error checking
-    if !runner.validateUserArguments(arguments(model), user_arguments)
-      return false
-    end
+    return false unless runner.validateUserArguments(arguments(model), user_arguments)
 
     # Assign the user inputs to variables
     g_function_path = runner.getStringArgumentValue('g_function_path', user_arguments)
     object = runner.getOptionalWorkspaceObjectChoiceValue('object', user_arguments, model)
 
     # Check to make sure the g function file exists
-    if !File.exist?(g_function_path)
+    unless File.exist?(g_function_path)
       runner.registerError("The G Function file '#{g_function_path}' could not be found.")
       return false
     end
@@ -89,17 +87,15 @@ class GLHEProGFunctionImport < OpenStudio::Measure::ModelMeasure
         runner.registerError("The selected loop with handle '#{handle}' was not found in the model. It may have been removed by another measure.")
       end
       return false
+    elsif object.get.to_PlantLoop.is_initialized
+      loop = object.get.to_PlantLoop.get
     else
-      if object.get.to_PlantLoop.is_initialized
-        loop = object.get.to_PlantLoop.get
-      else
-        runner.registerError('Script Error - argument not showing up as loop.')
-        return false
-      end
+      runner.registerError('Script Error - argument not showing up as loop.')
+      return false
     end
 
     # Check the location of the GFunction
-    if !File.exist?(g_function_path)
+    unless File.exist?(g_function_path)
       runner.registerError("Coulnd't find the G Function file.  Check file path and try again: '#{g_function_path}'.")
     end
 
@@ -178,7 +174,7 @@ class GLHEProGFunctionImport < OpenStudio::Measure::ModelMeasure
 
     # Add the G Function pairs after removing all old ones
     glhx.removeAllGFunctions
-    pair_range = 22..(76 * 2 + 22 - 2) # Pairs start on field 22
+    pair_range = 22..((76 * 2) + 22 - 2) # Pairs start on field 22
     pair_range.step(2) do |i|
       lntts = glhx_idf.getDouble(i)
       gfnc = glhx_idf.getDouble(i + 1)
@@ -193,7 +189,7 @@ class GLHEProGFunctionImport < OpenStudio::Measure::ModelMeasure
       glhx.addGFunction(lntts, gfnc)
     end
 
-    return true
+    true
   end
 end
 
