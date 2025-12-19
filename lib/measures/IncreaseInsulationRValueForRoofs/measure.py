@@ -179,6 +179,9 @@ class IncreaseInsulationRValueForRoofs(openstudio.measure.ModelMeasure):
         insulation_material_lifetime = runner.getIntegerArgumentValue("insulation_material_lifetime", user_arguments)
         insulation_thermal_conductivity = runner.getDoubleArgumentValue("insulation_thermal_conductivity", user_arguments)
         insulation_material_density = runner.getDoubleArgumentValue("insulation_material_density", user_arguments)
+        
+        # Track if user provided explicit density value (non-zero means user-specified)
+        user_specified_density = insulation_material_density > 0.0
 
         # Reasonableness checks
         if (r_value_ip < 0.0) or (r_value_ip > 500.0):
@@ -219,14 +222,19 @@ class IncreaseInsulationRValueForRoofs(openstudio.measure.ModelMeasure):
             "Graphite Polystyrene (GPS) Foam Board": 20, # source: https://www.epsmolders.org/graphite-enhanced-eps/
             "Expanded Polystyrene (EPS) Foam Board": 20, # source: https://www.epsmolders.org/what-is-eps/
             "Extruded Polystyrene (XPS) Foam Board": 35, # source: https://www.owenscorning.com/en-us/insulation/foamular
-            "Mineral Wool Heavy Density Blanket": 90, # source: https://www.energy.gov/energysaver/weatherize/insulation/types-insulation
-            "Mineral Wool Light Density Blanket": 90, # source: https://www.energy.gov/energysaver/weatherize/insulation/types-insulation
+            "Mineral Wool Heavy Density Blanket": 103, # source: OWENS CORNING Thermafiber Light and Heavy Density Mineral Wool Insulation EPD
+            "Mineral Wool Light Density Blanket": 48.6, # source: OWENS CORNING Thermafiber Light and Heavy Density Mineral Wool Insulation EPD
             "Fiberglass Batts": 30, # source: https://www.energy.gov/energysaver/weatherize/insulation/types-insulation
-            "Pure Wool Batts": 40 # source: https://www.energy.gov/energysaver/weatherize/insulation/types-insulation
+            "Pure Wool Batts": 24.98 # source: Havelock Wool Batt and Loose-fill Insulation EPD
         }
 
         selected_k = insulation_thermal_conductivity if insulation_thermal_conductivity > 0.0 else material_k_dict[insulation_material_type]
-        selected_rho = insulation_material_density if insulation_material_density > 0.0 else material_density_dict[insulation_material_type]
+        # Use user-specified density if provided, otherwise use default from dict
+        if insulation_material_density == 0.0:
+            insulation_material_density = material_density_dict[insulation_material_type]
+        
+        # Initialize selected_rho with user/default density (will be updated from EPD if available)
+        selected_rho = insulation_material_density
 
         # Conversions
         r_value_si = self._unit_convert(r_value_ip, "ft^2*h*R/Btu", "m^2*K/W")
@@ -416,7 +424,9 @@ class IncreaseInsulationRValueForRoofs(openstudio.measure.ModelMeasure):
                 "construction": new_construction,
                 "orig_construction_name": cname,
                 "total_area_m2": area_m2,
-                "added_thickness_m": added_thickness_m  # (0 if no increase)
+                "added_thickness_m": added_thickness_m,  # (0 if no increase)
+                "original_r_value_si": target_R,  # Original R-value in SI units
+                "target_r_value_si": r_value_si   # Target R-value in SI units
             })
 
         # Swap hard-assigned constructions on surfaces
@@ -472,10 +482,24 @@ class IncreaseInsulationRValueForRoofs(openstudio.measure.ModelMeasure):
 
         # Create a dict to hold GWP values per functional unit
         gwp_values = {"gwp_per_kg": [], "gwp_per_m3": [], "gwp_per_m2": []}
+        
+        # Extract density values from EPD responses
+        density_values = []
 
         # loop through each epd
         for idx, epd in enumerate(insulation_product_epd, start = 1):
             parsed_data  = parse_product_epd(epd)
+            
+            # Extract density if available
+            density_str = parsed_data.get("density")
+            if density_str:
+                density_value = extract_numeric_value(density_str)
+                if density_value > 0.0:
+                    density_values.append(density_value)
+                    runner.registerInfo(f"EPD {idx}: Extracted density = {density_value} kg/m³ from '{density_str}'")
+            else:
+                runner.registerInfo(f"EPD {idx}: No density data found")
+            
             # per mass
             gwp_per_kg = parsed_data["gwp_per_kg (kg CO2 eq/kg)"]
             if gwp_per_kg != 0.0:
@@ -497,6 +521,42 @@ class IncreaseInsulationRValueForRoofs(openstudio.measure.ModelMeasure):
                 filtered_count = len(gwp_values[key])
                 if original_count != filtered_count:
                     runner.registerInfo(f"Removed {original_count - filtered_count} outliers from {key}: {original_count} -> {filtered_count} values")
+
+        # Use EPD density if available, applying the same statistic method as GWP
+        if density_values:
+            # Remove outliers from density values
+            if len(density_values) > 0:
+                original_count = len(density_values)
+                density_values = self.remove_outliers_iqr(density_values)
+                filtered_count = len(density_values)
+                if original_count != filtered_count:
+                    runner.registerInfo(f"Removed {original_count - filtered_count} density outliers: {original_count} -> {filtered_count} values")
+            
+            # Apply statistic based on user selection
+            epd_density = 0.0
+            if len(density_values) == 1:
+                epd_density = density_values[0]
+            elif gwp_statistic == "minimum":
+                epd_density = float(np.min(density_values))
+            elif gwp_statistic == "maximum":
+                epd_density = float(np.max(density_values))
+            elif gwp_statistic == "mean":
+                epd_density = float(np.mean(density_values))
+            elif gwp_statistic == "median":
+                epd_density = float(np.median(density_values))
+            else:
+                epd_density = float(np.mean(density_values))  # default to mean
+            
+            # Use EPD density if user didn't provide a specific value (was using default 0.0)
+            if not user_specified_density:
+                selected_rho = epd_density
+                runner.registerInfo(f"Using EPD-derived density: {selected_rho:.2f} kg/m³ (based on {len(density_values)} EPD values)")
+            else:
+                selected_rho = insulation_material_density
+                runner.registerInfo(f"Using user-specified density: {selected_rho:.2f} kg/m³ (EPD {gwp_statistic}: {epd_density:.2f} kg/m³)")
+        else:
+            selected_rho = insulation_material_density
+            runner.registerInfo(f"No density data found in EPDs. Using {'user-specified' if user_specified_density else 'default'} density: {selected_rho:.2f} kg/m³")
 
         # Analysis-period multiplier
         mult = lifetime_multiplier(insulation_material_lifetime, analysis_period)
@@ -555,16 +615,36 @@ class IncreaseInsulationRValueForRoofs(openstudio.measure.ModelMeasure):
             # Tag onto construction as additionalProperties
             c = item["construction"]
             props = c.additionalProperties()
-            props.setFeature("embodied_carbon_kgCO2eq", total_gwp)
-            props.setFeature("modified_material", insulation_material_type)
+            
+            # Convert R-values to IP units for storage
+            original_r_value_ip = self._unit_convert(item["original_r_value_si"], "m^2*K/W", "ft^2*h*R/Btu")
+            target_r_value_ip = self._unit_convert(item["target_r_value_si"], "m^2*K/W", "ft^2*h*R/Btu")
+            
+            # Get construction handle
+            construction_handle = str(c.handle())
+            
+            # Get number of layers in construction
+            lc = c.to_LayeredConstruction()
+            construction_layers_count = len(lc.get().layers()) if lc.is_initialized() else 0
+            
+            # Store all properties matching exterior wall measure format
+            props.setFeature("construction_handle", construction_handle)
             props.setFeature("total_volume_m3", added_volume_m3)
-            props.setFeature("total_area_m2", area_m2)
-            props.setFeature("added_thickness_m", add_t_m)
-            props.setFeature("insulation_material_density_kg_per_m3", selected_rho)
+            props.setFeature("total_embodied_carbon_kgCO2eq", total_gwp)
+            props.setFeature("target_insulation_r_value_ip", target_r_value_ip)
+            props.setFeature("renovated_roof_area_m2", area_m2)
+            props.setFeature("original_insulation_r_value_ip", original_r_value_ip)
+            props.setFeature("insulation_material_type", insulation_material_type)
+            props.setFeature("insulation_material_thermal_conductivity_W_per_mK", selected_k)
             props.setFeature("insulation_material_lifetime_years", insulation_material_lifetime)
-            props.setFeature("insulation_material_gwp_per_kg", sel_gwp_per_kg)
-            props.setFeature("insulation_material_gwp_per_m2", sel_gwp_per_m2)
             props.setFeature("insulation_material_gwp_per_m3", sel_gwp_per_m3)
+            props.setFeature("insulation_material_gwp_per_m2", sel_gwp_per_m2)
+            props.setFeature("insulation_material_gwp_per_kg", sel_gwp_per_kg)
+            props.setFeature("insulation_material_density_kg_per_m3", selected_rho)
+            props.setFeature("construction_layers_count", construction_layers_count)
+            props.setFeature("analysis_period_years", analysis_period)
+            props.setFeature("added_insulation_layer_thickness_m", add_t_m)
+            props.setFeature("added_insulation_layer_area_m2", area_m2)
 
             runner.registerInfo(
                 f"Tagged '{c.nameString()}' with embodied carbon: "

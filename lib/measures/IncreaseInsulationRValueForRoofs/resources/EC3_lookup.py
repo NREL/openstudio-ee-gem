@@ -161,10 +161,17 @@ def parse_product_epd(epd: Dict[str, Any]) -> Dict[str, Any]:
     thickness = epd.get("thickness")
     gwp_per_declared_unit = epd.get("gwp")
     mass_per_declared_unit = epd.get("mass_per_declared_unit")
+    if mass_per_declared_unit and any(x in mass_per_declared_unit for x in ["g"]):
+        mass_per_declared_unit = str(extract_numeric_value(mass_per_declared_unit)/1000) + " kg"
+    elif mass_per_declared_unit and any(x in mass_per_declared_unit for x in ["lbs", "lb"]):
+        mass_per_declared_unit = str(extract_numeric_value(mass_per_declared_unit)*0.453592) + " kg"
     density = epd.get("density")
     # fix the issue that density unit is g/cm3 but parsed as kg/m3 in EC3 json repsonse
     if density and any(x in density for x in ["kg / m3", "kg / m^3", "kg/m3", "kg/m^3"]) and extract_numeric_value(density) < 10:
         density_value = extract_numeric_value(density)*1000
+        density = str(density_value) + " kg/m3"
+    elif density and any(x in density for x in ["lbs / ft3", "lb/ft3", "lbs/ft^3" , "lb / ft3"]):
+        density_value = extract_numeric_value(density)*16.0185
         density = str(density_value) + " kg/m3"
 
     gwp_per_kg = extract_numeric_value(epd.get("gwp_per_kg"))
@@ -332,7 +339,8 @@ def extract_numeric_value(value: Any) -> float:
     :param value: Value to process
     :return: Extracted numeric value
     """
-    match = re.search(r"[-+]?\d*\.?\d+", str(value))
+    # Extract numbers only; ignore leading '+' or '-' signs
+    match = re.search(r"\d*\.?\d+", str(value))
     return float(match.group()) if match else 0.0
 
 # extract numeric values then divide
@@ -429,8 +437,18 @@ def compute_gwp_data(keys, epd_list_by_material, epd_type, gwp_statistic):
 
             for unit_key, json_key in mapping.items():
                 value = extract_numeric_value(parsed_data.get(json_key))
-                if value is not None:
+                if value is not None and value != 0.0:
                     gwp_values[unit_key].append(float(value))
+        
+        # Remove outliers from GWP values using IQR method
+        for unit_key in gwp_values.keys():
+            if len(gwp_values[unit_key]) > 0:
+                original_count = len(gwp_values[unit_key])
+                gwp_values[unit_key] = remove_outliers_iqr(gwp_values[unit_key])
+                filtered_count = len(gwp_values[unit_key])
+                if original_count != filtered_count:
+                    print(f"Removed {original_count - filtered_count} outliers from {unit_key} for {key}: {original_count} -> {filtered_count} values")
+        
         for unit_key, values_list in gwp_values.items():
             if len(values_list) == 0:
                 print(f"No GWP values for {unit_key} in {key} using {epd_type}")
@@ -461,6 +479,27 @@ def compute_average(min,max):
 
     return avg
 
+def remove_outliers_iqr(data):
+    """Remove outliers from a list of numerical values using the IQR method.
+    Returns the filtered list without outliers.
+    """
+    if len(data) < 4:  # Need at least 4 data points for meaningful IQR calculation
+        return data
+    
+    data_array = np.array(data)
+    q1 = np.percentile(data_array, 25)
+    q3 = np.percentile(data_array, 75)
+    iqr = q3 - q1
+    
+    # Define outlier bounds
+    lower_bound = q1 - 1.5 * iqr
+    upper_bound = q3 + 1.5 * iqr
+    
+    # Filter out outliers
+    filtered_data = [x for x in data if lower_bound <= x <= upper_bound]
+    
+    return filtered_data
+
 def main():
     """
     Main function to execute the script.
@@ -468,7 +507,7 @@ def main():
     print("Fetching EC3 EPD data...")
 
     print("Search EPD based on names:")
-    search_url=generate_url_byname(category='bf1c8882d7784db4b10d9d5698b8b5cc', name_like= "fiber glass")
+    search_url=generate_url_byname(category='56f3c898f94b459eb18feadeb792ab88', name_like= "xps insulation") 
     epd_data = fetch_epd_data(search_url, API_TOKEN)
     
     for idx, epd in enumerate(epd_data, start=1):
