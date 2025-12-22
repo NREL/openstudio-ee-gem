@@ -851,10 +851,18 @@ def create_stacked_bar_chart(csv_path, measure_dir):
         ax = axes[idx]
         group = r_value_groups[r_val]
         
-        # Get data for this R-value
+        # Get data for this R-value and sort by embodied carbon (low to high)
         scenarios = group['scenarios']
-        op_carbon_tons = [oc / 1000 for oc in group['op_carbon']]
-        em_carbon_tons = [ec / 1000 for ec in group['em_carbon']]
+        op_carbon = group['op_carbon']
+        em_carbon = group['em_carbon']
+        
+        # Sort by embodied carbon values
+        sorted_data = sorted(zip(em_carbon, scenarios, op_carbon))
+        em_carbon_sorted, scenarios_sorted, op_carbon_sorted = zip(*sorted_data)
+        
+        scenarios = list(scenarios_sorted)
+        op_carbon_tons = [oc / 1000 for oc in op_carbon_sorted]
+        em_carbon_tons = [ec / 1000 for ec in em_carbon_sorted]
         
         # Set up x-axis positions
         x_pos = np.arange(len(scenarios))

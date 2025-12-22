@@ -132,7 +132,18 @@ def fetch_epd_data(url,api_token):
         HEADERS = {"Accept": "application/json", "Authorization": "Bearer " + api_token}
         response = requests.get(url, headers=HEADERS, verify=False)
         response.raise_for_status() # HTTPError if failure 
-        return response.json()
+        result = response.json()
+        
+        # Log how many records were returned
+        if isinstance(result, dict) and 'epds' in result:
+            print(f"  → API returned {len(result['epds'])} EPD records")
+            return result['epds']
+        elif isinstance(result, list):
+            print(f"  → API returned {len(result)} EPD records")
+            return result
+        else:
+            print(f"  → API returned unexpected format: {type(result)}")
+            return []
     except requests.exceptions.RequestException as e:
         print(f"Error fetching data from {url}: {e}")
         if 'response' in locals():  # Check if response was defined
@@ -221,7 +232,7 @@ def parse_product_epd(epd: Dict[str, Any]) -> Dict[str, Any]:
         gwp_per_m2 = multiply(gwp_per_kg, mass_per_area)
 
     # Per unit
-    if declared_unit and any(x in declared_unit for x in ["unit", "each", "item", 'piece']):
+    if declared_unit and any(x in declared_unit for x in ["unit", "each", "item", 'piece', 'ea']):
         gwp_per_unit = divide(gwp_per_declared_unit, declared_unit)
     
     parsed_data["epd_name"] = epd_name
@@ -506,7 +517,7 @@ def main():
     print("Fetching EC3 EPD data...")
 
     print("Search EPD based on names:")
-    search_url=generate_url_byname(name_like= "jamb weatherstripping", category="ca54e842c0fc4bf2b4f3a8564c3b1a4d")
+    search_url=generate_url_byname(name_like= "silicone adhesive smoke gasket", category="ca54e842c0fc4bf2b4f3a8564c3b1a4d")
     epd_data = fetch_epd_data(search_url, API_TOKEN)
     
     for idx, epd in enumerate(epd_data, start=1):

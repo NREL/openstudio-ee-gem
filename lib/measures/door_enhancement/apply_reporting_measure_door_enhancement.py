@@ -1,16 +1,16 @@
 """
-Apply reporting measure to extract AdditionalProperties from wall insulation models.
+Apply reporting measure to extract AdditionalProperties from door enhancement models and parse EnergyPlus simulation results.
 
 Usage:
-    python apply_reporting_measure_wall_insulation.py
+    python apply_reporting_measure_door_enhancement.py
 """
+
 import sys
 import os
-import codecs
 
 # Set UTF-8 encoding for console output to handle Unicode characters
 if sys.platform == 'win32':
-    import io
+    import codecs
     sys.stdout = codecs.getwriter('utf-8')(sys.stdout.buffer, 'strict')
     sys.stderr = codecs.getwriter('utf-8')(sys.stderr.buffer, 'strict')
 
@@ -30,9 +30,9 @@ except ImportError:
 
 def load_emission_factors():
     """Load emission factors from CSV file."""
-    emission_factors_path = Path(__file__).parent.parent / "ReportRetrofitImpacts" / "resources" / "emission_factors_for_operational_carbon.csv"
-    import pandas as pd
+    emission_factors_path = Path(__file__).parent.parent.parent / "ReportRetrofitImpacts" / "resources" / "emission_factors_for_operational_carbon.csv"
     
+    import pandas as pd
     if not emission_factors_path.exists():
         print(f"Warning: Emission factors file not found at {emission_factors_path}")
         print("  Using default emission factors")
@@ -118,14 +118,13 @@ def extract_model_data(osm_path, emission_factors):
     
     # Extract energy results from eplustbl.html file
     scenario_name = osm_path.stem
-    run_dir = osm_path.parent / f"{scenario_name}_simulation"
+    run_dir = osm_path.parent / f"run_{scenario_name[4:]}"  # Remove 'out_' prefix
     
-    # Try multiple possible eplustbl.html/htm locations
+    # Try multiple possible eplustbl.html locations
     eplustbl_paths = [
-        run_dir / "eplustbl.htm",
-        run_dir / "eplustbl.html",
         run_dir / "run" / "eplustbl.html",
-        run_dir / "reports" / "eplustbl.html"
+        run_dir / "reports" / "eplustbl.html",
+        run_dir / "eplustbl.html"
     ]
     
     energy_data = {}
@@ -182,30 +181,31 @@ def extract_model_data(osm_path, emission_factors):
             
             # Calculate total operational carbon
             try:
-                elec_GJ = float(energy_data.get('total_end_uses_electricity_GJ', 0) or 0)
-                gas_GJ = float(energy_data.get('total_end_uses_natural_gas_GJ', 0) or 0)
+                elec_gj = float(energy_data.get('total_end_uses_electricity_GJ', 0) or 0)
+                gas_gj = float(energy_data.get('total_end_uses_natural_gas_GJ', 0) or 0)
                 water_m3 = float(energy_data.get('total_end_uses_water_m3', 0) or 0)
                 
-                op_carbon_electricity = elec_GJ * emission_factors['elec_emission_factor']
-                op_carbon_gas = gas_GJ * emission_factors['gas_emission_factor']
-                op_carbon_water = water_m3 * emission_factors['water_emission_factor']
+                total_operational_carbon = (
+                    elec_gj * emission_factors['elec_emission_factor'] +
+                    gas_gj * emission_factors['gas_emission_factor'] +
+                    water_m3 * emission_factors['water_emission_factor']
+                )
                 
-                total_op_carbon = op_carbon_electricity + op_carbon_gas + op_carbon_water
-                
-                energy_data['operational_carbon_electricity_kgCO2e'] = op_carbon_electricity
-                energy_data['operational_carbon_gas_kgCO2e'] = op_carbon_gas
-                energy_data['operational_carbon_water_kgCO2e'] = op_carbon_water
-                energy_data['total_operational_carbon_kgCO2e'] = total_op_carbon
+                energy_data['total_operational_carbon_kgCO2e'] = f"{total_operational_carbon:.2f}"
+                print(f"  ✓ Operational carbon calculated: {total_operational_carbon:.2f} kgCO2e")
+                print(f"    = {elec_gj:.2f} GJ × {emission_factors['elec_emission_factor']:.2f}")
+                print(f"    + {gas_gj:.2f} GJ × {emission_factors['gas_emission_factor']:.2f}")
+                print(f"    + {water_m3:.2f} m³ × {emission_factors['water_emission_factor']:.2f}")
             except (ValueError, TypeError, KeyError) as e:
-                print(f"  ⚠ Error calculating operational carbon: {e}")
+                print(f"  ⚠ Could not calculate operational carbon: {e}")
                 energy_data['total_operational_carbon_kgCO2e'] = ''
             
             # Check if we actually got any data
             non_empty_fields = sum(1 for v in energy_data.values() if v)
             if non_empty_fields > 0:
-                print(f"✓ Parsed EnergyPlus report data ({non_empty_fields}/{len(energy_data)} fields populated)")
+                print(f"✓ Energy data extracted from HTML: {non_empty_fields}/{len(energy_data)} fields")
             else:
-                print(f"  ⚠ WARNING: No EnergyPlus data extracted from {eplustbl_path.name}")
+                print(f"  ⚠ No EnergyPlus data extracted from HTML")
                 energy_data = {}
                 
         except Exception as e:
@@ -246,7 +246,6 @@ def create_scatterplot(csv_path, measure_dir):
     
     import pandas as pd
     import re
-    import traceback
     
     # Read CSV file - it has two sections
     try:
@@ -259,7 +258,7 @@ def create_scatterplot(csv_path, measure_dir):
         energyplus_start = None
         
         for i, line in enumerate(lines):
-            if '# Wall Construction AdditionalProperties' in line:
+            if '# Roof Construction AdditionalProperties' in line:
                 construction_start = i + 1
             elif '# EnergyPlus Simulation Summary' in line:
                 energyplus_start = i + 1
@@ -297,7 +296,7 @@ def create_scatterplot(csv_path, measure_dir):
         print(f"  Merged df has columns: {list(df.columns)[:5]}...")
         print(f"  Checking for required columns:")
         print(f"    - total_embodied_carbon_kgCO2eq: {'total_embodied_carbon_kgCO2eq' in df.columns}")
-        print(f"    - insutlation_material_type: {'insutlation_material_type' in df.columns}")
+        print(f"    - insulation_material_type: {'insulation_material_type' in df.columns}")
         print(f"    - total_site_energy_GJ: {'total_site_energy_GJ' in df.columns}")
         
         # Sample data for first scenario
@@ -305,7 +304,7 @@ def create_scatterplot(csv_path, measure_dir):
             first_scenario = df.index[0]
             print(f"  Sample data for {first_scenario}:")
             print(f"    Carbon: {df.loc[first_scenario, 'total_embodied_carbon_kgCO2eq'] if 'total_embodied_carbon_kgCO2eq' in df.columns else 'NOT FOUND'}")
-            print(f"    Material: {df.loc[first_scenario, 'insutlation_material_type'] if 'insutlation_material_type' in df.columns else 'NOT FOUND'}")
+            print(f"    Material: {df.loc[first_scenario, 'insulation_material_type'] if 'insulation_material_type' in df.columns else 'NOT FOUND'}")
             print(f"    Energy: {df.loc[first_scenario, 'total_site_energy_GJ'] if 'total_site_energy_GJ' in df.columns else 'NOT FOUND'}")
         
     except Exception as e:
@@ -331,27 +330,35 @@ def create_scatterplot(csv_path, measure_dir):
             
             # Get carbon and material from construction data
             carbon = df.loc[scenario, 'total_embodied_carbon_kgCO2eq'] if 'total_embodied_carbon_kgCO2eq' in df.columns else None
-            material = df.loc[scenario, 'insutlation_material_type'] if 'insutlation_material_type' in df.columns else None
-            
-            # Get energy from EnergyPlus data
+            material_type = df.loc[scenario, 'insulation_material_type'] if 'insulation_material_type' in df.columns else 'Unknown'
             energy = df.loc[scenario, 'total_site_energy_GJ'] if 'total_site_energy_GJ' in df.columns else None
             
-            # Convert to appropriate types
-            if r_value is not None and carbon is not None and material is not None:
-                try:
-                    carbon_val = float(carbon)
-                    energy_val = float(energy) if energy and str(energy).strip() else None
-                    
-                    r_values.append(r_value)
-                    carbon_values.append(carbon_val)
-                    energy_values.append(energy_val)
-                    scenario_names.append(scenario)
-                    material_types.append(str(material))
-                except (ValueError, TypeError) as e:
-                    print(f"  ⚠ Skipping {scenario}: Error converting values - {e}")
-                    continue
+            print(f"  {scenario}: R={r_value}, Carbon={carbon}, Energy={energy}, Material={material_type}")
+            
+            # Convert to proper types
+            if carbon is not None and not pd.isna(carbon):
+                carbon = float(carbon)
+            else:
+                carbon = None
+                
+            if energy is not None and not pd.isna(energy):
+                energy = float(energy)
+            else:
+                energy = None
+            
+            # Debug: Print first few values
+            if len(r_values) < 3:
+                print(f"  {scenario}: R={r_value}, Carbon={carbon}, Energy={energy}, Material={material_type}")
+            
+            # Add to lists if all values are valid
+            if r_value is not None and carbon is not None and energy is not None and r_value >= 0:
+                r_values.append(r_value)
+                carbon_values.append(carbon)
+                energy_values.append(energy)
+                scenario_names.append(scenario)
+                material_types.append(material_type)
         except Exception as e:
-            print(f"  ⚠ Error processing scenario {scenario}: {e}")
+            print(f"  ⚠ Error processing {scenario}: {e}")
             continue
     
     if not r_values:
@@ -393,8 +400,8 @@ def create_scatterplot(csv_path, measure_dir):
         unique_r_values = sorted(set(r_with_energy))
         print(f"\n  Energy data summary:")
         for r_val in unique_r_values:
-            energies_at_r = [e for r, e in zip(r_with_energy, e_with_data) if r == r_val]
-            print(f"    R={r_val}: {len(energies_at_r)} data points, mean={sum(energies_at_r)/len(energies_at_r):.2f} GJ")
+            energy_at_r = [e for r, e in zip(r_with_energy, e_with_data) if r == r_val]
+            print(f"    R={r_val:.1f}: {len(energy_at_r)} data points, energy={energy_at_r[0]:.2f} GJ")
         
         ax1.scatter(r_with_energy, e_with_data, color=color1, s=100, alpha=0.6, 
                    label='Site Energy', marker='o', zorder=3)
@@ -402,10 +409,10 @@ def create_scatterplot(csv_path, measure_dir):
         
         # Add trendline for site energy
         if len(r_with_energy) >= 2:
-            z1 = np.polyfit(r_with_energy, e_with_data, 1)
+            z1 = np.polyfit(r_with_energy, e_with_data, 1)  # Linear fit
             p1 = np.poly1d(z1)
-            r_sorted = np.sort(unique_r_values)
-            ax1.plot(r_sorted, p1(r_sorted), color=color1, linestyle='--', linewidth=2,
+            r_sorted = np.sort(np.unique(r_with_energy))
+            ax1.plot(r_sorted, p1(r_sorted), color=color1, linestyle='--', linewidth=2, 
                     alpha=0.8, label=f'Energy Trend (slope={z1[0]:.2f})', zorder=2)
     
     ax1.grid(True, alpha=0.3)
@@ -422,22 +429,24 @@ def create_scatterplot(csv_path, measure_dir):
         if r_vals_mat:  # Only plot if there's data for this material
             # Simplify legend labels
             label = material.replace(' Foam Board', '').replace(' Blanket', '').replace(' Batts', '')
-            ax2.scatter(r_vals_mat, carbon_vals_mat,
-                       color=material_colors[material],
-                       s=100, alpha=0.7,
+            
+            # Plot embodied carbon with material-specific colors
+            ax2.scatter(r_vals_mat, carbon_vals_mat, 
+                       color=material_colors[material], 
+                       s=100, alpha=0.7, 
                        label=label,
-                       marker='s',
-                       edgecolors='black',
+                       marker='s',  # Square markers for carbon
+                       edgecolors='black', 
                        linewidths=0.5,
                        zorder=3)
             
             # Add trendline for each material type if there are at least 2 points
             if len(r_vals_mat) >= 2:
-                z_mat = np.polyfit(r_vals_mat, carbon_vals_mat, 1)
+                z_mat = np.polyfit(r_vals_mat, carbon_vals_mat, 1)  # Linear fit
                 p_mat = np.poly1d(z_mat)
                 r_mat_sorted = np.sort(r_vals_mat)
-                ax2.plot(r_mat_sorted, p_mat(r_mat_sorted),
-                        color=material_colors[material],
+                ax2.plot(r_mat_sorted, p_mat(r_mat_sorted), 
+                        color=material_colors[material], 
                         linestyle='--', linewidth=1.5, alpha=0.6, zorder=2)
     
     ax2.tick_params(axis='y')
@@ -447,7 +456,7 @@ def create_scatterplot(csv_path, measure_dir):
     ax1.grid(True, alpha=0.3)
     
     # Add title
-    plt.title('Energy and Carbon Impact vs. Wall Insulation R-Value', fontsize=14, fontweight='bold', pad=20)
+    plt.title('Energy and Carbon Impact vs. Roof Insulation R-Value', fontsize=14, fontweight='bold', pad=20)
     
     # Add legends - Site Energy on left, Materials on right
     lines1, labels1 = ax1.get_legend_handles_labels()
@@ -461,7 +470,7 @@ def create_scatterplot(csv_path, measure_dir):
     fig.tight_layout()
     
     # Save the plot
-    output_plot = measure_dir / "resources" / "wall_insulation_carbon_impact.png"
+    output_plot = measure_dir / "resources" / "roof_insulation_carbon_impact.png"
     output_plot.parent.mkdir(parents=True, exist_ok=True)
     plt.savefig(output_plot, dpi=300, bbox_inches='tight')
     plt.close()
@@ -495,7 +504,6 @@ def create_carbon_comparison_plot(csv_path, measure_dir):
     
     import pandas as pd
     import re
-    import traceback
     
     # Read CSV file - it has two sections
     try:
@@ -508,7 +516,7 @@ def create_carbon_comparison_plot(csv_path, measure_dir):
         energyplus_start = None
         
         for i, line in enumerate(lines):
-            if '# Wall Construction AdditionalProperties' in line:
+            if '# Roof Construction AdditionalProperties' in line:
                 construction_start = i + 1
             elif '# EnergyPlus Simulation Summary' in line:
                 energyplus_start = i + 1
@@ -563,29 +571,31 @@ def create_carbon_comparison_plot(csv_path, measure_dir):
             r_value_match = re.search(r'R(\d+\.?\d*)', scenario)
             r_value = float(r_value_match.group(1)) if r_value_match else None
             
-            # Get embodied carbon and material from construction data
+            # Get carbon values and material from CSV
             embodied_carbon = df.loc[scenario, 'total_embodied_carbon_kgCO2eq'] if 'total_embodied_carbon_kgCO2eq' in df.columns else None
-            material = df.loc[scenario, 'insutlation_material_type'] if 'insutlation_material_type' in df.columns else None
-            
-            # Get operational carbon from EnergyPlus data
             operational_carbon = df.loc[scenario, 'total_operational_carbon_kgCO2e'] if 'total_operational_carbon_kgCO2e' in df.columns else None
+            material_type = df.loc[scenario, 'insulation_material_type'] if 'insulation_material_type' in df.columns else 'Unknown'
             
-            # Convert to appropriate types
-            if r_value is not None and embodied_carbon is not None and material is not None and operational_carbon is not None:
-                try:
-                    embodied_val = float(embodied_carbon)
-                    operational_val = float(operational_carbon)
-                    
-                    r_values.append(r_value)
-                    embodied_carbon_values.append(embodied_val)
-                    operational_carbon_values.append(operational_val)
-                    scenario_names.append(scenario)
-                    material_types.append(str(material))
-                except (ValueError, TypeError) as e:
-                    print(f"  ⚠ Skipping {scenario}: Error converting carbon values - {e}")
-                    continue
+            # Convert to proper types
+            if embodied_carbon is not None and not pd.isna(embodied_carbon):
+                embodied_carbon = float(embodied_carbon)
+            else:
+                embodied_carbon = None
+                
+            if operational_carbon is not None and not pd.isna(operational_carbon):
+                operational_carbon = float(operational_carbon)
+            else:
+                operational_carbon = None
+            
+            # Add to lists if all values are valid
+            if r_value is not None and embodied_carbon is not None and operational_carbon is not None and r_value >= 0:
+                r_values.append(r_value)
+                embodied_carbon_values.append(embodied_carbon)
+                operational_carbon_values.append(operational_carbon)
+                scenario_names.append(scenario)
+                material_types.append(material_type)
         except Exception as e:
-            print(f"  ⚠ Error processing scenario {scenario}: {e}")
+            print(f"  ⚠ Error processing {scenario}: {e}")
             continue
     
     if not r_values:
@@ -622,7 +632,7 @@ def create_carbon_comparison_plot(csv_path, measure_dir):
     for r_val in unique_r_values:
         op_carbon_at_r = [oc for r, oc in zip(r_values, operational_carbon_values) if r == r_val]
         if op_carbon_at_r:
-            print(f"    R={r_val}: mean={sum(op_carbon_at_r)/len(op_carbon_at_r):.2f} kgCO2e")
+            print(f"    R={r_val:.1f}: {op_carbon_at_r[0]:.2f} kgCO2e")
     
     ax1.scatter(r_values, operational_carbon_values, color=color1, s=100, alpha=0.6,
                label='Operational Carbon', marker='o', zorder=3)
@@ -648,17 +658,20 @@ def create_carbon_comparison_plot(csv_path, measure_dir):
         embodied_vals_mat = [ec for ec, m in zip(embodied_carbon_values, mask) if m]
         
         if r_vals_mat:
+            # Simplify legend labels
             label = material.replace(' Foam Board', '').replace(' Blanket', '').replace(' Batts', '')
+            
+            # Plot embodied carbon with material-specific colors
             ax2.scatter(r_vals_mat, embodied_vals_mat,
                        color=material_colors[material],
                        s=100, alpha=0.7,
                        label=label,
-                       marker='s',
+                       marker='s',  # Square markers for embodied carbon
                        edgecolors='black',
                        linewidths=0.5,
                        zorder=3)
             
-            # Add trendline for each material type if there are at least 2 points
+            # Add trendline for each material type
             if len(r_vals_mat) >= 2:
                 z_mat = np.polyfit(r_vals_mat, embodied_vals_mat, 1)
                 p_mat = np.poly1d(z_mat)
@@ -683,7 +696,7 @@ def create_carbon_comparison_plot(csv_path, measure_dir):
     fig.tight_layout()
     
     # Save the plot
-    output_plot = measure_dir / "resources" / "wall_insulation_carbon_comparison.png"
+    output_plot = measure_dir / "resources" / "roof_insulation_carbon_comparison.png"
     output_plot.parent.mkdir(parents=True, exist_ok=True)
     plt.savefig(output_plot, dpi=300, bbox_inches='tight')
     plt.close()
@@ -711,7 +724,6 @@ def create_stacked_bar_chart(csv_path, measure_dir):
     
     import pandas as pd
     import re
-    import traceback
     
     # Read CSV file - it has two sections
     try:
@@ -723,7 +735,7 @@ def create_stacked_bar_chart(csv_path, measure_dir):
         energyplus_start = None
         
         for i, line in enumerate(lines):
-            if '# Wall Construction AdditionalProperties' in line:
+            if '# Roof Construction AdditionalProperties' in line:
                 construction_start = i + 1
             elif '# EnergyPlus Simulation Summary' in line:
                 energyplus_start = i + 1
@@ -772,26 +784,27 @@ def create_stacked_bar_chart(csv_path, measure_dir):
     
     for scenario in df.index:
         try:
-            # Get operational and embodied carbon
+            # Get carbon values
             op_carbon = df.loc[scenario, 'total_operational_carbon_kgCO2e'] if 'total_operational_carbon_kgCO2e' in df.columns else None
             em_carbon = df.loc[scenario, 'total_embodied_carbon_kgCO2eq'] if 'total_embodied_carbon_kgCO2eq' in df.columns else None
             
-            # Convert to appropriate types
-            if op_carbon is not None and em_carbon is not None:
-                try:
-                    op_val = float(op_carbon)
-                    em_val = float(em_carbon)
-                    
-                    scenario_names.append(scenario)
-                    operational_carbon.append(op_val)
-                    embodied_carbon.append(em_val)
-                except (ValueError, TypeError) as e:
-                    print(f"  ⚠ Skipping {scenario}: Error converting carbon values - {e}")
-                    continue
+            # Convert to proper types
+            if op_carbon is not None and not pd.isna(op_carbon):
+                op_carbon = float(op_carbon)
+            else:
+                op_carbon = 0.0
+                
+            if em_carbon is not None and not pd.isna(em_carbon):
+                em_carbon = float(em_carbon)
+            else:
+                em_carbon = 0.0
+            
+            scenario_names.append(scenario)
+            operational_carbon.append(op_carbon)
+            embodied_carbon.append(em_carbon)
             
         except Exception as e:
-            print(f"  ⚠ Error processing scenario {scenario}: {e}")
-            continue
+            print(f"  ⚠ Error processing {scenario}: {e}")
     
     if not scenario_names:
         print("✗ No valid data found for plotting")
@@ -907,7 +920,7 @@ def create_stacked_bar_chart(csv_path, measure_dir):
     plt.tight_layout(rect=[0, 0, 1, 0.99])
     
     # Save the plot
-    output_plot = measure_dir / "resources" / "wall_insulation_stacked_bar.png"
+    output_plot = measure_dir / "resources" / "roof_insulation_stacked_bar.png"
     output_plot.parent.mkdir(parents=True, exist_ok=True)
     plt.savefig(output_plot, dpi=300, bbox_inches='tight')
     plt.close()
@@ -922,7 +935,7 @@ def create_stacked_bar_chart(csv_path, measure_dir):
     print(f"  Total carbon range: {min(total_carbon):.2f} - {max(total_carbon):.2f} kgCO2e")
 
 def main():
-    # Find all output OSM files from the wall insulation measure
+    # Find all output OSM files from the roof insulation measure
     output_dir = Path(__file__).parent / "tests" / "output"
     
     if not output_dir.exists():
@@ -969,15 +982,12 @@ def main():
             
             all_model_data.append(props_df)
             
-            # Store energy data separately with scenario name
+            # Store energy data if available
             if energy_data:
                 energy_data['scenario_name'] = osm_path.stem
                 all_energy_data.append(energy_data)
-                print(f"✓ Data extracted successfully from {osm_path.name}")
-                print(f"  EnergyPlus metrics: {len(energy_data) - 1} fields")  # -1 for scenario_name
-            else:
-                print(f"✓ Data extracted successfully from {osm_path.name} (no EnergyPlus data)")
             
+            print(f"✓ Data extracted successfully from {osm_path.name}")
             successful += 1
         else:
             failed += 1
@@ -996,13 +1006,13 @@ def main():
             combined_df = combined_df[cols]
         
         # Save combined report with both sections
-        output_csv = measure_dir / "resources" / "wall_insulation_report.csv"
+        output_csv = measure_dir / "resources" / "roof_insulation_report.csv"
         output_csv.parent.mkdir(parents=True, exist_ok=True)
         
         try:
             with open(output_csv, 'w', newline='', encoding='utf-8') as f:
                 # First, write Construction AdditionalProperties section (transposed and reversed)
-                f.write("# Wall Construction AdditionalProperties\n")
+                f.write("# Roof Construction AdditionalProperties\n")
                 
                 construction_transposed = combined_df.set_index('scenario_name').T
                 construction_transposed = construction_transposed.iloc[::-1]
@@ -1013,22 +1023,24 @@ def main():
                 if all_energy_data:
                     f.write("# EnergyPlus Simulation Summary\n")
                     
-                    # Create DataFrame from energy data
-                    energy_df = pd.DataFrame(all_energy_data)
-                    energy_transposed = energy_df.set_index('scenario_name').T
-                    energy_transposed.to_csv(f)
+                    # Convert energy data list to DataFrame
+                    energyplus_df = pd.DataFrame(all_energy_data)
+                    energyplus_transposed = energyplus_df.set_index('scenario_name').T
+                    energyplus_transposed.to_csv(f)
             
             construction_features = len(combined_df.columns) - 1  # -1 for scenario_name
-            energy_metrics = len(all_energy_data[0]) - 1 if all_energy_data else 0  # -1 for scenario_name
+            energyplus_metrics = len(all_energy_data[0]) - 1 if all_energy_data else 0  # -1 for scenario_name
             
             print(f"\n✓ Combined report saved: {output_csv}")
             print(f"  Scenarios: {len(all_model_data)}")
             print(f"  Construction features: {construction_features}")
-            print(f"  EnergyPlus metrics: {energy_metrics}")
+            if all_energy_data:
+                print(f"  EnergyPlus metrics: {energyplus_metrics}")
         
         except PermissionError:
-            print(f"\n✗ Permission denied: Cannot write to {output_csv}")
-            print("  Please close the file if it is open in another program.")
+            print(f"\n✗ ERROR: Cannot write to {output_csv}")
+            print(f"  The file may be open in Excel or another program.")
+            print(f"  Please close the file and run this script again.")
             return 1
         
         # Create scatterplot with energy data

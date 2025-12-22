@@ -20,7 +20,7 @@ config.read(config_path)
 API_TOKEN= config["EC3_API_TOKEN"]["API_TOKEN"]
 
 CURRENT_DIR_PATH = Path(__file__).parent.absolute()
-model_path = Path(CURRENT_DIR_PATH / "tests/DOE_small_office.osm")
+model_path = Path(CURRENT_DIR_PATH / "tests/ReverseTranslatedModel.osm")
 
 def bottom_seal_options():
     return ["none", "brush weatherstrip", "automatic door bottom", "silicone adhesive smoke gasket"]
@@ -31,7 +31,7 @@ def top_side_seal_options():
 def door_options():
     return ['none', 'wooden door', 'garage door', 'glass door', 'polystyrene core steel door', 
             'polyurethane core steel door', 'fiberglass core steel door', 'honeycomb core steel door',
-            'stiffened core steel door', 'defined by model']
+            'stiffened core steel door']
 
 # Generate all combinations
 bottom_seals = bottom_seal_options()

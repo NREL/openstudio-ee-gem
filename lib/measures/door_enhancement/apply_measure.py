@@ -37,8 +37,8 @@ def set_arg(name, value):
     arg_map[name] = arg  
 
 set_arg("analysis_period", 30)
-set_arg("door_bottom_seal_option", "automatic door bottom")
-set_arg("door_top_side_seal_option", "jamb weatherstrip")
+set_arg("door_bottom_seal_option", "none")
+set_arg("door_top_side_seal_option", "silicone adhesive smoke gasket")
 set_arg("length_per_unit_bottom_side", 5.1816) 
 set_arg("strip_lifetime", 15)
 set_arg('door_lifetime',30)

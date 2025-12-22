@@ -650,12 +650,37 @@ class DoorEnhancement(openstudio.measure.ModelMeasure):
             side_sealing_product_epd = fetch_epd_data(url = side_sealing_product_url, api_token = api_key)
             epd_datalist["door_bottom_sealing"] = bottom_sealing_product_epd
             epd_datalist["door_side_sealing"] = side_sealing_product_epd
+            
+            # Debug: Log EPD data status
+            if bottom_sealing_product_epd is None:
+                runner.registerInfo(f"  DEBUG: Bottom sealing EPD is None")
+            elif isinstance(bottom_sealing_product_epd, list):
+                runner.registerInfo(f"  DEBUG: Bottom sealing EPD returned {len(bottom_sealing_product_epd)} records")
+            
+            if side_sealing_product_epd is None:
+                runner.registerInfo(f"  DEBUG: Side sealing EPD is None")
+            elif isinstance(side_sealing_product_epd, list):
+                runner.registerInfo(f"  DEBUG: Side sealing EPD returned {len(side_sealing_product_epd)} records")
 
             door_product_url = self.generate_door_url(door_option, subsurface.subSurfaceType())
             door_product_epd = fetch_epd_data(url = door_product_url, api_token = api_key)
             epd_datalist["door"] = door_product_epd
+            
+            if door_product_epd is None:
+                runner.registerInfo(f"  DEBUG: Door EPD is None")
+            elif isinstance(door_product_epd, list):
+                runner.registerInfo(f"  DEBUG: Door EPD returned {len(door_product_epd)} records")
 
             for material_name, epd_data in epd_datalist.items():
+                # Skip if no EPD data available (None or empty list), but initialize with zeros
+                if epd_data is None or (isinstance(epd_data, list) and len(epd_data) == 0):
+                    runner.registerInfo(f"  ⚠ No EPD data available for {material_name}, setting embodied carbon to 0")
+                    subsurface_dict[subsurface_name][material_name]["gwp_per_m2"] = None
+                    subsurface_dict[subsurface_name][material_name]["gwp_per_m"] = None
+                    subsurface_dict[subsurface_name][material_name]["gwp_per_unit"] = None
+                    subsurface_dict[subsurface_name][material_name]["embodied_carbon_kg_co2_eq"] = 0.0
+                    continue
+                
                 # collect  GWP values per functional unit
                 gwp_values = {}
                 gwp_values["gwp_per_m2"] = []
@@ -665,6 +690,16 @@ class DoorEnhancement(openstudio.measure.ModelMeasure):
                 for idx, epd in enumerate(epd_data,start = 1):
                     # parse json repsonse based on epd_type
                     parsed_data = parse_product_epd(epd)
+                    
+                    # Debug: Print parsed data for first EPD
+                    if idx == 1:
+                        runner.registerInfo(f"  DEBUG [{material_name}] EPD #{idx}: {parsed_data.get('epd_name', 'Unknown')}")
+                        runner.registerInfo(f"    Declared unit: {parsed_data.get('declared_unit', 'N/A')}")
+                        runner.registerInfo(f"    GWP per declared unit: {parsed_data.get('gwp_per_declared_unit', 'N/A')}")
+                        runner.registerInfo(f"    GWP per unit: {parsed_data['gwp_per_unit (kg CO2 eq/unit)']}")
+                        runner.registerInfo(f"    GWP per m2: {parsed_data['gwp_per_m2 (kg CO2 eq/m2)']}")
+                        runner.registerInfo(f"    GWP per m: calculated from unit")
+                    
                     # per unit
                     gwp_per_unit = parsed_data["gwp_per_unit (kg CO2 eq/unit)"]
                     if gwp_per_unit != 0.0:
@@ -713,20 +748,20 @@ class DoorEnhancement(openstudio.measure.ModelMeasure):
 
                 # extract gwp statistics by user input
                 gwp = None
-                for functional_unit, list in gwp_values.items():
-                    if len(list) == 0:
+                for functional_unit, values_list in gwp_values.items():
+                    if len(values_list) == 0:
                         gwp = None
                         runner.registerInfo(f"    ⚠ No GWP values available for {functional_unit}")
-                    elif len(list) == 1:
-                        gwp = list[0]
+                    elif len(values_list) == 1:
+                        gwp = values_list[0]
                     elif gwp_statistic == "minimum":
-                        gwp = float(np.min(list))
+                        gwp = float(np.min(values_list))
                     elif gwp_statistic == "maximum":
-                        gwp = float(np.max(list))
+                        gwp = float(np.max(values_list))
                     elif gwp_statistic == "mean":
-                        gwp = float(np.mean(list))
+                        gwp = float(np.mean(values_list))
                     elif gwp_statistic == "median":
-                        gwp = float(np.median(list))
+                        gwp = float(np.median(values_list))
                     # store gwp value
                     subsurface_dict[subsurface_name][material_name][functional_unit] = gwp
 
@@ -860,6 +895,119 @@ class DoorEnhancement(openstudio.measure.ModelMeasure):
             if 'new_r_value_si' in subsurface_dict[name]
         )
 
+        # Calculate total door area
+        total_door_area_m2 = sum(
+            subsurface_dict[name]["dimension"]["area_m2"] 
+            for name in subsurface_dict.keys()
+        )
+        
+        # Store summary in building's additional properties
+        building = model.getBuilding()
+        building_props = building.additionalProperties()
+        
+        # Store basic measure parameters
+        building_props.setFeature("door_enhancement_analysis_period_years", analysis_period)
+        building_props.setFeature("door_enhancement_strip_lifetime_years", strip_lifetime)
+        building_props.setFeature("door_enhancement_door_lifetime_years", door_lifetime)
+        building_props.setFeature("door_enhancement_door_area_per_unit_m2", door_area_per_unit)
+        building_props.setFeature("door_enhancement_gwp_statistic", gwp_statistic)
+        
+        # Store door option and properties
+        building_props.setFeature("door_enhancement_door_option", door_option)
+        if door_option != 'none':
+            door_r_value = self.door_r_values().get(door_option, 0.0)
+            building_props.setFeature("door_enhancement_door_r_value_m2KperW", door_r_value)
+            
+            # Get material properties for the selected door
+            mat_props = self.door_material_properties().get(door_option, {})
+            if mat_props:
+                actual_density = door_density if door_density > 0.0 else mat_props.get('density', 0.0)
+                actual_thickness = door_thickness if door_thickness > 0.0 else mat_props.get('thickness', 0.0)
+                actual_conductivity = door_thermal_conductivity if door_thermal_conductivity > 0.0 else mat_props.get('conductivity', 0.0)
+                
+                building_props.setFeature("door_enhancement_door_density_kg_per_m3", actual_density)
+                building_props.setFeature("door_enhancement_door_thickness_m", actual_thickness)
+                building_props.setFeature("door_enhancement_door_conductivity_W_per_mK", actual_conductivity)
+        
+        # Store sealing options
+        building_props.setFeature("door_enhancement_bottom_seal_option", door_bottom_seal_option)
+        building_props.setFeature("door_enhancement_top_side_seal_option", door_top_side_seal_option)
+        
+        # Store length per unit for sealing strips
+        if door_bottom_seal_option != 'none':
+            bottom_length = length_per_unit_dict.get(door_bottom_seal_option, 0.0)
+            building_props.setFeature("door_enhancement_bottom_seal_length_per_unit_m", bottom_length)
+        
+        if door_top_side_seal_option != 'none':
+            top_side_length = length_per_unit_dict.get(door_top_side_seal_option, 0.0)
+            building_props.setFeature("door_enhancement_top_side_seal_length_per_unit_m", top_side_length)
+        
+        # Store aggregate results
+        building_props.setFeature("door_enhancement_total_embodied_carbon_kgCO2eq", total_embodied_carbon)
+        building_props.setFeature("door_enhancement_total_door_area_m2", total_door_area_m2)
+        building_props.setFeature("door_enhancement_doors_processed_count", len(sub_surfaces_to_change))
+        building_props.setFeature("door_enhancement_doors_with_r_value_change_count", doors_with_r_value_change)
+        
+        # Store GWP values per functional unit (aggregate from all processed doors)
+        # Calculate average GWP values across all doors
+        gwp_per_unit_list = []
+        gwp_per_m2_list = []
+        gwp_per_m_bottom_list = []
+        gwp_per_m_side_list = []
+        
+        for name in subsurface_dict.keys():
+            # Door GWP per m2
+            if 'door' in subsurface_dict[name] and 'gwp_per_m2' in subsurface_dict[name]['door']:
+                gwp_m2 = subsurface_dict[name]['door']['gwp_per_m2']
+                if gwp_m2 is not None and gwp_m2 > 0:
+                    gwp_per_m2_list.append(gwp_m2)
+            
+            # Door GWP per unit
+            if 'door' in subsurface_dict[name] and 'gwp_per_unit' in subsurface_dict[name]['door']:
+                gwp_unit = subsurface_dict[name]['door']['gwp_per_unit']
+                if gwp_unit is not None and gwp_unit > 0:
+                    gwp_per_unit_list.append(gwp_unit)
+            
+            # Bottom seal GWP per m
+            if 'door_bottom_sealing' in subsurface_dict[name] and 'gwp_per_m' in subsurface_dict[name]['door_bottom_sealing']:
+                gwp_m = subsurface_dict[name]['door_bottom_sealing']['gwp_per_m']
+                if gwp_m is not None and gwp_m > 0:
+                    gwp_per_m_bottom_list.append(gwp_m)
+            
+            # Side seal GWP per m
+            if 'door_side_sealing' in subsurface_dict[name] and 'gwp_per_m' in subsurface_dict[name]['door_side_sealing']:
+                gwp_m = subsurface_dict[name]['door_side_sealing']['gwp_per_m']
+                if gwp_m is not None and gwp_m > 0:
+                    gwp_per_m_side_list.append(gwp_m)
+        
+        # Store average GWP values
+        if gwp_per_m2_list:
+            building_props.setFeature("door_enhancement_door_gwp_per_m2_kgCO2eq", float(np.mean(gwp_per_m2_list)))
+        if gwp_per_unit_list:
+            building_props.setFeature("door_enhancement_door_gwp_per_unit_kgCO2eq", float(np.mean(gwp_per_unit_list)))
+        if gwp_per_m_bottom_list:
+            building_props.setFeature("door_enhancement_bottom_seal_gwp_per_m_kgCO2eq", float(np.mean(gwp_per_m_bottom_list)))
+        if gwp_per_m_side_list:
+            building_props.setFeature("door_enhancement_side_seal_gwp_per_m_kgCO2eq", float(np.mean(gwp_per_m_side_list)))
+        
+        # Store construction names and handles
+        construction_names = []
+        construction_handles = []
+        for name in subsurface_dict.keys():
+            if 'new_construction_name' in subsurface_dict[name]:
+                construction_names.append(subsurface_dict[name]['new_construction_name'])
+                # Get construction handle
+                subsurface_obj = subsurface_dict[name]["subsurface object"]
+                if subsurface_obj.construction().is_initialized():
+                    construction = subsurface_obj.construction().get()
+                    construction_handles.append(str(construction.handle()))
+        
+        if construction_names:
+            building_props.setFeature("door_enhancement_construction_names", ', '.join(construction_names))
+            building_props.setFeature("door_enhancement_construction_handles", ', '.join(construction_handles))
+        
+        runner.registerInfo(f"\n✓ Door enhancement summary stored in building additional properties")
+        
         # Report final condition
         runner.registerInfo("\n" + "=" * 80)
         runner.registerInfo("MEASURE SUMMARY")
