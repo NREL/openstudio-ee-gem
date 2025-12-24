@@ -61,8 +61,85 @@ def load_emission_factors():
             'water_emission_factor': 0.46
         }
 
+def run_energyplus_simulation(osm_path):
+    """Run EnergyPlus simulation for an OSM file."""
+    print(f"  Running EnergyPlus simulation...")
+    
+    import subprocess
+    
+    try:
+        # Load the model to get weather file
+        translator = openstudio.osversion.VersionTranslator()
+        model_opt = translator.loadModel(str(osm_path))
+        
+        if not model_opt.is_initialized():
+            print(f"  ✗ Could not load model for simulation")
+            return False
+        
+        model = model_opt.get()
+        
+        # Create output directory for this scenario
+        scenario_name = osm_path.stem
+        run_dir = osm_path.parent / f"run_{scenario_name}"
+        run_dir.mkdir(parents=True, exist_ok=True)
+        
+        # Use the specified weather file
+        weather_file_path = Path(__file__).parent / "tests" / "USA_CO_Denver-Aurora-Buckley.AFB_.724695_TMY3.epw"
+        
+        if not weather_file_path.exists():
+            print(f"  ⚠ Weather file not found: {weather_file_path}")
+            return False
+        
+        weather_file_path = str(weather_file_path.absolute())
+        print(f"    Using weather file: {weather_file_path}")
+        
+        # Create a simple workflow JSON file
+        workflow_dict = {
+            "seed_file": str(osm_path.name),
+            "weather_file": weather_file_path,
+            "measure_paths": [],
+            "steps": []
+        }
+        
+        import json
+        workflow_path = run_dir / "in.osw"
+        with open(workflow_path, 'w') as f:
+            json.dump(workflow_dict, f, indent=2)
+        
+        # Copy OSM file to run directory
+        import shutil
+        osm_dest = run_dir / osm_path.name
+        shutil.copy(str(osm_path), str(osm_dest))
+        
+        # Run the workflow using OpenStudio CLI
+        print(f"    Running simulation in: {run_dir}")
+        
+        result = subprocess.run(
+            ["openstudio", "run", "-w", str(workflow_path)],
+            cwd=str(run_dir),
+            capture_output=True,
+            text=True,
+            timeout=600  # 10 minute timeout
+        )
+        
+        if result.returncode == 0:
+            print(f"  ✓ Simulation completed successfully")
+            return True
+        else:
+            print(f"  ✗ Simulation failed with return code {result.returncode}")
+            if result.stderr:
+                print(f"    Error: {result.stderr[:200]}")
+            return False
+            
+    except subprocess.TimeoutExpired:
+        print(f"  ✗ Simulation timeout (>10 minutes)")
+        return False
+    except Exception as e:
+        print(f"  ✗ Simulation error: {e}")
+        return False
+
 def extract_model_data(osm_path, emission_factors):
-    """Extract AdditionalProperties from OSM file and energy results from SQL file."""
+    """Extract Building AdditionalProperties from OSM file and energy results from SQL file."""
     print(f"\n{'='*80}")
     print(f"Processing: {osm_path.name}")
     print(f"{'='*80}")
@@ -76,49 +153,80 @@ def extract_model_data(osm_path, emission_factors):
         return None, None
     
     model = model_opt.get()
-    print(f"✓ Model loaded successfully. Contains {len(model.getConstructions())} constructions.")
+    building = model.getBuilding()
+    print(f"✓ Model loaded successfully")
     
-    # Extract AdditionalProperties directly
+    # Extract Building AdditionalProperties for door enhancement
     import pandas as pd
-    props_data = []
     
-    for construction in model.getConstructions():
-        props = construction.additionalProperties()
-        feature_names = props.featureNames()
+    building_props = building.additionalProperties()
+    feature_names = building_props.featureNames()
+    
+    # Filter for door_enhancement properties
+    door_enhancement_props = {}
+    door_enhancement_features = [
+        'door_enhancement_analysis_period_years',
+        'door_enhancement_strip_lifetime_years',
+        'door_enhancement_door_lifetime_years',
+        'door_enhancement_door_area_per_unit_m2',
+        'door_enhancement_gwp_statistic',
+        'door_enhancement_door_option',
+        'door_enhancement_door_r_value_m2KperW',
+        'door_enhancement_door_density_kg_per_m3',
+        'door_enhancement_door_thickness_m',
+        'door_enhancement_door_conductivity_W_per_mK',
+        'door_enhancement_bottom_seal_option',
+        'door_enhancement_top_side_seal_option',
+        'door_enhancement_bottom_seal_length_per_unit_m',
+        'door_enhancement_top_side_seal_length_per_unit_m',
+        'door_enhancement_total_embodied_carbon_kgCO2eq',
+        'door_enhancement_total_door_area_m2',
+        'door_enhancement_total_sealing_bottom_length_m',
+        'door_enhancement_total_sealing_side_length_m',
+        'door_enhancement_doors_processed_count',
+        'door_enhancement_doors_with_r_value_change_count',
+        'door_enhancement_door_gwp_per_m2_kgCO2eq',
+        'door_enhancement_door_gwp_per_unit_kgCO2eq',
+        'door_enhancement_bottom_seal_gwp_per_m_kgCO2eq',
+        'door_enhancement_side_seal_gwp_per_m_kgCO2eq',
+        'door_enhancement_construction_names',
+        'door_enhancement_construction_handles'
+    ]
+    
+    print(f"  Extracting door enhancement properties...")
+    for feature_name in door_enhancement_features:
+        value = None
         
-        if len(feature_names) > 0:
-            item = {}
-            
-            for feature_name in feature_names:
-                value = None
-                
-                # Try Double first
-                value_double = props.getFeatureAsDouble(feature_name)
-                if value_double.is_initialized():
-                    value = value_double.get()
-                else:
-                    # Try Integer
-                    value_int = props.getFeatureAsInteger(feature_name)
-                    if value_int.is_initialized():
-                        value = value_int.get()
-                    else:
-                        # Try String
-                        value_str = props.getFeatureAsString(feature_name)
-                        if value_str.is_initialized():
-                            value = value_str.get()
-                
-                if value is not None:
-                    item[feature_name] = value
-            
-            if item:
-                item["construction_handle"] = construction.handle().__str__()
-                props_data.append(item)
+        # Try Double first
+        value_double = building_props.getFeatureAsDouble(feature_name)
+        if value_double.is_initialized():
+            value = value_double.get()
+        else:
+            # Try Integer
+            value_int = building_props.getFeatureAsInteger(feature_name)
+            if value_int.is_initialized():
+                value = value_int.get()
+            else:
+                # Try String
+                value_str = building_props.getFeatureAsString(feature_name)
+                if value_str.is_initialized():
+                    value = value_str.get()
+        
+        if value is not None:
+            door_enhancement_props[feature_name] = value
+            print(f"    ✓ {feature_name}: {value}")
     
-    props_df = pd.DataFrame(props_data) if props_data else pd.DataFrame()
+    # Create DataFrame with properties
+    if door_enhancement_props:
+        props_df = pd.DataFrame([door_enhancement_props])
+        print(f"  ✓ Extracted {len(door_enhancement_props)} door enhancement properties")
+    else:
+        props_df = pd.DataFrame()
+        print(f"  ⚠ No door enhancement properties found in building")
     
     # Extract energy results from eplustbl.html file
     scenario_name = osm_path.stem
-    run_dir = osm_path.parent / f"run_{scenario_name[4:]}"  # Remove 'out_' prefix
+    run_dir = osm_path.parent / f"run_{scenario_name}"
     
     # Try multiple possible eplustbl.html locations
     eplustbl_paths = [
@@ -258,7 +366,7 @@ def create_scatterplot(csv_path, measure_dir):
         energyplus_start = None
         
         for i, line in enumerate(lines):
-            if '# Roof Construction AdditionalProperties' in line:
+            if '# Door Construction AdditionalProperties' in line:
                 construction_start = i + 1
             elif '# EnergyPlus Simulation Summary' in line:
                 energyplus_start = i + 1
@@ -516,7 +624,7 @@ def create_carbon_comparison_plot(csv_path, measure_dir):
         energyplus_start = None
         
         for i, line in enumerate(lines):
-            if '# Roof Construction AdditionalProperties' in line:
+            if '# Door Construction AdditionalProperties' in line:
                 construction_start = i + 1
             elif '# EnergyPlus Simulation Summary' in line:
                 energyplus_start = i + 1
@@ -735,7 +843,7 @@ def create_stacked_bar_chart(csv_path, measure_dir):
         energyplus_start = None
         
         for i, line in enumerate(lines):
-            if '# Roof Construction AdditionalProperties' in line:
+            if '# Door Construction AdditionalProperties' in line:
                 construction_start = i + 1
             elif '# EnergyPlus Simulation Summary' in line:
                 energyplus_start = i + 1
@@ -935,21 +1043,20 @@ def create_stacked_bar_chart(csv_path, measure_dir):
     print(f"  Total carbon range: {min(total_carbon):.2f} - {max(total_carbon):.2f} kgCO2e")
 
 def main():
-    # Find all output OSM files from the roof insulation measure
+    # Find all output OSM files from the door enhancement measure
     output_dir = Path(__file__).parent / "tests" / "output"
     
     if not output_dir.exists():
         print(f"Error: Output directory not found: {output_dir}")
-        print("\nPlease run the apply_measure.py script first.")
+        print("\nPlease run the apply_measure_scenario.py script first.")
         sys.exit(1)
     
-    # Find all OSM files matching the pattern out_R*_*.osm
-    osm_files = sorted(output_dir.glob("out_R*.osm"))
+    # Find all OSM files in the output directory
+    osm_files = sorted(output_dir.glob("*.osm"))
     
     if not osm_files:
         print(f"Error: No output OSM files found in {output_dir}")
-        print("Expected files matching pattern: out_R*.osm")
-        print("\nPlease run the apply_measure.py script first.")
+        print("\nPlease run the apply_measure_scenario.py script first.")
         sys.exit(1)
     
     print(f"\n{'='*80}")
@@ -974,17 +1081,38 @@ def main():
     for idx, osm_path in enumerate(osm_files, 1):
         print(f"\n[Model {idx}/{len(osm_files)}]")
         
+        # Run EnergyPlus simulation first
+        sim_success = run_energyplus_simulation(osm_path)
+        
+        if not sim_success:
+            print(f"  ⚠ Warning: Simulation failed, will extract properties only")
+        
+        # Extract data (properties and energy if simulation succeeded)
         props_df, energy_data = extract_model_data(osm_path, emission_factors)
         
         if props_df is not None and not props_df.empty:
+            # Parse scenario name from filename
+            # Filename format: {idx}_{bottom_seal}_{top_side_seal}_{door_option}.osm
+            filename = osm_path.stem
+            parts = filename.split('_', 1)  # Split only on first underscore to get idx and rest
+            
+            if len(parts) >= 2:
+                scenario_idx = parts[0]
+                # The rest contains bottom_seal_top_side_seal_door_option
+                # We need to reconstruct the original names (with spaces)
+                rest = parts[1].replace('_', ' ')
+                scenario_name = f"Scenario_{scenario_idx}: {rest}"
+            else:
+                scenario_name = filename
+            
             # Add scenario identifier column
-            props_df['scenario_name'] = osm_path.stem
+            props_df['scenario_name'] = scenario_name
             
             all_model_data.append(props_df)
             
             # Store energy data if available
             if energy_data:
-                energy_data['scenario_name'] = osm_path.stem
+                energy_data['scenario_name'] = scenario_name
                 all_energy_data.append(energy_data)
             
             print(f"✓ Data extracted successfully from {osm_path.name}")
@@ -1006,17 +1134,17 @@ def main():
             combined_df = combined_df[cols]
         
         # Save combined report with both sections
-        output_csv = measure_dir / "resources" / "roof_insulation_report.csv"
+        output_csv = measure_dir / "resources" / "door_enhancement_report.csv"
         output_csv.parent.mkdir(parents=True, exist_ok=True)
         
         try:
             with open(output_csv, 'w', newline='', encoding='utf-8') as f:
-                # First, write Construction AdditionalProperties section (transposed and reversed)
-                f.write("# Roof Construction AdditionalProperties\n")
+                # First, write Door Enhancement AdditionalProperties section (transposed and reversed)
+                f.write("# Door Enhancement Building AdditionalProperties\n")
                 
-                construction_transposed = combined_df.set_index('scenario_name').T
-                construction_transposed = construction_transposed.iloc[::-1]
-                construction_transposed.to_csv(f)
+                props_transposed = combined_df.set_index('scenario_name').T
+                props_transposed = props_transposed.iloc[::-1]
+                props_transposed.to_csv(f)
                 f.write("\n")
                 
                 # Second, write EnergyPlus Simulation Summary section
@@ -1028,12 +1156,12 @@ def main():
                     energyplus_transposed = energyplus_df.set_index('scenario_name').T
                     energyplus_transposed.to_csv(f)
             
-            construction_features = len(combined_df.columns) - 1  # -1 for scenario_name
+            door_enhancement_features = len(combined_df.columns) - 1  # -1 for scenario_name
             energyplus_metrics = len(all_energy_data[0]) - 1 if all_energy_data else 0  # -1 for scenario_name
             
             print(f"\n✓ Combined report saved: {output_csv}")
             print(f"  Scenarios: {len(all_model_data)}")
-            print(f"  Construction features: {construction_features}")
+            print(f"  Door enhancement features: {door_enhancement_features}")
             if all_energy_data:
                 print(f"  EnergyPlus metrics: {energyplus_metrics}")
         
@@ -1042,15 +1170,6 @@ def main():
             print(f"  The file may be open in Excel or another program.")
             print(f"  Please close the file and run this script again.")
             return 1
-        
-        # Create scatterplot with energy data
-        create_scatterplot(output_csv, measure_dir)
-        
-        # Create carbon comparison plot
-        create_carbon_comparison_plot(output_csv, measure_dir)
-        
-        # Create stacked bar chart
-        create_stacked_bar_chart(output_csv, measure_dir)
     
     # Print final summary
     print(f"\n\n{'='*80}")

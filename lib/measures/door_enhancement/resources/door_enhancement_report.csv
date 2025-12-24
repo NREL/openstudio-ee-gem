@@ -1,0 +1,44 @@
+# Door Enhancement Building AdditionalProperties
+,Scenario_1: silicone adhesive smoke gasket jamb weatherstrip wooden door,Scenario_2: silicone adhesive smoke gasket jamb weatherstrip glass door,Scenario_3: silicone adhesive smoke gasket jamb weatherstrip garage door
+door_enhancement_construction_handles,{2aa00b22-e1fa-49be-889b-ca4dc1de364a},{5381f7d8-cce1-4bfd-beff-53413823f4cb},{ebdbc7cf-bae4-4d63-bd34-18684dc056b8}
+door_enhancement_construction_names,Window Non-res Fixed - wooden door R-0.31,Window Non-res Fixed - glass door R-0.01,Window Non-res Fixed - garage door R-3.00
+door_enhancement_side_seal_gwp_per_m_kgCO2eq,1.0306890561667632,1.0306890561667632,1.0306890561667632
+door_enhancement_bottom_seal_gwp_per_m_kgCO2eq,0.6947660954145437,0.6947660954145437,0.6947660954145437
+door_enhancement_door_gwp_per_unit_kgCO2eq,82.3,,111.77
+door_enhancement_door_gwp_per_m2_kgCO2eq,42.205128205128204,366.30696056700003,49.96666666666667
+door_enhancement_doors_with_r_value_change_count,1,1,1
+door_enhancement_doors_processed_count,1,1,1
+door_enhancement_total_sealing_side_length_m,6.098,6.098,6.098
+door_enhancement_total_sealing_bottom_length_m,1.83,1.83,1.83
+door_enhancement_total_door_area_m2,3.90522,3.90522,3.90522
+door_enhancement_total_embodied_carbon_kgCO2eq,179.93343840745783,1445.622396183687,210.24395363822708
+door_enhancement_top_side_seal_length_per_unit_m,5.181,5.181,5.181
+door_enhancement_bottom_seal_length_per_unit_m,5.1816,5.1816,5.1816
+door_enhancement_top_side_seal_option,jamb weatherstrip,jamb weatherstrip,jamb weatherstrip
+door_enhancement_bottom_seal_option,silicone adhesive smoke gasket,silicone adhesive smoke gasket,silicone adhesive smoke gasket
+door_enhancement_door_conductivity_W_per_mK,0.14,0.96,0.028
+door_enhancement_door_thickness_m,0.044,0.006,0.084
+door_enhancement_door_density_kg_per_m3,638,2500,100
+door_enhancement_door_r_value_m2KperW,0.3142857142857142,0.00625,3.0
+door_enhancement_door_option,wooden door,glass door,garage door
+door_enhancement_gwp_statistic,median,median,median
+door_enhancement_door_area_per_unit_m2,1.95,1.95,1.95
+door_enhancement_door_lifetime_years,30,30,30
+door_enhancement_strip_lifetime_years,15,15,15
+door_enhancement_analysis_period_years,30,30,30
+
+# EnergyPlus Simulation Summary
+,Scenario_1: silicone adhesive smoke gasket jamb weatherstrip wooden door,Scenario_2: silicone adhesive smoke gasket jamb weatherstrip glass door,Scenario_3: silicone adhesive smoke gasket jamb weatherstrip garage door
+building_name,Ref Bldg Small Office New2004_v1.3_5.0,Ref Bldg Small Office New2004_v1.3_5.0,Ref Bldg Small Office New2004_v1.3_5.0
+environment,RUNPERIOD 1 ** Denver-Aurora-Buckley AFB CO USA TMY3 WMO#=724695,RUNPERIOD 1 ** Denver-Aurora-Buckley AFB CO USA TMY3 WMO#=724695,RUNPERIOD 1 ** Denver-Aurora-Buckley AFB CO USA TMY3 WMO#=724695
+simulation_hours,8760.00,8760.00,8760.00
+total_site_energy_GJ,329.45,331.40,328.30
+net_site_energy_GJ,329.45,331.40,328.30
+total_source_energy_GJ,900.17,904.03,897.91
+net_source_energy_GJ,900.17,904.03,897.91
+total_building_area_m2,511.16,511.16,511.16
+net_conditioned_building_area_m2,511.16,511.16,511.16
+total_end_uses_electricity_GJ,260.70,261.54,260.22
+total_end_uses_natural_gas_GJ,68.75,69.86,68.09
+total_end_uses_water_m3,0.00,0.00,0.00
+total_operational_carbon_kgCO2e,29945.23,30086.44,29863.24

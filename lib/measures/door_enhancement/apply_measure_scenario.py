@@ -23,15 +23,18 @@ CURRENT_DIR_PATH = Path(__file__).parent.absolute()
 model_path = Path(CURRENT_DIR_PATH / "tests/ReverseTranslatedModel.osm")
 
 def bottom_seal_options():
-    return ["none", "brush weatherstrip", "automatic door bottom", "silicone adhesive smoke gasket"]
+    #return ["none", "brush weatherstrip", "automatic door bottom", "silicone adhesive smoke gasket"]
+    return ["silicone adhesive smoke gasket"]
 
 def top_side_seal_options():
-    return ["none", "silicone adhesive smoke gasket", "jamb weatherstrip"]
+    #return ["none", "silicone adhesive smoke gasket", "jamb weatherstrip"]
+    return ["jamb weatherstrip"]
 
 def door_options():
-    return ['none', 'wooden door', 'garage door', 'glass door', 'polystyrene core steel door', 
-            'polyurethane core steel door', 'fiberglass core steel door', 'honeycomb core steel door',
-            'stiffened core steel door']
+    # return ['none', 'wooden door', 'garage door', 'glass door', 'polystyrene core steel door', 
+    #         'polyurethane core steel door', 'fiberglass core steel door', 'honeycomb core steel door',
+    #         'stiffened core steel door']
+    return ['wooden door', 'glass door', 'garage door']
 
 # Generate all combinations
 bottom_seals = bottom_seal_options()

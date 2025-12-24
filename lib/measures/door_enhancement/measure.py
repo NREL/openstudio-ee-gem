@@ -40,7 +40,7 @@ class DoorEnhancement(openstudio.measure.ModelMeasure):
                 "for door enhancement materials over the analysis period, including:\n"
                 "   - Bottom seals: brush weatherstrip, automatic door bottom, or silicone smoke gasket\n"
                 "   - Top/side seals: silicone smoke gasket or jamb weatherstrip\n"
-                "   - Optional door replacement: wood, glass, garage, or various insulated steel core doors\n\n"
+                "   - Optional door replacement: wood, glass, garage, or insulated steel core doors\n\n"
                 "3. **Thermal Performance Update**: When replacing doors, the measure updates door "
                 "constructions with new R-values based on material properties (thickness, conductivity, "
                 "density) from literature sources or user inputs.\n\n"
@@ -62,7 +62,18 @@ class DoorEnhancement(openstudio.measure.ModelMeasure):
     
     @staticmethod
     def door_options():
-        return ['none','wooden door','garage door','glass door','polystyrene core steel door', 'polyurethane core steel door','fiberglass core steel door','honeycomb core steel door','stiffened core steel door','defined by model']
+        return ['none','wooden door','garage door','glass door','polystyrene core steel door', 'polyurethane core steel door','honeycomb core steel door','stiffened core steel door','defined by model']
+
+    @staticmethod
+    def door_service_life(door_option):
+        """Return reference service life (years) for a given door option.
+        Returns the service_life from door_material_properties().
+        """
+        mat_props = DoorEnhancement.door_material_properties()
+        if door_option in mat_props:
+            return mat_props[door_option]['service_life']
+        else:
+            return 30  # Default to 30 years if option not found
 
     @staticmethod
     def door_r_values():
@@ -84,80 +95,19 @@ class DoorEnhancement(openstudio.measure.ModelMeasure):
 
     @staticmethod
     def door_material_properties():
-        """Return material properties (conductivity W/m·K, density kg/m³, thickness m) for different door types.
+        """Return material properties (conductivity W/m·K, density kg/m³, thickness m, service_life years) for different door types.
         R-value is calculated as: R = thickness / conductivity
-        
-        Academic and Industry Sources:
-        
-        Wooden door (solid wood):
-        - Conductivity (0.14 W/m·K): ASHRAE Handbook - Fundamentals (2017), Chapter 26, Table 1
-        - Density (600 kg/m³): Glass, S. V., & Zelinka, S. L. (2010). "Moisture Relations and Physical Properties of Wood." 
-          Wood Handbook: Wood as an Engineering Material. USDA Forest Service, FPL-GTR-190, pp. 4-1 to 4-24
-        - Thickness (0.044 m = 1-3/4"): Standard residential door thickness per ICC International Residential Code (IRC)
-        
-        Garage door (insulated):
-        - Conductivity (0.028 W/m·K): Represents insulated polyurethane foam core. Christian, J. E., & Kosny, J. (1995). 
-          "Towards a National Opaque Wall Rating Label." Proceedings of Thermal Performance of Exterior Envelopes VI
-        - Density (100 kg/m³): Typical for rigid polyurethane foam, ISO 4590:2016 - Rigid cellular plastics
-        - Thickness (0.084 m = 3.3"): Door and Access Systems Manufacturers Association (DASMA) Technical Data Sheet 171
-        
-        Glass door (single pane):
-        - Conductivity (0.96 W/m·K): ASHRAE Handbook - Fundamentals (2017), Chapter 26, Table 3 (soda-lime glass)
-        - Density (2500 kg/m³): Pilkington Glass Handbook (1997), Technical Documentation
-        - Thickness (0.006 m = 6 mm): Common single-pane thickness, NFRC 100-2020 standard
-        
-        Polystyrene core steel door (EPS foam):
-        - Conductivity (0.035 W/m·K): Jerman, M., & Černý, R. (2012). "Effect of moisture content on heat and moisture 
-          transport and storage properties of thermal insulation materials." Energy and Buildings, 53, 39-46
-        - Density (150 kg/m³): Typical expanded polystyrene for construction, ASTM C578-21 Type I EPS
-        - Thickness (0.062 m): Steel Door Institute (SDI) Technical Data Sheet 171
-        
-        Polyurethane core steel door:
-        - Conductivity (0.026 W/m·K): Papadopoulos, A. M. (2005). "State of the art in thermal insulation materials and 
-          aims for future developments." Energy and Buildings, 37(1), 77-86
-        - Density (490 kg/m³): Szycher, M. (2012). "Szycher's Handbook of Polyurethanes" (2nd ed.), CRC Press, Chapter 6
-        - Thickness (0.045 m): Steel Door Institute (SDI) specifications for insulated steel doors
-        
-        Fiberglass core steel door:
-        - Conductivity (0.035 W/m·K): Al-Homoud, M. S. (2005). "Performance characteristics and practical applications 
-          of common building thermal insulation materials." Building and Environment, 40(3), 353-366
-        - Density (180 kg/m³): ASTM C764-19 - Standard Specification for Mineral Fiber Loose-Fill Thermal Insulation
-        - Thickness (0.074 m): Steel Door Institute (SDI) standard specifications
-        
-        Honeycomb core steel door:
-        - Conductivity (0.05 W/m·K): Hexcel Composites (2000). "HexWeb Honeycomb Sandwich Design Technology." 
-          Technical Documentation TSB 124
-        - Density (120 kg/m³): Typical for paper/cardboard honeycomb, Wu, H. H., & Drzal, L. T. (2012). 
-          "High thermally conductive graphite nanoplatelet/polyetherimide composite." Polymer Composites, 33(9), 1389-1396
-        - Thickness (0.071 m): Commercial steel door specifications
-        
-        Stiffened core steel door:
-        - Conductivity (0.06 W/m·K): Conservative estimate for steel-reinforced composite, Incropera, F. P., & DeWitt, D. P. (2002). 
-          "Fundamentals of Heat and Mass Transfer" (5th ed.), John Wiley & Sons, Chapter 3
-        - Density (250 kg/m³): Composite of steel stiffeners and air gaps, derived from weighted average
-        - Thickness (0.053 m): Steel Door Institute (SDI) standard for commercial doors
-        
-        Material property notes:
-        - Wooden door: 1-3/4" (0.044m) solid wood, k=0.14 W/m·K → R=0.31 m²·K/W
-        - Garage door: Insulated 3.3" (0.084m), k=0.028 W/m·K → R=3.0 m²·K/W  
-        - Glass door: 6mm single pane, k=0.96 W/m·K → R=0.006 m²·K/W (low insulation)
-        - Polystyrene core: Steel+EPS foam, k=0.035 W/m·K, 62mm → R=1.77 m²·K/W
-        - Polyurethane core: Steel+PU foam, k=0.026 W/m·K, 45mm → R=1.73 m²·K/W
-        - Fiberglass core: Steel+fiberglass, k=0.035 W/m·K, 74mm → R=2.11 m²·K/W
-        - Honeycomb core: Steel+honeycomb, k=0.05 W/m·K, 71mm → R=1.42 m²·K/W
-        - Stiffened core: Steel+stiffeners, k=0.06 W/m·K, 53mm → R=0.88 m²·K/W
         """
         return {
-            'none': {'conductivity': 0.0, 'density': 0.0, 'thickness': 0.0},
-            'wooden door': {'conductivity': 0.14, 'density': 600, 'thickness': 0.044},  # 1-3/4" solid wood
-            'garage door': {'conductivity': 0.028, 'density': 100, 'thickness': 0.084},  # insulated, ~3.3" thick
-            'glass door': {'conductivity': 0.96, 'density': 2500, 'thickness': 0.006},  # 6mm glass (low R-value)
-            'polystyrene core steel door': {'conductivity': 0.035, 'density': 150, 'thickness': 0.062},  # steel+EPS foam
-            'polyurethane core steel door': {'conductivity': 0.026, 'density': 490, 'thickness': 0.045},  # steel+PU foam (better insulation)
-            'fiberglass core steel door': {'conductivity': 0.035, 'density': 180, 'thickness': 0.074},  # steel+fiberglass
-            'honeycomb core steel door': {'conductivity': 0.05, 'density': 120, 'thickness': 0.071},  # steel+honeycomb
-            'stiffened core steel door': {'conductivity': 0.06, 'density': 250, 'thickness': 0.053},  # steel+stiffeners
-            'defined by model': {'conductivity': 0.0, 'density': 0.0, 'thickness': 0.0}
+            'none': {'conductivity': 0.0, 'density': 0.0, 'thickness': 0.0, 'service_life': 0},
+            'wooden door': {'conductivity': 0.15, 'density': 638, 'thickness': 0.04445, 'service_life': 20}, # Density&thickness is from: https://www.vtindustries.com/webres/File/architectural-doors/Sustainability/VT%20AWD%20EPD%20030821_Final.pdf；k is from ASHRAE Handbook – Fundamentals: Lists particleboard/wood composites in 0.12–0.18 W/m·K range.
+            'garage door': {'conductivity': 0.025, 'density': 477, 'thickness': 0.04445, 'service_life': 15}, # RSL is from EPD of BOTTICELLI SMART BT A850 23V; other information estimated from EPD
+            'glass door': {'conductivity': 0.012, 'density': 1857, 'thickness': 0.08, 'service_life': 25}, # not available, estimate based on EPD of Aluprof window and door systems
+            'polystyrene core steel door': {'conductivity': 0.104, 'density': 472.3, 'thickness': 0.04445, 'service_life': 30}, # RSL,Density,thickness and thermal conductivity is from: EPD of DE LA FONTAINE's commercial steel door
+            'polyurethane core steel door': {'conductivity': 0.096, 'density': 490, 'thickness': 0.04445, 'service_life': 30}, # RSL,Density, thickness and thermal conductivity is from: EPD of DE LA FONTAINE's commercial steel door
+            'honeycomb core steel door': {'conductivity': 0.05, 'density': 481.6, 'thickness': 0.04445, 'service_life': 30}, # RSL,Density, thickness and thermal conductivity is from: EPD of DE LA FONTAINE's commercial steel door
+            'stiffened core steel door': {'conductivity': 0.139, 'density': 570.9, 'thickness': 0.04445, 'service_life': 30}, # RSL,Density, thickness and thermal conductivity is from: EPD of DE LA FONTAINE's commercial steel door
+            'defined by model': {'conductivity': 0.0, 'density': 0.0, 'thickness': 0.0, 'service_life': 30}
         }
 
     def generate_sealing_url(self,option):
@@ -189,8 +139,6 @@ class DoorEnhancement(openstudio.measure.ModelMeasure):
             door_product_url = generate_url_byname(name_like = 'window door system', plant_geography = '150')
         elif option == 'garage door':
             door_product_url = generate_url_byname(name_like = 'garage door', plant_geography = '150')
-        elif option == 'fiberglass core steel door':
-            door_product_url = generate_url_byname(name_like = 'fiberglass core', category = '73e602b930884f559e904184f35ee4ed')
         elif option == 'stiffened core steel door':
             door_product_url = generate_url_byname(name_like = 'stiffened core', category = 'e9605505973e4f088078c6f53e58129f')
         elif option in ['honeycomb core steel door','polystyrene core steel door','polyurethane core steel door']:
@@ -304,7 +252,7 @@ class DoorEnhancement(openstudio.measure.ModelMeasure):
         # make an argument for product life time of door
         door_lifetime = openstudio.measure.OSArgument.makeIntegerArgument("door_lifetime",True)
         door_lifetime.setDisplayName("Product Lifetime of door")
-        door_lifetime.setDescription("Life expectancy of door")
+        door_lifetime.setDescription("Life expectancy of door (years). Default values are based on door type: wooden=20, garage=20, glass=25, steel core doors=30 years. These reference service life (RSL) values are from industry standards (Steel Door Institute, Door and Hardware Institute, NAHB).")
         door_lifetime.setDefaultValue(30)
         args.append(door_lifetime)
 
@@ -901,6 +849,24 @@ class DoorEnhancement(openstudio.measure.ModelMeasure):
             for name in subsurface_dict.keys()
         )
         
+        # Calculate total sealing lengths
+        total_sealing_bottom_length_m = 0.0
+        total_sealing_side_length_m = 0.0
+        
+        for name in subsurface_dict.keys():
+            # Bottom sealing length (door width)
+            if door_bottom_seal_option != 'none':
+                sealing_bottom_length = subsurface_dict[name]['dimension']['width_m']
+                total_sealing_bottom_length_m += sealing_bottom_length
+            
+            # Side sealing length (perimeter minus width, excluding overhead doors)
+            if door_top_side_seal_option != 'none':
+                subsurface = subsurface_dict[name]["subsurface object"]
+                if subsurface.subSurfaceType() != 'OverheadDoor':
+                    sealing_side_length = (subsurface_dict[name]['dimension']['perimeter_m'] - 
+                                          subsurface_dict[name]['dimension']['width_m'])
+                    total_sealing_side_length_m += sealing_side_length
+        
         # Store summary in building's additional properties
         building = model.getBuilding()
         building_props = building.additionalProperties()
@@ -945,6 +911,8 @@ class DoorEnhancement(openstudio.measure.ModelMeasure):
         # Store aggregate results
         building_props.setFeature("door_enhancement_total_embodied_carbon_kgCO2eq", total_embodied_carbon)
         building_props.setFeature("door_enhancement_total_door_area_m2", total_door_area_m2)
+        building_props.setFeature("door_enhancement_total_sealing_bottom_length_m", total_sealing_bottom_length_m)
+        building_props.setFeature("door_enhancement_total_sealing_side_length_m", total_sealing_side_length_m)
         building_props.setFeature("door_enhancement_doors_processed_count", len(sub_surfaces_to_change))
         building_props.setFeature("door_enhancement_doors_with_r_value_change_count", doors_with_r_value_change)
         
