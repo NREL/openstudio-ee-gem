@@ -470,7 +470,7 @@ def create_scatterplot(csv_path, measure_dir):
     fig.tight_layout()
     
     # Save the plot
-    output_plot = measure_dir / "resources" / "roof_insulation_carbon_impact.png"
+    output_plot = measure_dir / "resources" / "roof_insulation_carbon_impact_year1.png"
     output_plot.parent.mkdir(parents=True, exist_ok=True)
     plt.savefig(output_plot, dpi=300, bbox_inches='tight')
     plt.close()
@@ -696,7 +696,7 @@ def create_carbon_comparison_plot(csv_path, measure_dir):
     fig.tight_layout()
     
     # Save the plot
-    output_plot = measure_dir / "resources" / "roof_insulation_carbon_comparison.png"
+    output_plot = measure_dir / "resources" / "roof_insulation_carbon_comparison_year1.png"
     output_plot.parent.mkdir(parents=True, exist_ok=True)
     plt.savefig(output_plot, dpi=300, bbox_inches='tight')
     plt.close()
@@ -708,7 +708,7 @@ def create_carbon_comparison_plot(csv_path, measure_dir):
     print(f"  Embodied carbon range: {min(embodied_carbon_values):.2f} - {max(embodied_carbon_values):.2f} kgCO2e")
 
 def create_stacked_bar_chart(csv_path, measure_dir):
-    """Create a stacked bar chart showing operational and embodied carbon for all scenarios."""
+    """Create a stacked bar chart showing operational carbon, operational carbon reduction, and embodied carbon."""
     print(f"\n{'='*80}")
     print("Creating stacked bar chart...")
     print(f"{'='*80}")
@@ -779,6 +779,8 @@ def create_stacked_bar_chart(csv_path, measure_dir):
     scenario_names = []
     operational_carbon = []
     embodied_carbon = []
+    embodied_carbon_30yr = []  # Adjusted for 30 years based on lifetime
+    r_values = []
     
     print(f"  Processing {len(df)} scenarios from CSV...")
     
@@ -787,6 +789,11 @@ def create_stacked_bar_chart(csv_path, measure_dir):
             # Get carbon values
             op_carbon = df.loc[scenario, 'total_operational_carbon_kgCO2e'] if 'total_operational_carbon_kgCO2e' in df.columns else None
             em_carbon = df.loc[scenario, 'total_embodied_carbon_kgCO2eq'] if 'total_embodied_carbon_kgCO2eq' in df.columns else None
+            lifetime = df.loc[scenario, 'insulation_material_lifetime_years'] if 'insulation_material_lifetime_years' in df.columns else None
+            
+            # Extract R-value from scenario name
+            r_match = re.search(r'R(\d+\.?\d*)', scenario)
+            r_val = float(r_match.group(1)) if r_match else None
             
             # Convert to proper types
             if op_carbon is not None and not pd.isna(op_carbon):
@@ -799,9 +806,23 @@ def create_stacked_bar_chart(csv_path, measure_dir):
             else:
                 em_carbon = 0.0
             
-            scenario_names.append(scenario)
-            operational_carbon.append(op_carbon)
-            embodied_carbon.append(em_carbon)
+            if lifetime is not None and not pd.isna(lifetime):
+                lifetime = float(lifetime)
+            else:
+                lifetime = 30.0  # Default to 30 years if not specified
+            
+            # Calculate total embodied carbon over 30 years
+            # Number of replacements needed in 30 years = ceil(30 / lifetime)
+            import math
+            replacements = math.ceil(30.0 / lifetime)
+            em_carbon_30yr = em_carbon * replacements
+            
+            if r_val is not None:
+                scenario_names.append(scenario)
+                operational_carbon.append(op_carbon)
+                embodied_carbon.append(em_carbon)
+                embodied_carbon_30yr.append(em_carbon_30yr)
+                r_values.append(r_val)
             
         except Exception as e:
             print(f"  ⚠ Error processing {scenario}: {e}")
@@ -810,45 +831,64 @@ def create_stacked_bar_chart(csv_path, measure_dir):
         print("✗ No valid data found for plotting")
         return
     
-    # Group scenarios by R-value
+    # Find baseline operational carbon (R=0.0)
+    baseline_op_carbon = None
+    for r_val, op_carbon in zip(r_values, operational_carbon):
+        if r_val == 0.0:
+            baseline_op_carbon = op_carbon
+            break
+    
+    if baseline_op_carbon is None:
+        print("✗ Baseline (R=0.0) operational carbon not found")
+        return
+    
+    print(f"  ✓ Baseline operational carbon (R=0.0): {baseline_op_carbon:.2f} kgCO2e")
+    
+    # Group scenarios by R-value - for Year 1 chart
     r_value_groups = {}
-    for scenario, op_carbon, em_carbon in zip(scenario_names, operational_carbon, embodied_carbon):
-        r_match = re.search(r'R(\d+\.?\d*)', scenario)
-        if r_match:
-            r_val = float(r_match.group(1))
-            if r_val not in r_value_groups:
-                r_value_groups[r_val] = {'scenarios': [], 'op_carbon': [], 'em_carbon': []}
-            r_value_groups[r_val]['scenarios'].append(scenario)
-            r_value_groups[r_val]['op_carbon'].append(op_carbon)
-            r_value_groups[r_val]['em_carbon'].append(em_carbon)
+    for scenario, op_carbon, em_carbon, em_carbon_30yr, r_val in zip(scenario_names, operational_carbon, embodied_carbon, embodied_carbon_30yr, r_values):
+        if r_val not in r_value_groups:
+            r_value_groups[r_val] = {'scenarios': [], 'op_carbon': [], 'em_carbon': [], 'em_carbon_30yr': []}
+        r_value_groups[r_val]['scenarios'].append(scenario)
+        r_value_groups[r_val]['op_carbon'].append(op_carbon)
+        r_value_groups[r_val]['em_carbon'].append(em_carbon)
+        r_value_groups[r_val]['em_carbon_30yr'].append(em_carbon_30yr)
     
-    # Sort R-values for consistent ordering
-    sorted_r_values = sorted(r_value_groups.keys())
+    # Filter to only include the specified R-values: 0, 24.4, 27.0, 32.3, 34.5, 38.5
+    target_r_values = [0.0, 24.4, 27.0, 32.3, 34.5, 38.5]
+    sorted_r_values = [r for r in target_r_values if r in r_value_groups]
+    
+    if not sorted_r_values:
+        print("✗ No target R-values found in data")
+        return
+    
+    print(f"  ✓ Plotting R-values: {sorted_r_values}")
+    
     n_subplots = len(sorted_r_values)
-    
-    # Determine subplot layout (e.g., 2 rows, n cols to fit all R-values)
-    n_cols = min(3, n_subplots)  # Max 3 columns
-    n_rows = (n_subplots + n_cols - 1) // n_cols  # Ceiling division
+    n_cols = n_subplots  # One column per R-value
     
     # Create figure with subplots
-    fig, axes = plt.subplots(n_rows, n_cols, figsize=(8 * n_cols, 6 * n_rows))
+    fig, axes = plt.subplots(1, n_cols, figsize=(4 * n_cols, 8))
     
-    # Handle case where there's only one subplot
-    if n_subplots == 1:
-        axes = np.array([axes])
-    axes = axes.flatten() if n_subplots > 1 else axes
+    # Handle case where there's only one subplot column
+    if n_cols == 1:
+        axes = [axes]
     
-    # Find global min/max for consistent y-axis scaling
+    # Find global max for consistent y-axis scaling
     all_totals = []
     for r_val in sorted_r_values:
         group = r_value_groups[r_val]
-        totals = [(op + em) / 1000 for op, em in zip(group['op_carbon'], group['em_carbon'])]
-        all_totals.extend(totals)
-    y_max = max(all_totals) * 1.1  # Add 10% margin
+        for op_carbon in group['op_carbon']:
+            op_reduction = abs(baseline_op_carbon - op_carbon)
+            totals = [(oc / 1000) + (abs(baseline_op_carbon - oc) / 1000) + (ec / 1000) 
+                     for oc, ec in zip(group['op_carbon'], group['em_carbon'])]
+            all_totals.extend(totals)
+    
+    y_max = max(all_totals) * 1.15 if all_totals else 1
     
     # Create a subplot for each R-value
-    for idx, r_val in enumerate(sorted_r_values):
-        ax = axes[idx]
+    for col_idx, r_val in enumerate(sorted_r_values):
+        ax = axes[col_idx]
         group = r_value_groups[r_val]
         
         # Get data for this R-value and sort by embodied carbon (low to high)
@@ -862,77 +902,833 @@ def create_stacked_bar_chart(csv_path, measure_dir):
         
         scenarios = list(scenarios_sorted)
         op_carbon_tons = [oc / 1000 for oc in op_carbon_sorted]
+        op_reduction_tons = [abs(baseline_op_carbon - oc) / 1000 for oc in op_carbon_sorted]
         em_carbon_tons = [ec / 1000 for ec in em_carbon_sorted]
         
         # Set up x-axis positions
         x_pos = np.arange(len(scenarios))
         
+        # Extract material names from scenario names
+        material_labels = []
+        for scenario in scenarios:
+            material = re.sub(r'^out_R\d+\.?\d*_', '', scenario)
+            material_labels.append(material)
+        
         # Create stacked bars
-        # Bottom: Operational carbon (blue)
+        # Layer 1 (bottom): Operational Carbon
         bars1 = ax.bar(x_pos, op_carbon_tons, 
                        color='#4472C4', label='Operational Carbon',
                        edgecolor='white', linewidth=0.5)
         
-        # Top: Embodied carbon (orange)
-        bars2 = ax.bar(x_pos, em_carbon_tons, bottom=op_carbon_tons,
+        # Layer 2 (middle): Operational Carbon Reduction
+        bars2 = ax.bar(x_pos, op_reduction_tons, bottom=op_carbon_tons,
+                       color='#70AD47', label='Op. Carbon Reduction',
+                       edgecolor='white', linewidth=0.5)
+        
+        # Layer 3 (top): Embodied Carbon
+        bottom_for_embodied = [op + red for op, red in zip(op_carbon_tons, op_reduction_tons)]
+        bars3 = ax.bar(x_pos, em_carbon_tons, bottom=bottom_for_embodied,
                        color='#ED7D31', label='Embodied Carbon',
                        edgecolor='white', linewidth=0.5)
         
         # Customize subplot
         ax.set_xlabel('Insulation Material', fontsize=10, fontweight='bold')
-        ax.set_ylabel('Carbon (ton CO2e)', fontsize=10, fontweight='bold')
-        ax.set_title(f'Target R-Value = {r_val:.1f}', fontsize=12, fontweight='bold', pad=10)
-        
-        # Extract material names from scenario names (remove R-value prefix)
-        material_labels = []
-        for scenario in scenarios:
-            # Remove "out_R##_" prefix to get material name
-            material = re.sub(r'^out_R\d+\.?\d*_', '', scenario)
-            material_labels.append(material)
-        
-        # Set x-axis labels
+        ax.set_ylabel('Carbon Emission at Year 1 (ton CO2e)', fontsize=10, fontweight='bold')
+        ax.set_title(f'R = {r_val:.1f}', fontsize=12, fontweight='bold', pad=10)
         ax.set_xticks(x_pos)
-        ax.set_xticklabels(material_labels, rotation=45, ha='right', fontsize=9)
-        
-        # Set consistent y-axis limits
+        ax.set_xticklabels(material_labels, rotation=45, ha='right', fontsize=8)
         ax.set_ylim(0, y_max)
-        
-        # Add legend to first subplot only
-        if idx == 0:
-            ax.legend(loc='upper right', frameon=True, shadow=True, fontsize=10)
-        
-        # Add grid
         ax.grid(axis='y', alpha=0.3, linestyle='--', linewidth=0.5)
         ax.set_axisbelow(True)
-        
-        # Format y-axis
         ax.yaxis.set_major_formatter(plt.FuncFormatter(lambda x, p: f'{x:,.0f}'))
-    
-    # Hide unused subplots
-    for idx in range(n_subplots, len(axes)):
-        axes[idx].axis('off')
+        
+        # Add legend to first subplot only
+        if col_idx == 0:
+            ax.legend(loc='upper right', frameon=True, shadow=True, fontsize=9)
     
     # Add main title
-    fig.suptitle('Operational and Embodied Carbon by Target R-Value and Material', 
-                 fontsize=16, fontweight='bold', y=0.995)
+    fig.suptitle('Carbon Impact by Target R-Value and Material\n(Baseline: R=0.0)', 
+                 fontsize=14, fontweight='bold', y=0.98)
     
     # Tight layout
-    plt.tight_layout(rect=[0, 0, 1, 0.99])
+    plt.tight_layout(rect=[0, 0, 1, 0.96])
     
     # Save the plot
-    output_plot = measure_dir / "resources" / "roof_insulation_stacked_bar.png"
+    output_plot = measure_dir / "resources" / "roof_insulation_stacked_bar_year1.png"
     output_plot.parent.mkdir(parents=True, exist_ok=True)
     plt.savefig(output_plot, dpi=300, bbox_inches='tight')
     plt.close()
     
     # Calculate statistics
-    total_carbon = [op + em for op, em in zip(operational_carbon, embodied_carbon)]
-    
     print(f"✓ Stacked bar chart saved: {output_plot}")
-    print(f"  Scenarios plotted: {len(scenario_names)}")
+    print(f"  R-values plotted: {sorted_r_values}")
+    print(f"  Baseline operational carbon (R=0.0): {baseline_op_carbon:.2f} kgCO2e")
     print(f"  Operational carbon range: {min(operational_carbon):.2f} - {max(operational_carbon):.2f} kgCO2e")
     print(f"  Embodied carbon range: {min(embodied_carbon):.2f} - {max(embodied_carbon):.2f} kgCO2e")
-    print(f"  Total carbon range: {min(total_carbon):.2f} - {max(total_carbon):.2f} kgCO2e")
+
+def create_stacked_bar_chart_year30(csv_path, measure_dir):
+    """Create a stacked bar chart showing 30-year operational carbon reduction and embodied carbon."""
+    print(f"\n{'='*80}")
+    print("Creating stacked bar chart for Year 30...")
+    print(f"{'='*80}")
+    
+    try:
+        import matplotlib
+        matplotlib.use('Agg')
+        import matplotlib.pyplot as plt
+        import numpy as np
+    except ImportError:
+        print("✗ matplotlib not found. Skipping stacked bar chart generation")
+        return
+    
+    import pandas as pd
+    import re
+    
+    # Read CSV file - it has two sections
+    try:
+        with open(csv_path, 'r', encoding='utf-8') as f:
+            lines = f.readlines()
+        
+        # Find the start of each section
+        construction_start = None
+        energyplus_start = None
+        
+        for i, line in enumerate(lines):
+            if '# Roof Construction AdditionalProperties' in line:
+                construction_start = i + 1
+            elif '# EnergyPlus Simulation Summary' in line:
+                energyplus_start = i + 1
+        
+        # Read construction section
+        construction_lines = []
+        if construction_start is not None:
+            i = construction_start
+            while i < len(lines) and lines[i].strip() and not lines[i].startswith('#'):
+                construction_lines.append(lines[i])
+                i += 1
+        
+        # Read energyplus section
+        energyplus_lines = []
+        if energyplus_start is not None:
+            i = energyplus_start
+            while i < len(lines) and lines[i].strip():
+                energyplus_lines.append(lines[i])
+                i += 1
+        
+        # Parse both sections
+        from io import StringIO
+        construction_df = pd.read_csv(StringIO(''.join(construction_lines)))
+        construction_df = construction_df.set_index(construction_df.columns[0]).T
+        
+        energyplus_df = pd.read_csv(StringIO(''.join(energyplus_lines)))
+        energyplus_df = energyplus_df.set_index(energyplus_df.columns[0]).T
+        
+        # Merge both dataframes
+        df = pd.concat([construction_df, energyplus_df], axis=1)
+        
+        print(f"  ✓ Read {len(df)} scenarios from CSV")
+        
+    except Exception as e:
+        print(f"✗ Error reading CSV: {e}")
+        import traceback
+        traceback.print_exc()
+        return
+    
+    # Extract data for plotting - for Year 30 chart
+    scenario_names = []
+    operational_carbon = []
+    embodied_carbon = []
+    embodied_carbon_30yr = []  # Adjusted for 30 years based on lifetime
+    r_values = []
+    
+    print(f"  Processing {len(df)} scenarios from CSV...")
+    
+    for scenario in df.index:
+        try:
+            # Get carbon values
+            op_carbon = df.loc[scenario, 'total_operational_carbon_kgCO2e'] if 'total_operational_carbon_kgCO2e' in df.columns else None
+            em_carbon = df.loc[scenario, 'total_embodied_carbon_kgCO2eq'] if 'total_embodied_carbon_kgCO2eq' in df.columns else None
+            lifetime = df.loc[scenario, 'insulation_material_lifetime_years'] if 'insulation_material_lifetime_years' in df.columns else None
+            
+            # Extract R-value from scenario name
+            r_match = re.search(r'R(\d+\.?\d*)', scenario)
+            r_val = float(r_match.group(1)) if r_match else None
+            
+            # Convert to proper types
+            if op_carbon is not None and not pd.isna(op_carbon):
+                op_carbon = float(op_carbon)
+            else:
+                op_carbon = 0.0
+                
+            if em_carbon is not None and not pd.isna(em_carbon):
+                em_carbon = float(em_carbon)
+            else:
+                em_carbon = 0.0
+            
+            if lifetime is not None and not pd.isna(lifetime):
+                lifetime = float(lifetime)
+            else:
+                lifetime = 30.0  # Default to 30 years if not specified
+            
+            # Calculate total embodied carbon over 30 years
+            # Number of replacements needed in 30 years = ceil(30 / lifetime)
+            import math
+            replacements = math.ceil(30.0 / lifetime)
+            em_carbon_30yr = em_carbon * replacements
+            
+            if r_val is not None:
+                scenario_names.append(scenario)
+                operational_carbon.append(op_carbon)
+                embodied_carbon.append(em_carbon)
+                embodied_carbon_30yr.append(em_carbon_30yr)
+                r_values.append(r_val)
+            
+        except Exception as e:
+            print(f"  ⚠ Error processing {scenario}: {e}")
+    
+    if not scenario_names:
+        print("✗ No valid data found for plotting")
+        return
+    
+    # Find baseline operational carbon (R=0.0)
+    baseline_op_carbon = None
+    for r_val, op_carbon in zip(r_values, operational_carbon):
+        if r_val == 0.0:
+            baseline_op_carbon = op_carbon
+            break
+    
+    if baseline_op_carbon is None:
+        print("✗ Baseline (R=0.0) operational carbon not found")
+        return
+    
+    print(f"  ✓ Baseline operational carbon (R=0.0): {baseline_op_carbon:.2f} kgCO2e")
+    
+    # Group scenarios by R-value - for Year 30 chart
+    r_value_groups = {}
+    for scenario, op_carbon, em_carbon, em_carbon_30yr, r_val in zip(scenario_names, operational_carbon, embodied_carbon, embodied_carbon_30yr, r_values):
+        if r_val not in r_value_groups:
+            r_value_groups[r_val] = {'scenarios': [], 'op_carbon': [], 'em_carbon': [], 'em_carbon_30yr': []}
+        r_value_groups[r_val]['scenarios'].append(scenario)
+        r_value_groups[r_val]['op_carbon'].append(op_carbon)
+        r_value_groups[r_val]['em_carbon'].append(em_carbon)
+        r_value_groups[r_val]['em_carbon_30yr'].append(em_carbon_30yr)
+    
+    # Filter to only include the specified R-values: 0, 24.4, 27.0, 32.3, 34.5, 38.5
+    target_r_values = [0.0, 24.4, 27.0, 32.3, 34.5, 38.5]
+    sorted_r_values = [r for r in target_r_values if r in r_value_groups]
+    
+    if not sorted_r_values:
+        print("✗ No target R-values found in data")
+        return
+    
+    print(f"  ✓ Plotting R-values: {sorted_r_values}")
+    
+    n_subplots = len(sorted_r_values)
+    n_cols = n_subplots  # One column per R-value
+    
+    # Create figure with subplots
+    fig, axes = plt.subplots(1, n_cols, figsize=(4 * n_cols, 8))
+    
+    # Handle case where there's only one subplot column
+    if n_cols == 1:
+        axes = [axes]
+    
+    # Find global max for consistent y-axis scaling
+    all_totals = []
+    for r_val in sorted_r_values:
+        group = r_value_groups[r_val]
+        for op_carbon, em_carbon_30yr in zip(group['op_carbon'], group['em_carbon_30yr']):
+            # 30-year operational carbon reduction + embodied carbon (adjusted for replacements)
+            op_reduction_30yr = abs(baseline_op_carbon - op_carbon) * 30
+            total = (op_reduction_30yr / 1000) + (em_carbon_30yr / 1000)
+            all_totals.append(total)
+    
+    y_max = max(all_totals) * 1.15 if all_totals else 1
+    
+    # Create a subplot for each R-value
+    for col_idx, r_val in enumerate(sorted_r_values):
+        ax = axes[col_idx]
+        group = r_value_groups[r_val]
+        
+        # Get data for this R-value and sort by embodied carbon (low to high)
+        scenarios = group['scenarios']
+        op_carbon = group['op_carbon']
+        em_carbon = group['em_carbon']
+        em_carbon_30yr = group['em_carbon_30yr']
+        
+        # Sort by embodied carbon values (single installation)
+        sorted_data = sorted(zip(em_carbon, scenarios, op_carbon, em_carbon_30yr))
+        em_carbon_sorted, scenarios_sorted, op_carbon_sorted, em_carbon_30yr_sorted = zip(*sorted_data)
+        
+        scenarios = list(scenarios_sorted)
+        # Calculate 30-year operational carbon reduction
+        op_reduction_30yr_tons = [abs(baseline_op_carbon - oc) * 30 / 1000 for oc in op_carbon_sorted]
+        em_carbon_30yr_tons = [ec / 1000 for ec in em_carbon_30yr_sorted]
+        
+        # Set up x-axis positions
+        x_pos = np.arange(len(scenarios))
+        
+        # Extract material names from scenario names
+        material_labels = []
+        for scenario in scenarios:
+            material = re.sub(r'^out_R\d+\.?\d*_', '', scenario)
+            material_labels.append(material)
+        
+        # Create stacked bars
+        # Layer 1 (bottom): Operational Carbon Reduction (30 years)
+        bars1 = ax.bar(x_pos, op_reduction_30yr_tons, 
+                       color='#70AD47', label='Op. Carbon Reduction (30yr)',
+                       edgecolor='white', linewidth=0.5)
+        
+        # Layer 2 (top): Embodied Carbon (adjusted for 30 years and replacements)
+        bars2 = ax.bar(x_pos, em_carbon_30yr_tons, bottom=op_reduction_30yr_tons,
+                       color='#ED7D31', label='Embodied Carbon (30yr)',
+                       edgecolor='white', linewidth=0.5)
+        
+        # Customize subplot
+        ax.set_xlabel('Insulation Material', fontsize=10, fontweight='bold')
+        ax.set_ylabel('Carbon Emission at Year 30 (ton CO2e)', fontsize=10, fontweight='bold')
+        ax.set_title(f'R = {r_val:.1f}', fontsize=12, fontweight='bold', pad=10)
+        ax.set_xticks(x_pos)
+        ax.set_xticklabels(material_labels, rotation=45, ha='right', fontsize=8)
+        ax.set_ylim(0, y_max)
+        ax.grid(axis='y', alpha=0.3, linestyle='--', linewidth=0.5)
+        ax.set_axisbelow(True)
+        ax.yaxis.set_major_formatter(plt.FuncFormatter(lambda x, p: f'{x:,.0f}'))
+        
+        # Add legend to first subplot only
+        if col_idx == 0:
+            ax.legend(loc='upper right', frameon=True, shadow=True, fontsize=9)
+    
+    # Add main title
+    fig.suptitle('30-Year Carbon Impact by Target R-Value and Material\n(Baseline: R=0.0)', 
+                 fontsize=14, fontweight='bold', y=0.98)
+    
+    # Tight layout
+    plt.tight_layout(rect=[0, 0, 1, 0.96])
+    
+    # Save the plot
+    output_plot = measure_dir / "resources" / "roof_insulation_stacked_bar_year30.png"
+    output_plot.parent.mkdir(parents=True, exist_ok=True)
+    plt.savefig(output_plot, dpi=300, bbox_inches='tight')
+    plt.close()
+    
+    # Calculate statistics
+    print(f"✓ Stacked bar chart (Year 30) saved: {output_plot}")
+    print(f"  R-values plotted: {sorted_r_values}")
+    print(f"  Baseline operational carbon (R=0.0): {baseline_op_carbon:.2f} kgCO2e/year")
+    print(f"  30-year operational carbon reduction range: {min([abs(baseline_op_carbon - oc) * 30 for oc in operational_carbon]):.2f} - {max([abs(baseline_op_carbon - oc) * 30 for oc in operational_carbon]):.2f} kgCO2e")
+    print(f"  Embodied carbon range: {min(embodied_carbon):.2f} - {max(embodied_carbon):.2f} kgCO2e")
+
+def create_time_series_chart(csv_path, measure_dir):
+    """Create time series chart showing embodied carbon vs operational carbon reduction over 30 years."""
+    print(f"\n{'='*80}")
+    print("Creating time series chart (Year 1-30)...")
+    print(f"{'='*80}")
+    
+    try:
+        import matplotlib
+        matplotlib.use('Agg')
+        import matplotlib.pyplot as plt
+        import numpy as np
+    except ImportError:
+        print("✗ matplotlib not found. Skipping time series chart generation")
+        return
+    
+    import pandas as pd
+    import re
+    
+    # Read CSV file
+    try:
+        with open(csv_path, 'r', encoding='utf-8') as f:
+            lines = f.readlines()
+        
+        construction_start = None
+        energyplus_start = None
+        
+        for i, line in enumerate(lines):
+            if '# Roof Construction AdditionalProperties' in line:
+                construction_start = i + 1
+            elif '# EnergyPlus Simulation Summary' in line:
+                energyplus_start = i + 1
+        
+        construction_lines = []
+        if construction_start is not None:
+            i = construction_start
+            while i < len(lines) and lines[i].strip() and not lines[i].startswith('#'):
+                construction_lines.append(lines[i])
+                i += 1
+        
+        energyplus_lines = []
+        if energyplus_start is not None:
+            i = energyplus_start
+            while i < len(lines) and lines[i].strip():
+                energyplus_lines.append(lines[i])
+                i += 1
+        
+        from io import StringIO
+        construction_df = pd.read_csv(StringIO(''.join(construction_lines)))
+        construction_df = construction_df.set_index(construction_df.columns[0]).T
+        
+        energyplus_df = pd.read_csv(StringIO(''.join(energyplus_lines)))
+        energyplus_df = energyplus_df.set_index(energyplus_df.columns[0]).T
+        
+        df = pd.concat([construction_df, energyplus_df], axis=1)
+        
+        print(f"  ✓ Read {len(df)} scenarios from CSV")
+        
+    except Exception as e:
+        print(f"✗ Error reading CSV: {e}")
+        import traceback
+        traceback.print_exc()
+        return
+    
+    # Extract data
+    scenario_data = {}
+    
+    for scenario in df.index:
+        try:
+            op_carbon = df.loc[scenario, 'total_operational_carbon_kgCO2e'] if 'total_operational_carbon_kgCO2e' in df.columns else None
+            em_carbon = df.loc[scenario, 'total_embodied_carbon_kgCO2eq'] if 'total_embodied_carbon_kgCO2eq' in df.columns else None
+            lifetime = df.loc[scenario, 'insulation_material_lifetime_years'] if 'insulation_material_lifetime_years' in df.columns else None
+            material_type = df.loc[scenario, 'insulation_material_type'] if 'insulation_material_type' in df.columns else 'Unknown'
+            
+            r_match = re.search(r'R(\d+\.?\d*)', scenario)
+            r_val = float(r_match.group(1)) if r_match else None
+            
+            if op_carbon is not None and not pd.isna(op_carbon):
+                op_carbon = float(op_carbon)
+            else:
+                continue
+                
+            if em_carbon is not None and not pd.isna(em_carbon):
+                em_carbon = float(em_carbon)
+            else:
+                continue
+            
+            if lifetime is not None and not pd.isna(lifetime):
+                lifetime = float(lifetime)
+            else:
+                lifetime = 30.0
+            
+            if r_val is not None and r_val > 0:  # Skip R=0
+                scenario_data[scenario] = {
+                    'r_val': r_val,
+                    'op_carbon': op_carbon,
+                    'em_carbon': em_carbon,
+                    'lifetime': lifetime,
+                    'material': material_type
+                }
+            
+        except Exception as e:
+            print(f"  ⚠ Error processing {scenario}: {e}")
+    
+    if not scenario_data:
+        print("✗ No valid data found for plotting")
+        return
+    
+    # Find baseline operational carbon (R=0.0)
+    baseline_op_carbon = None
+    for scenario in df.index:
+        r_match = re.search(r'R(\d+\.?\d*)', scenario)
+        if r_match and float(r_match.group(1)) == 0.0:
+            op_carbon = df.loc[scenario, 'total_operational_carbon_kgCO2e']
+            if op_carbon is not None and not pd.isna(op_carbon):
+                baseline_op_carbon = float(op_carbon)
+                break
+    
+    if baseline_op_carbon is None:
+        print("✗ Baseline (R=0.0) operational carbon not found")
+        return
+    
+    print(f"  ✓ Baseline operational carbon (R=0.0): {baseline_op_carbon:.2f} kgCO2e")
+    
+    # Select all scenarios with R=24.4, grouped by material type
+    target_r_value = 24.4
+    scenarios_to_plot = []
+    
+    for scenario, data in scenario_data.items():
+        if abs(data['r_val'] - target_r_value) < 0.1:  # R=24.4 with tolerance
+            scenarios_to_plot.append({
+                'scenario': scenario,
+                'r_val': data['r_val'],
+                'op_carbon': data['op_carbon'],
+                'em_carbon': data['em_carbon'],
+                'lifetime': data['lifetime'],
+                'material': data['material']
+            })
+    
+    # Sort by material type for consistent coloring
+    scenarios_to_plot = sorted(scenarios_to_plot, key=lambda x: x['material'])
+    
+    if not scenarios_to_plot:
+        print(f"✗ No scenarios found with R={target_r_value}")
+        return
+    
+    print(f"  ✓ Plotting {len(scenarios_to_plot)} scenarios with R={target_r_value}")
+    for s in scenarios_to_plot:
+        print(f"    - {s['material']}: lifetime={s['lifetime']:.0f}yr, embodied={s['em_carbon']:.0f}kgCO2e")
+    
+    # Create time series (1-30 years)
+    years = np.arange(1, 31)
+    
+    # Create figure with dual y-axes
+    fig, ax1 = plt.subplots(figsize=(14, 8))
+    ax2 = ax1.twinx()
+    
+    # Define colors for different materials (expand color palette)
+    colors = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', 
+              '#8c564b', '#e377c2', '#7f7f7f', '#bcbd22', '#17becf']
+    
+    # Left axis: Operational Carbon Reduction (solid lines)
+    ax1.set_xlabel('Year', fontsize=12, fontweight='bold')
+    ax1.set_ylabel('Total Operational Carbon Reduction (ton CO2e)', 
+                   fontsize=12, fontweight='bold', color='tab:blue')
+    
+    for idx, scenario_info in enumerate(scenarios_to_plot):
+        op_carbon = scenario_info['op_carbon']
+        r_val = scenario_info['r_val']
+        material = scenario_info['material']
+        
+        # Calculate cumulative operational carbon reduction
+        annual_reduction = abs(baseline_op_carbon - op_carbon)
+        reduction_over_time = [annual_reduction * year / 1000 for year in years]  # Convert to tons
+        
+        ax1.plot(years, reduction_over_time,
+                label=f'{material}',
+                color=colors[idx % len(colors)],
+                linewidth=2.5,
+                linestyle='-')
+    
+    ax1.tick_params(axis='y', labelcolor='tab:blue')
+    ax1.grid(True, alpha=0.3)
+    
+    # Right axis: Embodied Carbon (dashed lines with steps)
+    ax2.set_ylabel('Total Embodied Carbon (ton CO2e)', 
+                   fontsize=12, fontweight='bold', color='tab:red')
+    
+    for idx, scenario_info in enumerate(scenarios_to_plot):
+        em_carbon = scenario_info['em_carbon']
+        lifetime = scenario_info['lifetime']
+        r_val = scenario_info['r_val']
+        material = scenario_info['material']
+        
+        # Calculate embodied carbon at each year (increases at replacement)
+        embodied_over_time = []
+        for year in years:
+            import math
+            num_installations = math.ceil(year / lifetime)
+            embodied_over_time.append(em_carbon * num_installations / 1000)  # Convert to tons
+        
+        ax2.plot(years, embodied_over_time, 
+                label=f'{material} ({lifetime:.0f}yr)',
+                color=colors[idx % len(colors)],
+                linewidth=2,
+                linestyle='--',
+                drawstyle='steps-post')
+    
+    ax2.tick_params(axis='y', labelcolor='tab:red')
+    
+    # Set x-axis limits
+    ax1.set_xlim(1, 30)
+    
+    # Add legends
+    lines1, labels1 = ax1.get_legend_handles_labels()
+    ax1.legend(lines1, labels1, loc='upper left', fontsize=10, 
+              title='Operational Carbon Reduction', framealpha=0.9)
+    
+    lines2, labels2 = ax2.get_legend_handles_labels()
+    ax2.legend(lines2, labels2, loc='upper right', fontsize=10,
+              title='Embodied Carbon (with replacements)', framealpha=0.9)
+    
+    # Add title
+    plt.title(f'30-Year Carbon Impact for R={target_r_value:.1f} by Material Type\n(Baseline: R=0.0)', 
+             fontsize=14, fontweight='bold', pad=20)
+    
+    plt.tight_layout()
+    
+    # Save the plot
+    output_plot = measure_dir / "resources" / "roof_insulation_time_series_year1_to_30.png"
+    output_plot.parent.mkdir(parents=True, exist_ok=True)
+    plt.savefig(output_plot, dpi=300, bbox_inches='tight')
+    plt.close()
+    
+    print(f"✓ Time series chart saved: {output_plot}")
+    print(f"  Years plotted: 1-30")
+    print(f"  Scenarios: {len(scenarios_to_plot)}")
+
+def create_carbon_payback_chart(csv_path, measure_dir):
+    """Create a chart showing carbon payback period for each scenario."""
+    print(f"\n{'='*80}")
+    print("Creating carbon payback period chart...")
+    print(f"{'='*80}")
+    
+    try:
+        import matplotlib
+        matplotlib.use('Agg')
+        import matplotlib.pyplot as plt
+        import numpy as np
+    except ImportError:
+        print("✗ matplotlib not found. Skipping carbon payback chart generation")
+        return
+    
+    import pandas as pd
+    import re
+    
+    # Read CSV file - it has two sections
+    try:
+        with open(csv_path, 'r', encoding='utf-8') as f:
+            lines = f.readlines()
+        
+        # Find the start of each section
+        construction_start = None
+        energyplus_start = None
+        
+        for i, line in enumerate(lines):
+            if '# Roof Construction AdditionalProperties' in line:
+                construction_start = i + 1
+            elif '# EnergyPlus Simulation Summary' in line:
+                energyplus_start = i + 1
+        
+        # Read construction section
+        construction_lines = []
+        if construction_start is not None:
+            i = construction_start
+            while i < len(lines) and lines[i].strip() and not lines[i].startswith('#'):
+                construction_lines.append(lines[i])
+                i += 1
+        
+        # Read energyplus section
+        energyplus_lines = []
+        if energyplus_start is not None:
+            i = energyplus_start
+            while i < len(lines) and lines[i].strip():
+                energyplus_lines.append(lines[i])
+                i += 1
+        
+        # Parse both sections
+        from io import StringIO
+        construction_df = pd.read_csv(StringIO(''.join(construction_lines)))
+        construction_df = construction_df.set_index(construction_df.columns[0]).T
+        
+        energyplus_df = pd.read_csv(StringIO(''.join(energyplus_lines)))
+        energyplus_df = energyplus_df.set_index(energyplus_df.columns[0]).T
+        
+        # Merge both dataframes
+        df = pd.concat([construction_df, energyplus_df], axis=1)
+        
+        print(f"  ✓ Read {len(df)} scenarios from CSV")
+        
+    except Exception as e:
+        print(f"✗ Error reading CSV: {e}")
+        import traceback
+        traceback.print_exc()
+        return
+    
+    # Extract data for plotting
+    scenario_names = []
+    operational_carbon = []
+    embodied_carbon = []
+    r_values = []
+    
+    print(f"  Processing {len(df)} scenarios from CSV...")
+    
+    for scenario in df.index:
+        try:
+            # Get carbon values
+            op_carbon = df.loc[scenario, 'total_operational_carbon_kgCO2e'] if 'total_operational_carbon_kgCO2e' in df.columns else None
+            em_carbon = df.loc[scenario, 'total_embodied_carbon_kgCO2eq'] if 'total_embodied_carbon_kgCO2eq' in df.columns else None
+            
+            # Extract R-value from scenario name
+            r_match = re.search(r'R(\d+\.?\d*)', scenario)
+            r_val = float(r_match.group(1)) if r_match else None
+            
+            # Convert to proper types
+            if op_carbon is not None and not pd.isna(op_carbon):
+                op_carbon = float(op_carbon)
+            else:
+                op_carbon = 0.0
+                
+            if em_carbon is not None and not pd.isna(em_carbon):
+                em_carbon = float(em_carbon)
+            else:
+                em_carbon = 0.0
+            
+            if r_val is not None:
+                scenario_names.append(scenario)
+                operational_carbon.append(op_carbon)
+                embodied_carbon.append(em_carbon)
+                r_values.append(r_val)
+            
+        except Exception as e:
+            print(f"  ⚠ Error processing {scenario}: {e}")
+    
+    if not scenario_names:
+        print("✗ No valid data found for plotting")
+        return
+    
+    # Find baseline operational carbon (R=0.0)
+    baseline_op_carbon = None
+    for r_val, op_carbon in zip(r_values, operational_carbon):
+        if r_val == 0.0:
+            baseline_op_carbon = op_carbon
+            break
+    
+    if baseline_op_carbon is None:
+        print("✗ Baseline (R=0.0) operational carbon not found")
+        return
+    
+    print(f"  ✓ Baseline operational carbon (R=0.0): {baseline_op_carbon:.2f} kgCO2e")
+    
+    # Group scenarios by R-value
+    r_value_groups = {}
+    for scenario, op_carbon, em_carbon, r_val in zip(scenario_names, operational_carbon, embodied_carbon, r_values):
+        if r_val not in r_value_groups:
+            r_value_groups[r_val] = {'scenarios': [], 'op_carbon': [], 'em_carbon': [], 'payback': []}
+        
+        # Calculate payback period (years)
+        annual_reduction = abs(baseline_op_carbon - op_carbon)
+        if annual_reduction > 0:
+            payback_years = em_carbon / annual_reduction
+        else:
+            payback_years = float('inf')  # No reduction, no payback
+        
+        r_value_groups[r_val]['scenarios'].append(scenario)
+        r_value_groups[r_val]['op_carbon'].append(op_carbon)
+        r_value_groups[r_val]['em_carbon'].append(em_carbon)
+        r_value_groups[r_val]['payback'].append(payback_years)
+    
+    # Filter to only include the specified R-values: 0, 24.4, 27.0, 32.3, 34.5, 38.5
+    target_r_values = [0.0, 24.4, 27.0, 32.3, 34.5, 38.5]
+    sorted_r_values = [r for r in target_r_values if r in r_value_groups]
+    
+    # Remove R=0.0 as it has no reduction
+    sorted_r_values = [r for r in sorted_r_values if r != 0.0]
+    
+    if not sorted_r_values:
+        print("✗ No target R-values found in data")
+        return
+    
+    print(f"  ✓ Plotting R-values: {sorted_r_values}")
+    
+    n_subplots = len(sorted_r_values)
+    n_cols = n_subplots  # One column per R-value
+    
+    # Create figure with subplots
+    fig, axes = plt.subplots(1, n_cols, figsize=(4 * n_cols, 8))
+    
+    # Handle case where there's only one subplot column
+    if n_cols == 1:
+        axes = [axes]
+    
+    # Find global max for consistent y-axis scaling
+    all_payback = []
+    for r_val in sorted_r_values:
+        group = r_value_groups[r_val]
+        valid_payback = [p for p in group['payback'] if p != float('inf') and p < 100]  # Cap at 100 years for visualization
+        all_payback.extend(valid_payback)
+    
+    y_max = max(all_payback) * 1.15 if all_payback else 50
+    
+    # Create a subplot for each R-value
+    for col_idx, r_val in enumerate(sorted_r_values):
+        ax = axes[col_idx]
+        group = r_value_groups[r_val]
+        
+        # Get data for this R-value and sort by payback period (low to high)
+        scenarios = group['scenarios']
+        payback = group['payback']
+        
+        # Sort by payback period
+        sorted_data = sorted(zip(payback, scenarios))
+        payback_sorted, scenarios_sorted = zip(*sorted_data)
+        
+        scenarios = list(scenarios_sorted)
+        payback_years = list(payback_sorted)
+        
+        # Cap extremely high values for visualization
+        payback_years_capped = [min(p, 100) for p in payback_years]
+        
+        # Set up x-axis positions
+        x_pos = np.arange(len(scenarios))
+        
+        # Extract material names from scenario names
+        material_labels = []
+        for scenario in scenarios:
+            material = re.sub(r'^out_R\d+\.?\d*_', '', scenario)
+            material_labels.append(material)
+        
+        # Create bars with color gradient based on payback period
+        colors = []
+        for p in payback_years:
+            if p == float('inf'):
+                colors.append('#D3D3D3')  # Gray for no payback
+            elif p <= 10:
+                colors.append('#2E7D32')  # Dark green for fast payback
+            elif p <= 20:
+                colors.append('#66BB6A')  # Medium green
+            elif p <= 30:
+                colors.append('#FDD835')  # Yellow
+            elif p <= 50:
+                colors.append('#FB8C00')  # Orange
+            else:
+                colors.append('#C62828')  # Red for slow payback
+        
+        bars = ax.bar(x_pos, payback_years_capped, 
+                      color=colors,
+                      edgecolor='white', linewidth=0.5)
+        
+        # Add value labels on top of bars
+        for i, (p, p_capped) in enumerate(zip(payback_years, payback_years_capped)):
+            if p == float('inf'):
+                ax.text(i, p_capped + y_max * 0.02, 'N/A', 
+                       ha='center', va='bottom', fontsize=7, rotation=0)
+            elif p >= 100:
+                ax.text(i, p_capped + y_max * 0.02, f'>100', 
+                       ha='center', va='bottom', fontsize=7, rotation=0)
+            else:
+                ax.text(i, p_capped + y_max * 0.02, f'{p:.1f}', 
+                       ha='center', va='bottom', fontsize=7, rotation=0)
+        
+        # Customize subplot
+        ax.set_xlabel('Insulation Material', fontsize=10, fontweight='bold')
+        ax.set_ylabel('Carbon Payback Period (Years)', fontsize=10, fontweight='bold')
+        ax.set_title(f'R = {r_val:.1f}', fontsize=12, fontweight='bold', pad=10)
+        ax.set_xticks(x_pos)
+        ax.set_xticklabels(material_labels, rotation=45, ha='right', fontsize=8)
+        ax.set_ylim(0, y_max)
+        ax.grid(axis='y', alpha=0.3, linestyle='--', linewidth=0.5)
+        ax.set_axisbelow(True)
+        ax.yaxis.set_major_formatter(plt.FuncFormatter(lambda x, p: f'{x:.0f}'))
+        
+        # Add reference line at 30 years
+        ax.axhline(y=30, color='red', linestyle='--', linewidth=1.5, alpha=0.7, label='30-year reference')
+        
+        if col_idx == 0:
+            ax.legend(loc='upper right', fontsize=8)
+    
+    # Add main title
+    fig.suptitle('Carbon Payback Period: Years for Op. Carbon Reduction to Equal Embodied Carbon\n(Baseline: R=0.0)', 
+                 fontsize=14, fontweight='bold', y=0.98)
+    
+    # Tight layout
+    plt.tight_layout(rect=[0, 0, 1, 0.96])
+    
+    # Save the plot
+    output_plot = measure_dir / "resources" / "roof_insulation_carbon_payback.png"
+    output_plot.parent.mkdir(parents=True, exist_ok=True)
+    plt.savefig(output_plot, dpi=300, bbox_inches='tight')
+    plt.close()
+    
+    # Calculate and print statistics
+    print(f"✓ Carbon payback period chart saved: {output_plot}")
+    print(f"  R-values plotted: {sorted_r_values}")
+    print(f"\n  Carbon payback periods:")
+    for r_val in sorted_r_values:
+        group = r_value_groups[r_val]
+        valid_payback = [p for p in group['payback'] if p != float('inf')]
+        if valid_payback:
+            print(f"    R={r_val:.1f}: {min(valid_payback):.1f} - {max(valid_payback):.1f} years")
 
 def main():
     # Find all output OSM files from the roof insulation measure
@@ -1051,6 +1847,15 @@ def main():
         
         # Create stacked bar chart
         create_stacked_bar_chart(output_csv, measure_dir)
+        
+        # Create stacked bar chart for Year 30
+        create_stacked_bar_chart_year30(output_csv, measure_dir)
+        
+        # Create time series chart (Year 1-30)
+        create_time_series_chart(output_csv, measure_dir)
+        
+        # Create carbon payback period chart
+        create_carbon_payback_chart(output_csv, measure_dir)
     
     # Print final summary
     print(f"\n\n{'='*80}")
