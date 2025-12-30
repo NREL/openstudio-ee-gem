@@ -72,6 +72,7 @@ jobs:
               
               # Install Python dependencies for Python measures
               echo "Installing Python dependencies..."
+              DEBIAN_FRONTEND=noninteractive apt-get install -y -qq python3-pip
               pip install --upgrade pip
               pip install openpyxl requests python-dotenv plotly pandas
               
