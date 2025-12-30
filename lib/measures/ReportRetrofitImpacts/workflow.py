@@ -1,14 +1,18 @@
 """
-Comprehensive workflow script for window retrofit analysis.
+Comprehensive workflow script for building retrofit analysis.
 
 This script:
 1. Loads a baseline model
 2. Extracts baseline embodied carbon and runs baseline EnergyPlus simulation
-3. Applies window_enhancement measure with EC3 embodied carbon calculations
+3. Applies selected retrofit measures (window, wall, roof) with EC3 embodied carbon calculations
 4. Runs modified model EnergyPlus simulation
 5. Calculates deltas (operational energy, embodied carbon, cost)
 6. Updates optimization.xlsx with all scenario data
 7. Generates spider chart for comparison
+
+Configuration:
+    Edit workflow_config.json to select which measures to apply and configure their arguments.
+    See MULTI_MEASURE_USAGE.md for detailed configuration instructions.
 
 Usage:
     python workflow.py
@@ -17,14 +21,44 @@ Usage:
 import sys
 import os
 from pathlib import Path
+import json
+
+# ============================================================================
+# CONFIGURATION: Load from JSON file
+# ============================================================================
+def load_config(config_path="workflow_config.json"):
+    """Load workflow configuration from JSON file."""
+    config_file = Path(__file__).parent / config_path
+    
+    if not config_file.exists():
+        print(f"⚠ Configuration file not found: {config_file}")
+        print("Using default configuration: all measures enabled")
+        return {
+            "measures": {
+                "window_enhancement": {"enabled": True, "arguments": {}},
+                "wall_insulation": {"enabled": True, "arguments": {"r_value": 13.0, "gwp_statistic": "mean"}},
+                "roof_insulation": {"enabled": True, "arguments": {"r_value": 30.0, "gwp_statistic": "mean"}}
+            }
+        }
+    
+    with open(config_file, 'r') as f:
+        config = json.load(f)
+    
+    print(f"✓ Loaded configuration from: {config_file}")
+    return config
+
+# Load configuration
+CONFIG = load_config()
+MEASURES_TO_APPLY = {key: value.get('enabled', False) for key, value in CONFIG.get('measures', {}).items()}
+# ============================================================================
 
 # Add measure directories to Python path
 measure_dir = Path(__file__).parent.absolute()
 window_measure_dir = measure_dir.parent / "window_enhancement"
-sys.path.insert(0, str(measure_dir))
-sys.path.insert(0, str(window_measure_dir))
+wall_insulation_dir = measure_dir.parent / "IncreaseInsulationRValueForExteriorWalls"
+roof_insulation_dir = measure_dir.parent / "IncreaseInsulationRValueForRoofs"
 
-# Import OpenStudio
+# Import OpenStudio first (before modifying sys.path)
 try:
     import openstudio
 except ImportError:
@@ -37,20 +71,168 @@ import pandas as pd
 from openpyxl import load_workbook
 import plotly.graph_objects as go
 from dotenv import load_dotenv
+import subprocess
+import json
+import shutil
+import re
 
-# Import from existing measure scripts
+# Import from ReportRetrofitImpacts measure (must be done before adding window_enhancement to path)
+sys.path.insert(0, str(measure_dir))
 from measure import ECReport
 from call_RSmeans import RSMeansAPIClient
 
-# Import reusable functions from apply_reporting_measure
-from apply_reporting_measure import run_energyplus_simulation, extract_model_data
-
-# Import WindowEnhancement measure
+# Import WindowEnhancement measure using importlib to avoid name collision
 import importlib.util
-spec = importlib.util.spec_from_file_location("window_measure", window_measure_dir / "measure.py")
-window_measure_module = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(window_measure_module)
-WindowEnhancement = window_measure_module.WindowEnhancement
+
+if MEASURES_TO_APPLY.get('window_enhancement'):
+    spec = importlib.util.spec_from_file_location("window_measure", window_measure_dir / "measure.py")
+    window_measure_module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(window_measure_module)
+    WindowEnhancement = window_measure_module.WindowEnhancement
+
+if MEASURES_TO_APPLY.get('wall_insulation'):
+    spec_wall = importlib.util.spec_from_file_location("wall_insulation_measure", wall_insulation_dir / "measure.py")
+    wall_insulation_module = importlib.util.module_from_spec(spec_wall)
+    spec_wall.loader.exec_module(wall_insulation_module)
+    # Note: The class is incorrectly named in the measure file
+    WallInsulationMeasure = wall_insulation_module.IncreaseInsulationRValueForRoofs
+
+if MEASURES_TO_APPLY.get('roof_insulation'):
+    spec_roof = importlib.util.spec_from_file_location("roof_insulation_measure", roof_insulation_dir / "measure.py")
+    roof_insulation_module = importlib.util.module_from_spec(spec_roof)
+    spec_roof.loader.exec_module(roof_insulation_module)
+    RoofInsulationMeasure = roof_insulation_module.IncreaseInsulationRValueForRoofs
+
+
+def find_openstudio_cli():
+    """Find OpenStudio CLI executable."""
+    common_paths = [
+        r"C:\openstudio-3.8.0\bin\openstudio.exe",
+        r"C:\openstudio-3.7.0\bin\openstudio.exe",
+        r"C:\openstudio-3.9.0\bin\openstudio.exe",
+        r"/usr/local/openstudio-3.8.0/bin/openstudio",
+        r"/Applications/OpenStudio-3.8.0/bin/openstudio"
+    ]
+    
+    for path in common_paths:
+        if os.path.exists(path):
+            return path
+    
+    # Try to find in PATH
+    cli_path = shutil.which("openstudio")
+    if cli_path:
+        return cli_path
+    
+    raise FileNotFoundError("OpenStudio CLI not found. Please install OpenStudio.")
+
+
+def run_energyplus_simulation(osm_path):
+    """
+    Run EnergyPlus simulation using OpenStudio CLI.
+    
+    Args:
+        osm_path: Path to the OpenStudio model file
+    
+    Returns:
+        Path to eplustbl.html report if successful, None otherwise
+    """
+    osm_path = Path(osm_path)
+    
+    if not osm_path.exists():
+        print(f"✗ Model file not found: {osm_path}")
+        return None
+    
+    # Find OpenStudio CLI
+    try:
+        cli_path = find_openstudio_cli()
+        print(f"[OK] Found OpenStudio CLI: {cli_path}")
+    except FileNotFoundError as e:
+        print(f"✗ {e}")
+        return None
+    
+    # Create workflow.osw in the same directory as the model
+    workflow_dir = osm_path.parent
+    workflow_path = workflow_dir / "workflow.osw"
+    
+    workflow_json = {
+        "seed_file": osm_path.name,
+        "weather_file": "",
+        "steps": [],
+        "created_at": "2025-12-30T00:00:00Z",
+        "updated_at": "2025-12-30T00:00:00Z"
+    }
+    
+    with open(workflow_path, 'w') as f:
+        json.dump(workflow_json, f, indent=2)
+    
+    print(f"[OK] Created workflow: {workflow_path}")
+    
+    # Run OpenStudio CLI
+    print(f"Running EnergyPlus simulation...")
+    try:
+        result = subprocess.run(
+            [cli_path, "run", "-w", str(workflow_path)],
+            cwd=str(workflow_dir),
+            capture_output=True,
+            text=True,
+            timeout=600
+        )
+        
+        if result.returncode == 0:
+            print(f"[OK] Simulation completed successfully")
+        else:
+            print(f"⚠ Simulation completed with warnings (return code: {result.returncode})")
+            if result.stderr:
+                print(f"STDERR: {result.stderr[:500]}")
+    
+    except subprocess.TimeoutExpired:
+        print("✗ Simulation timed out after 600 seconds")
+        return None
+    except Exception as e:
+        print(f"✗ Error running simulation: {e}")
+        return None
+    
+    # Look for eplustbl.html in multiple possible locations
+    possible_report_paths = [
+        workflow_dir / "run" / "eplustbl.htm",
+        workflow_dir / "run" / "eplustbl.html",
+        workflow_dir / "reports" / "eplustbl.html",
+        workflow_dir / "reports" / "eplustbl.htm"
+    ]
+    
+    for report_path in possible_report_paths:
+        if report_path.exists():
+            print(f"[OK] Found report: {report_path}")
+            return report_path
+    
+    print("⚠ Could not find eplustbl.html report")
+    return None
+
+
+def extract_model_data(osm_path):
+    """
+    Extract embodied carbon data from OpenStudio model AdditionalProperties.
+    
+    Args:
+        osm_path: Path to the OpenStudio model file
+    
+    Returns:
+        dict with extracted data
+    """
+    translator = openstudio.osversion.VersionTranslator()
+    model_opt = translator.loadModel(str(osm_path))
+    
+    if not model_opt.is_initialized():
+        print(f"✗ Failed to load model: {osm_path}")
+        return {}
+    
+    model = model_opt.get()
+    carbon, carbon_detail = extract_embodied_carbon(model)
+    
+    return {
+        'embodied_carbon': carbon,
+        'carbon_detail': carbon_detail
+    }
 
 
 def extract_embodied_carbon(model):
@@ -116,7 +298,153 @@ def apply_window_enhancement_measure(model, arguments):
             
             # Update the map
             arg_map[arg_name] = arg
-            print(f"  Set {arg_name} = {value}")
+            
+            # Mask sensitive information in output
+            if arg_name in ['api_key', 'client_id', 'client_secret', 'token', 'password']:
+                display_value = '***REDACTED***'
+            else:
+                display_value = value
+            print(f"  Set {arg_name} = {display_value}")
+    
+    # Run measure
+    result = measure.run(model, runner, arg_map)
+    
+    # Print results
+    print(f"Result: {runner.result().value().valueName()}")
+    
+    for info in runner.result().info():
+        print(f"INFO: {info.logMessage()}")
+    
+    for warning in runner.result().warnings():
+        print(f"WARNING: {warning.logMessage()}")
+    
+    for error in runner.result().errors():
+        print(f"ERROR: {error.logMessage()}")
+    
+    return result
+
+
+def apply_wall_insulation_measure(model, arguments):
+    """
+    Apply wall insulation measure to the model.
+    
+    Args:
+        model: OpenStudio model
+        arguments: dict of measure arguments
+    
+    Returns:
+        bool: Success status
+    """
+    print(f"\n{'='*80}")
+    print("Applying Wall Insulation Measure")
+    print(f"{'='*80}\n")
+    
+    # Create OSRunner
+    osw = openstudio.WorkflowJSON()
+    runner = openstudio.measure.OSRunner(osw)
+    
+    # Create measure
+    measure = WallInsulationMeasure()
+    
+    # Get measure arguments
+    args = measure.arguments(model)
+    arg_map = openstudio.measure.convertOSArgumentVectorToMap(args)
+    
+    # Set argument values
+    for arg in args:
+        arg_name = arg.name()
+        if arg_name in arguments:
+            value = arguments[arg_name]
+            
+            # Set value based on argument type
+            if isinstance(value, bool):
+                arg.setValue(value)
+            elif isinstance(value, int):
+                arg.setValue(int(value))
+            elif isinstance(value, float):
+                arg.setValue(float(value))
+            else:
+                arg.setValue(str(value))
+            
+            # Update the map
+            arg_map[arg_name] = arg
+            
+            # Mask sensitive information in output
+            if arg_name in ['api_key', 'client_id', 'client_secret', 'token', 'password']:
+                display_value = '***REDACTED***'
+            else:
+                display_value = value
+            print(f"  Set {arg_name} = {display_value}")
+    
+    # Run measure
+    result = measure.run(model, runner, arg_map)
+    
+    # Print results
+    print(f"Result: {runner.result().value().valueName()}")
+    
+    for info in runner.result().info():
+        print(f"INFO: {info.logMessage()}")
+    
+    for warning in runner.result().warnings():
+        print(f"WARNING: {warning.logMessage()}")
+    
+    for error in runner.result().errors():
+        print(f"ERROR: {error.logMessage()}")
+    
+    return result
+
+
+def apply_roof_insulation_measure(model, arguments):
+    """
+    Apply roof insulation measure to the model.
+    
+    Args:
+        model: OpenStudio model
+        arguments: dict of measure arguments
+    
+    Returns:
+        bool: Success status
+    """
+    print(f"\n{'='*80}")
+    print("Applying Roof Insulation Measure")
+    print(f"{'='*80}\n")
+    
+    # Create OSRunner
+    osw = openstudio.WorkflowJSON()
+    runner = openstudio.measure.OSRunner(osw)
+    
+    # Create measure
+    measure = RoofInsulationMeasure()
+    
+    # Get measure arguments
+    args = measure.arguments(model)
+    arg_map = openstudio.measure.convertOSArgumentVectorToMap(args)
+    
+    # Set argument values
+    for arg in args:
+        arg_name = arg.name()
+        if arg_name in arguments:
+            value = arguments[arg_name]
+            
+            # Set value based on argument type
+            if isinstance(value, bool):
+                arg.setValue(value)
+            elif isinstance(value, int):
+                arg.setValue(int(value))
+            elif isinstance(value, float):
+                arg.setValue(float(value))
+            else:
+                arg.setValue(str(value))
+            
+            # Update the map
+            arg_map[arg_name] = arg
+            
+            # Mask sensitive information in output
+            if arg_name in ['api_key', 'client_id', 'client_secret', 'token', 'password']:
+                display_value = '***REDACTED***'
+            else:
+                display_value = value
+            print(f"  Set {arg_name} = {display_value}")
     
     # Run measure
     result = measure.run(model, runner, arg_map)
@@ -186,6 +514,9 @@ def get_rsmeans_cost(component_type="windows", runner=None):
 def update_optimization_spreadsheet(baseline_data, modified_data, delta_data, output_path):
     """
     Update optimization.xlsx with scenario data.
+    Excel structure: Factor | Scenario_1 | Scenario_2 | Scenario_3 | Unit | Basis
+    
+    We'll update Scenario_1 with modified data and Basis with baseline data.
     
     Args:
         baseline_data: dict with baseline metrics
@@ -198,6 +529,11 @@ def update_optimization_spreadsheet(baseline_data, modified_data, delta_data, ou
     print(f"{'='*80}\n")
     
     excel_path = measure_dir / 'resources' / 'optimization.xlsx'
+    
+    if not excel_path.exists():
+        print(f"✗ Excel file not found: {excel_path}")
+        return
+    
     wb = load_workbook(excel_path, data_only=False, keep_links=True)
     
     if 'values' not in wb.sheetnames:
@@ -206,38 +542,42 @@ def update_optimization_spreadsheet(baseline_data, modified_data, delta_data, ou
     
     ws = wb['values']
     
-    # Map factor names to values
+    # Map our data to Excel factor names (note: "Embodied Energy" in Excel means operational energy)
     factor_mapping = {
         'Embodied Carbon': {
-            'Baseline': baseline_data['embodied_carbon'],
             'Scenario_1': modified_data['embodied_carbon'],
-            'Delta': delta_data['embodied_carbon']
+            'Basis': baseline_data['embodied_carbon']
         },
-        'Operational Energy': {
-            'Baseline': baseline_data['operational_energy'],
+        'Embodied Energy': {  # Excel uses this name for operational energy
             'Scenario_1': modified_data['operational_energy'],
-            'Delta': delta_data['operational_energy']
+            'Basis': baseline_data['operational_energy']
         },
         'Cost': {
-            'Baseline': baseline_data['cost'],
             'Scenario_1': modified_data['cost'],
-            'Delta': delta_data['cost']
+            'Basis': baseline_data['cost']
         }
     }
     
+    # Build column index map from header row
+    col_map = {}
+    for col_idx, cell in enumerate(ws[1], start=1):
+        if cell.value:
+            col_map[str(cell.value).strip()] = col_idx
+    
+    print(f"  Excel columns found: {list(col_map.keys())}")
+    
     # Update cells
-    for row in ws.iter_rows(min_row=2):  # Skip header
+    for row_idx, row in enumerate(ws.iter_rows(min_row=2), start=2):
         factor_name = str(row[0].value).strip() if row[0].value else ""
         
         if factor_name in factor_mapping:
-            # Find column headers
-            for col_idx, cell in enumerate(ws[1], start=1):
-                col_header = str(cell.value).strip() if cell.value else ""
-                
-                if col_header in factor_mapping[factor_name]:
-                    value = factor_mapping[factor_name][col_header]
-                    ws.cell(row=row[0].row, column=col_idx, value=value)
-                    print(f"  Updated {factor_name} - {col_header}: {value:.2f}")
+            for col_name, value in factor_mapping[factor_name].items():
+                if col_name in col_map:
+                    col_idx = col_map[col_name]
+                    ws.cell(row=row_idx, column=col_idx, value=value)
+                    print(f"  Updated {factor_name} - {col_name}: {value:.2f}")
+                else:
+                    print(f"  ⚠ Column '{col_name}' not found in Excel")
     
     wb.save(output_path)
     print(f"\n[OK] Spreadsheet saved: {output_path}")
@@ -266,42 +606,104 @@ def generate_spider_chart(baseline_data, modified_data, output_path):
         modified_data['cost']
     ]
     
+    # Debug output
+    print("Raw Values:")
+    for cat, base, mod in zip(categories, baseline_values, modified_values):
+        print(f"  {cat.replace(chr(10), ' ')}: Baseline={base:.2f}, Modified={mod:.2f}")
+    
     normalized_baseline = [100, 100, 100]  # Baseline is 100%
-    normalized_modified = [
-        (mod / base * 100) if base > 0 else 100
-        for mod, base in zip(modified_values, baseline_values)
-    ]
     
-    fig = go.Figure()
+    # Better normalization handling for edge cases
+    normalized_modified = []
+    for mod, base, cat in zip(modified_values, baseline_values, categories):
+        if base > 0:
+            # Normal case: express as percentage of baseline
+            norm = (mod / base * 100)
+        elif mod > 0:
+            # Edge case: baseline is 0 but modified has value
+            # Can't express as % of baseline, so use absolute value scaled
+            norm = 150  # Show at max to indicate "infinite increase"
+            print(f"  ⚠ Warning: {cat.replace(chr(10), ' ')} baseline is 0, setting to 150% to show increase")
+        else:
+            # Both are 0
+            norm = 100
+        normalized_modified.append(norm)
     
+    print("\nNormalized Values (% of Baseline):")
+    for cat, norm in zip(categories, normalized_modified):
+        print(f"  {cat.replace(chr(10), ' ')}: {norm:.1f}%")
+    
+    # Create subplot with spider chart and bar chart side-by-side
+    from plotly.subplots import make_subplots
+    
+    fig = make_subplots(
+        rows=1, cols=2,
+        specs=[[{'type': 'polar'}, {'type': 'bar'}]],
+        subplot_titles=('Normalized Comparison (% of Baseline)', 'Absolute Values'),
+        column_widths=[0.5, 0.5]
+    )
+    
+    # Spider chart (normalized)
     fig.add_trace(go.Scatterpolar(
         r=normalized_baseline,
         theta=categories,
         fill='toself',
         name='Baseline',
-        line_color='blue'
-    ))
+        line_color='blue',
+        showlegend=True
+    ), row=1, col=1)
     
     fig.add_trace(go.Scatterpolar(
         r=normalized_modified,
         theta=categories,
         fill='toself',
-        name='Window Enhancement',
-        line_color='red'
-    ))
+        name='Retrofit Package',
+        line_color='red',
+        showlegend=True
+    ), row=1, col=1)
     
+    # Bar chart (absolute values)
+    category_short = ['Embodied Carbon', 'Operational Energy', 'Cost']
+    
+    fig.add_trace(go.Bar(
+        name='Baseline',
+        x=category_short,
+        y=baseline_values,
+        marker_color='blue',
+        text=[f'{v:.2f}' for v in baseline_values],
+        textposition='outside',
+        showlegend=False
+    ), row=1, col=2)
+    
+    fig.add_trace(go.Bar(
+        name='Retrofit Package',
+        x=category_short,
+        y=modified_values,
+        marker_color='red',
+        text=[f'{v:.2f}' for v in modified_values],
+        textposition='outside',
+        showlegend=False
+    ), row=1, col=2)
+    
+    # Update layout
     fig.update_layout(
         polar=dict(
             radialaxis=dict(
                 visible=True,
                 range=[0, 150]
             )),
-        showlegend=True,
-        title="Window Retrofit Impact Comparison<br>(Normalized to Baseline = 100%)"
+        title_text="Window Retrofit Impact Analysis",
+        title_x=0.5,
+        height=500,
+        barmode='group'
     )
+    
+    # Update y-axis labels for bar chart
+    fig.update_yaxes(title_text="Value", row=1, col=2)
     
     fig.write_html(output_path)
     print(f"[OK] Spider chart saved: {output_path}")
+    print(f"  Chart includes normalized % comparison and absolute values")
     
     # Also show in browser
     fig.show()
@@ -309,7 +711,7 @@ def generate_spider_chart(baseline_data, modified_data, output_path):
 
 def main():
     print(f"\n{'='*80}")
-    print("COMPREHENSIVE WINDOW RETROFIT WORKFLOW")
+    print("COMPREHENSIVE BUILDING RETROFIT WORKFLOW")
     print(f"{'='*80}\n")
     
     # Configuration
@@ -363,10 +765,13 @@ def main():
     # Parse baseline energy from eplustbl.html if available
     baseline_energy = 0.0
     if baseline_eplustbl_path and baseline_eplustbl_path.exists():
-        import re
-        html_text = baseline_eplustbl_path.read_text(encoding="utf-8", errors="ignore")
-        m = re.search(r'Total Site Energy</td>\s*<td[^>]*>\s*([0-9.]+)', html_text, flags=re.IGNORECASE)
-        baseline_energy = float(m.group(1)) if m else 0.0
+        # Use ECReport's parse method
+        report = ECReport()
+        osw = openstudio.WorkflowJSON()
+        runner = openstudio.measure.OSRunner(osw)
+        eplustbl_data = report.parse_eplustbl_html(baseline_eplustbl_path, runner)
+        if "total_site_energy_GJ" in eplustbl_data and eplustbl_data["total_site_energy_GJ"]:
+            baseline_energy = float(eplustbl_data["total_site_energy_GJ"])
     
     print(f"[OK] Baseline operational energy: {baseline_energy:.2f} GJ")
     
@@ -381,11 +786,15 @@ def main():
     }
     
     # =========================================================================
-    # STEP 2: Apply Window Enhancement Measure
+    # STEP 2: Apply Selected Retrofit Measures
     # =========================================================================
     print(f"\n{'='*80}")
-    print("STEP 2: APPLY WINDOW ENHANCEMENT")
+    print("STEP 2: APPLY SELECTED RETROFIT MEASURES")
     print(f"{'='*80}\n")
+    
+    # Show which measures are enabled
+    enabled_measures = [k for k, v in MEASURES_TO_APPLY.items() if v]
+    print(f"Enabled measures: {', '.join(enabled_measures)}\n")
     
     # Create a copy of the model for modification
     modified_model = baseline_model.clone().to_Model()
@@ -398,44 +807,78 @@ def main():
     config.read(config_path)
     ec3_api_token = config["EC3_API_TOKEN"]["API_TOKEN"]
     
-    # Define measure arguments (all required arguments including api_key)
-    window_args = {
-        # Required choice arguments
-        'wf_option': 'wood window frame',
-        'film_option': 'solar control film',
-        'glass_option': 'triple pane clear',
-        'gwp_statistic': 'mean',
+    # Apply Window Enhancement if enabled
+    if MEASURES_TO_APPLY.get('window_enhancement'):
+        # Get arguments from config, or use defaults
+        window_config = CONFIG.get('measures', {}).get('window_enhancement', {}).get('arguments', {})
+        window_args = {
+            # Required choice arguments
+            'wf_option': window_config.get('wf_option', 'wood window frame'),
+            'film_option': window_config.get('film_option', 'solar control film'),
+            'glass_option': window_config.get('glass_option', 'triple pane clear'),
+            'gwp_statistic': window_config.get('gwp_statistic', 'mean'),
+            
+            # Required string arguments
+            'api_key': ec3_api_token,
+            
+            # Required double arguments
+            'caulking_thickness': window_config.get('caulking_thickness', 0.0127),  # 0.5 inches in meters
+            'glass_pane_thickness': window_config.get('glass_pane_thickness', 0.003),  # 3mm
+            'gap_thickness': window_config.get('gap_thickness', 0.013),  # 13mm
+            'glass_solar_transmittance': window_config.get('glass_solar_transmittance', 0.7),
+            'glass_front_emissivity': window_config.get('glass_front_emissivity', 0.84),
+            'glass_back_emissivity': window_config.get('glass_back_emissivity', 0.84),
+            'length_per_unit': window_config.get('length_per_unit', 1.0),  # meters
+            
+            # Required integer arguments
+            'user_num_panes': window_config.get('user_num_panes', 3),
+            'num_horizontal_dividers': window_config.get('num_horizontal_dividers', 0),
+            'num_vertical_dividers': window_config.get('num_vertical_dividers', 0),
+            
+            # Optional arguments
+            'space_infiltration_reduction_percent': window_config.get('space_infiltration_reduction_percent', 50.0),
+            'caulking_option': window_config.get('caulking_option', 'acrylic'),
+            'weatherstrip_option': window_config.get('weatherstrip_option', 'silicone adhesive smoke gasket'),
+            'secondary_glazing_option': window_config.get('secondary_glazing_option', 'none')
+        }
         
-        # Required string arguments
-        'api_key': ec3_api_token,
+        success = apply_window_enhancement_measure(modified_model, window_args)
         
-        # Required double arguments
-        'caulking_thickness': 0.0127,  # 0.5 inches in meters
-        'glass_pane_thickness': 0.003,  # 3mm
-        'gap_thickness': 0.013,  # 13mm
-        'glass_solar_transmittance': 0.7,
-        'glass_front_emissivity': 0.84,
-        'glass_back_emissivity': 0.84,
-        'length_per_unit': 1.0,  # meters
-        
-        # Required integer arguments
-        'user_num_panes': 3,
-        'num_horizontal_dividers': 0,
-        'num_vertical_dividers': 0,
-        
-        # Optional arguments
-        'space_infiltration_reduction_percent': 50.0,
-        'caulking_option': 'acrylic',
-        'weatherstrip_option': 'silicone adhesive smoke gasket',
-        'secondary_glazing_option': 'none'
-    }
+        if not success:
+            print("✗ Failed to apply window enhancement measure")
+            sys.exit(1)
     
-    # Apply measure
-    success = apply_window_enhancement_measure(modified_model, window_args)
+    # Apply Wall Insulation if enabled
+    if MEASURES_TO_APPLY.get('wall_insulation'):
+        # Get arguments from config, or use defaults
+        wall_config = CONFIG.get('measures', {}).get('wall_insulation', {}).get('arguments', {})
+        wall_args = {
+            'r_value': wall_config.get('r_value', 13.0),
+            'api_key': ec3_api_token,
+            'gwp_statistic': wall_config.get('gwp_statistic', 'mean')
+        }
+        
+        success = apply_wall_insulation_measure(modified_model, wall_args)
+        
+        if not success:
+            print("✗ Failed to apply wall insulation measure")
+            sys.exit(1)
     
-    if not success:
-        print("✗ Failed to apply window enhancement measure")
-        sys.exit(1)
+    # Apply Roof Insulation if enabled
+    if MEASURES_TO_APPLY.get('roof_insulation'):
+        # Get arguments from config, or use defaults
+        roof_config = CONFIG.get('measures', {}).get('roof_insulation', {}).get('arguments', {})
+        roof_args = {
+            'r_value': roof_config.get('r_value', 30.0),
+            'api_key': ec3_api_token,
+            'gwp_statistic': roof_config.get('gwp_statistic', 'mean')
+        }
+        
+        success = apply_roof_insulation_measure(modified_model, roof_args)
+        
+        if not success:
+            print("✗ Failed to apply roof insulation measure")
+            sys.exit(1)
     
     # Save modified model
     modified_model_path = output_dir / "modified_model.osm"
@@ -461,10 +904,13 @@ def main():
     # Parse modified energy from eplustbl.html if available
     modified_energy = 0.0
     if modified_eplustbl_path and modified_eplustbl_path.exists():
-        import re
-        html_text = modified_eplustbl_path.read_text(encoding="utf-8", errors="ignore")
-        m = re.search(r'Total Site Energy</td>\s*<td[^>]*>\s*([0-9.]+)', html_text, flags=re.IGNORECASE)
-        modified_energy = float(m.group(1)) if m else 0.0
+        # Use ECReport's parse method
+        report = ECReport()
+        osw = openstudio.WorkflowJSON()
+        runner = openstudio.measure.OSRunner(osw)
+        eplustbl_data = report.parse_eplustbl_html(modified_eplustbl_path, runner)
+        if "total_site_energy_GJ" in eplustbl_data and eplustbl_data["total_site_energy_GJ"]:
+            modified_energy = float(eplustbl_data["total_site_energy_GJ"])
     
     print(f"[OK] Modified operational energy: {modified_energy:.2f} GJ")
     
@@ -513,7 +959,21 @@ def main():
     print(f"\n\n{'='*80}")
     print("WORKFLOW COMPLETE!")
     print(f"{'='*80}\n")
-    print(f"Results saved in: {output_dir}")
+    
+    # Show which measures were applied
+    applied_measures = []
+    if MEASURES_TO_APPLY.get('window_enhancement'):
+        applied_measures.append("Window Enhancement")
+    if MEASURES_TO_APPLY.get('wall_insulation'):
+        applied_measures.append("Wall Insulation")
+    if MEASURES_TO_APPLY.get('roof_insulation'):
+        applied_measures.append("Roof Insulation")
+    
+    print(f"Applied Measures:")
+    for measure in applied_measures:
+        print(f"  ✓ {measure}")
+    
+    print(f"\nResults saved in: {output_dir}")
     print(f"  - Modified model: modified_model.osm")
     print(f"  - Updated spreadsheet: optimization_updated.xlsx")
     print(f"  - Spider chart: retrofit_comparison_spider_chart.html")
