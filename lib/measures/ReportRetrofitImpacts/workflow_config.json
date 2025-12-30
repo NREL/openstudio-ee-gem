@@ -1,0 +1,41 @@
+{
+  "measures": {
+    "window_enhancement": {
+      "enabled": true,
+      "arguments": {
+        "wf_option": "wood window frame",
+        "film_option": "solar control film",
+        "glass_option": "triple pane clear",
+        "gwp_statistic": "mean",
+        "caulking_thickness": 0.0127,
+        "glass_pane_thickness": 0.003,
+        "gap_thickness": 0.013,
+        "glass_solar_transmittance": 0.7,
+        "glass_front_emissivity": 0.84,
+        "glass_back_emissivity": 0.84,
+        "length_per_unit": 1.0,
+        "user_num_panes": 3,
+        "num_horizontal_dividers": 0,
+        "num_vertical_dividers": 0,
+        "space_infiltration_reduction_percent": 50.0,
+        "caulking_option": "acrylic",
+        "weatherstrip_option": "silicone adhesive smoke gasket",
+        "secondary_glazing_option": "none"
+      }
+    },
+    "wall_insulation": {
+      "enabled": true,
+      "arguments": {
+        "r_value": 13.0,
+        "gwp_statistic": "mean"
+      }
+    },
+    "roof_insulation": {
+      "enabled": false,
+      "arguments": {
+        "r_value": 30.0,
+        "gwp_statistic": "mean"
+      }
+    }
+  }
+}

@@ -1,10 +1,15 @@
-<?xml version="1.0"?>
+<?xml version="1.0" encoding="UTF-8"?>
 <measure>
   <schema_version>3.1</schema_version>
   <name>increase_insulation_r_value_for_exterior_walls</name>
   <uid>3fdf9c39-d305-449b-a4b5-077166af5a67</uid>
+<<<<<<< HEAD
+  <version_id>9861a99e-fea4-4336-965f-f4049f22a8c8</version_id>
+  <version_modified>2025-11-20T21:58:18Z</version_modified>
+=======
   <version_id>e2c58f01-1f95-4c85-9f42-d1f97170fb49</version_id>
   <version_modified>2025-09-25T15:33:42Z</version_modified>
+>>>>>>> 5cd59c99ea8cd017184dd730830ef00b3fa5b384
   <xml_checksum>0F858D9E</xml_checksum>
   <class_name>IncreaseInsulationRValueForExteriorWalls</class_name>
   <display_name>Increase R-value of Insulation for Exterior Walls to a Specific Value</display_name>
@@ -31,52 +36,37 @@ The resulting construction will retain the cost data from the source constructio
   <arguments>
     <argument>
       <name>r_value</name>
-      <display_name>Insulation R-value (ft^2*h*R/Btu).</display_name>
+      <display_name>Insulation R-value (ft²·h·°F/Btu)</display_name>
       <type>Double</type>
       <required>true</required>
-      <model_dependent>false</model_dependent>
-      <default_value>13</default_value>
+      <default_value>13.0</default_value>
     </argument>
     <argument>
       <name>allow_reduction</name>
       <display_name>Allow both increase and decrease in R-value to reach requested target?</display_name>
       <type>Boolean</type>
       <required>true</required>
-      <model_dependent>false</model_dependent>
       <default_value>false</default_value>
-      <choices>
-        <choice>
-          <value>true</value>
-          <display_name>true</display_name>
-        </choice>
-        <choice>
-          <value>false</value>
-          <display_name>false</display_name>
-        </choice>
-      </choices>
     </argument>
     <argument>
       <name>material_cost_increase_ip</name>
-      <display_name>Increase in Material and Installation Costs for Construction per Area Used ($/ft^2).</display_name>
+      <display_name>Increase in Material and Installation Costs ($/ft²)</display_name>
       <type>Double</type>
       <required>true</required>
-      <model_dependent>false</model_dependent>
-      <default_value>0</default_value>
+      <default_value>0.0</default_value>
     </argument>
     <argument>
       <name>one_time_retrofit_cost_ip</name>
-      <display_name>One Time Retrofit Cost to Add Insulation to Construction ($/ft^2).</display_name>
+      <display_name>One Time Retrofit Cost ($/ft²)</display_name>
       <type>Double</type>
       <required>true</required>
-      <model_dependent>false</model_dependent>
-      <default_value>0</default_value>
+      <default_value>0.0</default_value>
     </argument>
     <argument>
       <name>years_until_retrofit_cost</name>
-      <display_name>Year to Incur One Time Retrofit Cost (whole years).</display_name>
+      <display_name>Year to Incur One Time Retrofit Cost</display_name>
       <type>Integer</type>
       <required>true</required>
-      <model_dependent>false</model_dependent>
       <default_value>0</default_value>
     </argument>
   </arguments>
@@ -136,6 +126,12 @@ The resulting construction will retain the cost data from the source constructio
       <filetype>rb</filetype>
       <usage_type>script</usage_type>
       <checksum>850115AF</checksum>
+    </file>
+    <file>
+      <filename>__pycache__/EC3_lookup.cpython-313.pyc</filename>
+      <filetype>pyc</filetype>
+      <usage_type>resource</usage_type>
+      <checksum>604E45BB</checksum>
     </file>
     <file>
       <filename>EnvelopeAndLoadTestModel_01.osm</filename>

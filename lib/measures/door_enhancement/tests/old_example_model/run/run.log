@@ -1,0 +1,72 @@
+[15:42:34.008132 DEBUG] [openstudio.workflow.OSWorkflow] Removing existing run directory: C:/Users/jhu1/AppData/Local/Temp/1/osmodel-399b-e7ca-cbcc-e374-1763159792-0/resources/run
+[15:42:34.008132 DEBUG] [openstudio.workflow.OSWorkflow] Registering that the workflow has started with the adapter
+[15:42:34.009151 DEBUG] [openstudio.workflow.OSWorkflow] Initialization - selected = true
+[15:42:34.010228 DEBUG] [openstudio.workflow.OSWorkflow] The root_dir for the datapoint is C:/Users/jhu1/AppData/Local/Temp/1/osmodel-399b-e7ca-cbcc-e374-1763159792-0/resources
+[15:42:34.010228 DEBUG] [openstudio.workflow.OSWorkflow] Removing existing generated files directory: C:/Users/jhu1/AppData/Local/Temp/1/osmodel-399b-e7ca-cbcc-e374-1763159792-0/resources/generated_files
+[15:42:34.011293 DEBUG] [openstudio.workflow.OSWorkflow] Creating generated files directory: C:/Users/jhu1/AppData/Local/Temp/1/osmodel-399b-e7ca-cbcc-e374-1763159792-0/resources/generated_files
+[15:42:34.012312 DEBUG] [openstudio.workflow.OSWorkflow] Removing existing reports directory: C:/Users/jhu1/AppData/Local/Temp/1/osmodel-399b-e7ca-cbcc-e374-1763159792-0/resources/reports
+[15:42:34.013328 DEBUG] [openstudio.workflow.OSWorkflow] Finding and loading the seed file
+[15:42:34.017379 INFO] [openstudio.worklow.Util] Loading OSM model
+[15:42:34.017379 INFO] [openstudio.worklow.Util] Reading in OSM model C:/Users/jhu1/AppData/Local/Temp/1/osmodel-399b-e7ca-cbcc-e374-1763159792-0/old_example_model.osm
+[15:42:34.022794 DEBUG] [openstudio.osversion.VersionTranslator] Starting translation from Version 3.8.0.
+[15:42:34.060098 DEBUG] [openstudio.osversion.VersionTranslator] Initial model has 2011 objects.
+[15:42:34.061116 DEBUG] [openstudio.osversion.VersionTranslator] Final model has 2011 objects in IDF form.
+[15:42:34.086981 DEBUG] [utilities.idf.Workspace] Workspace::isValid called.
+[15:42:34.196600 DEBUG] [openstudio.osversion.VersionTranslator] Final model has 2011 objects in Model form.
+[15:42:34.211233 DEBUG] [openstudio.workflow.OSWorkflow] Initialize the weather file from osw
+[15:42:34.212230 DEBUG] [openstudio.workflow.OSWorkflow] Search for weather file defined by osw srrl_2013_amy.epw
+[15:42:34.223455 DEBUG] [openstudio.EpwFile] No Daylightings Saving start Date
+[15:42:34.243537 INFO] [openstudio.EpwFile] Header start day of the week and actual start day of the week do not match in EPW file 'C:/Users/jhu1/AppData/Local/Temp/1/osmodel-399b-e7ca-cbcc-e374-1763159792-0/resources/files/srrl_2013_amy.epw'. Data will be treated as typical (TMY)
+[15:42:34.244545 DEBUG] [openstudio.workflow.OSWorkflow] OpenStudioMeasures - selected = true
+[15:42:34.244545 INFO] [openstudio.workflow.OSWorkflow] Beginning to execute OpenStudio Measures
+[15:42:34.244545 DEBUG] [openstudio.workflow.OSWorkflow] Finding measures of type ModelMeasure
+[15:42:34.244545 INFO] [openstudio.workflow.OSWorkflow] Finished applying OpenStudio Measures.
+[15:42:34.307656 DEBUG] [openstudio.workflow.OSWorkflow] Translator - selected = true
+[15:42:34.309689 INFO] [openstudio.workflow.OSWorkflow] Beginning the translation to IDF
+[15:42:34.314581 WARN] [openstudio.energyplus.ForwardTranslator] Space Space with no Geometry Assigned to SpaceType with non is not associated with a ThermalZone, it will not be translated.
+[15:42:34.315590 INFO] [openstudio.energyplus.ForwardTranslator] SpaceType Two Lights both LPD same schedule is not referenced by any space, it will not be translated.
+[15:42:34.373313 WARN] [openstudio.energyplus.ForwardTranslator] OS_ProgramControl is not currently translated
+[15:42:34.422933 INFO] [openstudio.workflow.OSWorkflow] Successfully translated to IDF
+[15:42:34.422933 DEBUG] [openstudio.workflow.OSWorkflow] EnergyPlusMeasures - selected = true
+[15:42:34.422933 INFO] [openstudio.workflow.OSWorkflow] Beginning to execute EnergyPlus Measures.
+[15:42:34.422933 DEBUG] [openstudio.workflow.OSWorkflow] Finding measures of type EnergyPlusMeasure
+[15:42:34.422933 INFO] [openstudio.workflow.OSWorkflow] Finished applying EnergyPlus Measures.
+[15:42:34.424174 DEBUG] [openstudio.workflow.OSWorkflow] PreProcess - selected = true
+[15:42:34.461036 INFO] [openstudio.workflow.OSWorkflow] Beginning to collect output requests from Reporting measures.
+[15:42:34.461036 DEBUG] [openstudio.workflow.OSWorkflow] Finding measures of type ReportingMeasure
+[15:42:34.461036 INFO] [openstudio.workflow.OSWorkflow] Finished collecting output requests from Reporting measures.
+[15:42:34.461036 INFO] [openstudio.workflow.OSWorkflow] Running EnergyPlus Preprocess
+[15:42:34.463242 INFO] [openstudio.workflow.OSWorkflow] Finished preprocess job for EnergyPlus simulation
+[15:42:34.487138 DEBUG] [openstudio.workflow.OSWorkflow] Saved final IDF as C:/Users/jhu1/AppData/Local/Temp/1/osmodel-399b-e7ca-cbcc-e374-1763159792-0/resources/run/in.idf
+[15:42:34.487138 DEBUG] [openstudio.workflow.OSWorkflow] EnergyPlus - selected = true
+[15:42:34.487138 DEBUG] [openstudio.OSWorkflow.prepareEnergyPlusDir] Original Directory: C:/All repos/openstudio-ee-gem/lib/measures/door_enhancement/tests
+[15:42:34.487138 DEBUG] [openstudio.OSWorkflow.prepareEnergyPlusDir] Changing To run directory: C:/Users/jhu1/AppData/Local/Temp/1/osmodel-399b-e7ca-cbcc-e374-1763159792-0/resources/run
+[15:42:34.488146 DEBUG] [ApplicationPathHelpers] getOpenStudioModule, szPath = 'C:\openstudioapplication-1.8.0\bin\openstudiolib.dll'
+[15:42:34.488146 DEBUG] [PathHelpers] completeAndNormalize: result = C:/openstudioapplication-1.8.0/bin/openstudiolib.dll
+[15:42:34.488146 DEBUG] [ApplicationPathHelpers] getOpenStudioModule, found 'C:/openstudioapplication-1.8.0/bin/openstudiolib.dll'
+[15:42:34.488146 DEBUG] [ApplicationPathHelpers] Searching for EnergyPlus in 'C:/openstudioapplication-1.8.0/EnergyPlus/energyplus.exe'
+[15:42:34.489157 DEBUG] [PathHelpers] completeAndNormalize: result = C:/openstudioapplication-1.8.0/EnergyPlus/energyplus.exe
+[15:42:34.489157 DEBUG] [ApplicationPathHelpers] Found EnergyPlus at 'C:/openstudioapplication-1.8.0/EnergyPlus/energyplus.exe'
+[15:42:34.489157 DEBUG] [PathHelpers] completeAndNormalize: result = C:/openstudioapplication-1.8.0/EnergyPlus/energyplus.exe
+[15:42:34.589706 INFO] [openstudio.OSWorkflow.prepareEnergyPlusDir] EnergyPlus executable path is C:/openstudioapplication-1.8.0/EnergyPlus/energyplus.exe
+[15:42:34.589706 INFO] [openstudio.OSWorkflow.prepareEnergyPlusDir] ExpandObjects executable path is C:/openstudioapplication-1.8.0/EnergyPlus/ExpandObjects.exe
+[15:42:34.589706 INFO] [openstudio.workflow.OSWorkflow] Starting simulation in run directory: C:/Users/jhu1/AppData/Local/Temp/1/osmodel-399b-e7ca-cbcc-e374-1763159792-0/resources/run
+[15:42:34.627046 INFO] [openstudio.workflow.OSWorkflow] Running command '"C:/openstudioapplication-1.8.0\EnergyPlus\ExpandObjects.exe"'
+[15:42:34.712567 INFO] [openstudio.workflow.OSWorkflow] Running command '"C:/openstudioapplication-1.8.0\EnergyPlus\energyplus.exe" in.idf'
+[15:42:36.284725 INFO] [openstudio.workflow.OSWorkflow] EnergyPlus returned '0'
+[15:42:36.285733 INFO] [openstudio.workflow.OSWorkflow] EnergyPlus finished with 23 warnings and 0 severe errors
+[15:42:36.285733 INFO] [openstudio.OSWorkflow.prepareEnergyPlusDir] Removing any copied EnergyPlus files
+[15:42:36.287777 DEBUG] [openstudio.OSWorkflow.prepareEnergyPlusDir] Changing Current Directory back to: C:/All repos/openstudio-ee-gem/lib/measures/door_enhancement/tests
+[15:42:36.287777 DEBUG] [openstudio.workflow.OSWorkflow] ReportingMeasures - selected = true
+[15:42:36.289193 INFO] [openstudio.workflow.OSWorkflow] Beginning to execute Reporting Measures.
+[15:42:36.289193 DEBUG] [openstudio.workflow.OSWorkflow] Finding measures of type ReportingMeasure
+[15:42:36.289193 INFO] [openstudio.workflow.OSWorkflow] Finished applying Reporting Measures.
+[15:42:36.292419 DEBUG] [openstudio.workflow.OSWorkflow] PostProcess - selected = true
+[15:42:36.292419 INFO] [openstudio.workflow.OSWorkflow] Gathering reports
+[15:42:36.294482 INFO] [openstudio.workflow.Util] Run directory: C:/Users/jhu1/AppData/Local/Temp/1/osmodel-399b-e7ca-cbcc-e374-1763159792-0/resources/run
+[15:42:36.294482 INFO] [openstudio.workflow.Util] Reports directoryC:/Users/jhu1/AppData/Local/Temp/1/osmodel-399b-e7ca-cbcc-e374-1763159792-0/resources
+[15:42:36.294482 INFO] [openstudio.workflow.Util] Saving EnergyPlus HTML report to C:/Users/jhu1/AppData/Local/Temp/1/osmodel-399b-e7ca-cbcc-e374-1763159792-0/resources/reports/eplustbl.html
+[15:42:36.299722 INFO] [openstudio.workflow.OSWorkflow] Finished gathering reports
+[15:42:36.299722 DEBUG] [openstudio.workflow.OSWorkflow] Cleanup - selected = true
+[15:42:36.300225 INFO] [openstudio.workflow.OSWorkflow] Beginning cleanup of the run directory
+[15:42:36.301727 INFO] [openstudio.workflow.OSWorkflow] Finished cleanup of the run directory

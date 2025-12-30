@@ -1,0 +1,30 @@
+{
+   "hash" : "F2392D52",
+   "measure_paths" : 
+   [
+      ".."
+   ],
+   "seed_file" : "../IncreaseInsulationRValueForExteriorWalls/tests/DOE_small_office.osm",
+   "steps" : 
+   [
+      {
+         "arguments" : 
+         {
+            "api_key" : "",
+            "gwp_statistic" : "median",
+            "insulation_material_density" : 0,
+            "insulation_material_lifetime" : 30,
+            "insulation_material_type" : "Polyiso Insulation Foam Board",
+            "insulation_thermal_conductivity" : 0,
+            "r_value" : 20
+         },
+         "measure_dir_name" : "IncreaseInsulationRValueForExteriorWalls"
+      },
+      {
+         "arguments" : {},
+         "measure_dir_name" : "ReportRetrofitImpacts"
+      }
+   ],
+   "updated_at" : "20251210T205522Z",
+   "weather_file" : "../IncreaseInsulationRValueForExteriorWalls/tests/USA_CO_Denver-Aurora-Buckley.AFB_.724695_TMY3.epw"
+}

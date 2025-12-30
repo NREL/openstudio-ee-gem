@@ -1,0 +1,20 @@
+[14:10:26.938199 ERROR] [openstudio.XMLValidator] xsdValidate.parseFileError: XML error 17.1871: Element 'uid': This element is not expected. Expected is ( name ).
+    at file:/C:/All%20repos/openstudio-ee-gem/lib/measures/IncreaseInsulationRValueForExteriorWalls/measure.xml:3
+[14:10:26.938199 WARN] [utilities.bcl.BCLXML] Failed to validate measure.xml at C:/All repos/openstudio-ee-gem/lib/measures/IncreaseInsulationRValueForExteriorWalls/measure.xml
+[14:10:26.939197 FATAL] [utilities.bcl.BCLMeasure] 'C:/All repos/openstudio-ee-gem/lib/measures/IncreaseInsulationRValueForExteriorWalls' is missing the required attribute "Measure Type"
+[14:10:26.939197 ERROR] [openstudio.WorkflowJSON] Cannot load measure 'IncreaseInsulationRValueForExteriorWalls' at 'C:/All repos/openstudio-ee-gem/lib/measures/IncreaseInsulationRValueForExteriorWalls'
+[14:10:26.949712 ERROR] [openstudio.XMLValidator] xsdValidate.parseFileError: XML error 17.1871: Element 'uid': This element is not expected. Expected is ( name ).
+    at file:/C:/All%20repos/openstudio-ee-gem/lib/measures/ReportRetrofitImpacts/measure.xml:3
+[14:10:26.949712 WARN] [utilities.bcl.BCLXML] Failed to validate measure.xml at C:/All repos/openstudio-ee-gem/lib/measures/ReportRetrofitImpacts/measure.xml
+[14:10:26.952007 FATAL] [utilities.bcl.BCLMeasure] 'C:/All repos/openstudio-ee-gem/lib/measures/ReportRetrofitImpacts' is missing the required attribute "Measure Type"
+[14:10:26.953007 ERROR] [openstudio.WorkflowJSON] Cannot load measure 'ReportRetrofitImpacts' at 'C:/All repos/openstudio-ee-gem/lib/measures/ReportRetrofitImpacts'
+[14:10:26.953007 FATAL] [openstudio.workflow.OSWorkflow] Workflow is invalid
+[14:10:26.953007 ERROR] [openstudio.workflow.OSWorkflow] Found error in state 'Initialization' with message: 'D:\OSN\Openstudio\src\workflow\RunInitialization.cpp@63 : Workflow is invalid'
+[14:10:26.970729 ERROR] [openstudio.XMLValidator] xsdValidate.parseFileError: XML error 17.1871: Element 'uid': This element is not expected. Expected is ( name ).
+    at file:/C:/All%20repos/openstudio-ee-gem/lib/measures/IncreaseInsulationRValueForExteriorWalls/measure.xml:3
+[14:10:26.970729 WARN] [utilities.bcl.BCLXML] Failed to validate measure.xml at C:/All repos/openstudio-ee-gem/lib/measures/IncreaseInsulationRValueForExteriorWalls/measure.xml
+[14:10:26.973722 FATAL] [utilities.bcl.BCLMeasure] 'C:/All repos/openstudio-ee-gem/lib/measures/IncreaseInsulationRValueForExteriorWalls' is missing the required attribute "Measure Type"
+[14:10:26.979722 ERROR] [openstudio.XMLValidator] xsdValidate.parseFileError: XML error 17.1871: Element 'uid': This element is not expected. Expected is ( name ).
+    at file:/C:/All%20repos/openstudio-ee-gem/lib/measures/ReportRetrofitImpacts/measure.xml:3
+[14:10:26.979722 WARN] [utilities.bcl.BCLXML] Failed to validate measure.xml at C:/All repos/openstudio-ee-gem/lib/measures/ReportRetrofitImpacts/measure.xml
+[14:10:26.980722 FATAL] [utilities.bcl.BCLMeasure] 'C:/All repos/openstudio-ee-gem/lib/measures/ReportRetrofitImpacts' is missing the required attribute "Measure Type"

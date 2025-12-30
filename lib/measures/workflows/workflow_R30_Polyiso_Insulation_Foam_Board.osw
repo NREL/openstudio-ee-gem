@@ -1,0 +1,25 @@
+{
+  "seed_file": "C:/All repos/openstudio-ee-gem/lib/measures/IncreaseInsulationRValueForExteriorWalls/tests/DOE_small_office.osm",
+  "weather_file": "C:/All repos/openstudio-ee-gem/lib/measures/IncreaseInsulationRValueForExteriorWalls/tests/USA_CO_Denver-Aurora-Buckley.AFB_.724695_TMY3.epw",
+  "measure_paths": [
+    "C:/All repos/openstudio-ee-gem/lib/measures"
+  ],
+  "steps": [
+    {
+      "measure_dir_name": "IncreaseInsulationRValueForExteriorWalls",
+      "arguments": {
+        "r_value": 30.0,
+        "api_key": "",
+        "insulation_material_type": "Polyiso Insulation Foam Board",
+        "insulation_material_lifetime": 30,
+        "insulation_thermal_conductivity": 0.0,
+        "gwp_statistic": "median",
+        "insulation_material_density": 0.0
+      }
+    },
+    {
+      "measure_dir_name": "ReportRetrofitImpacts",
+      "arguments": {}
+    }
+  ]
+}
