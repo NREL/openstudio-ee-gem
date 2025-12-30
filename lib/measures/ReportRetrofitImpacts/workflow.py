@@ -11,19 +11,18 @@ This script:
 7. Generates spider chart for comparison
 
 Usage:
-    python run_comprehensive_workflow.py
+    python workflow.py
 """
 
 import sys
 import os
 from pathlib import Path
-import json
-import shutil
-import subprocess
 
 # Add measure directories to Python path
 measure_dir = Path(__file__).parent.absolute()
 window_measure_dir = measure_dir.parent / "window_enhancement"
+sys.path.insert(0, str(measure_dir))
+sys.path.insert(0, str(window_measure_dir))
 
 # Import OpenStudio
 try:
@@ -39,140 +38,19 @@ from openpyxl import load_workbook
 import plotly.graph_objects as go
 from dotenv import load_dotenv
 
-# Import ECReport from the current measure directory
-sys.path.insert(0, str(measure_dir))
+# Import from existing measure scripts
 from measure import ECReport
 from call_RSmeans import RSMeansAPIClient
 
-# Import WindowEnhancement from the window_enhancement measure directory
-sys.path.insert(0, str(window_measure_dir))
+# Import reusable functions from apply_reporting_measure
+from apply_reporting_measure import run_energyplus_simulation, extract_model_data
+
+# Import WindowEnhancement measure
 import importlib.util
 spec = importlib.util.spec_from_file_location("window_measure", window_measure_dir / "measure.py")
 window_measure_module = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(window_measure_module)
 WindowEnhancement = window_measure_module.WindowEnhancement
-
-
-def find_openstudio_cli():
-    """Find OpenStudio CLI executable."""
-    cli_paths = [
-        r"C:\openstudio-3.8.0\bin\openstudio.exe",
-        r"C:\openstudio-3.7.0\bin\openstudio.exe",
-        r"C:\openstudio\bin\openstudio.exe",
-        "openstudio",  # Try system PATH
-    ]
-    
-    for path in cli_paths:
-        try:
-            result = subprocess.run([path, "--version"], 
-                                  capture_output=True, text=True, timeout=5)
-            if result.returncode == 0:
-                print(f"✓ Found OpenStudio CLI: {path}")
-                return path
-        except (FileNotFoundError, subprocess.TimeoutExpired):
-            continue
-    
-    return None
-
-
-def run_energyplus_simulation(osm_path, weather_file, output_dir):
-    """
-    Run EnergyPlus simulation and return parsed results.
-    
-    Args:
-        osm_path: Path to OSM model file
-        weather_file: Path to EPW weather file
-        output_dir: Directory for simulation output
-    
-    Returns:
-        dict: Simulation results or None if failed
-    """
-    print(f"\n{'='*80}")
-    print(f"Running EnergyPlus simulation: {osm_path.name}")
-    print(f"{'='*80}\n")
-    
-    output_dir.mkdir(parents=True, exist_ok=True)
-    
-    # Create workflow JSON
-    workflow_dict = {
-        "seed_file": osm_path.name,
-        "weather_file": weather_file.name,
-        "measure_paths": [],
-        "file_paths": [],
-        "run_directory": "./"
-    }
-    
-    osw_path = output_dir / "workflow.osw"
-    with open(osw_path, 'w') as f:
-        json.dump(workflow_dict, f, indent=2)
-    
-    # Copy files
-    shutil.copy(osm_path, output_dir / osm_path.name)
-    if weather_file.exists():
-        shutil.copy(weather_file, output_dir / weather_file.name)
-    
-    # Find OpenStudio CLI
-    cli_exe = find_openstudio_cli()
-    if not cli_exe:
-        print("✗ Could not find OpenStudio CLI. Skipping simulation.")
-        return None
-    
-    # Run simulation
-    print(f"Running simulation (this may take a few minutes)...")
-    try:
-        result = subprocess.run(
-            [cli_exe, "run", "-w", str(osw_path)],
-            cwd=str(output_dir),
-            capture_output=True,
-            text=True,
-            timeout=300
-        )
-        
-        if result.returncode == 0:
-            print("✓ Simulation completed successfully")
-        else:
-            print(f"✗ Simulation failed with return code {result.returncode}")
-            return None
-    except subprocess.TimeoutExpired:
-        print("✗ Simulation timed out")
-        return None
-    except Exception as e:
-        print(f"✗ Error running simulation: {e}")
-        return None
-    
-    # Parse results from eplustbl.html
-    html_paths = [
-        output_dir / "reports" / "eplustbl.html",
-        output_dir / "run" / "eplustbl.html",
-    ]
-    
-    for html_path in html_paths:
-        if html_path.exists():
-            print(f"✓ Found EnergyPlus report: {html_path}")
-            return parse_energyplus_html(html_path)
-    
-    print("✗ eplustbl.html not found")
-    return None
-
-
-def parse_energyplus_html(html_path):
-    """Parse EnergyPlus HTML report for energy metrics."""
-    import re
-    
-    html_text = html_path.read_text(encoding="utf-8", errors="ignore")
-    
-    def extract_field(pattern):
-        m = re.search(pattern, html_text, flags=re.IGNORECASE | re.DOTALL)
-        return float(m.group(1).strip()) if m else 0.0
-    
-    data = {
-        "total_site_energy_GJ": extract_field(r'Total Site Energy</td>\s*<td[^>]*>\s*([0-9.]+)'),
-        "net_site_energy_GJ": extract_field(r'Net Site Energy</td>\s*<td[^>]*>\s*([0-9.]+)'),
-        "total_source_energy_GJ": extract_field(r'Total Source Energy</td>\s*<td[^>]*>\s*([0-9.]+)'),
-        "total_building_area_m2": extract_field(r'Total Building Area</td>\s*<td[^>]*>\s*([0-9.]+)'),
-    }
-    
-    return data
 
 
 def extract_embodied_carbon(model):
@@ -283,7 +161,7 @@ def get_rsmeans_cost(component_type="windows", runner=None):
         print("⚠ Failed to authenticate with RSMeans API")
         return 0.0
     
-    print("✓ Successfully authenticated with RSMeans API")
+    print("[OK] Successfully authenticated with RSMeans API")
     
     # Search for relevant cost line items
     search_results = client.search_unit_costlines(
@@ -296,7 +174,7 @@ def get_rsmeans_cost(component_type="windows", runner=None):
         # Get first result's unit cost (simplified - should be refined)
         try:
             cost = float(search_results[0].get('unitCost', 0.0))
-            print(f"✓ Retrieved cost estimate: ${cost:.2f}")
+            print(f"[OK] Retrieved cost estimate: ${cost:.2f}")
             return cost
         except (ValueError, KeyError, IndexError):
             print("⚠ Could not parse cost from RSMeans results")
@@ -362,7 +240,7 @@ def update_optimization_spreadsheet(baseline_data, modified_data, delta_data, ou
                     print(f"  Updated {factor_name} - {col_header}: {value:.2f}")
     
     wb.save(output_path)
-    print(f"\n✓ Spreadsheet saved: {output_path}")
+    print(f"\n[OK] Spreadsheet saved: {output_path}")
 
 
 def generate_spider_chart(baseline_data, modified_data, output_path):
@@ -423,7 +301,7 @@ def generate_spider_chart(baseline_data, modified_data, output_path):
     )
     
     fig.write_html(output_path)
-    print(f"✓ Spider chart saved: {output_path}")
+    print(f"[OK] Spider chart saved: {output_path}")
     
     # Also show in browser
     fig.show()
@@ -471,26 +349,30 @@ def main():
         sys.exit(1)
     
     baseline_model = baseline_model_opt.get()
-    print(f"✓ Loaded baseline model")
+    print(f"[OK] Loaded baseline model")
     
     # Extract baseline embodied carbon
     baseline_carbon, baseline_carbon_detail = extract_embodied_carbon(baseline_model)
-    print(f"✓ Baseline embodied carbon: {baseline_carbon:.2f} kg CO2eq")
+    print(f"[OK] Baseline embodied carbon: {baseline_carbon:.2f} kg CO2eq")
     
-    # Run baseline simulation
-    baseline_sim_results = None
+    # Run baseline simulation using existing function from apply_reporting_measure
+    baseline_eplustbl_path = None
     if weather_file.exists():
-        baseline_sim_dir = output_dir / "baseline_simulation"
-        baseline_sim_results = run_energyplus_simulation(
-            baseline_model_path, weather_file, baseline_sim_dir
-        )
+        baseline_eplustbl_path = run_energyplus_simulation(baseline_model_path)
     
-    baseline_energy = baseline_sim_results['total_site_energy_GJ'] if baseline_sim_results else 0.0
-    print(f"✓ Baseline operational energy: {baseline_energy:.2f} GJ")
+    # Parse baseline energy from eplustbl.html if available
+    baseline_energy = 0.0
+    if baseline_eplustbl_path and baseline_eplustbl_path.exists():
+        import re
+        html_text = baseline_eplustbl_path.read_text(encoding="utf-8", errors="ignore")
+        m = re.search(r'Total Site Energy</td>\s*<td[^>]*>\s*([0-9.]+)', html_text, flags=re.IGNORECASE)
+        baseline_energy = float(m.group(1)) if m else 0.0
+    
+    print(f"[OK] Baseline operational energy: {baseline_energy:.2f} GJ")
     
     # Get baseline cost (could be zero if no RSMeans data)
     baseline_cost = 1000.0  # Placeholder - could use RSMeans
-    print(f"✓ Baseline cost: ${baseline_cost:.2f}")
+    print(f"[OK] Baseline cost: ${baseline_cost:.2f}")
     
     baseline_data = {
         'embodied_carbon': baseline_carbon,
@@ -508,13 +390,24 @@ def main():
     # Create a copy of the model for modification
     modified_model = baseline_model.clone().to_Model()
     
-    # Define measure arguments (all 14 required arguments)
+    # Read EC3 API token from config.ini
+    import configparser
+    repo_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+    config_path = os.path.join(repo_root, "config.ini")
+    config = configparser.ConfigParser()
+    config.read(config_path)
+    ec3_api_token = config["EC3_API_TOKEN"]["API_TOKEN"]
+    
+    # Define measure arguments (all required arguments including api_key)
     window_args = {
         # Required choice arguments
         'wf_option': 'wood window frame',
         'film_option': 'solar control film',
         'glass_option': 'triple pane clear',
         'gwp_statistic': 'mean',
+        
+        # Required string arguments
+        'api_key': ec3_api_token,
         
         # Required double arguments
         'caulking_thickness': 0.0127,  # 0.5 inches in meters
@@ -547,7 +440,7 @@ def main():
     # Save modified model
     modified_model_path = output_dir / "modified_model.osm"
     modified_model.save(str(modified_model_path), True)
-    print(f"✓ Saved modified model: {modified_model_path}")
+    print(f"[OK] Saved modified model: {modified_model_path}")
     
     # =========================================================================
     # STEP 3: Process Modified Model
@@ -558,22 +451,26 @@ def main():
     
     # Extract modified embodied carbon
     modified_carbon, modified_carbon_detail = extract_embodied_carbon(modified_model)
-    print(f"✓ Modified embodied carbon: {modified_carbon:.2f} kg CO2eq")
+    print(f"[OK] Modified embodied carbon: {modified_carbon:.2f} kg CO2eq")
     
-    # Run modified simulation
-    modified_sim_results = None
+    # Run modified simulation using existing function from apply_reporting_measure
+    modified_eplustbl_path = None
     if weather_file.exists():
-        modified_sim_dir = output_dir / "modified_simulation"
-        modified_sim_results = run_energyplus_simulation(
-            modified_model_path, weather_file, modified_sim_dir
-        )
+        modified_eplustbl_path = run_energyplus_simulation(modified_model_path)
     
-    modified_energy = modified_sim_results['total_site_energy_GJ'] if modified_sim_results else 0.0
-    print(f"✓ Modified operational energy: {modified_energy:.2f} GJ")
+    # Parse modified energy from eplustbl.html if available
+    modified_energy = 0.0
+    if modified_eplustbl_path and modified_eplustbl_path.exists():
+        import re
+        html_text = modified_eplustbl_path.read_text(encoding="utf-8", errors="ignore")
+        m = re.search(r'Total Site Energy</td>\s*<td[^>]*>\s*([0-9.]+)', html_text, flags=re.IGNORECASE)
+        modified_energy = float(m.group(1)) if m else 0.0
+    
+    print(f"[OK] Modified operational energy: {modified_energy:.2f} GJ")
     
     # Get modified cost
     modified_cost = baseline_cost + get_rsmeans_cost("windows")
-    print(f"✓ Modified cost: ${modified_cost:.2f}")
+    print(f"[OK] Modified cost: ${modified_cost:.2f}")
     
     modified_data = {
         'embodied_carbon': modified_carbon,
