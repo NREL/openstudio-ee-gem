@@ -3,13 +3,23 @@
 # See also https://openstudio.net/license
 # *******************************************************************************
 
+import sys
+import os
+from pathlib import Path
+
+# Add measure directory to Python path for resource imports
+measure_dir = Path(__file__).parent
+if str(measure_dir) not in sys.path:
+    sys.path.insert(0, str(measure_dir))
+
 import openstudio
 import pandas as pd
-from pathlib import Path
 from openpyxl import load_workbook
 import plotly.graph_objects as go
 import requests
 import re
+from dotenv import load_dotenv
+from call_RSmeans import RSMeansAPIClient
 
 CURRENT_DIR_PATH = Path(__file__).absolute()
 optimization_excel_path = CURRENT_DIR_PATH.parent / 'resources' / 'optimization.xlsx'
@@ -172,19 +182,42 @@ class ECReport(openstudio.measure.ReportingMeasure):
         runner.registerInfo(f"Parsed EnergyPlus report: {data.get('building_name', 'N/A')}")
         return data
     
-    def pull_rsmeans_cost(self, sheet_name, code_3):
+    def pull_rsmeans_cost_from_api(self, runner):
         """
-        Pulls RSMeans cost data from the Excel file. Currently, user needs to provide
-        sheet name and Column E value from Master Format Codes
+        Pulls RSMeans cost data from the API using credentials from .env file.
         """
-        #
-        rsmeans_data = pd.read_excel(rsmeans_data_path, sheet_name=sheet_name)
-        product_cost = rsmeans_data.loc[rsmeans_data['Code 3'] == code_3, 'Total Incl O&P'].values
-        if len(product_cost) > 0:
-            print("RSMeans Total Incl O&P (USD) = " + str(product_cost[0]))
-        else:
-            print("No cost found for the given code.")
-        return
+        # Load credentials from .env file
+        load_dotenv()
+        client_id = os.getenv('client_id')
+        client_secret = os.getenv('client_secret')
+        
+        if not client_id or not client_secret:
+            runner.registerWarning("RSMeans API credentials not found in .env file")
+            return None
+        
+        # Initialize client with credentials
+        client = RSMeansAPIClient(client_id, client_secret, use_sandbox=True)
+        
+        # Authenticate
+        if not client.authenticate():
+            runner.registerWarning("Failed to authenticate with RSMeans API")
+            return None
+        
+        runner.registerInfo("Successfully authenticated with RSMeans API")
+        
+        # Example: Search for a unit cost line
+        # You can customize this based on your needs
+        search_results = client.search_unit_costlines(
+            release_id='2019-an',
+            measurement_system='imp',
+            searchTerm='windows'
+        )
+        
+        if search_results:
+            runner.registerInfo(f"Found RSMeans search results")
+            # Process and use the results as needed
+        
+        return search_results
 
 
     def parse_osm_additional_properties(self, osm_path, runner):
@@ -440,7 +473,8 @@ class ECReport(openstudio.measure.ReportingMeasure):
             self.modify_optimization_sheet(total_gwp)
             self.optimization()
         
-        self.pull_rsmeans_cost("windows costs", "08 53 13.40")
+        # Call RSMeans API
+        self.pull_rsmeans_cost_from_api(runner)
 
         runner.registerInfo("Report complete.")
 

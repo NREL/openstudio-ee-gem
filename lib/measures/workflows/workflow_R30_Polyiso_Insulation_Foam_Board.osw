@@ -9,7 +9,7 @@
       "measure_dir_name": "IncreaseInsulationRValueForExteriorWalls",
       "arguments": {
         "r_value": 30.0,
-        "api_key": "5fk7wP4cJg6pcmx6ncZN0ftMdoVR8u",
+        "api_key": "",
         "insulation_material_type": "Polyiso Insulation Foam Board",
         "insulation_material_lifetime": 30,
         "insulation_thermal_conductivity": 0.0,

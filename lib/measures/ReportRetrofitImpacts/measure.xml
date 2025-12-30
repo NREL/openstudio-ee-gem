@@ -1,10 +1,44 @@
-<?xml version="1.0" encoding="UTF-8"?>
+<?xml version="1.0"?>
 <measure>
+  <schema_version>3.1</schema_version>
+  <name>report_retrofit_impacts</name>
   <uid>c3d4e5f6-a7b8-9012-cdef-123456789012</uid>
   <version_id>d4e5f6a7-b8c9-0123-def1-234567890123</version_id>
-  <name>Report AdditionalProperties (Python)</name>
+  <version_modified>2025-12-29T00:00:00Z</version_modified>
+  <xml_checksum>00000000</xml_checksum>
+  <class_name>ECReport</class_name>
+  <display_name>Report Retrofit Impacts</display_name>
   <description>Reports all AdditionalProperties and their key-value pairs in the model.</description>
   <modeler_description>Traverse model and extract AdditionalProperties content using Python.</modeler_description>
   <arguments/>
   <outputs/>
+  <provenances/>
+  <tags>
+    <tag>Reporting.QAQC</tag>
+  </tags>
+  <attributes>
+    <attribute>
+      <name>Measure Type</name>
+      <value>ReportingMeasure</value>
+      <datatype>string</datatype>
+    </attribute>
+    <attribute>
+      <name>Intended Software Tool</name>
+      <value>OpenStudio Application</value>
+      <datatype>string</datatype>
+    </attribute>
+    <attribute>
+      <name>Intended Software Tool</name>
+      <value>Parametric Analysis Tool</value>
+      <datatype>string</datatype>
+    </attribute>
+  </attributes>
+  <files>
+    <file>
+      <filename>measure.py</filename>
+      <filetype>py</filetype>
+      <usage_type>script</usage_type>
+      <checksum>00000000</checksum>
+    </file>
+  </files>
 </measure>

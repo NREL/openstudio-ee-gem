@@ -582,7 +582,7 @@ def fetch_epd_data(url,api_token):
         print(f"Fetching data from URL: {url}")  # Log the URL being fetched
         # API configuration
         HEADERS = {"Accept": "application/json", "Authorization": "Bearer " + api_token}
-        response = requests.get(url, headers=HEADERS, verify=False)
+        response = requests.get(url, headers=HEADERS, verify=False, timeout=30)
         response.raise_for_status() # HTTPError if failure 
         return response.json()
     except requests.exceptions.RequestException as e:
@@ -770,45 +770,6 @@ def multiply(multiplicand: Any, multiplier: Any) -> float:
     multiplicand_value = extract_numeric_value(multiplicand)
     multiplier_value = extract_numeric_value(multiplier)
     return multiplicand_value * multiplier_value
-# when vertex coordinates are provided in openstudio model, this function can calculate area, perimeter, width and length
-def calculate_geometry(self, sub_surface):
-    """
-    Calculate the length, width, perimeter, and area of the window from its vertices.
-    Assumes the window is a quadrilateral (typically a rectangle).
-    """
-    vertices = sub_surface.vertices()
-    if len(vertices) != 4:
-        return {
-            "length": 0.0,
-            "width": 0.0,
-            "perimeter": 0.0,
-            "area": 0.0
-        }
-
-    # Calculate all edge lengths
-    edge_lengths = []
-    perimeter = 0.0
-    for i in range(4):
-        v1 = vertices[i]
-        v2 = vertices[(i + 1) % 4]
-        edge = v2 - v1
-        length = edge.length()
-        edge_lengths.append(length)
-        perimeter += length
-
-    # Assume opposite edges are equal, so we can group into two unique lengths
-    length = max(edge_lengths)
-    width = min(edge_lengths)
-
-    # Area = length × width
-    area = length * width
-
-    return {
-        "length": length,
-        "width": width,
-        "perimeter": perimeter,
-        "area": area
-    }
 # handle the case when no epd returned from API request 
 def test_empty_epd(primary, fallback):
     if primary:

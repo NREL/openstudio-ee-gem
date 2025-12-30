@@ -3,6 +3,15 @@
 # See also https://openstudio.net/license
 # *******************************************************************************
 
+import sys
+import os
+from pathlib import Path
+
+# Add measure directory to Python path for resource imports
+measure_dir = Path(__file__).parent
+if str(measure_dir) not in sys.path:
+    sys.path.insert(0, str(measure_dir))
+
 import openstudio
 import typing
 import numpy as np

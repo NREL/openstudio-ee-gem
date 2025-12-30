@@ -10,7 +10,7 @@
       {
          "arguments" : 
          {
-            "api_key" : "5fk7wP4cJg6pcmx6ncZN0ftMdoVR8u",
+            "api_key" : "",
             "gwp_statistic" : "median",
             "insulation_material_density" : 0,
             "insulation_material_lifetime" : 30,
