@@ -70,6 +70,11 @@ jobs:
               /tmp/aws/install
               rm -rf /tmp/aws /tmp/awscliv2.zip
               
+              # Install Python dependencies for Python measures
+              echo "Installing Python dependencies..."
+              pip install --upgrade pip
+              pip install openpyxl requests python-dotenv plotly pandas
+              
               # Install gem dependencies
               echo "Installing gem dependencies..."
               
