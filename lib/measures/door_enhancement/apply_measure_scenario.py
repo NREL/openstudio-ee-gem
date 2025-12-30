@@ -23,13 +23,13 @@ CURRENT_DIR_PATH = Path(__file__).parent.absolute()
 model_path = Path(CURRENT_DIR_PATH / "tests/ReverseTranslatedModel.osm")
 
 def bottom_seal_options():
-    # return ["brush weatherstrip", "automatic door bottom", "silicone adhesive smoke gasket"]
-    return ['none']
+    return ["brush weatherstrip", "automatic door bottom", "silicone adhesive smoke gasket"]
+    #return ['none']
 
 
 def top_side_seal_options():
-    # return ["silicone adhesive smoke gasket", "jamb weatherstrip"]
-    return ['none']
+    return ["silicone adhesive smoke gasket", "jamb weatherstrip"]
+    #return ['none']
 
 def door_options():
     # return ['wooden door', 'garage door', 'polystyrene core steel door', 
@@ -37,18 +37,24 @@ def door_options():
             # 'stiffened core steel door']
     return ['none']
 
+def infiltration_reduction_percentages():
+    # Test different infiltration reduction scenarios
+    return [0, 10, 20, 30, 40, 50]
+
 # Generate all combinations
 bottom_seals = bottom_seal_options()
 top_side_seals = top_side_seal_options()
 doors = door_options()
+infiltration_reductions = infiltration_reduction_percentages()
 
-all_combinations = list(product(bottom_seals, top_side_seals, doors))
+all_combinations = list(product(bottom_seals, top_side_seals, doors, infiltration_reductions))
 total_combinations = len(all_combinations)
 
 print(f"Testing {total_combinations} retrofit combinations...")
 print(f"Bottom seal options: {len(bottom_seals)}")
 print(f"Top/side seal options: {len(top_side_seals)}")
 print(f"Door options: {len(doors)}")
+print(f"Infiltration reduction percentages: {len(infiltration_reductions)}")
 print("-" * 80)
 
 # Prepare CSV file for results
@@ -59,15 +65,16 @@ with open(output_csv, 'w', newline='', encoding='utf-8') as csvfile:
     csv_writer = csv.writer(csvfile)
     csv_writer.writerow([
         'Combination_Number', 'Bottom_Seal', 'Top_Side_Seal', 'Door_Option', 
-        'Door_R_Value', 'Result', 'Errors', 'Warnings', 'Info_Messages'
+        'Infiltration_Reduction_%', 'Door_R_Value', 'Result', 'Errors', 'Warnings', 'Info_Messages'
     ])
     
     # Test each combination
-    for idx, (bottom_seal, top_side_seal, door_option) in enumerate(all_combinations, start=1):
+    for idx, (bottom_seal, top_side_seal, door_option, infiltration_reduction) in enumerate(all_combinations, start=1):
         print(f"\n[{idx}/{total_combinations}] Testing combination:")
         print(f"  Bottom seal: {bottom_seal}")
         print(f"  Top/side seal: {top_side_seal}")
         print(f"  Door: {door_option}")
+        print(f"  Infiltration reduction: {infiltration_reduction}%")
         
         # Load fresh model for each test
         translator = openstudio.osversion.VersionTranslator()
@@ -95,7 +102,7 @@ with open(output_csv, 'w', newline='', encoding='utf-8') as csvfile:
         set_arg('door_area_per_unit', 1.95)
         set_arg('door_option', door_option)
         set_arg("gwp_statistic", "median")
-        set_arg("space_infiltration_reduction_percent", 0)
+        set_arg("space_infiltration_reduction_percent", infiltration_reduction)
         set_arg("api_key", API_TOKEN)
         
         # Calculate door R-value directly from door option using measure's static method
@@ -126,6 +133,7 @@ with open(output_csv, 'w', newline='', encoding='utf-8') as csvfile:
                 bottom_seal,
                 top_side_seal,
                 door_option,
+                infiltration_reduction,
                 door_r_value,
                 result_value,
                 '; '.join(errors) if errors else '',
@@ -135,7 +143,7 @@ with open(output_csv, 'w', newline='', encoding='utf-8') as csvfile:
             
             # Save model for successful runs
             if result_value == "Success":
-                safe_name = f"{idx}_{bottom_seal.replace(' ', '_')}_{top_side_seal.replace(' ', '_')}_{door_option.replace(' ', '_')}"
+                safe_name = f"{idx}_{bottom_seal.replace(' ', '_')}_{top_side_seal.replace(' ', '_')}_{door_option.replace(' ', '_')}_infilt{infiltration_reduction}"
                 save_path = Path(CURRENT_DIR_PATH / f"tests/output/{safe_name}.osm")
                 model.save(openstudio.toPath(str(save_path)), True)
             
@@ -145,6 +153,7 @@ with open(output_csv, 'w', newline='', encoding='utf-8') as csvfile:
                 idx,
                 bottom_seal,
                 top_side_seal,
+                infiltration_reduction,
                 door_option,
                 '',
                 'Exception',
