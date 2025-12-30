@@ -161,27 +161,34 @@ def parse_product_epd(epd: Dict[str, Any]) -> Dict[str, Any]:
     thickness = epd.get("thickness")
     gwp_per_declared_unit = epd.get("gwp")
     mass_per_declared_unit = epd.get("mass_per_declared_unit")
+    if mass_per_declared_unit and any(x in mass_per_declared_unit for x in ["g"]):
+        mass_per_declared_unit = str(extract_numeric_value(mass_per_declared_unit)/1000) + " kg"
+    elif mass_per_declared_unit and any(x in mass_per_declared_unit for x in ["lbs", "lb"]):
+        mass_per_declared_unit = str(extract_numeric_value(mass_per_declared_unit)*0.453592) + " kg"
     density = epd.get("density")
     # fix the issue that density unit is g/cm3 but parsed as kg/m3 in EC3 json repsonse
     if density and any(x in density for x in ["kg / m3", "kg / m^3", "kg/m3", "kg/m^3"]) and extract_numeric_value(density) < 10:
         density_value = extract_numeric_value(density)*1000
+        density = str(density_value) + " kg/m3"
+    elif density and any(x in density for x in ["lbs / ft3", "lb/ft3", "lbs/ft^3" , "lb / ft3"]):
+        density_value = extract_numeric_value(density)*16.0185
         density = str(density_value) + " kg/m3"
 
     gwp_per_kg = extract_numeric_value(epd.get("gwp_per_kg"))
     epd_name = epd.get('name')
     description = epd.get('description')
     original_ec3_link = epd['manufacturer']['original_ec3_link']
-    # # For the two parameters below, need to confirm the accuracy of data before using; for insulation material, the mass per declared unit is always 2.04 kg,
-    # # not sure where this 2.04 kg is from, didn't see it in EPD, better not to use
-    # category_mass_per_declared_unit = epd['category']['mass_per_declared_unit']
-    # category_declared_unit = epd['category']['declared_unit']
+    # For the two parameters below, need to confirm the accuracy of data before using; for insulation material, the mass per declared unit is always 2.04 kg,
+    # not sure where this 2.04 kg is from, didn't see it in EPD, better not to use
+    category_mass_per_declared_unit = epd['category']['mass_per_declared_unit']
+    category_declared_unit = epd['category']['declared_unit']
 
-    # mass_per_area = 0.0
-    # if "kg" in category_mass_per_declared_unit and "m2" in category_declared_unit:
-    #     mass_per_area = divide(category_mass_per_declared_unit, category_declared_unit)
+    mass_per_area = 0.0
+    if category_mass_per_declared_unit and category_declared_unit and "kg" in category_mass_per_declared_unit and "m2" in category_declared_unit:
+        mass_per_area = divide(category_mass_per_declared_unit, category_declared_unit)
 
-    # if mass_per_declared_unit is None and category_mass_per_declared_unit is not None and any(x in category_declared_unit for x in ["m2", "m^2"]):
-    #     mass_per_declared_unit = divide(category_mass_per_declared_unit,category_declared_unit)
+    if mass_per_declared_unit is None and category_mass_per_declared_unit is not None and category_declared_unit is not None and any(x in category_declared_unit for x in ["m2", "m^2"]):
+        mass_per_declared_unit = divide(category_mass_per_declared_unit,category_declared_unit)
 
     # Per kg
     if gwp_per_kg is None or gwp_per_kg == 0.0:
@@ -210,8 +217,8 @@ def parse_product_epd(epd: Dict[str, Any]) -> Dict[str, Any]:
         gwp_per_m2 = divide(gwp_per_declared_unit, declared_unit) * 10.7639 # convert from square feet to m2
     elif declared_unit and any(x in declared_unit for x in ["m3", "m^3"]) and thickness and "mm" in thickness:
         gwp_per_m2 = divide(gwp_per_declared_unit, declared_unit) * (extract_numeric_value(thickness)/1000)
-    # if gwp_per_m2 == 0.0 and mass_per_area and gwp_per_kg:
-    #     gwp_per_m2 = multiply(gwp_per_kg, mass_per_area)
+    if gwp_per_m2 == 0.0 and mass_per_area and gwp_per_kg:
+        gwp_per_m2 = multiply(gwp_per_kg, mass_per_area)
 
     # Per unit
     if declared_unit and any(x in declared_unit for x in ["unit", "each", "item", 'piece']):
@@ -227,9 +234,9 @@ def parse_product_epd(epd: Dict[str, Any]) -> Dict[str, Any]:
     parsed_data["gwp_per_m2 (kg CO2 eq/m2)"] = gwp_per_m2
     parsed_data["gwp_per_kg (kg CO2 eq/kg)"] = gwp_per_kg
     parsed_data['gwp_per_unit (kg CO2 eq/unit)'] = gwp_per_unit
-    # parsed_data["category_mass_per_declared_unit"] = category_mass_per_declared_unit
-    # parsed_data["category_declared_unit"] = category_declared_unit
-    # parsed_data["mass_per_area"] = mass_per_area
+    parsed_data["category_mass_per_declared_unit"] = category_mass_per_declared_unit
+    parsed_data["category_declared_unit"] = category_declared_unit
+    parsed_data["mass_per_area"] = mass_per_area
     parsed_data["original_ec3_link"] = original_ec3_link
     parsed_data["description"] = description
 
@@ -429,8 +436,18 @@ def compute_gwp_data(keys, epd_list_by_material, epd_type, gwp_statistic):
 
             for unit_key, json_key in mapping.items():
                 value = extract_numeric_value(parsed_data.get(json_key))
-                if value is not None:
+                if value is not None and value != 0.0:
                     gwp_values[unit_key].append(float(value))
+        
+        # Remove outliers from GWP values using IQR method
+        for unit_key in gwp_values.keys():
+            if len(gwp_values[unit_key]) > 0:
+                original_count = len(gwp_values[unit_key])
+                gwp_values[unit_key] = remove_outliers_iqr(gwp_values[unit_key])
+                filtered_count = len(gwp_values[unit_key])
+                if original_count != filtered_count:
+                    print(f"Removed {original_count - filtered_count} outliers from {unit_key} for {key}: {original_count} -> {filtered_count} values")
+        
         for unit_key, values_list in gwp_values.items():
             if len(values_list) == 0:
                 print(f"No GWP values for {unit_key} in {key} using {epd_type}")
@@ -460,6 +477,27 @@ def compute_average(min,max):
         avg = None
 
     return avg
+
+def remove_outliers_iqr(data):
+    """Remove outliers from a list of numerical values using the IQR method.
+    Returns the filtered list without outliers.
+    """
+    if len(data) < 4:  # Need at least 4 data points for meaningful IQR calculation
+        return data
+    
+    data_array = np.array(data)
+    q1 = np.percentile(data_array, 25)
+    q3 = np.percentile(data_array, 75)
+    iqr = q3 - q1
+    
+    # Define outlier bounds
+    lower_bound = q1 - 1.5 * iqr
+    upper_bound = q3 + 1.5 * iqr
+    
+    # Filter out outliers
+    filtered_data = [x for x in data if lower_bound <= x <= upper_bound]
+    
+    return filtered_data
 
 def main():
     """

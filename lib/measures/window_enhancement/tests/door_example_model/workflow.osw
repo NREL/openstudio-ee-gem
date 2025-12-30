@@ -1,7 +1,0 @@
-{
-   "created_at" : "20251120T230439Z",
-   "seed_file" : "../door_example_model.osm",
-   "steps" : [],
-   "updated_at" : "20251120T230445Z",
-   "weather_file" : "srrl_2013_amy.epw"
-}
