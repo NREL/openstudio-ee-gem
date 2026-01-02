@@ -1529,14 +1529,6 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
         if space_infiltration_reduction_percent > 100:
             runner.registerError('Please enter a value less than or equal to 100 for the Space Infiltration reduction percentage.')
             return False, 0, 0.0, []
-        elif space_infiltration_reduction_percent == 0:
-            runner.registerInfo('  ℹ No Space Infiltration adjustment requested (infiltration coefficients or life cycle costs may still be affected)')
-        elif abs(space_infiltration_reduction_percent) < 1:
-            runner.registerWarning(f"A Space Infiltration reduction percentage of {space_infiltration_reduction_percent} percent is abnormally low.")
-        elif space_infiltration_reduction_percent > 90:
-            runner.registerWarning(f"A Space Infiltration reduction percentage of {space_infiltration_reduction_percent} percent is abnormally high.")
-        elif space_infiltration_reduction_percent < 0:
-            runner.registerInfo('  ℹ Space Infiltration reduction percentage is negative (will increase infiltration)')
 
         # Get space infiltration objects used in the model
         space_infiltration_objects = model.getSpaceInfiltrationDesignFlowRates()
