@@ -1,12 +1,14 @@
 # How to use this script:
 # This script is for reading the unparsed json reponse from EC3, just change 'test_url' to get different json response; 
 # change page size to '1' can read json repsonse of an individual EPD, which will be the first EPD in the search result
+# Note: This script now also demonstrates extracting reference_service_life from EPD data
 
 # Test EC3 API Call
 import requests
 import pprint
 import os
 import configparser
+from EC3_lookup import parse_product_epd
 
 # reading EC3 API token
 script_dir = os.path.dirname(os.path.abspath(__file__))
@@ -37,3 +39,20 @@ pprint.pp(test_response)
 #print(test_response)
 # Print the number of EPDs
 print(f"Number of EPDs: {len(test_response)}")
+
+# Test lifetime extraction from EPD data
+print("\n" + "="*80)
+print("TESTING LIFETIME EXTRACTION FROM EPD DATA")
+print("="*80)
+if test_response and len(test_response) > 0:
+    for idx, epd in enumerate(test_response, start=1):
+        print(f"\nEPD {idx}:")
+        parsed_data = parse_product_epd(epd)
+        print(f"  EPD Name: {parsed_data.get('epd_name', 'N/A')}")
+        print(f"  Reference Service Life: {parsed_data.get('reference_service_life', 'Not specified in EPD')}")
+        print(f"  GWP per m2: {parsed_data.get('gwp_per_m2 (kg CO2 eq/m2)', 'N/A')}")
+        print(f"  GWP per m3: {parsed_data.get('gwp_per_m3 (kg CO2 eq/m3)', 'N/A')}")
+        print(f"  Declared Unit: {parsed_data.get('declared_unit', 'N/A')}")
+else:
+    print("No EPD data found in response")
+print("="*80)

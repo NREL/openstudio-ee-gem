@@ -485,6 +485,9 @@ class IncreaseInsulationRValueForRoofs(openstudio.measure.ModelMeasure):
         
         # Extract density values from EPD responses
         density_values = []
+        
+        # Collect lifetime values from EPD
+        lifetime_values = []
 
         # loop through each epd
         for idx, epd in enumerate(insulation_product_epd, start = 1):
@@ -499,6 +502,21 @@ class IncreaseInsulationRValueForRoofs(openstudio.measure.ModelMeasure):
                     runner.registerInfo(f"EPD {idx}: Extracted density = {density_value} kg/m³ from '{density_str}'")
             else:
                 runner.registerInfo(f"EPD {idx}: No density data found")
+            
+            # Extract reference service life
+            reference_service_life = parsed_data.get("reference_service_life")
+            if reference_service_life is not None:
+                if isinstance(reference_service_life, (int, float)):
+                    lifetime_values.append(float(reference_service_life))
+                    runner.registerInfo(f"EPD {idx}: Extracted lifetime = {reference_service_life} years")
+                elif isinstance(reference_service_life, str):
+                    # Extract numeric value from string (e.g., "25 years" -> 25)
+                    numeric_value = extract_numeric_value(reference_service_life)
+                    if numeric_value is not None and numeric_value > 0:
+                        lifetime_values.append(float(numeric_value))
+                        runner.registerInfo(f"EPD {idx}: Extracted lifetime = {numeric_value} years from '{reference_service_life}'")
+            else:
+                runner.registerInfo(f"EPD {idx}: No lifetime data found")
             
             # per mass
             gwp_per_kg = parsed_data["gwp_per_kg (kg CO2 eq/kg)"]
@@ -521,6 +539,41 @@ class IncreaseInsulationRValueForRoofs(openstudio.measure.ModelMeasure):
                 filtered_count = len(gwp_values[key])
                 if original_count != filtered_count:
                     runner.registerInfo(f"Removed {original_count - filtered_count} outliers from {key}: {original_count} -> {filtered_count} values")
+        
+        # Remove outliers from lifetime values
+        if len(lifetime_values) > 0:
+            original_lifetime_count = len(lifetime_values)
+            lifetime_values = self.remove_outliers_iqr(lifetime_values)
+            filtered_lifetime_count = len(lifetime_values)
+            if original_lifetime_count != filtered_lifetime_count:
+                runner.registerInfo(f"Removed {original_lifetime_count - filtered_lifetime_count} outliers from lifetime: {original_lifetime_count} -> {filtered_lifetime_count} values")
+        
+        # Process lifetime from EPD (with fallback to user input)
+        user_lifetime = insulation_material_lifetime
+        
+        if len(lifetime_values) == 0:
+            # No EPD lifetime - use user input
+            epd_lifetime = user_lifetime
+            runner.registerInfo(f"No lifetime data in EPD for {insulation_material_type}, using user input: {user_lifetime} years")
+        else:
+            # Apply the same statistic method as GWP values
+            if len(lifetime_values) == 1:
+                epd_lifetime = lifetime_values[0]
+            elif gwp_statistic == "minimum":
+                epd_lifetime = float(np.min(lifetime_values))
+            elif gwp_statistic == "maximum":
+                epd_lifetime = float(np.max(lifetime_values))
+            elif gwp_statistic == "mean":
+                epd_lifetime = float(np.mean(lifetime_values))
+            elif gwp_statistic == "median":
+                epd_lifetime = float(np.median(lifetime_values))
+            else:
+                epd_lifetime = float(np.mean(lifetime_values))  # Default to mean
+            runner.registerInfo(f"Using EPD-derived lifetime: {epd_lifetime:.1f} years for {insulation_material_type} (was {user_lifetime} from user input, based on {len(lifetime_values)} EPD values)")
+        
+        # Use the EPD-derived or user-specified lifetime for calculations
+        selected_lifetime = epd_lifetime
+        lifetime_source = "EPD" if epd_lifetime != user_lifetime else "user_input"
 
         # Use EPD density if available, applying the same statistic method as GWP
         if density_values:
@@ -558,8 +611,9 @@ class IncreaseInsulationRValueForRoofs(openstudio.measure.ModelMeasure):
             selected_rho = insulation_material_density
             runner.registerInfo(f"No density data found in EPDs. Using {'user-specified' if user_specified_density else 'default'} density: {selected_rho:.2f} kg/m³")
 
-        # Analysis-period multiplier
-        mult = lifetime_multiplier(insulation_material_lifetime, analysis_period)
+        # Analysis-period multiplier (using EPD-derived or user-specified lifetime)
+        mult = lifetime_multiplier(selected_lifetime, analysis_period)
+        runner.registerInfo(f"Lifetime multiplier: {mult} (lifetime: {selected_lifetime} years, analysis period: {analysis_period} years)")
 
         # Compute and tag embodied carbon for each modified construction
         gwp_summary_rows = []
@@ -608,7 +662,8 @@ class IncreaseInsulationRValueForRoofs(openstudio.measure.ModelMeasure):
                 "gwp_per_m2": sel_gwp_per_m2,
                 "gwp_per_m3": sel_gwp_per_m3,
                 "density_kg_per_m3": selected_rho,
-                "lifetime_years": insulation_material_lifetime,
+                "lifetime_years": selected_lifetime,
+                "lifetime_source": lifetime_source,
                 "total_gwp_kg_co2_eq": total_gwp
             })
 
@@ -636,7 +691,9 @@ class IncreaseInsulationRValueForRoofs(openstudio.measure.ModelMeasure):
             props.setFeature("original_insulation_r_value_ip", original_r_value_ip)
             props.setFeature("insulation_material_type", insulation_material_type)
             props.setFeature("insulation_material_thermal_conductivity_W_per_mK", selected_k)
-            props.setFeature("insulation_material_lifetime_years", insulation_material_lifetime)
+            props.setFeature("insulation_material_lifetime_years", selected_lifetime)
+            props.setFeature("insulation_material_lifetime_source", lifetime_source)
+            props.setFeature("insulation_material_lifetime_user_input", user_lifetime)
             props.setFeature("insulation_material_gwp_per_m3", sel_gwp_per_m3)
             props.setFeature("insulation_material_gwp_per_m2", sel_gwp_per_m2)
             props.setFeature("insulation_material_gwp_per_kg", sel_gwp_per_kg)

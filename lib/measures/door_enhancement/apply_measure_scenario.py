@@ -20,26 +20,28 @@ config.read(config_path)
 API_TOKEN= config["EC3_API_TOKEN"]["API_TOKEN"]
 
 CURRENT_DIR_PATH = Path(__file__).parent.absolute()
-model_path = Path(CURRENT_DIR_PATH / "tests/ReverseTranslatedModel.osm")
+model_path = Path(CURRENT_DIR_PATH / "tests/EnvelopeAndLoadTestModel_01.osm")
 
 def bottom_seal_options():
-    return ["brush weatherstrip", "automatic door bottom", "silicone adhesive smoke gasket"]
-    #return ['none']
+    #return ["brush weatherstrip", "automatic door bottom", "silicone adhesive smoke gasket"]
+    return ['none']
 
 
 def top_side_seal_options():
-    return ["silicone adhesive smoke gasket", "jamb weatherstrip"]
-    #return ['none']
+    #return ["silicone adhesive smoke gasket", "jamb weatherstrip"]
+    return ['none']
 
 def door_options():
-    # return ['wooden door', 'garage door', 'polystyrene core steel door', 
-            # 'polyurethane core steel door', 'honeycomb core steel door',
-            # 'stiffened core steel door']
+    # return ['polystyrene core steel door', 
+    #         'polyurethane core steel door', 'honeycomb core steel door',
+    #         'stiffened core steel door']
     return ['none']
+
 
 def infiltration_reduction_percentages():
     # Test different infiltration reduction scenarios
-    return [0, 10, 20, 30, 40, 50]
+    #return [30]
+    return [-300, -200,-100, 0, 30, 60, 90]
 
 # Generate all combinations
 bottom_seals = bottom_seal_options()

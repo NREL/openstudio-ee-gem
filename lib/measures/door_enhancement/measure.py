@@ -336,6 +336,12 @@ class DoorEnhancement(openstudio.measure.ModelMeasure):
         analysis_period = runner.getIntegerArgumentValue("analysis_period",user_arguments)
         strip_lifetime = runner.getIntegerArgumentValue("strip_lifetime",user_arguments)
         door_lifetime = runner.getIntegerArgumentValue("door_lifetime",user_arguments)
+        
+        # If door_lifetime is default/invalid and door_option is specified, use default from material properties
+        if door_lifetime <= 0 and door_option != 'none':
+            default_lifetime = self.door_service_life(door_option)
+            runner.registerInfo(f"Using default lifetime for {door_option}: {default_lifetime} years")
+            door_lifetime = default_lifetime
         api_key = runner.getStringArgumentValue("api_key", user_arguments)
         door_area_per_unit = runner.getDoubleArgumentValue("door_area_per_unit", user_arguments)
         door_thermal_conductivity = runner.getDoubleArgumentValue("door_thermal_conductivity", user_arguments)
@@ -626,6 +632,9 @@ class DoorEnhancement(openstudio.measure.ModelMeasure):
                 gwp_values["gwp_per_m2"] = []
                 gwp_values["gwp_per_m"] = []
                 gwp_values['gwp_per_unit'] = []
+                
+                # Collect lifetime values from EPD
+                lifetime_values = []
 
                 for idx, epd in enumerate(epd_data,start = 1):
                     # parse json repsonse based on epd_type
@@ -661,6 +670,17 @@ class DoorEnhancement(openstudio.measure.ModelMeasure):
                     elif gwp_per_unit != 0 and material_name == "door_side_sealing":
                         gwp_per_m = gwp_per_unit / length_per_unit_dict[door_top_side_seal_option]
                         gwp_values["gwp_per_m"].append(float(gwp_per_m))
+                    
+                    # Extract reference service life
+                    reference_service_life = parsed_data.get("reference_service_life")
+                    if reference_service_life is not None:
+                        if isinstance(reference_service_life, (int, float)):
+                            lifetime_values.append(float(reference_service_life))
+                        elif isinstance(reference_service_life, str):
+                            # Extract numeric value from string (e.g., "25 years" -> 25)
+                            numeric_value = extract_numeric_value(reference_service_life)
+                            if numeric_value is not None and numeric_value > 0:
+                                lifetime_values.append(float(numeric_value))
 
                 # Remove outliers using IQR method
                 for functional_unit, values_list in gwp_values.items():
@@ -685,6 +705,51 @@ class DoorEnhancement(openstudio.measure.ModelMeasure):
                                 runner.registerWarning(
                                     f"All values were outliers for {functional_unit}, using original data"
                                 )
+
+                # Remove outliers from lifetime values
+                if len(lifetime_values) >= 4:
+                    original_lifetime_count = len(lifetime_values)
+                    q1 = np.percentile(lifetime_values, 25)
+                    q3 = np.percentile(lifetime_values, 75)
+                    iqr = q3 - q1
+                    lower_bound = q1 - 1.5 * iqr
+                    upper_bound = q3 + 1.5 * iqr
+                    filtered_lifetime = [x for x in lifetime_values if lower_bound <= x <= upper_bound]
+                    
+                    if len(filtered_lifetime) < original_lifetime_count:
+                        runner.registerInfo(
+                            f"    • Removed {original_lifetime_count - len(filtered_lifetime)} outlier(s) from lifetime "
+                            f"({material_name}: {original_lifetime_count} → {len(filtered_lifetime)} values)"
+                        )
+                        if len(filtered_lifetime) > 0:
+                            lifetime_values = filtered_lifetime
+                
+                # Process lifetime from EPD (with fallback to user input, then to default material properties)
+                user_lifetime = subsurface_dict[subsurface_name][material_name]["lifetime"]
+                
+                if len(lifetime_values) == 0:
+                    # No EPD lifetime - use user input (which already incorporates defaults)
+                    epd_lifetime = user_lifetime
+                    runner.registerInfo(f"    ℹ No lifetime data in EPD for {material_name}, using user input: {user_lifetime} years")
+                else:
+                    # Apply the same statistic method as GWP values
+                    if len(lifetime_values) == 1:
+                        epd_lifetime = lifetime_values[0]
+                    elif gwp_statistic == "minimum":
+                        epd_lifetime = float(np.min(lifetime_values))
+                    elif gwp_statistic == "maximum":
+                        epd_lifetime = float(np.max(lifetime_values))
+                    elif gwp_statistic == "mean":
+                        epd_lifetime = float(np.mean(lifetime_values))
+                    elif gwp_statistic == "median":
+                        epd_lifetime = float(np.median(lifetime_values))
+                    else:
+                        epd_lifetime = float(np.mean(lifetime_values))  # Default to mean
+                    runner.registerInfo(f"    ✓ {material_name.replace('_', ' ').title()} lifetime from EPD: {epd_lifetime:.1f} years (was {user_lifetime} from user input)")
+                
+                # Update lifetime in subsurface_dict
+                subsurface_dict[subsurface_name][material_name]["lifetime"] = epd_lifetime
+                subsurface_dict[subsurface_name][material_name]["lifetime_source"] = "EPD" if epd_lifetime != user_lifetime else "user_input"
 
                 # extract gwp statistics by user input
                 gwp = None

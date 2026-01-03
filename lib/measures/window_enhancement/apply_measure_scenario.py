@@ -1,5 +1,6 @@
 # import sys
 import os
+import re
 import openstudio
 from pathlib import Path
 from measure import WindowEnhancement
@@ -20,39 +21,48 @@ config.read(config_path)
 API_TOKEN= config["EC3_API_TOKEN"]["API_TOKEN"]
 
 CURRENT_DIR_PATH = Path(__file__).parent.absolute()
-model_path = Path(CURRENT_DIR_PATH / "tests/DOE_small_office.osm")
+model_path = Path(CURRENT_DIR_PATH / "tests/EnvelopeAndLoadTestModel_01.osm")
 
 def frame_options():
     """Return window frame options to test"""
-    return ['wood-aluminium window frame', 'wood window frame']
+    #return ['wood-aluminium window frame', 'wood window frame']
+    return ['none']
 
 def caulking_options():
     """Return caulking options to test"""
-    return ['polyurethane', 'acrylic']
+    #return ['polyurethane', 'acrylic']
+    return ['none']
 
 def glass_options():
     """Return glass pane options to test"""
+    #return ['provide user_num_panes']
     return ['none']
 
 def user_num_panes_options():
     """Return number of panes to test (only used when glass_option is 'provide user_num_panes')"""
+    #return [1,2,3]
     return [0]
 
 def film_options():
     """Return film options to test"""
+    #return ['safety film', 'solar control film', 'anti-graffiti film', 'decorative film', 'low-e film']
     return ['none']
 
 def weatherstrip_options():
     """Return weatherstrip options to test"""
-    return ['silicone adhesive smoke gasket']
+    #return ['silicone adhesive smoke gasket']
+    return ['none']
 
 def secondary_glazing_options():
     """Return secondary glazing options to test"""
-    return ['none']
+    return ["none"]
+    #return ['install secondary glazing']
+
 
 def infiltration_reduction_percentages():
     """Test different infiltration reduction scenarios"""
-    return [0, 10,20,30,40, 50]
+    #return [-300, -200,-100, 0, 30, 60, 90]
+    return [30]
 
 # Generate all combinations
 frame_opts = frame_options()

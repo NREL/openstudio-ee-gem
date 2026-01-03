@@ -1,4 +1,5 @@
 # EC3 API Lookup Script
+from ast import parse
 import requests
 import json
 import re
@@ -183,6 +184,7 @@ def parse_product_epd(epd: Dict[str, Any]) -> Dict[str, Any]:
     # not sure where this 2.04 kg is from, didn't see it in EPD, better not to use
     category_mass_per_declared_unit = epd['category']['mass_per_declared_unit']
     category_declared_unit = epd['category']['declared_unit']
+    reference_service_life = epd.get('reference_service_life')
 
     mass_per_area = 0.0
     if "kg" in category_mass_per_declared_unit and "m2" in category_declared_unit:
@@ -231,6 +233,7 @@ def parse_product_epd(epd: Dict[str, Any]) -> Dict[str, Any]:
     parsed_data["mass_per_declared_unit"] = mass_per_declared_unit
     parsed_data["thickness"] = thickness
     parsed_data["density"] = density
+    parsed_data["reference_service_life"] = reference_service_life
     parsed_data["gwp_per_m3 (kg CO2 eq/m3)"] = gwp_per_m3
     parsed_data["gwp_per_m2 (kg CO2 eq/m2)"] = gwp_per_m2
     parsed_data["gwp_per_kg (kg CO2 eq/kg)"] = gwp_per_kg

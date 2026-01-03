@@ -604,6 +604,12 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
         num_horizontal_dividers = runner.getIntegerArgumentValue("num_horizontal_dividers", user_arguments)
         num_vertical_dividers = runner.getIntegerArgumentValue("num_vertical_dividers", user_arguments)
 
+        # Check for conflicting renovation options
+        if glass_option == "provide user_num_panes" and user_num_panes > 0 and secondary_glazing_option == "install secondary glazing":
+            runner.registerWarning("Both glass replacement and secondary glazing are selected. These options conflict - glass replacement creates a new multi-pane window while secondary glazing adds an interior pane to existing windows. Secondary glazing will be disabled to avoid double-counting and construction conflicts.")
+            secondary_glazing_option = "none"
+            runner.registerInfo("  → Secondary glazing option changed to 'none' due to glass replacement conflict")
+
         # Validate all user arguments
         if not self.validate_user_arguments_values(runner, analysis_period, glass_lifetime, wf_lifetime, 
                                                      caulking_lifetime, film_lifetime, weatherstrip_lifetime, 
@@ -833,12 +839,12 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
         )
         
         total_glazing_area_m2 = sum(
-            subsurface_dict[name]["dimension"]["glazing_area_m2"] 
+            subsurface_dict[name]["glass"]["area_m2"] 
             for name in subsurface_dict.keys()
         )
         
         total_frame_area_m2 = sum(
-            subsurface_dict[name]["dimension"]["frame_area_m2"] 
+            subsurface_dict[name]["frame"]["area_m2"] 
             for name in subsurface_dict.keys()
         )
         
@@ -848,7 +854,7 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
         )
         
         total_caulking_volume_m3 = sum(
-            subsurface_dict[name]["dimension"]["caulking_volume_m3"] 
+            subsurface_dict[name]["caulking"]["volume_m3"] 
             for name in subsurface_dict.keys()
         )
         
@@ -856,8 +862,8 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
         total_weatherstrip_length_m = 0.0
         for name in subsurface_dict.keys():
             if subsurface_dict[name]["subsurface_object"].subSurfaceType() in ["OperableWindow", "GlassDoor"]:
-                # Weatherstrip applied to sliding edge (height for vertical sliders, width for horizontal)
-                total_weatherstrip_length_m += subsurface_dict[name]["dimension"]["height_m"]
+                # Weatherstrip applied to sliding edge (minimum of length and width)
+                total_weatherstrip_length_m += subsurface_dict[name]["weatherstrip"]["length_m"]
         
         # Store summary in building's additional properties
         building = model.getBuilding()
@@ -1299,9 +1305,9 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
                                     gwp_statistic, analysis_period, glass_pane_thickness, length_per_unit):
         """Calculate total embodied carbon (CO2 emissions) for all window materials.
         
-        Extracts GWP values from EPD data, applies selected statistic (min/max/mean/median),
+        Extracts GWP values and lifetime from EPD data, applies selected statistic (min/max/mean/median),
         multiplies by material quantities and replacement cycles over analysis period.
-        Updates subsurface_data with embodied carbon for each material.
+        Updates subsurface_data with embodied carbon for each material and lifetime from EPD.
         """
         for material_name, epd_data in epd_datalist.items():
             if epd_data is None:
@@ -1312,8 +1318,33 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
                 subsurface_data[material_name]["gwp_per_m"] = None
                 continue
 
-            gwp_values, thickness_summary = self.extract_gwp_and_thickness_from_epd(length_per_unit, epd_data)
+            # Extract GWP, thickness, and lifetime from EPD data
+            gwp_values, thickness_summary, lifetime_values = self.extract_gwp_and_thickness_from_epd(length_per_unit, epd_data)
             subsurface_data[material_name]["thickness_list"] = thickness_summary
+            
+            # Process lifetime from EPD (with fallback to user input)
+            user_lifetime = subsurface_data[material_name]["lifetime"]
+            if len(lifetime_values) == 0:
+                epd_lifetime = user_lifetime
+                runner.registerInfo(f"    ℹ No lifetime data in EPD for {material_name}, using user input: {user_lifetime} years")
+            else:
+                # Apply the same statistic method as GWP values
+                if len(lifetime_values) == 1:
+                    epd_lifetime = lifetime_values[0]
+                elif gwp_statistic == "minimum":
+                    epd_lifetime = float(np.min(lifetime_values))
+                elif gwp_statistic == "maximum":
+                    epd_lifetime = float(np.max(lifetime_values))
+                elif gwp_statistic == "mean":
+                    epd_lifetime = float(np.mean(lifetime_values))
+                elif gwp_statistic == "median":
+                    epd_lifetime = float(np.median(lifetime_values))
+                else:
+                    epd_lifetime = float(np.mean(lifetime_values))  # Default to mean
+                runner.registerInfo(f"    ✓ {material_name.replace('_', ' ').title()} lifetime from EPD: {epd_lifetime:.1f} years (was {user_lifetime} from user input)")
+            
+            subsurface_data[material_name]["lifetime"] = epd_lifetime
+            subsurface_data[material_name]["lifetime_source"] = "EPD" if epd_lifetime != user_lifetime else "user_input"
 
             # Extract gwp statistics
             for functional_unit, list in gwp_values.items():
@@ -1332,7 +1363,7 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
                     gwp = float(np.median(list))
                 subsurface_data[material_name][functional_unit] = gwp
             
-            # Multipliers for calculating embodied carbon over analysis period
+            # Multipliers for calculating embodied carbon over analysis period (using updated lifetime)
             multiplier = lifetime_multiplier(subsurface_data[material_name]["lifetime"], analysis_period)
 
             embodied_carbon = 0.0
@@ -1651,10 +1682,11 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
         return filtered_data
 
     def extract_gwp_and_thickness_from_epd(self, length_per_unit, epd_data):
-        """Extract global warming potential (GWP) values from EPD product data.
+        """Extract global warming potential (GWP) values and lifetime from EPD product data.
         
-        Parses EPD records to get carbon emissions per unit (m2, kg, m3, m) and
-        removes statistical outliers. Returns (gwp_values_dict, thickness_list).
+        Parses EPD records to get carbon emissions per unit (m2, kg, m3, m), thickness,
+        and reference service life. Removes statistical outliers from numerical data.
+        Returns (gwp_values_dict, thickness_list, lifetime_list).
         """
         gwp_values = {}
         gwp_values["gwp_per_m2"] = []
@@ -1662,6 +1694,7 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
         gwp_values["gwp_per_m3"] = []
         gwp_values["gwp_per_m"] = []
         thickness_summary = []
+        lifetime_values = []
 
         for idx, epd in enumerate(epd_data,start = 1):
             parsed_data = parse_product_epd(epd)
@@ -1691,6 +1724,17 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
                         thickness_summary.append(float(thickness_value))
                 else:
                     thickness_summary.append(float(thickness))
+            
+            # Extract reference service life
+            reference_service_life = parsed_data.get("reference_service_life")
+            if reference_service_life is not None:
+                if isinstance(reference_service_life, (int, float)):
+                    lifetime_values.append(float(reference_service_life))
+                elif isinstance(reference_service_life, str):
+                    # Extract numeric value from string (e.g., "25 years" -> 25)
+                    numeric_value = extract_numeric_value(reference_service_life)
+                    if numeric_value is not None and numeric_value > 0:
+                        lifetime_values.append(float(numeric_value))
         
         # Remove outliers from GWP values
         for key in ["gwp_per_m2", "gwp_per_kg", "gwp_per_m3", "gwp_per_m"]:
@@ -1709,7 +1753,15 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
             if original_thickness_count != filtered_thickness_count:
                 print(f"Removed {original_thickness_count - filtered_thickness_count} outliers from thickness: {original_thickness_count} -> {filtered_thickness_count} values")
         
-        return gwp_values, thickness_summary
+        # Remove outliers from lifetime values
+        if len(lifetime_values) > 0:
+            original_lifetime_count = len(lifetime_values)
+            lifetime_values = self.remove_outliers_iqr(lifetime_values)
+            filtered_lifetime_count = len(lifetime_values)
+            if original_lifetime_count != filtered_lifetime_count:
+                print(f"Removed {original_lifetime_count - filtered_lifetime_count} outliers from lifetime: {original_lifetime_count} -> {filtered_lifetime_count} values")
+        
+        return gwp_values, thickness_summary, lifetime_values
 
     def get_film_properties(self, film_option):
         """Get standard optical and thermal properties for different glazing film types.
