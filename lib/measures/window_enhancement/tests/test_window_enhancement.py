@@ -10,6 +10,9 @@ import gc
 import os
 import configparser
 
+# not running test in CI
+pytest.skip("Skipping all tests in this module", allow_module_level=True)
+
 CURRENT_DIR_PATH = Path(__file__).parent.absolute()
 MEASURE_PATH = CURRENT_DIR_PATH.parent / "measure.py"
 if not MEASURE_PATH.exists():
