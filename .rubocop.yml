@@ -1,20 +1,6 @@
-inherit_mode:
-  merge:
-    - Exclude
-
 AllCops:
-  NewCops: enable
   Exclude:
     - 'spec/test_measures/**/*'
-    - 'vendor/**/*'        # Standard exclusion for all vendor code
-    - '.bundle/**/*'       # Bundler cache directory
-    - 'tmp/**/*'          # Temporary files
-    - 'node_modules/**/*' # Node.js dependencies (if applicable)
-  # Standard RuboCop behavior - these settings are actually defaults
-  DisabledByDefault: false
-
-require:
-  - rubocop-performance
-  - rubocop-rake
+require: rubocop-performance
 inherit_from:
-    - http://s3.amazonaws.com/openstudio-resources/styles/rubocop_v6.yml
+  - http://s3.amazonaws.com/openstudio-resources/styles/rubocop_v4.yml
