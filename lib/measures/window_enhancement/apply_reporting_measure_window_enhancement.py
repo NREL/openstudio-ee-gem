@@ -367,6 +367,286 @@ def extract_model_data(osm_path, emission_factors):
     
     return props_df, energy_df
 
+def create_carbon_comparison_plot(csv_path, measure_dir):
+    """Create a scatterplot with dual y-axes showing operational carbon and embodied carbon vs infiltration reduction."""
+    print(f"\n{'='*80}")
+    print("Creating carbon comparison plot...")
+    print(f"{'='*80}")
+    
+    try:
+        import matplotlib
+        matplotlib.use('Agg')  # Use non-interactive backend
+        import matplotlib.pyplot as plt
+        import numpy as np
+    except ImportError:
+        print("✗ matplotlib not found. Installing matplotlib...")
+        import subprocess
+        try:
+            subprocess.check_call([sys.executable, "-m", "pip", "install", "matplotlib"])
+            import matplotlib
+            matplotlib.use('Agg')
+            import matplotlib.pyplot as plt
+            import numpy as np
+        except Exception as e:
+            print(f"✗ Failed to install matplotlib: {e}")
+            return
+    
+    import pandas as pd
+    import re
+    
+    # Read CSV file (transposed format)
+    try:
+        df = pd.read_csv(csv_path, index_col=0, header=None)
+        df = df.T  # Transpose back to normal format
+        
+        print(f"  ✓ Read {len(df)} scenarios from CSV")
+        print(f"  Available columns: {list(df.columns)[:5]}...")
+        
+    except Exception as e:
+        print(f"✗ Error reading CSV: {e}")
+        import traceback
+        traceback.print_exc()
+        return
+    
+    # Extract data for plotting
+    infiltration_values = []
+    embodied_carbon_values = []
+    operational_carbon_values = []
+    scenario_names = []
+    
+    print(f"  Processing {len(df)} scenarios from CSV...")
+    
+    for idx, row in df.iterrows():
+        try:
+            scenario = row.get('scenario_file', f'scenario_{idx}')
+            
+            # Extract infiltration reduction percentage
+            infiltration = row.get('window_enhancement_infiltration_reduction_percent', None)
+            if infiltration is None or pd.isna(infiltration):
+                continue
+            
+            # Extract carbon values
+            embodied = row.get('window_enhancement_total_embodied_carbon_kgCO2eq', None)
+            operational = row.get('total_operational_carbon_kgCO2e', None)
+            
+            if embodied is None or pd.isna(embodied):
+                continue
+            if operational is None or pd.isna(operational):
+                continue
+            
+            infiltration_values.append(float(infiltration))
+            embodied_carbon_values.append(float(embodied))
+            operational_carbon_values.append(float(operational))
+            scenario_names.append(str(scenario))
+            
+        except Exception as e:
+            print(f"  ⚠ Skipping scenario {idx}: {e}")
+            continue
+    
+    if not infiltration_values:
+        print("✗ No valid carbon data found for plotting")
+        return
+    
+    # Create figure with dual y-axes
+    fig, ax1 = plt.subplots(figsize=(12, 7))
+    ax2 = ax1.twinx()
+    
+    # Left axis: Operational Carbon (blue)
+    color1 = 'tab:blue'
+    ax1.set_xlabel('Infiltration Reduction (%)', fontsize=12, fontweight='bold')
+    ax1.set_ylabel('Operational Carbon (kgCO2e)', color=color1, fontsize=12, fontweight='bold')
+    
+    # Plot operational carbon
+    ax1.scatter(infiltration_values, operational_carbon_values, color=color1, s=100, alpha=0.6,
+               label='Operational Carbon', marker='o', zorder=3)
+    ax1.tick_params(axis='y', labelcolor=color1)
+    
+    # Add trendline for operational carbon
+    if len(infiltration_values) >= 2:
+        unique_inf = sorted(set(infiltration_values))
+        z1 = np.polyfit(infiltration_values, operational_carbon_values, 1)
+        p1 = np.poly1d(z1)
+        ax1.plot(unique_inf, p1(unique_inf), color=color1, linestyle='--', linewidth=2,
+                alpha=0.8, label=f'Op. Carbon Trend (slope={z1[0]:.2f})', zorder=2)
+    
+    ax1.grid(True, alpha=0.3)
+    
+    # Right axis: Embodied Carbon (orange)
+    color2 = 'tab:orange'
+    ax2.set_ylabel('Embodied Carbon (kgCO2e)', color=color2, fontsize=12, fontweight='bold')
+    
+    ax2.scatter(infiltration_values, embodied_carbon_values, color=color2, s=100, alpha=0.6,
+               label='Embodied Carbon', marker='s', zorder=3)
+    ax2.tick_params(axis='y', labelcolor=color2)
+    
+    # Add trendline for embodied carbon
+    if len(infiltration_values) >= 2:
+        z2 = np.polyfit(infiltration_values, embodied_carbon_values, 1)
+        p2 = np.poly1d(z2)
+        ax2.plot(unique_inf, p2(unique_inf), color=color2, linestyle='--', linewidth=2,
+                alpha=0.8, label=f'Emb. Carbon Trend (slope={z2[0]:.2f})', zorder=2)
+    
+    # Add title
+    plt.title('Operational vs Embodied Carbon by Infiltration Reduction', 
+             fontsize=14, fontweight='bold', pad=20)
+    
+    # Add legends
+    lines1, labels1 = ax1.get_legend_handles_labels()
+    ax1.legend(lines1, labels1, loc='upper left', fontsize=10, title='Operational Carbon')
+    
+    lines2, labels2 = ax2.get_legend_handles_labels()
+    ax2.legend(lines2, labels2, loc='upper right', fontsize=10, title='Embodied Carbon')
+    
+    # Adjust layout
+    fig.tight_layout()
+    
+    # Save the plot
+    output_plot = measure_dir / "resources" / "window_enhancement_carbon_comparison.png"
+    output_plot.parent.mkdir(parents=True, exist_ok=True)
+    plt.savefig(output_plot, dpi=300, bbox_inches='tight')
+    plt.close()
+    
+    print(f"✓ Carbon comparison plot saved: {output_plot}")
+    print(f"  Data points plotted: {len(infiltration_values)}")
+    print(f"  Infiltration reduction range: {min(infiltration_values):.1f}% - {max(infiltration_values):.1f}%")
+    print(f"  Operational carbon range: {min(operational_carbon_values):.2f} - {max(operational_carbon_values):.2f} kgCO2e")
+    print(f"  Embodied carbon range: {min(embodied_carbon_values):.2f} - {max(embodied_carbon_values):.2f} kgCO2e")
+
+def create_stacked_bar_chart(csv_path, measure_dir):
+    """Create a stacked bar chart showing operational and embodied carbon for all scenarios."""
+    print(f"\n{'='*80}")
+    print("Creating stacked bar chart...")
+    print(f"{'='*80}")
+    
+    try:
+        import matplotlib
+        matplotlib.use('Agg')
+        import matplotlib.pyplot as plt
+        import numpy as np
+    except ImportError:
+        print("✗ matplotlib not found. Skipping stacked bar chart generation")
+        return
+    
+    import pandas as pd
+    import re
+    
+    # Read CSV file (transposed format)
+    try:
+        df = pd.read_csv(csv_path, index_col=0, header=None)
+        df = df.T  # Transpose back to normal format
+        
+        print(f"  ✓ Read {len(df)} scenarios from CSV")
+        
+    except Exception as e:
+        print(f"✗ Error reading CSV: {e}")
+        import traceback
+        traceback.print_exc()
+        return
+    
+    # Extract data for plotting
+    scenario_names = []
+    operational_carbon = []
+    embodied_carbon = []
+    infiltration_reduction = []
+    
+    print(f"  Processing {len(df)} scenarios from CSV...")
+    
+    for idx, row in df.iterrows():
+        try:
+            scenario = row.get('scenario_file', f'scenario_{idx}')
+            
+            # Extract carbon values
+            op_carbon = row.get('total_operational_carbon_kgCO2e', None)
+            em_carbon = row.get('window_enhancement_total_embodied_carbon_kgCO2eq', None)
+            infiltration = row.get('window_enhancement_infiltration_reduction_percent', None)
+            
+            if op_carbon is None or pd.isna(op_carbon):
+                continue
+            if em_carbon is None or pd.isna(em_carbon):
+                continue
+            if infiltration is None or pd.isna(infiltration):
+                continue
+            
+            scenario_names.append(str(scenario))
+            operational_carbon.append(float(op_carbon))
+            embodied_carbon.append(float(em_carbon))
+            infiltration_reduction.append(float(infiltration))
+            
+        except Exception as e:
+            print(f"  ⚠ Skipping scenario {idx}: {e}")
+            continue
+    
+    if not scenario_names:
+        print("✗ No valid data found for plotting")
+        return
+    
+    # Sort data by infiltration reduction percentage
+    sorted_data = sorted(zip(infiltration_reduction, scenario_names, operational_carbon, embodied_carbon))
+    infiltration_sorted, scenarios_sorted, op_carbon_sorted, em_carbon_sorted = zip(*sorted_data)
+    
+    # Convert to tons for better readability
+    op_carbon_tons = [oc / 1000 for oc in op_carbon_sorted]
+    em_carbon_tons = [ec / 1000 for ec in em_carbon_sorted]
+    
+    # Create figure
+    fig, ax = plt.subplots(figsize=(12, 7))
+    
+    # Set up x-axis positions
+    x_pos = np.arange(len(scenarios_sorted))
+    
+    # Create stacked bars
+    # Bottom: Operational carbon (blue)
+    bars1 = ax.bar(x_pos, op_carbon_tons, 
+                   color='#4472C4', label='Operational Carbon',
+                   edgecolor='white', linewidth=0.5)
+    
+    # Top: Embodied carbon (orange)
+    bars2 = ax.bar(x_pos, em_carbon_tons, bottom=op_carbon_tons,
+                   color='#ED7D31', label='Embodied Carbon',
+                   edgecolor='white', linewidth=0.5)
+    
+    # Customize plot
+    ax.set_xlabel('Infiltration Reduction (%)', fontsize=12, fontweight='bold')
+    ax.set_ylabel('Carbon (ton CO2e)', fontsize=12, fontweight='bold')
+    ax.set_title('Operational and Embodied Carbon by Infiltration Reduction', 
+                fontsize=14, fontweight='bold', pad=20)
+    
+    # Set x-axis labels with infiltration percentages
+    x_labels = [f"{inf:.0f}%" for inf in infiltration_sorted]
+    ax.set_xticks(x_pos)
+    ax.set_xticklabels(x_labels, rotation=45, ha='right', fontsize=10)
+    
+    # Add legend
+    ax.legend(loc='upper right', fontsize=11, framealpha=0.9)
+    
+    # Add grid
+    ax.grid(axis='y', alpha=0.3, linestyle='--', linewidth=0.5)
+    ax.set_axisbelow(True)
+    
+    # Add value labels on bars
+    for i, (op_val, em_val) in enumerate(zip(op_carbon_tons, em_carbon_tons)):
+        total = op_val + em_val
+        ax.text(i, total + 0.02 * max([op + em for op, em in zip(op_carbon_tons, em_carbon_tons)]), 
+               f'{total:.2f}', ha='center', va='bottom', fontsize=8, fontweight='bold')
+    
+    # Tight layout
+    plt.tight_layout()
+    
+    # Save the plot
+    output_plot = measure_dir / "resources" / "window_enhancement_stacked_bar.png"
+    output_plot.parent.mkdir(parents=True, exist_ok=True)
+    plt.savefig(output_plot, dpi=300, bbox_inches='tight')
+    plt.close()
+    
+    # Calculate statistics
+    total_carbon = [op + em for op, em in zip(operational_carbon, embodied_carbon)]
+    
+    print(f"✓ Stacked bar chart saved: {output_plot}")
+    print(f"  Scenarios plotted: {len(scenario_names)}")
+    print(f"  Operational carbon range: {min(operational_carbon):.2f} - {max(operational_carbon):.2f} kgCO2e")
+    print(f"  Embodied carbon range: {min(embodied_carbon):.2f} - {max(embodied_carbon):.2f} kgCO2e")
+    print(f"  Total carbon range: {min(total_carbon):.2f} - {max(total_carbon):.2f} kgCO2e")
+
 def main():
     """Main function to process all OSM files in the output directory."""
     print("\n" + "="*80)
@@ -428,9 +708,9 @@ def main():
     if all_props_data:
         combined_props = pd.concat(all_props_data, ignore_index=True)
         
-        # Save to CSV
+        # Save to CSV (transposed)
         props_csv_path = output_dir / "window_enhancement_properties_report.csv"
-        combined_props.to_csv(props_csv_path, index=False)
+        combined_props.T.to_csv(props_csv_path, header=False)
         print(f"\n✓ Saved window enhancement properties to: {props_csv_path}")
         print(f"  Total scenarios: {len(combined_props)}")
     else:
@@ -439,9 +719,9 @@ def main():
     if all_energy_data:
         combined_energy = pd.concat(all_energy_data, ignore_index=True)
         
-        # Save to CSV
+        # Save to CSV (transposed)
         energy_csv_path = output_dir / "window_enhancement_energy_report.csv"
-        combined_energy.to_csv(energy_csv_path, index=False)
+        combined_energy.T.to_csv(energy_csv_path, header=False)
         print(f"\n✓ Saved energy simulation results to: {energy_csv_path}")
         print(f"  Total scenarios: {len(combined_energy)}")
     else:
@@ -451,9 +731,9 @@ def main():
     if all_props_data and all_energy_data:
         combined_report = pd.merge(combined_props, combined_energy, on='scenario_file', how='outer')
         
-        # Save combined report
+        # Save combined report (transposed)
         combined_csv_path = output_dir / "window_enhancement_report.csv"
-        combined_report.to_csv(combined_csv_path, index=False)
+        combined_report.T.to_csv(combined_csv_path, header=False)
         print(f"\n✓ Saved combined report to: {combined_csv_path}")
         print(f"  Total scenarios: {len(combined_report)}")
         
@@ -479,6 +759,19 @@ def main():
                 print(f"  Min: {operational_col.min():.2f} kgCO2e")
                 print(f"  Max: {operational_col.max():.2f} kgCO2e")
                 print(f"  Std Dev: {operational_col.std():.2f} kgCO2e")
+        
+        # Generate visualizations
+        measure_dir = Path(__file__).parent
+        
+        print(f"\n{'='*80}")
+        print("Generating visualizations...")
+        print(f"{'='*80}")
+        
+        # Create carbon comparison plot
+        create_carbon_comparison_plot(combined_csv_path, measure_dir)
+        
+        # Create stacked bar chart
+        create_stacked_bar_chart(combined_csv_path, measure_dir)
     
     print(f"\n{'='*80}")
     print("✓ Report generation complete!")

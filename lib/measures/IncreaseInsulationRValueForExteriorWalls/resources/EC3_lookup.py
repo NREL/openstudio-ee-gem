@@ -159,6 +159,7 @@ def parse_product_epd(epd: Dict[str, Any]) -> Dict[str, Any]:
     # extract information from EPD's json repsonse
     declared_unit = epd.get("declared_unit")
     thickness = epd.get("thickness")
+    thickness_per_declared_unit = epd.get("thickness_per_declared_unit")
     gwp_per_declared_unit = epd.get("gwp")
     mass_per_declared_unit = epd.get("mass_per_declared_unit")
     if mass_per_declared_unit and any(x in mass_per_declared_unit for x in ["g"]):
@@ -178,6 +179,7 @@ def parse_product_epd(epd: Dict[str, Any]) -> Dict[str, Any]:
     epd_name = epd.get('name')
     description = epd.get('description')
     original_ec3_link = epd['manufacturer']['original_ec3_link']
+    reference_service_life = epd.get('reference_service_life')
     # For the two parameters below, need to confirm the accuracy of data before using; for insulation material, the mass per declared unit is always 2.04 kg,
     # not sure where this 2.04 kg is from, didn't see it in EPD, better not to use
     category_mass_per_declared_unit = epd['category']['mass_per_declared_unit']
@@ -229,7 +231,9 @@ def parse_product_epd(epd: Dict[str, Any]) -> Dict[str, Any]:
     parsed_data["gwp_per_declared_unit"] = gwp_per_declared_unit
     parsed_data["mass_per_declared_unit"] = mass_per_declared_unit
     parsed_data["thickness"] = thickness
+    parsed_data["thickness_per_declared_unit"] = thickness_per_declared_unit
     parsed_data["density"] = density
+    parsed_data["reference_service_life"] = reference_service_life
     parsed_data["gwp_per_m3 (kg CO2 eq/m3)"] = gwp_per_m3
     parsed_data["gwp_per_m2 (kg CO2 eq/m2)"] = gwp_per_m2
     parsed_data["gwp_per_kg (kg CO2 eq/kg)"] = gwp_per_kg

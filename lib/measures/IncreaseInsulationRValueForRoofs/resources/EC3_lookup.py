@@ -159,6 +159,38 @@ def parse_product_epd(epd: Dict[str, Any]) -> Dict[str, Any]:
     # extract information from EPD's json repsonse
     declared_unit = epd.get("declared_unit")
     thickness = epd.get("thickness")
+    thickness_per_declared_unit = epd.get("thickness_per_declared_unit")
+    
+    # Convert thickness to meters
+    if thickness:
+        if "mm" in str(thickness):
+            thickness_value = extract_numeric_value(thickness) / 1000
+            thickness = str(thickness_value) + " m"
+        elif "cm" in str(thickness):
+            thickness_value = extract_numeric_value(thickness) / 100
+            thickness = str(thickness_value) + " m"
+        elif "in" in str(thickness) or "inch" in str(thickness):
+            thickness_value = extract_numeric_value(thickness) * 0.0254
+            thickness = str(thickness_value) + " m"
+        elif "ft" in str(thickness) or "foot" in str(thickness) or "feet" in str(thickness):
+            thickness_value = extract_numeric_value(thickness) * 0.3048
+            thickness = str(thickness_value) + " m"
+    
+    # Convert thickness_per_declared_unit to meters
+    if thickness_per_declared_unit:
+        if "mm" in str(thickness_per_declared_unit):
+            thickness_per_declared_unit_value = extract_numeric_value(thickness_per_declared_unit) / 1000
+            thickness_per_declared_unit = str(thickness_per_declared_unit_value) + " m"
+        elif "cm" in str(thickness_per_declared_unit):
+            thickness_per_declared_unit_value = extract_numeric_value(thickness_per_declared_unit) / 100
+            thickness_per_declared_unit = str(thickness_per_declared_unit_value) + " m"
+        elif "in" in str(thickness_per_declared_unit) or "inch" in str(thickness_per_declared_unit):
+            thickness_per_declared_unit_value = extract_numeric_value(thickness_per_declared_unit) * 0.0254
+            thickness_per_declared_unit = str(thickness_per_declared_unit_value) + " m"
+        elif "ft" in str(thickness_per_declared_unit) or "foot" in str(thickness_per_declared_unit) or "feet" in str(thickness_per_declared_unit):
+            thickness_per_declared_unit_value = extract_numeric_value(thickness_per_declared_unit) * 0.3048
+            thickness_per_declared_unit = str(thickness_per_declared_unit_value) + " m"
+    
     gwp_per_declared_unit = epd.get("gwp")
     mass_per_declared_unit = epd.get("mass_per_declared_unit")
     if mass_per_declared_unit and any(x in mass_per_declared_unit for x in ["g"]):
@@ -178,6 +210,7 @@ def parse_product_epd(epd: Dict[str, Any]) -> Dict[str, Any]:
     epd_name = epd.get('name')
     description = epd.get('description')
     original_ec3_link = epd['manufacturer']['original_ec3_link']
+    reference_service_life = epd.get('reference_service_life')
     # For the two parameters below, need to confirm the accuracy of data before using; for insulation material, the mass per declared unit is always 2.04 kg,
     # not sure where this 2.04 kg is from, didn't see it in EPD, better not to use
     category_mass_per_declared_unit = epd['category']['mass_per_declared_unit']
@@ -205,8 +238,8 @@ def parse_product_epd(epd: Dict[str, Any]) -> Dict[str, Any]:
         gwp_per_m3 = divide(gwp_per_declared_unit, declared_unit)
     elif declared_unit and "cf" in declared_unit:
         gwp_per_m3 = divide(gwp_per_declared_unit, declared_unit) * 35.3147 # convert from cubic feet to m3
-    elif declared_unit and any(x in declared_unit for x in ["m\u00b2","m2", "m^2"]) and thickness and "mm" in thickness:
-        gwp_per_m3 = divide(gwp_per_declared_unit, declared_unit)/(extract_numeric_value(thickness)/1000)
+    elif declared_unit and any(x in declared_unit for x in ["m\u00b2","m2", "m^2"]) and thickness and "m" in thickness:
+        gwp_per_m3 = divide(gwp_per_declared_unit, declared_unit)/extract_numeric_value(thickness)
     elif density and any(x in density for x in ["kg / m3", "kg / m^3", "kg/m3", "kg/m^3"]) and gwp_per_kg:
         gwp_per_m3 = multiply(gwp_per_kg, density)
 
@@ -215,8 +248,8 @@ def parse_product_epd(epd: Dict[str, Any]) -> Dict[str, Any]:
         gwp_per_m2 = divide(gwp_per_declared_unit, declared_unit)
     elif declared_unit and any(x in declared_unit for x in ["ft²","sf", "ft^2"]):
         gwp_per_m2 = divide(gwp_per_declared_unit, declared_unit) * 10.7639 # convert from square feet to m2
-    elif declared_unit and any(x in declared_unit for x in ["m3", "m^3"]) and thickness and "mm" in thickness:
-        gwp_per_m2 = divide(gwp_per_declared_unit, declared_unit) * (extract_numeric_value(thickness)/1000)
+    elif declared_unit and any(x in declared_unit for x in ["m3", "m^3"]) and thickness and "m" in thickness:
+        gwp_per_m2 = divide(gwp_per_declared_unit, declared_unit) * extract_numeric_value(thickness)
     if gwp_per_m2 == 0.0 and mass_per_area and gwp_per_kg:
         gwp_per_m2 = multiply(gwp_per_kg, mass_per_area)
 
@@ -229,7 +262,9 @@ def parse_product_epd(epd: Dict[str, Any]) -> Dict[str, Any]:
     parsed_data["gwp_per_declared_unit"] = gwp_per_declared_unit
     parsed_data["mass_per_declared_unit"] = mass_per_declared_unit
     parsed_data["thickness"] = thickness
+    parsed_data["thickness_per_declared_unit"] = thickness_per_declared_unit
     parsed_data["density"] = density
+    parsed_data["reference_service_life"] = reference_service_life
     parsed_data["gwp_per_m3 (kg CO2 eq/m3)"] = gwp_per_m3
     parsed_data["gwp_per_m2 (kg CO2 eq/m2)"] = gwp_per_m2
     parsed_data["gwp_per_kg (kg CO2 eq/kg)"] = gwp_per_kg
@@ -278,6 +313,39 @@ def parse_industrial_epd(epd: Dict[str, Any]) -> Dict[str, Any]:
     density_avg = compute_average(density_min, density_max)
     servicelife_avg = compute_average(servicelife_min,servicelife_max)
     thickness_per_declared_unit_avg = compute_average(thickness_per_declared_unit_min,thickness_per_declared_unit_max)
+    
+    # Convert thickness_per_declared_unit_min to meters
+    if thickness_per_declared_unit_min:
+        if "mm" in str(thickness_per_declared_unit_min):
+            thickness_per_declared_unit_min_value = extract_numeric_value(thickness_per_declared_unit_min) / 1000
+            thickness_per_declared_unit_min = str(thickness_per_declared_unit_min_value) + " m"
+        elif "cm" in str(thickness_per_declared_unit_min):
+            thickness_per_declared_unit_min_value = extract_numeric_value(thickness_per_declared_unit_min) / 100
+            thickness_per_declared_unit_min = str(thickness_per_declared_unit_min_value) + " m"
+        elif "in" in str(thickness_per_declared_unit_min) or "inch" in str(thickness_per_declared_unit_min):
+            thickness_per_declared_unit_min_value = extract_numeric_value(thickness_per_declared_unit_min) * 0.0254
+            thickness_per_declared_unit_min = str(thickness_per_declared_unit_min_value) + " m"
+        elif "ft" in str(thickness_per_declared_unit_min) or "foot" in str(thickness_per_declared_unit_min) or "feet" in str(thickness_per_declared_unit_min):
+            thickness_per_declared_unit_min_value = extract_numeric_value(thickness_per_declared_unit_min) * 0.3048
+            thickness_per_declared_unit_min = str(thickness_per_declared_unit_min_value) + " m"
+    
+    # Convert thickness_per_declared_unit_max to meters
+    if thickness_per_declared_unit_max:
+        if "mm" in str(thickness_per_declared_unit_max):
+            thickness_per_declared_unit_max_value = extract_numeric_value(thickness_per_declared_unit_max) / 1000
+            thickness_per_declared_unit_max = str(thickness_per_declared_unit_max_value) + " m"
+        elif "cm" in str(thickness_per_declared_unit_max):
+            thickness_per_declared_unit_max_value = extract_numeric_value(thickness_per_declared_unit_max) / 100
+            thickness_per_declared_unit_max = str(thickness_per_declared_unit_max_value) + " m"
+        elif "in" in str(thickness_per_declared_unit_max) or "inch" in str(thickness_per_declared_unit_max):
+            thickness_per_declared_unit_max_value = extract_numeric_value(thickness_per_declared_unit_max) * 0.0254
+            thickness_per_declared_unit_max = str(thickness_per_declared_unit_max_value) + " m"
+        elif "ft" in str(thickness_per_declared_unit_max) or "foot" in str(thickness_per_declared_unit_max) or "feet" in str(thickness_per_declared_unit_max):
+            thickness_per_declared_unit_max_value = extract_numeric_value(thickness_per_declared_unit_max) * 0.3048
+            thickness_per_declared_unit_max = str(thickness_per_declared_unit_max_value) + " m"
+    
+    # Recalculate thickness_per_declared_unit_avg after conversion
+    thickness_per_declared_unit_avg = compute_average(thickness_per_declared_unit_min, thickness_per_declared_unit_max)
 
     # Per kg
     if gwp_per_kg is None or gwp_per_kg == 0.0:
@@ -294,8 +362,8 @@ def parse_industrial_epd(epd: Dict[str, Any]) -> Dict[str, Any]:
         gwp_per_m3 = divide(gwp_per_declared_unit, declared_unit)
     elif declared_unit and "cf" in declared_unit:
         gwp_per_m3 = divide(gwp_per_declared_unit, declared_unit) * 35.3147 # convert from cubic feet to m3
-    elif declared_unit and any(x in declared_unit for x in ["m\u00b2","m2", "m^2"]) and thickness_per_declared_unit_avg and "mm" in thickness_per_declared_unit_min:
-        gwp_per_m3 = divide(gwp_per_declared_unit, declared_unit)/(extract_numeric_value(thickness_per_declared_unit_avg)/1000)
+    elif declared_unit and any(x in declared_unit for x in ["m\u00b2","m2", "m^2"]) and thickness_per_declared_unit_avg and "m" in str(thickness_per_declared_unit_min):
+        gwp_per_m3 = divide(gwp_per_declared_unit, declared_unit)/extract_numeric_value(thickness_per_declared_unit_avg)
     elif density_avg and gwp_per_kg:
         gwp_per_m3 = multiply(gwp_per_kg, density_avg)
 
@@ -304,8 +372,8 @@ def parse_industrial_epd(epd: Dict[str, Any]) -> Dict[str, Any]:
         gwp_per_m2 = divide(gwp_per_declared_unit, declared_unit)
     elif declared_unit and "sf" in declared_unit:
         gwp_per_m2 = divide(gwp_per_declared_unit, declared_unit) * 10.7639 # convert from square feet to m2
-    elif declared_unit and any(x in declared_unit for x in ["m3", "m^3"]) and thickness_per_declared_unit_avg and (("mm" in thickness_per_declared_unit_min) or ("mm" in thickness_per_declared_unit_max)):
-        gwp_per_m2 = divide(gwp_per_declared_unit, declared_unit) * (extract_numeric_value(thickness_per_declared_unit_avg)/1000)
+    elif declared_unit and any(x in declared_unit for x in ["m3", "m^3"]) and thickness_per_declared_unit_avg and (("m" in str(thickness_per_declared_unit_min)) or ("m" in str(thickness_per_declared_unit_max))):
+        gwp_per_m2 = divide(gwp_per_declared_unit, declared_unit) * extract_numeric_value(thickness_per_declared_unit_avg)
         
     parsed_data["epd_name"] = epd_name
     parsed_data["declared_unit"] = declared_unit

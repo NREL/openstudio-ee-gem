@@ -797,114 +797,84 @@ def create_stacked_bar_chart(csv_path, measure_dir):
         print("✗ No valid data found for plotting")
         return
     
-    # Group scenarios by R-value
-    r_value_groups = {}
-    for scenario, op_carbon, em_carbon in zip(scenario_names, operational_carbon, embodied_carbon):
+    # Sort scenarios by R-value (extracted from scenario name)
+    import re
+    scenario_r_values = []
+    for scenario in scenario_names:
+        r_match = re.search(r'R(\d+\.?\d*)', scenario)
+        r_val = float(r_match.group(1)) if r_match else 0
+        scenario_r_values.append(r_val)
+    
+    # Create a list of tuples and sort by R-value, then by scenario name
+    sorted_data = sorted(zip(scenario_r_values, scenario_names, operational_carbon, embodied_carbon))
+    
+    # Unpack sorted data
+    _, scenario_names, operational_carbon, embodied_carbon = zip(*sorted_data)
+    scenario_names = list(scenario_names)
+    operational_carbon = list(operational_carbon)
+    embodied_carbon = list(embodied_carbon)
+    
+    # Create figure and axis
+    fig, ax = plt.subplots(figsize=(20, 8))
+    
+    # Set up x-axis positions
+    x_pos = np.arange(len(scenario_names))
+    
+    # Convert from kg to tons (divide by 1000)
+    operational_carbon_tons = [oc / 1000 for oc in operational_carbon]
+    embodied_carbon_tons = [ec / 1000 for ec in embodied_carbon]
+    
+    # Create stacked bars
+    # Bottom: Operational carbon (blue)
+    bars1 = ax.bar(x_pos, operational_carbon_tons, 
+                   color='#4472C4', label='Operational Carbon',
+                   edgecolor='white', linewidth=0.5)
+    
+    # Top: Embodied carbon (orange)
+    bars2 = ax.bar(x_pos, embodied_carbon_tons, bottom=operational_carbon_tons,
+                   color='#ED7D31', label='Embodied Carbon',
+                   edgecolor='white', linewidth=0.5)
+    
+    # Customize the plot
+    ax.set_xlabel('Scenarios', fontsize=12, fontweight='bold')
+    ax.set_ylabel('Total Carbon Emission at Year 1 (ton CO2e)', fontsize=12, fontweight='bold')
+    ax.set_title('Operational and Embodied Carbon by Scenario', fontsize=14, fontweight='bold', pad=20)
+    
+    # Set x-axis labels - rotate for readability
+    ax.set_xticks(x_pos)
+    ax.set_xticklabels(scenario_names, rotation=90, ha='right', fontsize=8)
+    
+    # Add horizontal dashed lines to show operational carbon levels for different R-values
+    # Extract R-value from scenario names and group operational carbon by R-value
+    import re
+    r_value_op_carbon = {}
+    for scenario, op_carbon_kg in zip(scenario_names, operational_carbon):
         r_match = re.search(r'R(\d+\.?\d*)', scenario)
         if r_match:
             r_val = float(r_match.group(1))
-            if r_val not in r_value_groups:
-                r_value_groups[r_val] = {'scenarios': [], 'op_carbon': [], 'em_carbon': []}
-            r_value_groups[r_val]['scenarios'].append(scenario)
-            r_value_groups[r_val]['op_carbon'].append(op_carbon)
-            r_value_groups[r_val]['em_carbon'].append(em_carbon)
+            if r_val not in r_value_op_carbon:
+                r_value_op_carbon[r_val] = op_carbon_kg
     
-    # Sort R-values for consistent ordering
-    sorted_r_values = sorted(r_value_groups.keys())
-    n_subplots = len(sorted_r_values)
+    # Sort by R-value and add dashed lines
+    for r_val in sorted(r_value_op_carbon.keys()):
+        op_carbon_tons = r_value_op_carbon[r_val] / 1000
+        ax.axhline(y=op_carbon_tons, color='gray', linestyle='--', linewidth=1.5, alpha=0.7, zorder=1)
+        # Add R-value label at the right edge
+        ax.text(len(scenario_names) - 0.5, op_carbon_tons, f'  R={r_val:.1f}', 
+               verticalalignment='center', fontsize=9, color='gray', fontweight='bold')
     
-    # Determine subplot layout (e.g., 2 rows, n cols to fit all R-values)
-    n_cols = min(3, n_subplots)  # Max 3 columns
-    n_rows = (n_subplots + n_cols - 1) // n_cols  # Ceiling division
+    # Add legend
+    ax.legend(loc='upper right', frameon=True, shadow=True, fontsize=11)
     
-    # Create figure with subplots
-    fig, axes = plt.subplots(n_rows, n_cols, figsize=(8 * n_cols, 6 * n_rows))
+    # Add grid for better readability
+    ax.grid(axis='y', alpha=0.3, linestyle='--', linewidth=0.5)
+    ax.set_axisbelow(True)
     
-    # Handle case where there's only one subplot
-    if n_subplots == 1:
-        axes = np.array([axes])
-    axes = axes.flatten() if n_subplots > 1 else axes
-    
-    # Find global min/max for consistent y-axis scaling
-    all_totals = []
-    for r_val in sorted_r_values:
-        group = r_value_groups[r_val]
-        totals = [(op + em) / 1000 for op, em in zip(group['op_carbon'], group['em_carbon'])]
-        all_totals.extend(totals)
-    y_max = max(all_totals) * 1.1  # Add 10% margin
-    
-    # Create a subplot for each R-value
-    for idx, r_val in enumerate(sorted_r_values):
-        ax = axes[idx]
-        group = r_value_groups[r_val]
-        
-        # Get data for this R-value and sort by embodied carbon (low to high)
-        scenarios = group['scenarios']
-        op_carbon = group['op_carbon']
-        em_carbon = group['em_carbon']
-        
-        # Sort by embodied carbon values
-        sorted_data = sorted(zip(em_carbon, scenarios, op_carbon))
-        em_carbon_sorted, scenarios_sorted, op_carbon_sorted = zip(*sorted_data)
-        
-        scenarios = list(scenarios_sorted)
-        op_carbon_tons = [oc / 1000 for oc in op_carbon_sorted]
-        em_carbon_tons = [ec / 1000 for ec in em_carbon_sorted]
-        
-        # Set up x-axis positions
-        x_pos = np.arange(len(scenarios))
-        
-        # Create stacked bars
-        # Bottom: Operational carbon (blue)
-        bars1 = ax.bar(x_pos, op_carbon_tons, 
-                       color='#4472C4', label='Operational Carbon',
-                       edgecolor='white', linewidth=0.5)
-        
-        # Top: Embodied carbon (orange)
-        bars2 = ax.bar(x_pos, em_carbon_tons, bottom=op_carbon_tons,
-                       color='#ED7D31', label='Embodied Carbon',
-                       edgecolor='white', linewidth=0.5)
-        
-        # Customize subplot
-        ax.set_xlabel('Insulation Material', fontsize=10, fontweight='bold')
-        ax.set_ylabel('Carbon (ton CO2e)', fontsize=10, fontweight='bold')
-        ax.set_title(f'Target R-Value = {r_val:.1f}', fontsize=12, fontweight='bold', pad=10)
-        
-        # Extract material names from scenario names (remove R-value prefix)
-        material_labels = []
-        for scenario in scenarios:
-            # Remove "out_R##_" prefix to get material name
-            material = re.sub(r'^out_R\d+\.?\d*_', '', scenario)
-            material_labels.append(material)
-        
-        # Set x-axis labels
-        ax.set_xticks(x_pos)
-        ax.set_xticklabels(material_labels, rotation=45, ha='right', fontsize=9)
-        
-        # Set consistent y-axis limits
-        ax.set_ylim(0, y_max)
-        
-        # Add legend to first subplot only
-        if idx == 0:
-            ax.legend(loc='upper right', frameon=True, shadow=True, fontsize=10)
-        
-        # Add grid
-        ax.grid(axis='y', alpha=0.3, linestyle='--', linewidth=0.5)
-        ax.set_axisbelow(True)
-        
-        # Format y-axis
-        ax.yaxis.set_major_formatter(plt.FuncFormatter(lambda x, p: f'{x:,.0f}'))
-    
-    # Hide unused subplots
-    for idx in range(n_subplots, len(axes)):
-        axes[idx].axis('off')
-    
-    # Add main title
-    fig.suptitle('Operational and Embodied Carbon by Target R-Value and Material', 
-                 fontsize=16, fontweight='bold', y=0.995)
+    # Format y-axis
+    ax.yaxis.set_major_formatter(plt.FuncFormatter(lambda x, p: f'{x:,.0f}'))
     
     # Tight layout
-    plt.tight_layout(rect=[0, 0, 1, 0.99])
+    plt.tight_layout()
     
     # Save the plot
     output_plot = measure_dir / "resources" / "wall_insulation_stacked_bar.png"

@@ -20,7 +20,7 @@ config.read(config_path)
 API_TOKEN= config["EC3_API_TOKEN"]["API_TOKEN"]
 
 CURRENT_DIR_PATH = Path(__file__).parent.absolute()
-model_path = Path(CURRENT_DIR_PATH / "tests/EnvelopeAndLoadTestModel_01.osm")
+model_path = Path(CURRENT_DIR_PATH / "tests/DOE_small_office.osm")
 
 def bottom_seal_options():
     #return ["brush weatherstrip", "automatic door bottom", "silicone adhesive smoke gasket"]

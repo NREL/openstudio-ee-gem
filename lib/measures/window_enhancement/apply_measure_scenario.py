@@ -21,7 +21,7 @@ config.read(config_path)
 API_TOKEN= config["EC3_API_TOKEN"]["API_TOKEN"]
 
 CURRENT_DIR_PATH = Path(__file__).parent.absolute()
-model_path = Path(CURRENT_DIR_PATH / "tests/EnvelopeAndLoadTestModel_01.osm")
+model_path = Path(CURRENT_DIR_PATH / "tests/DOE_small_office.osm")
 
 def frame_options():
     """Return window frame options to test"""
@@ -61,8 +61,8 @@ def secondary_glazing_options():
 
 def infiltration_reduction_percentages():
     """Test different infiltration reduction scenarios"""
-    #return [-300, -200,-100, 0, 30, 60, 90]
-    return [30]
+    return [-300, -200,-100, 0, 30, 60, 90]
+    #return [30]
 
 # Generate all combinations
 frame_opts = frame_options()
