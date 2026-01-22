@@ -1,7 +1,7 @@
 
 OS:Version,
-  {d2d8ee6a-17e5-4faa-9154-4e560ce91f88}, !- Handle
-  3.9.0;                                  !- Version Identifier
+  {002cbe20-112a-41a5-9339-e835669689df}, !- Handle
+  3.10.0;                                 !- Version Identifier
 
 OS:Site,
   {272d9a4d-ec25-4bbb-b083-822aef42268c}, !- Handle
@@ -10,7 +10,8 @@ OS:Site,
   -104.75,                                !- Longitude {deg}
   -7,                                     !- Time Zone {hr}
   1726,                                   !- Elevation {m}
-  City;                                   !- Terrain
+  ,                                       !- Terrain
+  No;                                     !- Keep Site Location Information
 
 OS:YearDescription,
   {946a3f36-6a26-4d77-9dd6-2ba19ae10e9d}, !- Handle
@@ -260,22 +261,6 @@ OS:Output:Table:SummaryReports,
 
 OS:Output:Diagnostics,
   {352a68fc-2fac-4182-8e24-ba5fb4135505}; !- Handle
-
-OS:WeatherFile,
-  {708b5976-aa45-460a-bbe4-15fd61a403d4}, !- Handle
-  Denver-Aurora-Buckley AFB,              !- City
-  CO,                                     !- State Province Region
-  USA,                                    !- Country
-  TMY3,                                   !- Data Source
-  724695,                                 !- WMO Number
-  39.72,                                  !- Latitude {deg}
-  -104.75,                                !- Longitude {deg}
-  -7,                                     !- Time Zone {hr}
-  1726,                                   !- Elevation {m}
-  C:/Users/jhu1/AppData/Local/Temp/1/osmodel-1431-e238-3606-4156-1764789450-0/resources/files/USA_CO_Denver-Aurora-Buckley.AFB_.724695_TMY3.epw, !- Url
-  A0C64037,                               !- Checksum
-  ,                                       !- Start Date Actual Year
-  Sunday;                                 !- Start Day of Week
 
 OS:SpaceType,
   {2d524ba6-938a-4aa5-a16a-60a01316a593}, !- Handle
@@ -2731,7 +2716,8 @@ OS:SpaceInfiltration:DesignFlowRate,
   0,                                      !- Constant Term Coefficient
   0,                                      !- Temperature Term Coefficient
   0.224,                                  !- Velocity Term Coefficient
-  0;                                      !- Velocity Squared Term Coefficient
+  0,                                      !- Velocity Squared Term Coefficient
+  Outdoor;                                !- Density Basis
 
 OS:SpaceInfiltration:DesignFlowRate,
   {375dc417-41b9-40e9-87fa-375a2b11e991}, !- Handle
@@ -2746,7 +2732,8 @@ OS:SpaceInfiltration:DesignFlowRate,
   0,                                      !- Constant Term Coefficient
   0,                                      !- Temperature Term Coefficient
   0.224,                                  !- Velocity Term Coefficient
-  0;                                      !- Velocity Squared Term Coefficient
+  0,                                      !- Velocity Squared Term Coefficient
+  Outdoor;                                !- Density Basis
 
 OS:SpaceInfiltration:DesignFlowRate,
   {1bbf02db-37f4-4228-a74e-dc6446e350ec}, !- Handle
@@ -2761,7 +2748,8 @@ OS:SpaceInfiltration:DesignFlowRate,
   0,                                      !- Constant Term Coefficient
   0,                                      !- Temperature Term Coefficient
   0.224,                                  !- Velocity Term Coefficient
-  0;                                      !- Velocity Squared Term Coefficient
+  0,                                      !- Velocity Squared Term Coefficient
+  Outdoor;                                !- Density Basis
 
 OS:SpaceInfiltration:DesignFlowRate,
   {12736a6a-f699-42fa-b401-aef48b95131e}, !- Handle
@@ -2776,7 +2764,8 @@ OS:SpaceInfiltration:DesignFlowRate,
   0,                                      !- Constant Term Coefficient
   0,                                      !- Temperature Term Coefficient
   0.224,                                  !- Velocity Term Coefficient
-  0;                                      !- Velocity Squared Term Coefficient
+  0,                                      !- Velocity Squared Term Coefficient
+  Outdoor;                                !- Density Basis
 
 OS:Site:GroundTemperature:BuildingSurface,
   {4f22dbd4-1455-49e2-bc2e-7519c691ffb3}, !- Handle
@@ -7116,4 +7105,144 @@ OS:Curve:Cubic,
   4.4744,                                 !- Coefficient4 x**3
   0.7,                                    !- Minimum Value of x
   1;                                      !- Maximum Value of x
+
+OS:StandardsInformation:Construction,
+  {d667bb1f-449f-4cd3-aef7-6948817bac59}, !- Handle
+  {ef95a29b-5658-4d45-bf9e-b8bd43a75011}; !- Construction Name
+
+OS:StandardsInformation:Construction,
+  {860f9e8d-38d8-4176-af35-5a658a775813}, !- Handle
+  {62d8ba66-b619-4e18-b044-15a4692ffeab}; !- Construction Name
+
+OS:StandardsInformation:Construction,
+  {60189ae8-7f1f-4522-9d34-f7273f763f95}, !- Handle
+  {821355a3-3be5-4c0d-bd2a-701c5802f12a}; !- Construction Name
+
+OS:StandardsInformation:Material,
+  {cfc2faf0-8333-4d8f-af06-c8091a4f16e0}, !- Handle
+  {7fdf1418-da70-4f17-80d7-dae036b345a9}; !- Material Name
+
+OS:StandardsInformation:Material,
+  {fc7541ff-217a-49ff-ba15-2ebc33ac095d}, !- Handle
+  {e9cd93cd-3735-4388-a49b-aded5ff9c7b4}; !- Material Name
+
+OS:StandardsInformation:Material,
+  {a1f5f4fd-ef29-4657-99ff-0476b4089e1d}, !- Handle
+  {834e83b3-fa94-4aca-b3ba-452d3727c24b}; !- Material Name
+
+OS:StandardsInformation:Material,
+  {1a7693ec-ea5d-44b5-aad4-2fc99fbdfc77}, !- Handle
+  {873875b6-4903-4fc2-af93-ad8d747cc28d}; !- Material Name
+
+OS:StandardsInformation:Material,
+  {ec04d162-1392-4920-b384-488a922d0533}, !- Handle
+  {0df260ed-f9ae-42ec-a707-aa5b3e6b24a2}; !- Material Name
+
+OS:StandardsInformation:Material,
+  {4459109c-df81-41a7-9815-9b938bef9388}, !- Handle
+  {b7e70aec-48d8-40e8-9042-cde8c45eec78}; !- Material Name
+
+OS:StandardsInformation:Material,
+  {632c3dbf-76f4-4ac7-99f5-105452348daf}, !- Handle
+  {0b854bf9-23fe-4fb5-852a-dbb94ecc6978}; !- Material Name
+
+OS:StandardsInformation:Material,
+  {74dd9094-f267-44d1-810d-2bda4d08ac7c}, !- Handle
+  {72454668-6251-46de-93d0-6b6855fe3e3f}; !- Material Name
+
+OS:StandardsInformation:Material,
+  {8e00144c-a7ab-47f6-9fd9-16feaaeb4e46}, !- Handle
+  {e619f9c1-0ee7-4aae-94ae-8b0d51f3ec62}; !- Material Name
+
+OS:StandardsInformation:Material,
+  {eeb42a72-c565-4d70-ac39-30c671ccdd89}, !- Handle
+  {8287a39d-10ab-4ef2-a655-e7c5e4656897}; !- Material Name
+
+OS:StandardsInformation:Material,
+  {4e5e621e-8133-4060-a478-8f70066411e9}, !- Handle
+  {bcb971f9-2731-4e6b-b275-830e4c6caa30}; !- Material Name
+
+OS:StandardsInformation:Material,
+  {dcf226c3-e438-47e7-99b8-d50c4ebaf072}, !- Handle
+  {d14b12f0-2ed3-47ac-8c0d-65d3e7df8d34}; !- Material Name
+
+OS:StandardsInformation:Material,
+  {64fc55ac-dd29-41fb-a604-610a28c2bb12}, !- Handle
+  {3732bf2e-f237-4dd4-baa3-0c5c6afaf122}; !- Material Name
+
+OS:StandardsInformation:Material,
+  {0f55fabd-b6d7-4dc5-b2df-1d810d9f5e4f}, !- Handle
+  {12f95f94-fa46-4f1f-a4da-8c27d695ed6a}; !- Material Name
+
+OS:StandardsInformation:Material,
+  {a421ce21-bf03-431a-9ad7-2f627741c4f6}, !- Handle
+  {4adaeba1-50e3-4c48-bd6a-b9dda655aa2c}; !- Material Name
+
+OS:StandardsInformation:Material,
+  {c4d9ed30-d02b-49b7-95f7-9a44be9ec5bd}, !- Handle
+  {9475b6cb-c819-4c4b-a9f9-8183c96d129f}; !- Material Name
+
+OS:StandardsInformation:Material,
+  {6471727f-834e-45e0-b455-5a1b09190d8a}, !- Handle
+  {67d7ba8f-3d89-4498-bd98-936142cabf95}; !- Material Name
+
+OS:StandardsInformation:Material,
+  {e1af2bc2-ebdc-4e2d-8f64-108497f6e99c}, !- Handle
+  {7f0891c8-112c-4767-ab55-1d87649d5f23}; !- Material Name
+
+OS:StandardsInformation:Material,
+  {be8634fe-bb04-4c05-9ce5-230ed85a570d}, !- Handle
+  {2d5c7b17-acaa-48b5-be37-70655ab34a47}; !- Material Name
+
+OS:StandardsInformation:Material,
+  {659e9db1-2379-43a7-b32f-c3ef1d5185d0}, !- Handle
+  {af16923f-d051-418f-92b0-c9b416572c94}; !- Material Name
+
+OS:StandardsInformation:Material,
+  {183cb646-c699-4306-add5-4b5aaa96427f}, !- Handle
+  {15e9044a-bbe6-4b92-893d-da9a3c7866c6}; !- Material Name
+
+OS:StandardsInformation:Material,
+  {dabe783e-6800-4480-82ee-0c6291ab2a0a}, !- Handle
+  {44de7485-248e-4050-89c0-deef1bde542f}; !- Material Name
+
+OS:StandardsInformation:Material,
+  {2e26fdba-ecc0-418b-821c-f6d95ee660ce}, !- Handle
+  {da15f817-1dd7-4616-a0fe-8210773c1d2f}; !- Material Name
+
+OS:StandardsInformation:Material,
+  {d6a7ed86-31e1-40fe-af04-355e387e64ea}, !- Handle
+  {23534e8c-f649-43ff-8a2b-780f31868169}; !- Material Name
+
+OS:StandardsInformation:Construction,
+  {7ee76986-bf44-4556-8884-d39c871c1df6}, !- Handle
+  {a5c3b9a4-9880-404d-9a27-fa10fb558a4c}; !- Construction Name
+
+OS:StandardsInformation:Material,
+  {65f5df75-d779-4210-aad2-f11cb5813a51}, !- Handle
+  {03981049-983e-4fe5-a0c4-2c6134f8a138}; !- Material Name
+
+OS:StandardsInformation:Material,
+  {39b35df3-c2c4-4641-b2c5-c0ff0d847dfd}, !- Handle
+  {0cf3de34-5104-4954-9e10-4236f1cfd6b5}; !- Material Name
+
+OS:StandardsInformation:Construction,
+  {99f07f4d-78b0-40e2-8f23-173172d87368}, !- Handle
+  {2dc48553-2cc9-4d42-8392-6684462920ec}; !- Construction Name
+
+OS:WeatherFile,
+  {56a79216-d3a8-4e23-ba71-f142317eb2f9}, !- Handle
+  Denver-Aurora-Buckley AFB,              !- City
+  CO,                                     !- State Province Region
+  USA,                                    !- Country
+  TMY3,                                   !- Data Source
+  724695,                                 !- WMO Number
+  39.72,                                  !- Latitude {deg}
+  -104.75,                                !- Longitude {deg}
+  -7,                                     !- Time Zone {hr}
+  1726,                                   !- Elevation {m}
+  USA_CO_Denver-Aurora-Buckley.AFB_.724695_TMY3.epw, !- Url
+  A0C64037,                               !- Checksum
+  ,                                       !- Start Date Actual Year
+  Sunday;                                 !- Start Day of Week
 

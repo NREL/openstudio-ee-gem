@@ -214,6 +214,18 @@ def extract_model_data(osm_path, emission_factors):
     else:
         print(f"  ⚠ eplustbl.html not found in run directory")
     
+    # Calculate totals across all constructions (if multiple roofs were renovated)
+    if not props_df.empty:
+        if 'renovated_roof_area_m2' in props_df.columns:
+            total_area = props_df['renovated_roof_area_m2'].sum()
+            energy_data['total_renovated_roof_area_m2'] = total_area
+            print(f"  ✓ Total renovated roof area: {total_area:.2f} m²")
+        
+        if 'total_embodied_carbon_kgCO2eq' in props_df.columns:
+            total_carbon = props_df['total_embodied_carbon_kgCO2eq'].sum()
+            energy_data['total_embodied_carbon_all_constructions_kgCO2eq'] = total_carbon
+            print(f"  ✓ Total embodied carbon (all constructions): {total_carbon:.2f} kgCO2eq")
+    
     return props_df, energy_data
 
 def create_scatterplot(csv_path, measure_dir):

@@ -93,10 +93,11 @@ def run_single_measure(model_path, save_path, r_value, insulation_type):
 def run_measure():
     """Run the measure for all combinations of R-values and insulation types."""
     CURRENT_DIR_PATH = Path(__file__).parent.absolute()
-    model_path = CURRENT_DIR_PATH / "tests/DOE_small_office.osm"
+    model_path = CURRENT_DIR_PATH / "tests/Warehouse-ASHRAE.osm"
     
     # Test parameters
-    r_values = [5,8.1,11.9,13.0,15.6,18.2,20.4,27.0]
+    r_values = [0,8.1,11.9,13.0,15.6,18.2,20.4,27.0]
+    #_values = [0]
     material_types = insulation_material_types()
     
     # Track results

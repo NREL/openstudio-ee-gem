@@ -1,0 +1,7 @@
+{
+   "created_at" : "20260115T201104Z",
+   "seed_file" : "../DOE_small_office.osm",
+   "steps" : [],
+   "updated_at" : "20260115T201113Z",
+   "weather_file" : "USA_CO_Denver-Aurora-Buckley.AFB_.724695_TMY3.epw"
+}

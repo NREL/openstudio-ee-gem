@@ -296,9 +296,9 @@ class IncreaseInsulationRValueForExteriorWalls(openstudio.measure.ModelMeasure):
                 continue
 
             # Skip update if construction already meets or exceeds target R-value
-            # if max_r >= r_value_si and not allow_reduction:
-            #     runner.registerInfo(f"'{name}' already meets or exceeds the R-value target.")
-            #     continue
+            if max_r >= r_value_si:
+                runner.registerInfo(f"'{name}' already meets or exceeds the R-value target (current: {openstudio.convert(max_r, 'm^2*K/W', 'ft^2*h*R/Btu').get():.2f}, target: {r_value_ip:.2f}).")
+                continue
 
             # Calculate additional R-value needed
             delta_r = max(0, r_value_si - max_r)

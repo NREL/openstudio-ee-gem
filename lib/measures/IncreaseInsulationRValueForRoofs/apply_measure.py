@@ -19,10 +19,11 @@ API_TOKEN= config["EC3_API_TOKEN"]["API_TOKEN"]
 
 def run_measure():
     CURRENT_DIR_PATH = Path(__file__).parent.absolute()
-    model_path = CURRENT_DIR_PATH / "tests/DOE_small_office.osm"
+    model_path = CURRENT_DIR_PATH / "tests/Warehouse-ASHRAE.osm"
     
     # Define test parameters
     r_values = [0,24.4,27.0,32.3,34.5,38.5]
+    #r_values = [0]
     insulation_materials = [
         "Blown Cellulose",
         "Blown Fiberglass",

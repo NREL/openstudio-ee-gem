@@ -61,11 +61,208 @@ def load_emission_factors():
             'water_emission_factor': 0.46
         }
 
-def extract_model_data(osm_path, emission_factors):
+def run_energyplus_simulation(osm_path):
+    """Run EnergyPlus simulation for an OSM file."""
+    import subprocess
+    import json
+    import shutil
+    
+    scenario_name = osm_path.stem
+    run_dir = osm_path.parent / f"{scenario_name}_simulation"
+    
+    # Check if simulation has already been run
+    eplustbl_paths = [
+        run_dir / "eplustbl.htm",
+        run_dir / "eplustbl.html",
+        run_dir / "run" / "eplustbl.html",
+        run_dir / "reports" / "eplustbl.html"
+    ]
+    
+    for eplustbl_path in eplustbl_paths:
+        if eplustbl_path.exists():
+            print(f"  ✓ Simulation results already exist: {eplustbl_path.name}")
+            return True
+    
+    print(f"  Running EnergyPlus simulation...")
+    
+    # Create run directory
+    run_dir.mkdir(parents=True, exist_ok=True)
+    
+    try:
+        # Load the model
+        translator = openstudio.osversion.VersionTranslator()
+        model_opt = translator.loadModel(str(osm_path))
+        
+        if not model_opt.is_initialized():
+            print(f"  ✗ Error: Could not load model from {osm_path}")
+            return False
+        
+        model = model_opt.get()
+        
+        # Get weather file path from model and verify/find it
+        weather_file_obj = model.getWeatherFile()
+        epw_path = None
+        
+        # Try to get path from model
+        if weather_file_obj.path().is_initialized():
+            model_epw_path = Path(weather_file_obj.path().get().__str__())
+            if model_epw_path.exists():
+                epw_path = model_epw_path
+                print(f"  ✓ Using weather file from model: {epw_path.name}")
+            else:
+                print(f"  ⚠ Weather file in model not found: {model_epw_path}")
+        
+        # If no valid weather file found, search common locations
+        if not epw_path:
+            possible_epw_locations = [
+                # Check in the output directory
+                osm_path.parent / "weather.epw",
+                osm_path.parent / "*.epw",
+                # Check in tests directory
+                osm_path.parent.parent / "weather.epw",
+                osm_path.parent.parent / "*.epw",
+                # Check relative to measure directory
+                Path(__file__).parent / "tests" / "weather.epw",
+                Path(__file__).parent / "tests" / "*.epw",
+                Path(__file__).parent / "weather.epw",
+                Path(__file__).parent / "*.epw",
+            ]
+            
+            for location in possible_epw_locations:
+                if "*" in str(location):
+                    # Use glob for wildcard patterns
+                    matches = list(location.parent.glob(location.name))
+                    if matches:
+                        epw_path = matches[0]
+                        break
+                elif location.exists():
+                    epw_path = location
+                    break
+            
+            if epw_path:
+                print(f"  ✓ Found weather file: {epw_path}")
+                # No need to update the model - the OSW will override it
+            else:
+                print(f"  ⚠ Warning: No weather file found. Simulation may fail.")
+                print(f"    Checked locations:")
+                for loc in possible_epw_locations[:6]:  # Show first few
+                    print(f"      - {loc}")
+                # Don't return False yet - let the simulation try anyway
+        
+        # Use OpenStudio CLI to run the workflow
+        # Create a minimal OSW (OpenStudio Workflow) file
+        osw_path = run_dir / "workflow.osw"
+        
+        osw_content = {
+            "seed_file": str(osm_path.absolute()),
+            "weather_file": str(epw_path.absolute()) if epw_path and epw_path.exists() else "",
+            "measure_paths": [],
+            "file_paths": [],
+            "run_directory": "./run",
+            "steps": [],
+            "created_at": "20260120T120000Z",
+            "updated_at": "20260120T120000Z",
+            "oswVersion": "3.9.0"
+        }
+        
+        with open(osw_path, 'w') as f:
+            json.dump(osw_content, f, indent=2)
+        
+        if epw_path and epw_path.exists():
+            print(f"  ✓ Workflow file created: {osw_path.name} (weather: {epw_path.name})")
+        else:
+            print(f"  ✓ Workflow file created: {osw_path.name} (no weather file)")
+        
+        # Find OpenStudio CLI executable
+        openstudio_exe = None
+        possible_cli_paths = [
+            r"C:\openstudio-3.8.0\bin\openstudio.exe",
+            r"C:\openstudio-3.7.0\bin\openstudio.exe",
+            r"C:\openstudio-3.9.0\bin\openstudio.exe",
+            r"C:\Program Files\OpenStudio-3.8.0\bin\openstudio.exe",
+            r"C:\Program Files\OpenStudio-3.7.0\bin\openstudio.exe",
+            "/usr/local/openstudio/bin/openstudio",  # Linux/Mac
+            "/Applications/OpenStudio-3.8.0/bin/openstudio",  # Mac
+        ]
+        
+        # Try to find OpenStudio CLI in PATH
+        openstudio_exe = shutil.which("openstudio")
+        
+        if not openstudio_exe:
+            # Check common installation paths
+            for cli_path in possible_cli_paths:
+                if Path(cli_path).exists():
+                    openstudio_exe = cli_path
+                    break
+        
+        if not openstudio_exe:
+            print(f"  ✗ Error: OpenStudio CLI not found in PATH or common locations")
+            print(f"    Checked: {possible_cli_paths}")
+            print(f"  ⚠ You can run the simulation manually using:")
+            print(f"    openstudio run -w {osw_path}")
+            return False
+        
+        # Run OpenStudio CLI
+        cmd = [openstudio_exe, "run", "-w", str(osw_path)]
+        
+        print(f"  ▶ Running: {' '.join([Path(c).name if i == 0 else c for i, c in enumerate(cmd)])}")
+        
+        try:
+            result = subprocess.run(
+                cmd,
+                capture_output=True,
+                text=True,
+                timeout=600,  # 10 minute timeout
+                cwd=str(run_dir)
+            )
+            
+            if result.returncode == 0:
+                print(f"  ✓ OpenStudio simulation completed successfully")
+                
+                # Verify output files exist in run directory
+                for eplustbl_path in eplustbl_paths:
+                    if eplustbl_path.exists():
+                        print(f"  ✓ Output file created: {eplustbl_path.name}")
+                        return True
+                
+                print(f"  ⚠ Warning: Simulation completed but output files not found")
+                print(f"    Checking run subdirectory...")
+                # Check if files are in a 'run' subdirectory
+                run_subdir = run_dir / "run"
+                if run_subdir.exists():
+                    for file in run_subdir.glob("*eplustbl*"):
+                        print(f"  ✓ Found output file: {file}")
+                        return True
+                return False
+            else:
+                print(f"  ✗ OpenStudio simulation failed with return code: {result.returncode}")
+                if result.stderr:
+                    print(f"  Error output: {result.stderr[:500]}")
+                if result.stdout:
+                    print(f"  Standard output: {result.stdout[-500:]}")
+                return False
+        except FileNotFoundError:
+            print(f"  ✗ Error: Could not execute OpenStudio CLI at: {openstudio_exe}")
+            return False
+            
+    except subprocess.TimeoutExpired:
+        print(f"  ✗ Error: OpenStudio simulation timed out (>10 minutes)")
+        return False
+    except Exception as e:
+        print(f"  ✗ Error running simulation: {e}")
+        import traceback
+        traceback.print_exc()
+        return False
+
+def extract_model_data(osm_path, emission_factors, run_simulation=True):
     """Extract AdditionalProperties from OSM file and energy results from SQL file."""
     print(f"\n{'='*80}")
     print(f"Processing: {osm_path.name}")
     print(f"{'='*80}")
+    
+    # Run EnergyPlus simulation if requested
+    if run_simulation:
+        run_energyplus_simulation(osm_path)
     
     # Load the model
     translator = openstudio.osversion.VersionTranslator()
@@ -115,6 +312,36 @@ def extract_model_data(osm_path, emission_factors):
                 props_data.append(item)
     
     props_df = pd.DataFrame(props_data) if props_data else pd.DataFrame()
+    
+    # Check if this is an R0 baseline model (no insulation properties found)
+    is_baseline = False
+    if props_df.empty or 'target_insulation_r-value_ip' not in props_df.columns:
+        # Check if filename indicates R0 baseline
+        if '_R0_' in osm_path.name or osm_path.stem.startswith('out_R0'):
+            is_baseline = True
+            print(f"  ℹ Detected R0 baseline model - will extract energy data only")
+            # Create baseline properties dataframe with placeholder values
+            props_df = pd.DataFrame([{
+                'construction_handle': 'baseline',
+                'construction_name': 'Baseline (No Insulation Upgrade)',
+                'target_insulation_r-value_ip': 0.0,
+                'original_insulation_r-value_ip': 9.45178657550291,  # Default from other models
+                'insulation_material_type': 'Baseline (No Added Insulation)',
+                'insulation_material_thermal_conductivity_W_per_mK': 0.0,
+                'insulation_material_density_kg_per_m3': 0.0,
+                'insulation_material_gwp_per_kg': 0.0,
+                'insulation_material_gwp_per_m2': 0.0,
+                'insulation_material_gwp_per_m3': 0.0,
+                'insulation_material_lifetime_years': 0.0,
+                'insulation_material_lifetime_source': 'N/A - Baseline',
+                'total_volume_m3': 0.0,
+                'total_embodied_carbon_kgCO2eq': 0.0,
+                'added_insulation_layer_thickness_m': 0.0,
+                'added_insulation_layer_mass_kg': 0.0,
+                'renovated_exterior_wall_area_m2': 0.0,
+                'analysis_period_years': 30,
+                'is_baseline': 'TRUE'
+            }])
     
     # Extract energy results from eplustbl.html file
     scenario_name = osm_path.stem
@@ -214,6 +441,42 @@ def extract_model_data(osm_path, emission_factors):
     else:
         print(f"  ⚠ eplustbl.html not found in run directory")
     
+    # Calculate totals from construction properties and add to energy data
+    if not props_df.empty and 'renovated_exterior_wall_area_m2' in props_df.columns:
+        # Calculate total renovated wall area (sum across all constructions)
+        try:
+            total_wall_area = props_df['renovated_exterior_wall_area_m2'].sum()
+            energy_data['total_renovated_wall_area_m2'] = total_wall_area
+            print(f"  ✓ Total renovated wall area: {total_wall_area:.2f} m²")
+        except (ValueError, TypeError, KeyError) as e:
+            print(f"  ⚠ Error calculating total wall area: {e}")
+            energy_data['total_renovated_wall_area_m2'] = 0.0
+        
+        # Calculate total embodied carbon (sum across all constructions)
+        try:
+            total_embodied_carbon = props_df['total_embodied_carbon_kgCO2eq'].sum()
+            energy_data['total_embodied_carbon_all_constructions_kgCO2eq'] = total_embodied_carbon
+            print(f"  ✓ Total embodied carbon (all constructions): {total_embodied_carbon:.2f} kgCO2eq")
+        except (ValueError, TypeError, KeyError) as e:
+            print(f"  ⚠ Error calculating total embodied carbon: {e}")
+            energy_data['total_embodied_carbon_all_constructions_kgCO2eq'] = 0.0
+    else:
+        # For baseline or models without wall area data
+        energy_data['total_renovated_wall_area_m2'] = 0.0
+        energy_data['total_embodied_carbon_all_constructions_kgCO2eq'] = 0.0
+    
+    # For baseline models, if we got energy data but no properties, still return the data
+    if is_baseline:
+        if energy_data:
+            print(f"✓ Baseline model data extracted (energy data: {len(energy_data)} fields)")
+        else:
+            print(f"  ⚠ No energy data extracted for baseline model")
+    
+    # Only return None if we have neither properties nor energy data (unless it's a baseline with energy data)
+    if props_df.empty and not energy_data and not is_baseline:
+        print(f"✗ No data extracted from {osm_path.name}")
+        return None, None
+    
     return props_df, energy_data
 
 def create_scatterplot(csv_path, measure_dir):
@@ -284,6 +547,12 @@ def create_scatterplot(csv_path, measure_dir):
         from io import StringIO
         construction_df = pd.read_csv(StringIO(''.join(construction_lines)))
         construction_df = construction_df.set_index(construction_df.columns[0]).T
+        
+        # Check if energyplus_lines is empty
+        if not energyplus_lines:
+            print("✗ Error: EnergyPlus section not found or empty in CSV file")
+            print("  Looking for '# EnergyPlus Simulation Summary' header")
+            return
         
         energyplus_df = pd.read_csv(StringIO(''.join(energyplus_lines)))
         energyplus_df = energyplus_df.set_index(energyplus_df.columns[0]).T
@@ -534,6 +803,12 @@ def create_carbon_comparison_plot(csv_path, measure_dir):
         construction_df = pd.read_csv(StringIO(''.join(construction_lines)))
         construction_df = construction_df.set_index(construction_df.columns[0]).T
         
+        # Check if energyplus_lines is empty
+        if not energyplus_lines:
+            print("✗ Error: EnergyPlus section not found or empty in CSV file")
+            print("  Looking for '# EnergyPlus Simulation Summary' header")
+            return
+        
         energyplus_df = pd.read_csv(StringIO(''.join(energyplus_lines)))
         energyplus_df = energyplus_df.set_index(energyplus_df.columns[0]).T
         
@@ -749,6 +1024,12 @@ def create_stacked_bar_chart(csv_path, measure_dir):
         construction_df = pd.read_csv(StringIO(''.join(construction_lines)))
         construction_df = construction_df.set_index(construction_df.columns[0]).T
         
+        # Check if energyplus_lines is empty
+        if not energyplus_lines:
+            print("✗ Error: EnergyPlus section not found or empty in CSV file")
+            print("  Looking for '# EnergyPlus Simulation Summary' header")
+            return
+        
         energyplus_df = pd.read_csv(StringIO(''.join(energyplus_lines)))
         energyplus_df = energyplus_df.set_index(energyplus_df.columns[0]).T
         
@@ -931,7 +1212,8 @@ def main():
     for idx, osm_path in enumerate(osm_files, 1):
         print(f"\n[Model {idx}/{len(osm_files)}]")
         
-        props_df, energy_data = extract_model_data(osm_path, emission_factors)
+        # Run simulation and extract data (run_simulation=True by default)
+        props_df, energy_data = extract_model_data(osm_path, emission_factors, run_simulation=True)
         
         if props_df is not None and not props_df.empty:
             # Add scenario identifier column
