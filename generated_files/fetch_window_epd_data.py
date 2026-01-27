@@ -1,5 +1,5 @@
 """
-Standalone script to fetch EPD data for all insulation materials and organize into tables
+Standalone script to fetch EPD data for window materials and organize into tables
 """
 
 import sys
@@ -13,7 +13,7 @@ import configparser
 # Add the resources path to import EC3_lookup functions
 script_dir = os.path.dirname(os.path.abspath(__file__))
 parent_dir = os.path.dirname(script_dir)
-resources_path = os.path.join(parent_dir, "lib", "measures", "IncreaseInsulationRValueForRoofs", "resources")
+resources_path = os.path.join(parent_dir, "lib", "measures", "window_enhancement", "resources")
 sys.path.insert(0, resources_path)
 
 from EC3_lookup import generate_url_byname, fetch_epd_data, parse_product_epd, extract_numeric_value
@@ -36,51 +36,134 @@ except KeyError:
     print("Error: Missing [EC3_API_TOKEN] or API_TOKEN in config.ini file")
     sys.exit(1)
 
-# Define all insulation material types and their corresponding API query parameters
-INSULATION_MATERIALS = {
-    "Blown Cellulose": {
-        "category": "6fd418c8ff92415c833e6327638d8482",
-        "name_like": "cellulose"
+# Define all window material types and their corresponding API query parameters
+WINDOW_MATERIALS = {
+    # Glass Pane Products
+    "Processed Non-Insulating Glass Panes": {
+        "category": "6daae3d967104f5c8c85199b259f58c8",
+        "name_like": "monolithic glass",
+        "plant_geography": "021",
+        "component_type": "glass pane"
     },
-    "Blown Fiberglass": {
-        "category": "6fd418c8ff92415c833e6327638d8482",
-        "name_like": "fiber glass"
+    "Insulating Glazing Unit - Double Pane": {
+        "name_like": "double pane",
+        "plant_geography": "021",
+        "component_type": "glass pane"
     },
-    "Blown Mineral Wool": {
-        "category": "6fd418c8ff92415c833e6327638d8482",
-        "name_like": "mineral wool"
+    "Insulating Glazing Unit - Triple Pane": {
+        "category": "ade3ad3405124279955e7d3085f59383",
+        "name_like": "triple pane",
+        "plant_geography": "021",
+        "component_type": "glass pane"
     },
-    "Polyiso Insulation Foam Board": {
-        "category": "56f3c898f94b459eb18feadeb792ab88",
-        "name_like": "polyiso roof insulation board"
+    
+    # Window Frame Products
+    "Wood Window Frame": {
+        "name_like": "wood window frame",
+        "plant_geography": "150",
+        "component_type": "window frame"
     },
-    "Graphite Polystyrene (GPS) Foam Board": {
-        "category": "56f3c898f94b459eb18feadeb792ab88",
-        "name_like": "Graphite Polystyrene"
+    "Wood-Aluminium Window Frame": {
+        "name_like": "wood-aluminium window frame",
+        "plant_geography": "150",
+        "component_type": "window frame"
     },
-    "Expanded Polystyrene (EPS) Foam Board": {
-        "category": "56f3c898f94b459eb18feadeb792ab88",
-        "name_like": "eps insulation"
+    
+    # Window Perimeter Caulking
+    "Window Perimeter Caulking - Sealant Acrylic": {
+        "name_like": "sealant",
+        "description_like": "acrylic",
+        "plant_geography": "021",
+        "component_type": "window perimeter caulking"
     },
-    "Extruded Polystyrene (XPS) Foam Board": {
-        "category": "56f3c898f94b459eb18feadeb792ab88",
-        "name_like": "xps insulation"
+    "Window Perimeter Caulking - Single-Ply Polyurethane": {
+        "category": "e95e0d13de844101beb364b47af73d45",
+        "description_like": "window",
+        "plant_geography": "021",
+        "component_type": "window perimeter caulking"
     },
-    "Mineral Wool Heavy Density Blanket": {
-        "category": "53a5d5bee64545f1bdd60e102a4a6ddf",
-        "name_like": "mineral wool heavy density"
+    
+    # Window Film Products
+    "Window Film - Safety Film": {
+        "category": "3aa3a34fae9a400fa297339ba88e1fab",
+        "name_like": "glazing",
+        "description_like": "safety film",
+        "plant_geography": "021",
+        "component_type": "window film"
     },
-    "Mineral Wool Light Density Blanket": {
-        "category": "53a5d5bee64545f1bdd60e102a4a6ddf",
-        "name_like": "mineral wool light density"
+    "Window Film - Solar Control Film": {
+        "category": "3aa3a34fae9a400fa297339ba88e1fab",
+        "name_like": "glazing",
+        "description_like": "solar control film",
+        "plant_geography": "021",
+        "component_type": "window film"
     },
-    "Fiberglass Batts": {
-        "category": "53a5d5bee64545f1bdd60e102a4a6ddf",
-        "name_like": "fiber glass batts"
+    "Window Film - Anti-Graffiti Film": {
+        "category": "3aa3a34fae9a400fa297339ba88e1fab",
+        "name_like": "glazing",
+        "description_like": "anti-graffiti film",
+        "plant_geography": "021",
+        "component_type": "window film"
     },
-    "Pure Wool Batts": {
-        "category": "53a5d5bee64545f1bdd60e102a4a6ddf",
-        "name_like": "batts insulation wool"
+    "Window Film - Decorative Film": {
+        "category": "3aa3a34fae9a400fa297339ba88e1fab",
+        "name_like": "glazing",
+        "description_like": "decorative film",
+        "plant_geography": "021",
+        "component_type": "window film"
+    },
+    "Window Film - Low-E Film": {
+        "category": "3aa3a34fae9a400fa297339ba88e1fab",
+        "name_like": "glazing",
+        "description_like": "low-e film",
+        "plant_geography": "021",
+        "component_type": "window film"
+    },
+    
+    # Window Weatherstrip
+    "Window Weatherstrip - Silicone Adhesive Smoke Gasket": {
+        "category": "ca54e842c0fc4bf2b4f3a8564c3b1a4d",
+        "name_like": "doors hardware",
+        "description_like": "silicone adhesive smoke gasket",
+        "plant_geography": "021",
+        "component_type": "window weatherstrip"
+    },
+    
+    # Whole Window Products
+    "Fixed Window": {
+        "name_like": "fixed window",
+        "plant_geography": "021",
+        "component_type": "whole window"
+    },
+    "Project Window": {
+        "name_like": "project window",
+        "plant_geography": "021",
+        "component_type": "whole window"
+    },
+    "Sliding Window": {
+        "name_like": "sliding window",
+        "plant_geography": "021",
+        "component_type": "whole window"
+    },
+    "Storefront Window": {
+        "name_like": "storefront window",
+        "plant_geography": "021",
+        "component_type": "whole window"
+    },
+    "Casement Window": {
+        "name_like": "casement window",
+        "plant_geography": "021",
+        "component_type": "whole window"
+    },
+    "Opening Window": {
+        "name_like": "opening window",
+        "plant_geography": "021",
+        "component_type": "whole window"
+    },
+    "Outward Hinged Window": {
+        "name_like": "open outward",
+        "plant_geography": "021",
+        "component_type": "whole window"
     }
 }
 
@@ -150,13 +233,6 @@ def create_statistics_summary(df, timestamp, output_dir):
             print(f"  ⚠ Skipping {metric_name} - column not found in DataFrame")
             continue
         
-        # Debug: Check if we're processing reference_service_life
-        if metric_name == 'reference_service_life':
-            print(f"  Processing reference_service_life metric...")
-            print(f"  Total rows in DataFrame: {len(df)}")
-            print(f"  Non-null reference_service_life values: {df['reference_service_life'].notna().sum()}")
-            print(f"  Sample values: {df['reference_service_life'].head(10).tolist()}")
-        
         for material in sorted(df['Material Category'].unique()):
             material_df = df[df['Material Category'] == material]
             
@@ -175,6 +251,7 @@ def create_statistics_summary(df, timestamp, output_dir):
                 summary_rows.append({
                     'Metric': metric_name,
                     'Material Category': material,
+                    'Component Type': material_df['Component Type'].iloc[0],
                     'Count': len(values),
                     'Min': np.min(values),
                     'Max': np.max(values),
@@ -188,7 +265,7 @@ def create_statistics_summary(df, timestamp, output_dir):
     # Create DataFrame and save
     summary_df = pd.DataFrame(summary_rows)
     
-    summary_filename = f"insulation_epd_statistics_summary_{timestamp}.csv"
+    summary_filename = f"window_epd_statistics_summary_{timestamp}.csv"
     summary_filepath = os.path.join(output_dir, summary_filename)
     summary_df.to_csv(summary_filepath, index=False, encoding='utf-8-sig')
     
@@ -224,23 +301,35 @@ def fetch_material_epd_data(material_name, query_params):
     """Fetch EPD data for a single material"""
     print(f"\n{'='*80}")
     print(f"Fetching material: {material_name}")
+    print(f"Component Type: {query_params.get('component_type', 'N/A')}")
     print(f"{'='*80}")
     
-    # 生成API URL
-    url = generate_url_byname(**query_params)
-    print(f"API URL: {url}")
+    # Create a copy of query params without component_type for API call
+    api_params = {k: v for k, v in query_params.items() if k != 'component_type'}
     
-    # Get EPD data
-    epd_response = fetch_epd_data(url, API_TOKEN)
+    # 生成API URL
+    try:
+        url = generate_url_byname(**api_params)
+        print(f"API URL: {url}")
+    except Exception as e:
+        print(f"  ❌ Error generating URL: {e}")
+        return None
+    
+    # Get EPD data with error handling
+    try:
+        epd_response = fetch_epd_data(url, API_TOKEN)
+    except Exception as e:
+        print(f"  ❌ Error fetching data: {e}")
+        return None
     
     if not epd_response:
         print(f"  No data retrieved")
         return None
     
     # Save raw JSON response
-    output_dir = script_dir
+    output_dir = os.path.join(script_dir, "window epd data")
     os.makedirs(output_dir, exist_ok=True)
-    json_filename = f"{material_name.replace(' ', '_').replace('(', '').replace(')', '')}_raw_response.json"
+    json_filename = f"{material_name.replace(' ', '_').replace('(', '').replace(')', '').replace('-', '_')}_raw_response.json"
     json_filepath = os.path.join(output_dir, json_filename)
     with open(json_filepath, 'w', encoding='utf-8') as f:
         json.dump(epd_response, f, indent=2, ensure_ascii=False)
@@ -261,14 +350,14 @@ def fetch_material_epd_data(material_name, query_params):
     for idx, epd in enumerate(epds, start=1):
         parsed = parse_product_epd(epd)
         
-        # Debug: Check what thickness looks like in raw EPD data
-        raw_thickness = epd.get("thickness")
+        # Debug: Check what data looks like in raw EPD data
         if idx <= 3:  # Log first 3 EPDs for debugging
-            print(f"  Debug EPD #{idx}: raw thickness from EPD = {raw_thickness}, type = {type(raw_thickness)}")
-            print(f"  Debug EPD #{idx}: parsed thickness = {parsed.get('thickness')}")
+            print(f"  Debug EPD #{idx}: Product name = {parsed.get('product_name', 'N/A')}")
+            print(f"  Debug EPD #{idx}: Declared unit = {parsed.get('declared_unit', 'N/A')}")
         
-        # Add material category to the parsed data
+        # Add material category and component type to the parsed data
         parsed["Material Category"] = material_name
+        parsed["Component Type"] = query_params.get('component_type', 'N/A')
         
         # Append the complete parsed data
         epd_details.append(parsed)
@@ -277,17 +366,18 @@ def fetch_material_epd_data(material_name, query_params):
     
     return {
         "material_name": material_name,
+        "component_type": query_params.get('component_type', 'N/A'),
         "total_epds": len(epds),
         "epd_details": epd_details
     }
 
 def main():
     """Main function"""
-    print(f"Starting EPD data retrieval...")
+    print(f"Starting Window EPD data retrieval...")
     print(f"Current time: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     
     # Create output directory if it doesn't exist
-    output_dir = script_dir
+    output_dir = os.path.join(script_dir, "window epd data")
     os.makedirs(output_dir, exist_ok=True)
     print(f"Output directory: {output_dir}\n")
     
@@ -295,11 +385,19 @@ def main():
     all_epd_details = []
     
     # Iterate through all materials
-    for material_name, query_params in INSULATION_MATERIALS.items():
-        result = fetch_material_epd_data(material_name, query_params)
-        if result:
-            all_results.append(result)
-            all_epd_details.extend(result["epd_details"])
+    for material_name, query_params in WINDOW_MATERIALS.items():
+        try:
+            result = fetch_material_epd_data(material_name, query_params)
+            if result:
+                all_results.append(result)
+                all_epd_details.extend(result["epd_details"])
+        except KeyboardInterrupt:
+            print(f"\n⚠ Interrupted by user. Processing data collected so far...")
+            break
+        except Exception as e:
+            print(f"\n❌ Error processing {material_name}: {e}")
+            print(f"Continuing with next material...")
+            continue
     
     # Create detailed EPD table
     print(f"\n{'='*80}")
@@ -311,8 +409,7 @@ def main():
         
         # Save detailed EPD data
         timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-        output_dir = script_dir
-        details_filename = f"insulation_epd_data_{timestamp}.csv"
+        details_filename = f"window_epd_data_{timestamp}.csv"
         details_filepath = os.path.join(output_dir, details_filename)
         details_df.to_csv(details_filepath, index=False, encoding='utf-8-sig')
         print(f"✓ Detailed EPD data saved: {details_filepath}")
@@ -343,12 +440,20 @@ def main():
         material_counts = details_df['Material Category'].value_counts().sort_index()
         for material, count in material_counts.items():
             print(f"  {material}: {count} EPDs")
-    
-    print(f"\n{'='*80}")
-    print("Data retrieval completed!")
-    print(f"Total materials processed: {len(all_results)}")
-    print(f"Total EPDs retrieved: {len(all_epd_details)}")
-    print(f"{'='*80}\n")
+        
+        # Print summary by component type
+        print(f"\n{'='*80}")
+        print("EPD Count by Component Type")
+        print(f"{'='*80}\n")
+        component_counts = details_df['Component Type'].value_counts().sort_index()
+        for component, count in component_counts.items():
+            print(f"  {component}: {count} EPDs")
+        
+        print(f"\n{'='*80}")
+        print("✓ All processing complete!")
+        print(f"{'='*80}\n")
+    else:
+        print("⚠ No EPD data collected. Please check API parameters and connectivity.")
 
 if __name__ == "__main__":
     main()

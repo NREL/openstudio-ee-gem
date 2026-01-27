@@ -1,5 +1,5 @@
 """
-Standalone script to fetch EPD data for all insulation materials and organize into tables
+Standalone script to fetch EPD data for door materials (sealing and whole doors) and organize into tables
 """
 
 import sys
@@ -13,7 +13,7 @@ import configparser
 # Add the resources path to import EC3_lookup functions
 script_dir = os.path.dirname(os.path.abspath(__file__))
 parent_dir = os.path.dirname(script_dir)
-resources_path = os.path.join(parent_dir, "lib", "measures", "IncreaseInsulationRValueForRoofs", "resources")
+resources_path = os.path.join(parent_dir, "lib", "measures", "door_enhancement", "resources")
 sys.path.insert(0, resources_path)
 
 from EC3_lookup import generate_url_byname, fetch_epd_data, parse_product_epd, extract_numeric_value
@@ -36,51 +36,76 @@ except KeyError:
     print("Error: Missing [EC3_API_TOKEN] or API_TOKEN in config.ini file")
     sys.exit(1)
 
-# Define all insulation material types and their corresponding API query parameters
-INSULATION_MATERIALS = {
-    "Blown Cellulose": {
-        "category": "6fd418c8ff92415c833e6327638d8482",
-        "name_like": "cellulose"
+# Define all door material types and their corresponding API query parameters
+# Based on the table provided, organized by renovation type
+DOOR_MATERIALS = {
+    # Door Sealing Products
+    "Silicone Adhesive Smoke Gasket": {
+        "category": "ca54e842c0fc4bf2b4f3a8564c3b1a4d",
+        "name_like": "silicone adhesive smoke gasket",
+        "plant_geography": "021",
+        "renovation_type": "door sealing"
     },
-    "Blown Fiberglass": {
-        "category": "6fd418c8ff92415c833e6327638d8482",
-        "name_like": "fiber glass"
+    "Brush Weatherstrip": {
+        "category": "ca54e842c0fc4bf2b4f3a8564c3b1a4d",
+        "name_like": "brush weatherstrip",
+        "plant_geography": "021",
+        "renovation_type": "door sealing"
     },
-    "Blown Mineral Wool": {
-        "category": "6fd418c8ff92415c833e6327638d8482",
-        "name_like": "mineral wool"
+    "Automatic Door Bottom": {
+        "category": "ca54e842c0fc4bf2b4f3a8564c3b1a4d",
+        "name_like": "automatic door bottom",
+        "plant_geography": "021",
+        "renovation_type": "door sealing"
     },
-    "Polyiso Insulation Foam Board": {
-        "category": "56f3c898f94b459eb18feadeb792ab88",
-        "name_like": "polyiso roof insulation board"
+    "Jamb Weatherstripping": {
+        "name_like": "jamb weatherstripping",
+        "plant_geography": "021",
+        "renovation_type": "door sealing"
     },
-    "Graphite Polystyrene (GPS) Foam Board": {
-        "category": "56f3c898f94b459eb18feadeb792ab88",
-        "name_like": "Graphite Polystyrene"
+    
+    # Whole Door Products
+    "Wood Door Leaf": {
+        "name_like": "wood door leaf",
+        "plant_geography": "021",
+        "renovation_type": "whole door"
     },
-    "Expanded Polystyrene (EPS) Foam Board": {
-        "category": "56f3c898f94b459eb18feadeb792ab88",
-        "name_like": "eps insulation"
+    "Garage Door": {
+        "name_like": "garage door",
+        "plant_geography": "150",
+        "renovation_type": "whole door"
     },
-    "Extruded Polystyrene (XPS) Foam Board": {
-        "category": "56f3c898f94b459eb18feadeb792ab88",
-        "name_like": "xps insulation"
+    "Window Door System": {
+        "name_like": "window door system",
+        "plant_geography": "150",
+        "renovation_type": "whole door"
     },
-    "Mineral Wool Heavy Density Blanket": {
-        "category": "53a5d5bee64545f1bdd60e102a4a6ddf",
-        "name_like": "mineral wool heavy density"
+    "Polystyrene Core Steel Door": {
+        "name_like": "polystyrene core steel door",
+        "plant_geography": "021",
+        "renovation_type": "whole door"
     },
-    "Mineral Wool Light Density Blanket": {
-        "category": "53a5d5bee64545f1bdd60e102a4a6ddf",
-        "name_like": "mineral wool light density"
+    "Polyurethane Core Steel Door": {
+        "name_like": "polyurethane core steel door",
+        "plant_geography": "021",
+        "renovation_type": "whole door"
     },
-    "Fiberglass Batts": {
-        "category": "53a5d5bee64545f1bdd60e102a4a6ddf",
-        "name_like": "fiber glass batts"
+    "Fiberglass Core": {
+        "category": "73e602b930884f559e90418f35ee4ed",
+        "name_like": "fiberglass core",
+        "plant_geography": "021",
+        "renovation_type": "whole door"
     },
-    "Pure Wool Batts": {
-        "category": "53a5d5bee64545f1bdd60e102a4a6ddf",
-        "name_like": "batts insulation wool"
+    "Honeycomb Core Steel Door": {
+        "name_like": "honeycomb core steel door",
+        "plant_geography": "021",
+        "renovation_type": "whole door"
+    },
+    "Stiffened Core": {
+        "category": "e9605505973e4f088078c6f53e58129f",
+        "name_like": "stiffened core",
+        "plant_geography": "021",
+        "renovation_type": "whole door"
     }
 }
 
@@ -137,6 +162,10 @@ def create_statistics_summary(df, timestamp, output_dir):
         {
             'column': 'gwp_per_unit (kg CO2 eq/unit)',
             'extract_func': lambda x: float(x) if x and x != 'N/A' and x != 0.0 and x is not None else None
+        },
+        {
+            'column': 'gwp_per_m (kg CO2 eq/m)',
+            'extract_func': lambda x: float(x) if x and x != 'N/A' and x != 0.0 and x is not None else None
         }
     ]
     
@@ -175,6 +204,7 @@ def create_statistics_summary(df, timestamp, output_dir):
                 summary_rows.append({
                     'Metric': metric_name,
                     'Material Category': material,
+                    'Renovation Type': material_df['Renovation Type'].iloc[0],
                     'Count': len(values),
                     'Min': np.min(values),
                     'Max': np.max(values),
@@ -188,7 +218,7 @@ def create_statistics_summary(df, timestamp, output_dir):
     # Create DataFrame and save
     summary_df = pd.DataFrame(summary_rows)
     
-    summary_filename = f"insulation_epd_statistics_summary_{timestamp}.csv"
+    summary_filename = f"door_epd_statistics_summary_{timestamp}.csv"
     summary_filepath = os.path.join(output_dir, summary_filename)
     summary_df.to_csv(summary_filepath, index=False, encoding='utf-8-sig')
     
@@ -224,21 +254,33 @@ def fetch_material_epd_data(material_name, query_params):
     """Fetch EPD data for a single material"""
     print(f"\n{'='*80}")
     print(f"Fetching material: {material_name}")
+    print(f"Renovation Type: {query_params.get('renovation_type', 'N/A')}")
     print(f"{'='*80}")
     
-    # 生成API URL
-    url = generate_url_byname(**query_params)
-    print(f"API URL: {url}")
+    # Create a copy of query params without renovation_type for API call
+    api_params = {k: v for k, v in query_params.items() if k != 'renovation_type'}
     
-    # Get EPD data
-    epd_response = fetch_epd_data(url, API_TOKEN)
+    # 生成API URL
+    try:
+        url = generate_url_byname(**api_params)
+        print(f"API URL: {url}")
+    except Exception as e:
+        print(f"  ❌ Error generating URL: {e}")
+        return None
+    
+    # Get EPD data with error handling
+    try:
+        epd_response = fetch_epd_data(url, API_TOKEN)
+    except Exception as e:
+        print(f"  ❌ Error fetching data: {e}")
+        return None
     
     if not epd_response:
         print(f"  No data retrieved")
         return None
     
     # Save raw JSON response
-    output_dir = script_dir
+    output_dir = os.path.join(script_dir)
     os.makedirs(output_dir, exist_ok=True)
     json_filename = f"{material_name.replace(' ', '_').replace('(', '').replace(')', '')}_raw_response.json"
     json_filepath = os.path.join(output_dir, json_filename)
@@ -261,14 +303,14 @@ def fetch_material_epd_data(material_name, query_params):
     for idx, epd in enumerate(epds, start=1):
         parsed = parse_product_epd(epd)
         
-        # Debug: Check what thickness looks like in raw EPD data
-        raw_thickness = epd.get("thickness")
+        # Debug: Check what data looks like in raw EPD data
         if idx <= 3:  # Log first 3 EPDs for debugging
-            print(f"  Debug EPD #{idx}: raw thickness from EPD = {raw_thickness}, type = {type(raw_thickness)}")
-            print(f"  Debug EPD #{idx}: parsed thickness = {parsed.get('thickness')}")
+            print(f"  Debug EPD #{idx}: Product name = {parsed.get('product_name', 'N/A')}")
+            print(f"  Debug EPD #{idx}: Declared unit = {parsed.get('declared_unit', 'N/A')}")
         
-        # Add material category to the parsed data
+        # Add material category and renovation type to the parsed data
         parsed["Material Category"] = material_name
+        parsed["Renovation Type"] = query_params.get('renovation_type', 'N/A')
         
         # Append the complete parsed data
         epd_details.append(parsed)
@@ -277,17 +319,18 @@ def fetch_material_epd_data(material_name, query_params):
     
     return {
         "material_name": material_name,
+        "renovation_type": query_params.get('renovation_type', 'N/A'),
         "total_epds": len(epds),
         "epd_details": epd_details
     }
 
 def main():
     """Main function"""
-    print(f"Starting EPD data retrieval...")
+    print(f"Starting Door EPD data retrieval...")
     print(f"Current time: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     
     # Create output directory if it doesn't exist
-    output_dir = script_dir
+    output_dir = os.path.join(script_dir)
     os.makedirs(output_dir, exist_ok=True)
     print(f"Output directory: {output_dir}\n")
     
@@ -295,11 +338,19 @@ def main():
     all_epd_details = []
     
     # Iterate through all materials
-    for material_name, query_params in INSULATION_MATERIALS.items():
-        result = fetch_material_epd_data(material_name, query_params)
-        if result:
-            all_results.append(result)
-            all_epd_details.extend(result["epd_details"])
+    for material_name, query_params in DOOR_MATERIALS.items():
+        try:
+            result = fetch_material_epd_data(material_name, query_params)
+            if result:
+                all_results.append(result)
+                all_epd_details.extend(result["epd_details"])
+        except KeyboardInterrupt:
+            print(f"\n⚠ Interrupted by user. Processing data collected so far...")
+            break
+        except Exception as e:
+            print(f"\n❌ Error processing {material_name}: {e}")
+            print(f"Continuing with next material...")
+            continue
     
     # Create detailed EPD table
     print(f"\n{'='*80}")
@@ -311,8 +362,8 @@ def main():
         
         # Save detailed EPD data
         timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-        output_dir = script_dir
-        details_filename = f"insulation_epd_data_{timestamp}.csv"
+        output_dir = os.path.join(script_dir)
+        details_filename = f"door_epd_data_{timestamp}.csv"
         details_filepath = os.path.join(output_dir, details_filename)
         details_df.to_csv(details_filepath, index=False, encoding='utf-8-sig')
         print(f"✓ Detailed EPD data saved: {details_filepath}")
@@ -343,6 +394,14 @@ def main():
         material_counts = details_df['Material Category'].value_counts().sort_index()
         for material, count in material_counts.items():
             print(f"  {material}: {count} EPDs")
+        
+        # Print summary by renovation type
+        print(f"\n{'='*80}")
+        print("EPD Count by Renovation Type")
+        print(f"{'='*80}\n")
+        renovation_counts = details_df['Renovation Type'].value_counts().sort_index()
+        for renovation_type, count in renovation_counts.items():
+            print(f"  {renovation_type}: {count} EPDs")
     
     print(f"\n{'='*80}")
     print("Data retrieval completed!")

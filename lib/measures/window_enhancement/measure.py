@@ -399,7 +399,7 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
             "of soda lime silica glasses' Solar Energy Materials, 12(4), 275-288, reports 0.775 for standard "
             "float glass. ISO 9050:2003 'Glass in building - Determination of light transmittance, solar "
             "direct transmittance' provides testing methodology yielding 0.77-0.78 for clear glass.")
-        glass_solar_transmittance.setDefaultValue(0.0)
+        glass_solar_transmittance.setDefaultValue(0.837)
         args.append(glass_solar_transmittance)
 
         glass_visible_transmittance = openstudio.measure.OSArgument.makeDoubleArgument(
@@ -413,7 +413,7 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
             "15 lists 3mm clear glass VT as 0.881. McCluney, R. (1996) 'Introduction to Radiometry and "
             "Photometry' Artech House, reports clear float glass VT of 0.88. Pilkington (2016) 'Pilkington "
             "Glass Products Specifications' technical data sheet lists Optifloat Clear 3mm VT as 0.90.")
-        glass_visible_transmittance.setDefaultValue(0.0)
+        glass_visible_transmittance.setDefaultValue(0.898)
         args.append(glass_visible_transmittance)
 
         glass_front_emissivity = openstudio.measure.OSArgument.makeDoubleArgument("glass_front_emissivity", True)
@@ -427,7 +427,7 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
             "glass. ISO 10292:1994 'Glass in building - Calculation of steady-state U values' specifies "
             "0.837 for uncoated glass surfaces. EN 673:2011 'Glass in building - Determination of thermal "
             "transmittance (U value)' uses 0.837 (often rounded to 0.84).")
-        glass_front_emissivity.setDefaultValue(0.0)
+        glass_front_emissivity.setDefaultValue(0.84)
         args.append(glass_front_emissivity)
 
         glass_back_emissivity = openstudio.measure.OSArgument.makeDoubleArgument("glass_back_emissivity", True)
@@ -439,7 +439,7 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
             "ASHRAE Handbook - Fundamentals (2017) Chapter 15, NFRC 301-2019 'Standard Test Method for "
             "Emittance of Specular Surfaces', and ISO 10292:1994 all specify 0.84 (or 0.837) for both "
             "surfaces of uncoated soda-lime glass.")
-        glass_back_emissivity.setDefaultValue(0.0)
+        glass_back_emissivity.setDefaultValue(0.84)
         args.append(glass_back_emissivity)
 
         glass_front_solar_reflectance = openstudio.measure.OSArgument.makeDoubleArgument(
@@ -453,7 +453,7 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
             "Energy Materials, 12(4), 275-288, reports 0.070-0.075 for standard float glass at normal "
             "incidence. ISO 9050:2003 testing methodology yields 0.07-0.08 for clear glass front surface "
             "reflectance.")
-        glass_front_solar_reflectance.setDefaultValue(0.0)
+        glass_front_solar_reflectance.setDefaultValue(0.075)
         args.append(glass_front_solar_reflectance)
 
         glass_back_solar_reflectance = openstudio.measure.OSArgument.makeDoubleArgument(
@@ -465,7 +465,7 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
             "as front side - uncoated clear glass has symmetric optical properties. ASHRAE Handbook - "
             "Fundamentals (2017) Chapter 15 specifies identical front and back solar reflectance for uncoated "
             "glass. Rubin, M. (1985) confirms 0.07-0.075 for both surfaces of standard soda-lime glass.")
-        glass_back_solar_reflectance.setDefaultValue(0.0)
+        glass_back_solar_reflectance.setDefaultValue(0.075)
         args.append(glass_back_solar_reflectance)
 
         glass_front_visible_reflectance = openstudio.measure.OSArgument.makeDoubleArgument(
@@ -479,7 +479,7 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
             "McCluney, R. (1996) 'Introduction to Radiometry and Photometry' reports clear float glass visible "
             "reflectance of 0.08 at normal incidence. Pilkington technical specifications list 0.08 for "
             "Optifloat Clear glass.")
-        glass_front_visible_reflectance.setDefaultValue(0.0)
+        glass_front_visible_reflectance.setDefaultValue(0.081)
         args.append(glass_front_visible_reflectance)
 
         glass_back_visible_reflectance = openstudio.measure.OSArgument.makeDoubleArgument(
@@ -491,7 +491,7 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
             "Sources: Same as front side - uncoated clear glass exhibits symmetric visible reflectance. ASHRAE "
             "Handbook - Fundamentals (2017) Chapter 15, NFRC 300-2017, and ISO 9050:2003 all specify identical "
             "front and back visible reflectance (0.08) for uncoated soda-lime glass.")
-        glass_back_visible_reflectance.setDefaultValue(0.0)
+        glass_back_visible_reflectance.setDefaultValue(0.081)
         args.append(glass_back_visible_reflectance)
 
         # make an argument for selecting which gwp statistic to use for embodied carbon calculation
@@ -1764,76 +1764,15 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
         return gwp_values, thickness_summary, lifetime_values
 
     def get_film_properties(self, film_option):
-        """Get standard optical and thermal properties for different glazing film types.
-        
-        Returns default values for visible light, solar heat transmission, heat radiation,
-        and insulation based on film type (safety, solar control, decorative, low-e, etc).
-        Returns: (visible_transmittance, solar_transmittance, thermal_emissivity, thermal_resistance)
-        
-        Academic and Industry Sources:
-        
-        Safety film:
-        - Visible transmittance (0.88): Osterhaus, W. K., & Bailey, I. L. (1992). "Large area glare sources and their effect 
-          on visual discomfort and visual performance at computer workstations." Industry Applications Society Annual Meeting, 
-          IEEE, Vol. 2, pp. 1825-1829. Safety films typically maintain 85-90% visible light transmission.
-        - Solar transmittance (0.75): Smith, G. B., & Granqvist, C. G. (2010). "Green Nanotechnology: Solutions for 
-          Sustainability and Energy in the Built Environment." CRC Press, Chapter 4. Clear safety films allow 70-80% 
-          solar transmission.
-        - Thermal emissivity (0.84): ASHRAE Handbook - Fundamentals (2017), Chapter 15. Standard polyester films have 
-          emissivity ~0.84, similar to uncoated glass.
-        - Thermal resistance (0.0): Negligible additional R-value per NFRC Technical Document 100-2020
-        
-        Solar control film:
-        - Visible transmittance (0.50): Karlsson, J., Karlsson, B., & Roos, A. (2001). "A simple model for assessing 
-          the energy performance of windows." Energy and Buildings, 33(7), 641-651. Mid-range solar control films typically 
-          allow 45-55% visible light.
-        - Solar transmittance (0.30): Lee, E. S., Selkowitz, S. E., Clear, R. D., DiBartolomeo, D. L., Klems, J. H., 
-          Fernandes, L. L., ... & Inkarojrit, V. (2006). "Advancement of electrochromic windows." California Energy 
-          Commission Report CEC-500-2006-052. Solar control films reduce solar heat gain to 25-35%.
-        - Thermal emissivity (0.84): Standard film substrate, ASHRAE Handbook - Fundamentals (2017)
-        - Thermal resistance (0.0): Minimal R-value contribution per manufacturer specifications
-        
-        Anti-graffiti film:
-        - Visible transmittance (0.90): International Window Film Association (IWFA) Technical Bulletin TB-001 (2018). 
-          Anti-graffiti films are designed for maximum clarity with 88-92% visible transmittance.
-        - Solar transmittance (0.80): Curcija, D., Vidanovic, S., Hart, R., & Jonsson, J. (2018). "WINDOW Technical 
-          Documentation." Lawrence Berkeley National Laboratory, LBNL-2000012. Clear protective films maintain 78-82% 
-          solar transmission.
-        - Thermal emissivity (0.84): Standard polyester film properties
-        - Thermal resistance (0.0): No insulating properties
-        
-        Decorative film:
-        - Visible transmittance (0.70): Varies significantly by pattern. Value based on Tzempelikos, A., & Athienitis, 
-          A. K. (2007). "The impact of shading design and control on building cooling and lighting demand." Solar Energy, 
-          81(3), 369-382. Translucent decorative films typically 65-75% VT.
-        - Solar transmittance (0.65): Nielsen, T. R., Duer, K., & Svendsen, S. (2000). "Energy performance of glazings 
-          and windows." Solar Energy, 69(Suppl. 1-6), 137-143. Decorative films reduce solar transmission to 60-70%.
-        - Thermal emissivity (0.84): Standard substrate
-        - Thermal resistance (0.0): Minimal insulating effect
-        
-        Low-E film (retrofit low-emissivity):
-        - Visible transmittance (0.75): Arasteh, D., Reilly, S., & Rubin, M. (1989). "A versatile procedure for 
-          calculating heat transfer through windows." ASHRAE Transactions, 95(2), 755-765. Low-E films typically 
-          70-80% VT to balance light transmission with IR reflection.
-        - Solar transmittance (0.65): Rubin, M. (1985). "Optical properties of soda lime silica glasses." Solar Energy 
-          Materials, 12(4), 275-288. Low-E coatings reduce solar heat gain to 60-70% while maintaining daylight.
-        - Thermal emissivity (0.15): Granqvist, C. G. (2007). "Transparent conductors as solar energy materials: A 
-          panoramic review." Solar Energy Materials and Solar Cells, 91(17), 1529-1598. Low-E coatings achieve 
-          emissivity of 0.10-0.20 for effective IR reflection.
-        - Thermal resistance (0.05): Adds modest R-value. Collins, R. E., & Simko, T. M. (1998). "Current status of 
-          the science and technology of vacuum glazing." Solar Energy, 62(3), 189-213. Retrofit low-E films provide 
-          ΔR ≈ 0.04-0.06 m²·K/W.
-        
-        Default/unknown film:
-        - Conservative mid-range values based on clear protective films (0.85, 0.70, 0.84, 0.0)
+        """Get standard optical and thermal properties for different glazing film types from technical data of product.
         """
         # Film properties: (visible_transmittance, solar_transmittance, thermal_emissivity, thermal_resistance)
         film_properties = {
-            'safety film': (0.88, 0.75, 0.84, 0.0),
-            'solar control film': (0.50, 0.30, 0.84, 0.0),
-            'anti-graffiti film': (0.90, 0.80, 0.84, 0.0),
-            'decorative film': (0.70, 0.65, 0.84, 0.0),
-            'low-e film': (0.75, 0.65, 0.15, 0.05)
+            'safety film': (0.89, 0.81, 0.87, 0.16),
+            'solar control film': (0.23, 0.13, 0.52, 0.21),
+            'anti-graffiti film': (0.89, 0.82, 0.9, 0.16),
+            'decorative film': (0.85, 0.76, 0.7, 0.16),
+            'low-e film': (0.12, 0.08, 0.38, 0.23)
         }
         return film_properties.get(film_option, (0.85, 0.70, 0.84, 0.0))
 
@@ -1930,7 +1869,7 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
             glass_pane.setInfraredTransmittanceatNormalIncidence(0.0)
             glass_pane.setFrontSideInfraredHemisphericalEmissivity(front_emissivity)
             glass_pane.setBackSideInfraredHemisphericalEmissivity(back_emissivity)
-            glass_pane.setThermalConductivity(0.9)  # W/m-K for typical glass
+            glass_pane.setThermalConductivity(0.9)  # W/m-K for Openstudio Material: Clear 3mm
             
             # Add glass layer
             layers.append(glass_pane)

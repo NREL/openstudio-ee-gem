@@ -1,0 +1,55 @@
+﻿Metric,Material Category,Component Type,Count,Min,Max,Mean,Median,Std Dev,Q1 (25th percentile),Q3 (75th percentile)
+density,Casement Window,whole window,1,2400.0,2400.0,2400.0,2400.0,0.0,2400.0,2400.0
+density,Fixed Window,whole window,1,2700.0,2700.0,2700.0,2700.0,0.0,2700.0,2700.0
+density,Insulating Glazing Unit - Double Pane,glass pane,4,2500.0,2500.0,2500.0,2500.0,0.0,2500.0,2500.0
+density,Insulating Glazing Unit - Triple Pane,glass pane,4,2500.0,2500.0,2500.0,2500.0,0.0,2500.0,2500.0
+density,Processed Non-Insulating Glass Panes,glass pane,2,2500.0,2530.0,2515.0,2515.0,15.0,2507.5,2522.5
+density,Project Window,whole window,1,2400.0,2400.0,2400.0,2400.0,0.0,2400.0,2400.0
+density,Storefront Window,whole window,1,2400.0,2400.0,2400.0,2400.0,0.0,2400.0,2400.0
+density,Window Perimeter Caulking - Sealant Acrylic,window perimeter caulking,1,1610.0,1610.0,1610.0,1610.0,0.0,1610.0,1610.0
+density,Window Perimeter Caulking - Single-Ply Polyurethane,window perimeter caulking,1,1400.0,1400.0,1400.0,1400.0,0.0,1400.0,1400.0
+reference_service_life,Insulating Glazing Unit - Double Pane,glass pane,1,30.0,30.0,30.0,30.0,0.0,30.0,30.0
+gwp_per_declared_unit,Casement Window,whole window,6,106.0,4840.0,2483.5116666666668,2495.0,2356.5227672032415,131.3025,4840.0
+gwp_per_declared_unit,Fixed Window,whole window,7,2.65,293.2286,120.18917599999999,94.39,87.74754722065421,81.33281600000001,144.195
+gwp_per_declared_unit,Insulating Glazing Unit - Double Pane,glass pane,8,38.1,694.0,241.51375000000002,58.7,257.3046522576642,50.625,454.03249999999997
+gwp_per_declared_unit,Insulating Glazing Unit - Triple Pane,glass pane,7,38.1,582.0,218.11428571428573,90.9,227.77386924360763,74.95,332.95
+gwp_per_declared_unit,Processed Non-Insulating Glass Panes,glass pane,3,26.7,577.0,213.60000000000002,37.1,256.99767832933173,31.9,307.05
+gwp_per_declared_unit,Project Window,whole window,6,125.07,4840.0,2514.7164333333335,2566.6143,2325.873781194845,185.80714999999998,4840.0
+gwp_per_declared_unit,Sliding Window,whole window,3,1.7,295.28,161.66,188.0,121.29207393725278,94.85,241.64
+gwp_per_declared_unit,Storefront Window,whole window,2,150.0,164.35,157.175,157.175,7.174999999999997,153.5875,160.7625
+gwp_per_declared_unit,Window Perimeter Caulking - Sealant Acrylic,window perimeter caulking,1,1.7,1.7,1.7,1.7,0.0,1.7,1.7
+gwp_per_declared_unit,Window Perimeter Caulking - Single-Ply Polyurethane,window perimeter caulking,1,3.67,3.67,3.67,3.67,0.0,3.67,3.67
+gwp_per_declared_unit,Wood Window Frame,window frame,36,77.05,126.14,100.805,102.52000000000001,12.256811371641485,90.8575,108.6925
+gwp_per_declared_unit,Wood-Aluminium Window Frame,window frame,18,95.51,126.14,110.035,109.005,8.064522614513521,105.22,114.7175
+gwp_per_kg (kg CO2 eq/kg),Casement Window,whole window,6,3.79,165.7534247,85.1438956005,85.819911316,80.61237334409257,4.41662566125,165.7534247
+gwp_per_kg (kg CO2 eq/kg),Fixed Window,whole window,4,1.000105955,106.8548387,28.84422545925,3.7609785909999998,45.06337710781475,2.0725967374999996,30.532607312750002
+gwp_per_kg (kg CO2 eq/kg),Insulating Glazing Unit - Double Pane,glass pane,7,0.8264642082,13.20991887,4.834234946742858,2.538461538,4.40442436945483,1.912052117,6.7203478885
+gwp_per_kg (kg CO2 eq/kg),Insulating Glazing Unit - Triple Pane,glass pane,7,0.8264642082,9.619238477,4.2607986274571426,2.468619247,3.3195935775328165,1.971800434,6.483833796000001
+gwp_per_kg (kg CO2 eq/kg),Processed Non-Insulating Glass Panes,glass pane,2,1.648148148,2.456953642,2.052550895,2.052550895,0.4044027470000001,1.8503495215,2.2547522685000003
+gwp_per_kg (kg CO2 eq/kg),Project Window,whole window,5,3.79,165.7534247,100.9953951342,165.7534247,79.31207637301834,3.926701571,165.7534247
+gwp_per_kg (kg CO2 eq/kg),Sliding Window,whole window,3,4.460422961,72.03389831,27.00451734666667,4.519230769,31.840589683037436,4.4898268649999995,38.2765645395
+gwp_per_kg (kg CO2 eq/kg),Storefront Window,whole window,1,4.347826087,4.347826087,4.347826087,4.347826087,0.0,4.347826087,4.347826087
+gwp_per_kg (kg CO2 eq/kg),Window Perimeter Caulking - Sealant Acrylic,window perimeter caulking,1,1.7,1.7,1.7,1.7,0.0,1.7,1.7
+gwp_per_kg (kg CO2 eq/kg),Window Perimeter Caulking - Single-Ply Polyurethane,window perimeter caulking,1,3.67,3.67,3.67,3.67,0.0,3.67,3.67
+gwp_per_kg (kg CO2 eq/kg),Wood Window Frame,window frame,36,1.61737332,2.691959799,2.2146266965277777,2.2091547800000004,0.26627496713990384,2.03426321125,2.451693051
+gwp_per_kg (kg CO2 eq/kg),Wood-Aluminium Window Frame,window frame,18,1.913117547,2.691959799,2.403770113388889,2.454065714,0.20255661260096694,2.2990511025,2.53563435625
+gwp_per_m3 (kg CO2 eq/m3),Casement Window,whole window,1,9096.0,9096.0,9096.0,9096.0,0.0,9096.0,9096.0
+gwp_per_m3 (kg CO2 eq/m3),Fixed Window,whole window,1,13748.0314959,13748.0314959,13748.0314959,13748.0314959,0.0,13748.0314959,13748.0314959
+gwp_per_m3 (kg CO2 eq/m3),Insulating Glazing Unit - Double Pane,glass pane,6,2066.1605205,35937.5,16631.249086117285,15650.0,11701.583071395928,6885.097719375,23802.777777777777
+gwp_per_m3 (kg CO2 eq/m3),Insulating Glazing Unit - Triple Pane,glass pane,6,2066.1605205,31300.0,17369.13888036445,21296.25918503674,10445.431985342278,8613.792480416667,23226.452905811624
+gwp_per_m3 (kg CO2 eq/m3),Processed Non-Insulating Glass Panes,glass pane,2,4198.11320754717,6183.333333333333,5190.723270440251,5190.723270440251,992.6100628930817,4694.4182389937105,5687.028301886792
+gwp_per_m3 (kg CO2 eq/m3),Project Window,whole window,1,9096.0,9096.0,9096.0,9096.0,0.0,9096.0,9096.0
+gwp_per_m3 (kg CO2 eq/m3),Window Perimeter Caulking - Sealant Acrylic,window perimeter caulking,1,2737.0,2737.0,2737.0,2737.0,0.0,2737.0,2737.0
+gwp_per_m3 (kg CO2 eq/m3),Window Perimeter Caulking - Single-Ply Polyurethane,window perimeter caulking,1,5138.0,5138.0,5138.0,5138.0,0.0,5138.0,5138.0
+gwp_per_m3 (kg CO2 eq/m3),Wood Window Frame,window frame,36,866.8000000000001,1302.4285714285713,1093.899294532628,1088.5625,112.17862060796377,1025.2541666666666,1192.904761904762
+gwp_per_m3 (kg CO2 eq/m3),Wood-Aluminium Window Frame,window frame,18,876.1666666666667,1218.111111111111,1074.041049382716,1058.7611111111112,96.01475790233602,1016.8541666666667,1150.9138888888888
+gwp_per_m2 (kg CO2 eq/m2),Casement Window,whole window,6,106.0,4840.0,2483.5116666666668,2495.0,2356.5227672032415,131.3025,4840.0
+gwp_per_m2 (kg CO2 eq/m2),Fixed Window,whole window,7,2.65,194.0,99.78132471794869,94.39,55.998113763726394,81.33281600000001,122.3818205128205
+gwp_per_m2 (kg CO2 eq/m2),Insulating Glazing Unit - Double Pane,glass pane,8,38.1,694.0,241.51375000000002,58.7,257.3046522576642,50.625,454.03249999999997
+gwp_per_m2 (kg CO2 eq/m2),Insulating Glazing Unit - Triple Pane,glass pane,7,38.1,582.0,218.11428571428573,90.9,227.77386924360763,74.95,332.95
+gwp_per_m2 (kg CO2 eq/m2),Processed Non-Insulating Glass Panes,glass pane,3,26.7,577.0,213.60000000000002,37.1,256.99767832933173,31.9,307.05
+gwp_per_m2 (kg CO2 eq/m2),Project Window,whole window,6,125.07,4840.0,2490.9072735042732,2495.1868205128203,2349.10764850671,150.09341025641027,4840.0
+gwp_per_m2 (kg CO2 eq/m2),Sliding Window,whole window,3,1.7,295.28,133.42556776556776,103.2967032967033,121.73226210455303,52.49835164835165,199.28835164835164
+gwp_per_m2 (kg CO2 eq/m2),Storefront Window,whole window,2,150.0,164.35,157.175,157.175,7.174999999999997,153.5875,160.7625
+gwp_per_m2 (kg CO2 eq/m2),Wood Window Frame,window frame,36,77.05,126.14,100.805,102.52000000000001,12.256811371641485,90.8575,108.6925
+gwp_per_m2 (kg CO2 eq/m2),Wood-Aluminium Window Frame,window frame,18,95.51,126.14,110.035,109.005,8.064522614513521,105.22,114.7175
