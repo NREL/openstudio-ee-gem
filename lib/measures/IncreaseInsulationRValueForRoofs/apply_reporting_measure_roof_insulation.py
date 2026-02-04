@@ -237,22 +237,20 @@ def create_scatterplot(csv_path, measure_dir):
     print(f"  DEBUG: CSV exists = {os.path.exists(csv_path)}")
     
     try:
-        import matplotlib
-        matplotlib.use('Agg')  # Use non-interactive backend
-        import matplotlib.pyplot as plt
+        import plotly.graph_objects as go
+        from plotly.subplots import make_subplots
         import numpy as np
     except ImportError:
-        print("✗ matplotlib not found. Installing matplotlib...")
+        print("✗ plotly not found. Installing plotly...")
         import subprocess
         try:
-            subprocess.check_call([sys.executable, "-m", "pip", "install", "matplotlib"])
-            import matplotlib
-            matplotlib.use('Agg')
-            import matplotlib.pyplot as plt
+            subprocess.check_call([sys.executable, "-m", "pip", "install", "plotly", "kaleido"])
+            import plotly.graph_objects as go
+            from plotly.subplots import make_subplots
             import numpy as np
-            print("✓ matplotlib installed successfully")
+            print("✓ plotly installed successfully")
         except Exception as e:
-            print(f"✗ Failed to install matplotlib: {e}")
+            print(f"✗ Failed to install plotly: {e}")
             print("  Skipping plot generation")
             return
     
@@ -334,18 +332,39 @@ def create_scatterplot(csv_path, measure_dir):
     
     print(f"  Processing {len(df)} scenarios from CSV...")
     
+    baseline_energy = None
+    baseline_r_value = None
+    
     for scenario in df.index:
         try:
             # Extract R-value from scenario name
             r_value_match = re.search(r'R(\d+\.?\d*)', scenario)
             r_value = float(r_value_match.group(1)) if r_value_match else None
             
-            # Get carbon and material from construction data
+            # Check if this is a baseline scenario
+            is_baseline = (r_value == 0.0 or 'R0' in scenario or 'baseline' in scenario.lower())
+            
+            if is_baseline:
+                # For baseline, we only need energy data (no carbon or material)
+                energy = df.loc[scenario, 'total_site_energy_GJ'] if 'total_site_energy_GJ' in df.columns else None
+                
+                if energy is not None and not pd.isna(energy):
+                    energy = float(energy)
+                    baseline_energy = energy
+                    baseline_r_value = r_value
+                    # Add baseline to the list with zero carbon and 'Baseline' material
+                    r_values.append(r_value)
+                    carbon_values.append(0)  # Baseline has no embodied carbon
+                    energy_values.append(energy)
+                    scenario_names.append(scenario)
+                    material_types.append('Baseline (No Added Insulation)')
+                    print(f"  ✓ Added baseline scenario: R={r_value}, Energy={energy:.2f} GJ")
+                continue
+            
+            # For non-baseline scenarios, get carbon and material from construction data
             carbon = df.loc[scenario, 'total_embodied_carbon_kgCO2eq'] if 'total_embodied_carbon_kgCO2eq' in df.columns else None
             material_type = df.loc[scenario, 'insulation_material_type'] if 'insulation_material_type' in df.columns else 'Unknown'
             energy = df.loc[scenario, 'total_site_energy_GJ'] if 'total_site_energy_GJ' in df.columns else None
-            
-            print(f"  {scenario}: R={r_value}, Carbon={carbon}, Energy={energy}, Material={material_type}")
             
             # Convert to proper types
             if carbon is not None and not pd.isna(carbon):
@@ -379,115 +398,182 @@ def create_scatterplot(csv_path, measure_dir):
     
     # Define color map for insulation materials (includes all 11 material types from the measure)
     material_colors = {
-        'Blown Cellulose': '#bcbd22',  # yellow-green
-        'Blown Fiberglass': '#17becf',  # cyan
-        'Blown Mineral Wool': '#aec7e8',  # light blue
-        'Expanded Polystyrene (EPS) Foam Board': '#1f77b4',  # blue
-        'Extruded Polystyrene (XPS) Foam Board': '#ff7f0e',  # orange
-        'Fiberglass Batts': '#2ca02c',  # green
-        'Graphite Polystyrene (GPS) Foam Board': '#d62728',  # red
-        'Mineral Wool Heavy Density Blanket': '#9467bd',  # purple
-        'Mineral Wool Light Density Blanket': '#8c564b',  # brown
-        'Polyiso Insulation Foam Board': '#e377c2',  # pink
-        'Pure Wool Batts': '#7f7f7f',  # gray
+        'Blown Cellulose': '#bcbd22',
+        'Blown Fiberglass': '#17becf',
+        'Blown Mineral Wool': '#aec7e8',
+        'Expanded Polystyrene (EPS) Foam Board': '#1f77b4',
+        'Extruded Polystyrene (XPS) Foam Board': '#ff7f0e',
+        'Fiberglass Batts': '#2ca02c',
+        'Graphite Polystyrene (GPS) Foam Board': '#d62728',
+        'Mineral Wool Heavy Density Blanket': '#9467bd',
+        'Mineral Wool Light Density Blanket': '#8c564b',
+        'Polyiso Insulation Foam Board': '#e377c2',
+        'Pure Wool Batts': '#7f7f7f',
+        'Baseline (No Added Insulation)': '#000000',
     }
     
-    # Create figure with dual y-axes
-    fig, ax1 = plt.subplots(figsize=(14, 8))
-    ax2 = ax1.twinx()  # Create second y-axis for carbon
+    # Sort materials by average embodied carbon (descending) for legend ordering
+    material_avg_carbon = {}
+    for material in set(material_types):
+        material_carbon = [c for c, m in zip(carbon_values, material_types) if m == material and c > 0]
+        if material_carbon:
+            material_avg_carbon[material] = sum(material_carbon) / len(material_carbon)
+        else:
+            material_avg_carbon[material] = 0
     
-    # First, plot site energy on left axis (primary)
-    color1 = 'tab:blue'
-    ax1.set_xlabel('Target Insulation R-Value (IP)', fontsize=12, fontweight='bold')
-    ax1.set_ylabel('Total Site Energy (GJ)', color=color1, fontsize=12, fontweight='bold')
+    sorted_materials = sorted(material_avg_carbon.keys(), key=lambda m: material_avg_carbon[m], reverse=True)
+    
+    # Create figure with dual y-axes using Plotly
+    fig = make_subplots(specs=[[{"secondary_y": True}]])
     
     # Check if we have energy data
     energy_with_data = [e for e in energy_values if e is not None]
     if energy_with_data:
-        # Plot site energy as a single series
-        r_with_energy = [r for r, e in zip(r_values, energy_values) if e is not None]
-        e_with_data = [e for e in energy_values if e is not None]
+        # Separate baseline and non-baseline for energy plot
+        baseline_r = [r for r, m in zip(r_values, material_types) if 'Baseline' in m]
+        baseline_e = [e for e, m in zip(energy_values, material_types) if 'Baseline' in m]
         
-        # Debug: Check for unique energy values per R-value
-        unique_r_values = sorted(set(r_with_energy))
-        print(f"\n  Energy data summary:")
-        for r_val in unique_r_values:
-            energy_at_r = [e for r, e in zip(r_with_energy, e_with_data) if r == r_val]
-            print(f"    R={r_val:.1f}: {len(energy_at_r)} data points, energy={energy_at_r[0]:.2f} GJ")
+        non_baseline_r = [r for r, m in zip(r_values, material_types) if 'Baseline' not in m]
+        non_baseline_e = [e for e, m in zip(energy_values, material_types) if 'Baseline' not in m]
         
-        ax1.scatter(r_with_energy, e_with_data, color=color1, s=100, alpha=0.6, 
-                   label='Site Energy', marker='o', zorder=3)
-        ax1.tick_params(axis='y', labelcolor=color1)
+        # Plot baseline as horizontal line (if it exists)
+        if baseline_e:
+            baseline_energy_value = baseline_e[0]
+            x_min, x_max = min(r_values), max(r_values)
+            fig.add_trace(
+                go.Scatter(
+                    x=[x_min, x_max],
+                    y=[baseline_energy_value, baseline_energy_value],
+                    mode='lines',
+                    name='Op. Baseline (R=0)',
+                    line=dict(color='purple', width=3, dash='dash'),
+                    showlegend=True
+                ),
+                secondary_y=False
+            )
         
-        # Add trendline for site energy
-        if len(r_with_energy) >= 2:
-            z1 = np.polyfit(r_with_energy, e_with_data, 1)  # Linear fit
-            p1 = np.poly1d(z1)
-            r_sorted = np.sort(np.unique(r_with_energy))
-            ax1.plot(r_sorted, p1(r_sorted), color=color1, linestyle='--', linewidth=2, 
-                    alpha=0.8, label=f'Energy Trend (slope={z1[0]:.2f})', zorder=2)
+        # Plot non-baseline as star markers
+        if non_baseline_r:
+            fig.add_trace(
+                go.Scatter(
+                    x=non_baseline_r,
+                    y=non_baseline_e,
+                    mode='markers',
+                    name='Site Energy',
+                    marker=dict(color='purple', size=18, symbol='star'),
+                    showlegend=True
+                ),
+                secondary_y=False
+            )
     
-    ax1.grid(True, alpha=0.3)
-    
-    # Plot embodied carbon on right axis with different colors for each material type
-    ax2.set_ylabel('Total Embodied Carbon (kgCO2eq)', fontsize=12, fontweight='bold')
-    
-    for material in material_colors.keys():
+    # Plot embodied carbon on right axis with different colors for each material (sorted by carbon)
+    for material in sorted_materials:
+        if material == 'Baseline (No Added Insulation)':
+            continue  # Skip baseline for embodied carbon plot
+            
         # Filter data for this material
         mask = [mat == material for mat in material_types]
         r_vals_mat = [r for r, m in zip(r_values, mask) if m]
         carbon_vals_mat = [c for c, m in zip(carbon_values, mask) if m]
         
-        if r_vals_mat:  # Only plot if there's data for this material
+        if r_vals_mat:
             # Simplify legend labels
             label = material.replace(' Foam Board', '').replace(' Blanket', '').replace(' Batts', '')
             
             # Plot embodied carbon with material-specific colors
-            ax2.scatter(r_vals_mat, carbon_vals_mat, 
-                       color=material_colors[material], 
-                       s=100, alpha=0.7, 
-                       label=label,
-                       marker='s',  # Square markers for carbon
-                       edgecolors='black', 
-                       linewidths=0.5,
-                       zorder=3)
-            
-            # Add trendline for each material type if there are at least 2 points
-            if len(r_vals_mat) >= 2:
-                z_mat = np.polyfit(r_vals_mat, carbon_vals_mat, 1)  # Linear fit
-                p_mat = np.poly1d(z_mat)
-                r_mat_sorted = np.sort(r_vals_mat)
-                ax2.plot(r_mat_sorted, p_mat(r_mat_sorted), 
-                        color=material_colors[material], 
-                        linestyle='--', linewidth=1.5, alpha=0.6, zorder=2)
+            fig.add_trace(
+                go.Scatter(
+                    x=r_vals_mat,
+                    y=carbon_vals_mat,
+                    mode='markers',
+                    name=label,
+                    marker=dict(
+                        color=material_colors[material],
+                        size=12,
+                        symbol='square',
+                        line=dict(color='black', width=1)
+                    ),
+                    showlegend=True
+                ),
+                secondary_y=True
+            )
     
-    ax2.tick_params(axis='y')
+    # Update layout
+    fig.update_xaxes(
+        title_text='Target R-value ((hr·ft²·°F)/BTU)',
+        title_font=dict(size=16),
+        tickfont=dict(size=13),
+        showgrid=False,
+        showline=True,
+        linewidth=2,
+        linecolor='black',
+        ticks='inside',
+        ticklen=5,
+        mirror=True
+    )
     
-    # Configure plot
-    ax1.set_xlabel('Target Insulation R-Value (IP)', fontsize=12, fontweight='bold')
-    ax1.grid(True, alpha=0.3)
+    fig.update_yaxes(
+        title_text='Total Site Energy (GJ)',
+        title_font=dict(size=16, color='purple'),
+        tickfont=dict(size=13, color='purple'),
+        showgrid=False,
+        showline=True,
+        linewidth=2,
+        linecolor='black',
+        ticks='inside',
+        tickcolor='purple',
+        ticklen=5,
+        mirror=True,
+        secondary_y=False
+    )
     
-    # Add title
-    plt.title('Energy and Carbon Impact vs. Roof Insulation R-Value', fontsize=14, fontweight='bold', pad=20)
+    fig.update_yaxes(
+        title_text='Total Embodied Carbon (kg CO₂ eq)',
+        title_font=dict(size=16),
+        tickfont=dict(size=13),
+        showgrid=False,
+        showline=True,
+        linewidth=2,
+        linecolor='black',
+        ticks='inside',
+        ticklen=5,
+        mirror=True,
+        secondary_y=True
+    )
     
-    # Add legends - Site Energy on left, Materials on right
-    lines1, labels1 = ax1.get_legend_handles_labels()
-    ax1.legend(lines1, labels1, loc='upper left', fontsize=10, title='Operational Energy')
-    
-    # Material legend on the right side
-    lines2, labels2 = ax2.get_legend_handles_labels()
-    ax2.legend(lines2, labels2, loc='upper right', fontsize=9, title='Insulation Material', ncol=1)
-    
-    # Adjust layout to prevent label cutoff
-    fig.tight_layout()
+    fig.update_layout(
+        title=dict(
+            text='Energy and Carbon Impact vs. Roof Insulation R-Value',
+            font=dict(size=18),
+            x=0.5,
+            xanchor='center'
+        ),
+        width=1100,
+        height=700,
+        plot_bgcolor='white',
+        paper_bgcolor='white',
+        legend=dict(
+            x=0.02,
+            y=0.98,
+            xanchor='left',
+            yanchor='top',
+            font=dict(size=11),
+            bgcolor='rgba(255,255,255,0.9)',
+            bordercolor='black',
+            borderwidth=1
+        ),
+        margin=dict(l=80, r=80, t=80, b=80)
+    )
     
     # Save the plot
-    output_plot = measure_dir / "resources" / "roof_insulation_carbon_impact_year1.png"
-    output_plot.parent.mkdir(parents=True, exist_ok=True)
-    plt.savefig(output_plot, dpi=300, bbox_inches='tight')
-    plt.close()
+    output_plot_jpeg = measure_dir / "resources" / "roof_insulation_carbon_impact_year1.jpeg"
+    output_plot_html = measure_dir / "resources" / "roof_insulation_carbon_impact_year1.html"
+    output_plot_jpeg.parent.mkdir(parents=True, exist_ok=True)
     
-    print(f"✓ Scatterplot saved: {output_plot}")
+    fig.write_image(str(output_plot_jpeg), scale=2)
+    fig.write_html(str(output_plot_html))
+    
+    print(f"✓ Scatterplot saved: {output_plot_jpeg} and {output_plot_html}")
     print(f"  Data points plotted: {len(r_values)}")
     print(f"  R-value range: {min(r_values):.1f} - {max(r_values):.1f}")
     print(f"  Carbon range: {min(carbon_values):.2f} - {max(carbon_values):.2f} kgCO2eq")
@@ -506,12 +592,11 @@ def create_carbon_comparison_plot(csv_path, measure_dir):
     print(f"{'='*80}")
     
     try:
-        import matplotlib
-        matplotlib.use('Agg')  # Use non-interactive backend
-        import matplotlib.pyplot as plt
+        import plotly.graph_objects as go
+        from plotly.subplots import make_subplots
         import numpy as np
     except ImportError:
-        print("✗ matplotlib not found. Skipping carbon comparison plot.")
+        print("✗ plotly not found. Skipping carbon comparison plot.")
         return
     
     import pandas as pd
@@ -577,11 +662,34 @@ def create_carbon_comparison_plot(csv_path, measure_dir):
     
     print(f"  Processing {len(df)} scenarios with carbon data from CSV...")
     
+    baseline_operational_carbon = None
+    baseline_r_value = None
+    
     for scenario in df.index:
         try:
             # Extract R-value from scenario name
             r_value_match = re.search(r'R(\d+\.?\d*)', scenario)
             r_value = float(r_value_match.group(1)) if r_value_match else None
+            
+            # Check if this is a baseline scenario
+            is_baseline = (r_value == 0.0 or 'R0' in scenario or 'baseline' in scenario.lower())
+            
+            if is_baseline:
+                # For baseline, we only need operational carbon data
+                operational_carbon = df.loc[scenario, 'total_operational_carbon_kgCO2e'] if 'total_operational_carbon_kgCO2e' in df.columns else None
+                
+                if operational_carbon is not None and not pd.isna(operational_carbon):
+                    operational_carbon = float(operational_carbon)
+                    baseline_operational_carbon = operational_carbon
+                    baseline_r_value = r_value
+                    # Add baseline to the list with zero embodied carbon and 'Baseline' material
+                    r_values.append(r_value)
+                    embodied_carbon_values.append(0)  # Baseline has no embodied carbon
+                    operational_carbon_values.append(operational_carbon)
+                    scenario_names.append(scenario)
+                    material_types.append('Baseline (No Added Insulation)')
+                    print(f"  ✓ Added baseline scenario: R={r_value}, Op. Carbon={operational_carbon:.2f} kgCO2e")
+                continue
             
             # Get carbon values and material from CSV
             embodied_carbon = df.loc[scenario, 'total_embodied_carbon_kgCO2eq'] if 'total_embodied_carbon_kgCO2eq' in df.columns else None
@@ -627,43 +735,72 @@ def create_carbon_comparison_plot(csv_path, measure_dir):
         'Mineral Wool Light Density Blanket': '#8c564b',
         'Polyiso Insulation Foam Board': '#e377c2',
         'Pure Wool Batts': '#7f7f7f',
+        'Baseline (No Added Insulation)': '#000000',
     }
     
-    # Create figure with dual y-axes
-    fig, ax1 = plt.subplots(figsize=(14, 8))
-    ax2 = ax1.twinx()
+    # Sort materials by average embodied carbon (descending) for legend ordering
+    material_avg_carbon = {}
+    for material in set(material_types):
+        material_carbon = [ec for ec, m in zip(embodied_carbon_values, material_types) if m == material and ec > 0]
+        if material_carbon:
+            material_avg_carbon[material] = sum(material_carbon) / len(material_carbon)
+        else:
+            material_avg_carbon[material] = 0
     
-    # Left axis: Operational Carbon (blue)
-    color1 = 'tab:blue'
-    ax1.set_xlabel('Target Insulation R-Value (IP)', fontsize=12, fontweight='bold')
-    ax1.set_ylabel('Operational Carbon (kgCO2e)', color=color1, fontsize=12, fontweight='bold')
+    sorted_materials = sorted(material_avg_carbon.keys(), key=lambda m: material_avg_carbon[m], reverse=True)
     
-    # Plot operational carbon as single series (same for all materials at same R-value)
-    unique_r_values = sorted(set(r_values))
-    print(f"\n  Operational Carbon data summary:")
-    for r_val in unique_r_values:
-        op_carbon_at_r = [oc for r, oc in zip(r_values, operational_carbon_values) if r == r_val]
-        if op_carbon_at_r:
-            print(f"    R={r_val:.1f}: {op_carbon_at_r[0]:.2f} kgCO2e")
+    # Create figure with dual y-axes using Plotly
+    fig = make_subplots(specs=[[{"secondary_y": True}]])
     
-    ax1.scatter(r_values, operational_carbon_values, color=color1, s=100, alpha=0.6,
-               label='Operational Carbon', marker='o', zorder=3)
-    ax1.tick_params(axis='y', labelcolor=color1)
+    # Separate baseline and non-baseline for operational carbon plot
+    baseline_r = [r for r, m in zip(r_values, material_types) if 'Baseline' in m]
+    baseline_oc = [oc for oc, m in zip(operational_carbon_values, material_types) if 'Baseline' in m]
     
-    # Add trendline for operational carbon
-    if len(r_values) >= 2:
-        z1 = np.polyfit(r_values, operational_carbon_values, 1)
-        p1 = np.poly1d(z1)
-        r_sorted = np.sort(unique_r_values)
-        ax1.plot(r_sorted, p1(r_sorted), color=color1, linestyle='--', linewidth=2,
-                alpha=0.8, label=f'Op. Carbon Trend (slope={z1[0]:.2f})', zorder=2)
+    non_baseline_r = [r for r, m in zip(r_values, material_types) if 'Baseline' not in m]
+    non_baseline_oc = [oc for oc, m in zip(operational_carbon_values, material_types) if 'Baseline' not in m]
     
-    ax1.grid(True, alpha=0.3)
+    # Plot baseline as horizontal line (if it exists)
+    if baseline_oc:
+        baseline_oc_value = baseline_oc[0]
+        x_min, x_max = min(r_values), max(r_values)
+        fig.add_trace(
+            go.Scatter(
+                x=[x_min, x_max],
+                y=[baseline_oc_value, baseline_oc_value],
+                mode='lines',
+                name='Baseline (R=0)',
+                line=dict(color='purple', width=3, dash='dash'),
+                showlegend=True
+            ),
+            secondary_y=False
+        )
     
-    # Right axis: Embodied Carbon with material-specific colors
-    ax2.set_ylabel('Embodied Carbon (kgCO2e)', fontsize=12, fontweight='bold')
+    # Plot non-baseline operational carbon as star markers
+    if non_baseline_r:
+        unique_r_values = sorted(set(non_baseline_r))
+        print(f"\n  Operational Carbon data summary:")
+        for r_val in unique_r_values:
+            op_carbon_at_r = [oc for r, oc in zip(non_baseline_r, non_baseline_oc) if r == r_val]
+            if op_carbon_at_r:
+                print(f"    R={r_val:.1f}: {op_carbon_at_r[0]:.2f} kgCO2e")
+        
+        fig.add_trace(
+            go.Scatter(
+                x=non_baseline_r,
+                y=non_baseline_oc,
+                mode='markers',
+                name='Operational Carbon',
+                marker=dict(color='purple', size=18, symbol='star'),
+                showlegend=True
+            ),
+            secondary_y=False
+        )
     
-    for material in material_colors.keys():
+    # Plot embodied carbon on right axis with material-specific colors (sorted by carbon)
+    for material in sorted_materials:
+        if material == 'Baseline (No Added Insulation)':
+            continue  # Skip baseline for embodied carbon plot
+            
         # Filter data for this material
         mask = [mat == material for mat in material_types]
         r_vals_mat = [r for r, m in zip(r_values, mask) if m]
@@ -674,46 +811,102 @@ def create_carbon_comparison_plot(csv_path, measure_dir):
             label = material.replace(' Foam Board', '').replace(' Blanket', '').replace(' Batts', '')
             
             # Plot embodied carbon with material-specific colors
-            ax2.scatter(r_vals_mat, embodied_vals_mat,
-                       color=material_colors[material],
-                       s=100, alpha=0.7,
-                       label=label,
-                       marker='s',  # Square markers for embodied carbon
-                       edgecolors='black',
-                       linewidths=0.5,
-                       zorder=3)
-            
-            # Add trendline for each material type
-            if len(r_vals_mat) >= 2:
-                z_mat = np.polyfit(r_vals_mat, embodied_vals_mat, 1)
-                p_mat = np.poly1d(z_mat)
-                r_mat_sorted = np.sort(r_vals_mat)
-                ax2.plot(r_mat_sorted, p_mat(r_mat_sorted),
+            fig.add_trace(
+                go.Scatter(
+                    x=r_vals_mat,
+                    y=embodied_vals_mat,
+                    mode='markers',
+                    name=label,
+                    marker=dict(
                         color=material_colors[material],
-                        linestyle='--', linewidth=1.5, alpha=0.6, zorder=2)
+                        size=12,
+                        symbol='square',
+                        line=dict(color='black', width=1)
+                    ),
+                    showlegend=True
+                ),
+                secondary_y=True
+            )
     
-    ax2.tick_params(axis='y')
+    # Update layout
+    fig.update_xaxes(
+        title_text='Target Insulation R-Value (IP)',
+        title_font=dict(size=16),
+        tickfont=dict(size=13),
+        showgrid=False,
+        showline=True,
+        linewidth=2,
+        linecolor='black',
+        ticks='inside',
+        ticklen=5,
+        mirror=True
+    )
     
-    # Add title
-    plt.title('Operational vs Embodied Carbon Impact', fontsize=14, fontweight='bold', pad=20)
+    fig.update_yaxes(
+        title_text='Operational Carbon (kg CO₂ eq/year)',
+        title_font=dict(size=16, color='purple'),
+        tickfont=dict(size=13, color='purple'),
+        showgrid=False,
+        showline=True,
+        linewidth=2,
+        linecolor='purple',
+        ticks='inside',
+        tickcolor='purple',
+        ticklen=5,
+        mirror=True,
+        secondary_y=False
+    )
     
-    # Add legends
-    lines1, labels1 = ax1.get_legend_handles_labels()
-    ax1.legend(lines1, labels1, loc='upper left', fontsize=10, title='Operational Carbon')
+    fig.update_yaxes(
+        title_text='Embodied Carbon (kg CO₂ eq)',
+        title_font=dict(size=16),
+        tickfont=dict(size=13),
+        showgrid=False,
+        showline=True,
+        linewidth=2,
+        linecolor='black',
+        ticks='inside',
+        ticklen=5,
+        mirror=True,
+        secondary_y=True
+    )
     
-    lines2, labels2 = ax2.get_legend_handles_labels()
-    ax2.legend(lines2, labels2, loc='upper right', fontsize=9, title='Embodied Carbon by Material', ncol=1)
-    
-    # Adjust layout
-    fig.tight_layout()
+    fig.update_layout(
+        title=dict(
+            text='Operational carbon vs. Embodied carbon by Roof Insulation R-Value',
+            font=dict(size=18),
+            x=0.5,
+            xanchor='center'
+        ),
+        width=1100,
+        height=700,
+        plot_bgcolor='white',
+        paper_bgcolor='white',
+        legend=dict(
+            x=0.02,
+            y=0.9,
+            xanchor='left',
+            yanchor='top',
+            font=dict(size=11),
+            bgcolor='rgba(255,255,255,0.9)',
+            bordercolor='black',
+            borderwidth=1
+        ),
+        margin=dict(l=80, r=80, t=80, b=80)
+    )
     
     # Save the plot
-    output_plot = measure_dir / "resources" / "roof_insulation_carbon_comparison_year1.png"
-    output_plot.parent.mkdir(parents=True, exist_ok=True)
-    plt.savefig(output_plot, dpi=300, bbox_inches='tight')
-    plt.close()
+    output_plot_jpeg = measure_dir / "resources" / "roof_insulation_carbon_comparison_year1.jpeg"
+    output_plot_html = measure_dir / "resources" / "roof_insulation_carbon_comparison_year1.html"
+    output_plot_jpeg.parent.mkdir(parents=True, exist_ok=True)
     
-    print(f"✓ Carbon comparison plot saved: {output_plot}")
+    fig.write_image(str(output_plot_jpeg), scale=2)
+    fig.write_html(str(output_plot_html))
+    
+    fig.write_image(str(output_plot_jpeg), scale=2)
+    fig.write_html(str(output_plot_html))
+    
+    print(f"✓ Carbon comparison plot saved: {output_plot_jpeg} and {output_plot_html}")
     print(f"  Data points plotted: {len(r_values)}")
     print(f"  R-value range: {min(r_values):.1f} - {max(r_values):.1f}")
     print(f"  Operational carbon range: {min(operational_carbon_values):.2f} - {max(operational_carbon_values):.2f} kgCO2e")

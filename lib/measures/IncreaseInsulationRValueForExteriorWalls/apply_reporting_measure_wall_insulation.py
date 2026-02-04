@@ -488,22 +488,20 @@ def create_scatterplot(csv_path, measure_dir):
     print(f"  DEBUG: CSV exists = {os.path.exists(csv_path)}")
     
     try:
-        import matplotlib
-        matplotlib.use('Agg')  # Use non-interactive backend
-        import matplotlib.pyplot as plt
+        import plotly.graph_objects as go
+        from plotly.subplots import make_subplots
         import numpy as np
     except ImportError:
-        print("✗ matplotlib not found. Installing matplotlib...")
+        print("✗ Plotly not found. Installing Plotly...")
         import subprocess
         try:
-            subprocess.check_call([sys.executable, "-m", "pip", "install", "matplotlib"])
-            import matplotlib
-            matplotlib.use('Agg')
-            import matplotlib.pyplot as plt
+            subprocess.check_call([sys.executable, "-m", "pip", "install", "plotly", "kaleido"])
+            import plotly.graph_objects as go
+            from plotly.subplots import make_subplots
             import numpy as np
-            print("✓ matplotlib installed successfully")
+            print("✓ Plotly installed successfully")
         except Exception as e:
-            print(f"✗ Failed to install matplotlib: {e}")
+            print(f"✗ Failed to install Plotly: {e}")
             print("  Skipping plot generation")
             return
     
@@ -605,20 +603,39 @@ def create_scatterplot(csv_path, measure_dir):
             # Get energy from EnergyPlus data
             energy = df.loc[scenario, 'total_site_energy_GJ'] if 'total_site_energy_GJ' in df.columns else None
             
+            # For baseline cases (R0), we may not have material/carbon data, but we need energy data
+            is_baseline = ('R0' in scenario or 'baseline' in scenario.lower() or (r_value is not None and r_value == 0.0))
+            
             # Convert to appropriate types
-            if r_value is not None and carbon is not None and material is not None:
-                try:
-                    carbon_val = float(carbon)
-                    energy_val = float(energy) if energy and str(energy).strip() else None
-                    
-                    r_values.append(r_value)
-                    carbon_values.append(carbon_val)
-                    energy_values.append(energy_val)
-                    scenario_names.append(scenario)
-                    material_types.append(str(material))
-                except (ValueError, TypeError) as e:
-                    print(f"  ⚠ Skipping {scenario}: Error converting values - {e}")
-                    continue
+            if r_value is not None:
+                # For baseline, only require energy data
+                # For non-baseline, require carbon and material data
+                if is_baseline and energy:
+                    try:
+                        energy_val = float(energy) if energy and str(energy).strip() else None
+                        if energy_val is not None:
+                            r_values.append(r_value)
+                            carbon_values.append(0.0)  # baseline has no embodied carbon
+                            energy_values.append(energy_val)
+                            scenario_names.append(scenario)
+                            material_types.append('Baseline (No Added Insulation)')
+                            print(f"    ✓ Added baseline scenario: {scenario}, R={r_value}, Energy={energy_val:.2f} GJ")
+                    except (ValueError, TypeError) as e:
+                        print(f"  ⚠ Skipping baseline {scenario}: Error converting values - {e}")
+                        continue
+                elif not is_baseline and carbon is not None and material is not None:
+                    try:
+                        carbon_val = float(carbon)
+                        energy_val = float(energy) if energy and str(energy).strip() else None
+                        
+                        r_values.append(r_value)
+                        carbon_values.append(carbon_val)
+                        energy_values.append(energy_val)
+                        scenario_names.append(scenario)
+                        material_types.append(str(material))
+                    except (ValueError, TypeError) as e:
+                        print(f"  ⚠ Skipping {scenario}: Error converting values - {e}")
+                        continue
         except Exception as e:
             print(f"  ⚠ Error processing scenario {scenario}: {e}")
             continue
@@ -642,47 +659,88 @@ def create_scatterplot(csv_path, measure_dir):
         'Pure Wool Batts': '#7f7f7f',  # gray
     }
     
-    # Create figure with dual y-axes
-    fig, ax1 = plt.subplots(figsize=(14, 8))
-    ax2 = ax1.twinx()  # Create second y-axis for carbon
-    
-    # First, plot site energy on left axis (primary)
-    color1 = 'tab:blue'
-    ax1.set_xlabel('Target Insulation R-Value (IP)', fontsize=12, fontweight='bold')
-    ax1.set_ylabel('Total Site Energy (GJ)', color=color1, fontsize=12, fontweight='bold')
+    # Create figure with dual y-axes using Plotly
+    fig = make_subplots(specs=[[{"secondary_y": True}]])
     
     # Check if we have energy data
     energy_with_data = [e for e in energy_values if e is not None]
     if energy_with_data:
-        # Plot site energy as a single series
+        # Separate baseline and non-baseline data
         r_with_energy = [r for r, e in zip(r_values, energy_values) if e is not None]
         e_with_data = [e for e in energy_values if e is not None]
+        scenarios_with_energy = [s for s, e in zip(scenario_names, energy_values) if e is not None]
+        
+        # Identify baseline cases (R=0 or containing 'baseline' or 'R0')
+        baseline_mask = [('R0' in s or 'baseline' in s.lower() or r == 0.0) for s, r in zip(scenarios_with_energy, r_with_energy)]
+        
+        r_baseline = [r for r, is_baseline in zip(r_with_energy, baseline_mask) if is_baseline]
+        e_baseline = [e for e, is_baseline in zip(e_with_data, baseline_mask) if is_baseline]
+        r_non_baseline = [r for r, is_baseline in zip(r_with_energy, baseline_mask) if not is_baseline]
+        e_non_baseline = [e for e, is_baseline in zip(e_with_data, baseline_mask) if not is_baseline]
+        
+        # Debug output
+        print(f"\n  Energy data summary:")
+        print(f"    Total scenarios with energy data: {len(scenarios_with_energy)}")
+        print(f"    Baseline scenarios: {sum(baseline_mask)} - {[s for s, is_b in zip(scenarios_with_energy, baseline_mask) if is_b]}")
+        print(f"    Non-baseline scenarios: {len(r_non_baseline)}")
         
         # Debug: Check for unique energy values per R-value
         unique_r_values = sorted(set(r_with_energy))
-        print(f"\n  Energy data summary:")
         for r_val in unique_r_values:
             energies_at_r = [e for r, e in zip(r_with_energy, e_with_data) if r == r_val]
             print(f"    R={r_val}: {len(energies_at_r)} data points, mean={sum(energies_at_r)/len(energies_at_r):.2f} GJ")
         
-        ax1.scatter(r_with_energy, e_with_data, color=color1, s=100, alpha=0.6, 
-                   label='Site Energy', marker='o', zorder=3)
-        ax1.tick_params(axis='y', labelcolor=color1)
+        # Add baseline energy as horizontal line spanning the plot
+        if r_baseline and e_baseline:
+            # Get unique baseline values
+            baseline_r_sorted = sorted(set(r_baseline))
+            baseline_e_avg = {r: sum([e for r_b, e in zip(r_baseline, e_baseline) if r_b == r]) / len([e for r_b, e in zip(r_baseline, e_baseline) if r_b == r]) for r in baseline_r_sorted}
+            
+            # Get the baseline value (assuming single baseline at R=0)
+            baseline_energy = list(baseline_e_avg.values())[0] if baseline_e_avg else None
+            
+            if baseline_energy:
+                # Add horizontal line across entire x-axis range
+                fig.add_trace(
+                    go.Scatter(
+                        x=[min(r_with_energy), max(r_with_energy)],
+                        y=[baseline_energy, baseline_energy],
+                        mode='lines',
+                        line=dict(color='purple', dash='dash', width=3),
+                        name='Site Energy (Baseline)',
+                        legendgroup='energy',
+                        showlegend=True
+                    ),
+                    secondary_y=False
+                )
         
-        # Add trendline for site energy
-        if len(r_with_energy) >= 2:
-            z1 = np.polyfit(r_with_energy, e_with_data, 1)
-            p1 = np.poly1d(z1)
-            r_sorted = np.sort(unique_r_values)
-            ax1.plot(r_sorted, p1(r_sorted), color=color1, linestyle='--', linewidth=2,
-                    alpha=0.8, label=f'Energy Trend (slope={z1[0]:.2f})', zorder=2)
+        # Add non-baseline energy scatter plot with star markers (50% larger)
+        if r_non_baseline and e_non_baseline:
+            fig.add_trace(
+                go.Scatter(
+                    x=r_non_baseline, y=e_non_baseline,
+                    mode='markers',
+                    marker=dict(size=18, color='purple', opacity=0.6, symbol='star'),
+                    name='Site Energy',
+                    legendgroup='energy',
+                    showlegend=True
+                ),
+                secondary_y=False
+            )
     
-    ax1.grid(True, alpha=0.3)
+    # Calculate average embodied carbon for each material to sort legend
+    material_avg_carbon = {}
+    for material in material_colors.keys():
+        mask = [mat == material for mat in material_types]
+        carbon_vals = [c for c, m in zip(carbon_values, mask) if m]
+        if carbon_vals:
+            material_avg_carbon[material] = sum(carbon_vals) / len(carbon_vals)
+    
+    # Sort materials by average embodied carbon (descending order for legend)
+    sorted_materials = sorted(material_avg_carbon.keys(), key=lambda m: material_avg_carbon[m], reverse=True)
     
     # Plot embodied carbon on right axis with different colors for each material type
-    ax2.set_ylabel('Total Embodied Carbon (kgCO2eq)', fontsize=12, fontweight='bold')
-    
-    for material in material_colors.keys():
+    for material in sorted_materials:
         # Filter data for this material
         mask = [mat == material for mat in material_types]
         r_vals_mat = [r for r, m in zip(r_values, mask) if m]
@@ -691,51 +749,107 @@ def create_scatterplot(csv_path, measure_dir):
         if r_vals_mat:  # Only plot if there's data for this material
             # Simplify legend labels
             label = material.replace(' Foam Board', '').replace(' Blanket', '').replace(' Batts', '')
-            ax2.scatter(r_vals_mat, carbon_vals_mat,
-                       color=material_colors[material],
-                       s=100, alpha=0.7,
-                       label=label,
-                       marker='s',
-                       edgecolors='black',
-                       linewidths=0.5,
-                       zorder=3)
             
-            # Add trendline for each material type if there are at least 2 points
-            if len(r_vals_mat) >= 2:
-                z_mat = np.polyfit(r_vals_mat, carbon_vals_mat, 1)
-                p_mat = np.poly1d(z_mat)
-                r_mat_sorted = np.sort(r_vals_mat)
-                ax2.plot(r_mat_sorted, p_mat(r_mat_sorted),
+            # Add scatter plot
+            fig.add_trace(
+                go.Scatter(
+                    x=r_vals_mat, y=carbon_vals_mat,
+                    mode='markers',
+                    marker=dict(
+                        size=10,
                         color=material_colors[material],
-                        linestyle='--', linewidth=1.5, alpha=0.6, zorder=2)
+                        opacity=0.7,
+                        symbol='square',
+                        line=dict(color='black', width=0.5)
+                    ),
+                    name=label,
+                    legendgroup='carbon',
+                    showlegend=True
+                ),
+                secondary_y=True
+            )
     
-    ax2.tick_params(axis='y')
+    # Update layout
+    fig.update_xaxes(
+        title_text='Target R-value ((hr·ft²·°F)/BTU)', 
+        title_font=dict(size=16),
+        tickfont=dict(size=13),
+        showgrid=False,
+        showline=True,
+        linewidth=2,
+        linecolor='black',
+        mirror=True,
+        ticks='inside',
+        tickwidth=2,
+        ticklen=5,
+        tickcolor='black'
+    )
+    fig.update_yaxes(
+        title_text='Operational carbon (kg CO₂ eq/year)', 
+        title_font=dict(size=16, color='purple'), 
+        tickfont=dict(size=13),
+        secondary_y=False,
+        showgrid=False,
+        showline=True,
+        linewidth=2,
+        linecolor='purple',
+        mirror=True,
+        ticks='inside',
+        tickwidth=2,
+        ticklen=5,
+        tickcolor='purple'
+    )
+    fig.update_yaxes(
+        title_text='Embodied carbon (kg CO₂ eq)', 
+        title_font=dict(size=16), 
+        tickfont=dict(size=13),
+        secondary_y=True,
+        showgrid=False,
+        showline=True,
+        linewidth=2,
+        linecolor='black',
+        ticks='inside',
+        tickwidth=2,
+        ticklen=5,
+        tickcolor='black'
+    )
     
-    # Configure plot
-    ax1.set_xlabel('Target Insulation R-Value (IP)', fontsize=12, fontweight='bold')
-    ax1.grid(True, alpha=0.3)
+    fig.update_layout(
+        title=dict(
+            text='Energy and Carbon Impact vs. Wall Insulation R-Value',
+            font=dict(size=14)
+        ),
+        width=1100,
+        height=700,
+        hovermode='closest',
+        legend=dict(
+            orientation="v",
+            yanchor="top",
+            y=0.9,
+            xanchor="left",
+            x=0.02,
+            bordercolor="black",
+            borderwidth=1,
+            font=dict(size=12),
+            bgcolor='rgba(255,255,255,0.8)'
+        ),
+        showlegend=True,
+        plot_bgcolor='white',
+        paper_bgcolor='white',
+        margin=dict(l=80, r=80, t=80, b=80)
+    )
     
-    # Add title
-    plt.title('Energy and Carbon Impact vs. Wall Insulation R-Value', fontsize=14, fontweight='bold', pad=20)
+    # Save the plot as both JPEG and HTML
+    output_plot_jpeg = measure_dir / "resources" / "wall_insulation_carbon_impact.jpeg"
+    output_plot_html = measure_dir / "resources" / "wall_insulation_carbon_impact.html"
+    output_plot_jpeg.parent.mkdir(parents=True, exist_ok=True)
     
-    # Add legends - Site Energy on left, Materials on right
-    lines1, labels1 = ax1.get_legend_handles_labels()
-    ax1.legend(lines1, labels1, loc='upper left', fontsize=10, title='Operational Energy')
+    fig.write_image(str(output_plot_jpeg), format='jpeg', width=1100, height=700, scale=2)
+    fig.write_html(str(output_plot_html))
     
-    # Material legend on the right side
-    lines2, labels2 = ax2.get_legend_handles_labels()
-    ax2.legend(lines2, labels2, loc='upper right', fontsize=9, title='Insulation Material', ncol=1)
-    
-    # Adjust layout to prevent label cutoff
-    fig.tight_layout()
-    
-    # Save the plot
-    output_plot = measure_dir / "resources" / "wall_insulation_carbon_impact.png"
-    output_plot.parent.mkdir(parents=True, exist_ok=True)
-    plt.savefig(output_plot, dpi=300, bbox_inches='tight')
-    plt.close()
-    
-    print(f"✓ Scatterplot saved: {output_plot}")
+    print(f"✓ Scatterplot saved:")
+    print(f"  - JPEG: {output_plot_jpeg}")
+    print(f"  - HTML: {output_plot_html}")
     print(f"  Data points plotted: {len(r_values)}")
     print(f"  R-value range: {min(r_values):.1f} - {max(r_values):.1f}")
     print(f"  Carbon range: {min(carbon_values):.2f} - {max(carbon_values):.2f} kgCO2eq")
@@ -754,12 +868,11 @@ def create_carbon_comparison_plot(csv_path, measure_dir):
     print(f"{'='*80}")
     
     try:
-        import matplotlib
-        matplotlib.use('Agg')  # Use non-interactive backend
-        import matplotlib.pyplot as plt
+        import plotly.graph_objects as go
+        from plotly.subplots import make_subplots
         import numpy as np
     except ImportError:
-        print("✗ matplotlib not found. Skipping carbon comparison plot.")
+        print("✗ Plotly not found. Skipping carbon comparison plot.")
         return
     
     import pandas as pd
@@ -845,20 +958,38 @@ def create_carbon_comparison_plot(csv_path, measure_dir):
             # Get operational carbon from EnergyPlus data
             operational_carbon = df.loc[scenario, 'total_operational_carbon_kgCO2e'] if 'total_operational_carbon_kgCO2e' in df.columns else None
             
+            # For baseline cases (R0), we may not have material/embodied carbon data, but we need operational carbon
+            is_baseline = ('R0' in scenario or 'baseline' in scenario.lower() or (r_value is not None and r_value == 0.0))
+            
             # Convert to appropriate types
-            if r_value is not None and embodied_carbon is not None and material is not None and operational_carbon is not None:
-                try:
-                    embodied_val = float(embodied_carbon)
-                    operational_val = float(operational_carbon)
-                    
-                    r_values.append(r_value)
-                    embodied_carbon_values.append(embodied_val)
-                    operational_carbon_values.append(operational_val)
-                    scenario_names.append(scenario)
-                    material_types.append(str(material))
-                except (ValueError, TypeError) as e:
-                    print(f"  ⚠ Skipping {scenario}: Error converting carbon values - {e}")
-                    continue
+            if r_value is not None:
+                # For baseline, only require operational carbon
+                # For non-baseline, require all data
+                if is_baseline and operational_carbon is not None:
+                    try:
+                        operational_val = float(operational_carbon)
+                        r_values.append(r_value)
+                        embodied_carbon_values.append(0.0)  # baseline has no embodied carbon
+                        operational_carbon_values.append(operational_val)
+                        scenario_names.append(scenario)
+                        material_types.append('Baseline (No Added Insulation)')
+                        print(f"    ✓ Added baseline scenario: {scenario}, R={r_value}, Op. Carbon={operational_val:.2f} kgCO2e")
+                    except (ValueError, TypeError) as e:
+                        print(f"  ⚠ Skipping baseline {scenario}: Error converting values - {e}")
+                        continue
+                elif not is_baseline and embodied_carbon is not None and material is not None and operational_carbon is not None:
+                    try:
+                        embodied_val = float(embodied_carbon)
+                        operational_val = float(operational_carbon)
+                        
+                        r_values.append(r_value)
+                        embodied_carbon_values.append(embodied_val)
+                        operational_carbon_values.append(operational_val)
+                        scenario_names.append(scenario)
+                        material_types.append(str(material))
+                    except (ValueError, TypeError) as e:
+                        print(f"  ⚠ Skipping {scenario}: Error converting carbon values - {e}")
+                        continue
         except Exception as e:
             print(f"  ⚠ Error processing scenario {scenario}: {e}")
             continue
@@ -882,41 +1013,78 @@ def create_carbon_comparison_plot(csv_path, measure_dir):
         'Pure Wool Batts': '#7f7f7f',
     }
     
-    # Create figure with dual y-axes
-    fig, ax1 = plt.subplots(figsize=(14, 8))
-    ax2 = ax1.twinx()
+    # Create figure with dual y-axes using Plotly
+    fig = make_subplots(specs=[[{"secondary_y": True}]])
     
-    # Left axis: Operational Carbon (blue)
-    color1 = 'tab:blue'
-    ax1.set_xlabel('Target Insulation R-Value (IP)', fontsize=12, fontweight='bold')
-    ax1.set_ylabel('Operational Carbon (kgCO2e)', color=color1, fontsize=12, fontweight='bold')
+    # Separate baseline and non-baseline data for operational carbon
+    baseline_mask = [('R0' in s or 'baseline' in s.lower() or r == 0.0) for s, r in zip(scenario_names, r_values)]
+    
+    r_baseline = [r for r, is_baseline in zip(r_values, baseline_mask) if is_baseline]
+    op_baseline = [oc for oc, is_baseline in zip(operational_carbon_values, baseline_mask) if is_baseline]
+    r_non_baseline = [r for r, is_baseline in zip(r_values, baseline_mask) if not is_baseline]
+    op_non_baseline = [oc for oc, is_baseline in zip(operational_carbon_values, baseline_mask) if not is_baseline]
     
     # Plot operational carbon as single series (same for all materials at same R-value)
     unique_r_values = sorted(set(r_values))
     print(f"\n  Operational Carbon data summary:")
+    print(f"    Total scenarios: {len(scenario_names)}")
+    print(f"    Baseline scenarios: {sum(baseline_mask)} - {[s for s, is_b in zip(scenario_names, baseline_mask) if is_b]}")
+    print(f"    Non-baseline scenarios: {len(r_non_baseline)}")
     for r_val in unique_r_values:
         op_carbon_at_r = [oc for r, oc in zip(r_values, operational_carbon_values) if r == r_val]
         if op_carbon_at_r:
-            print(f"    R={r_val}: mean={sum(op_carbon_at_r)/len(op_carbon_at_r):.2f} kgCO2e")
+            print(f"    R={r_val}: {len(op_carbon_at_r)} data points, mean={sum(op_carbon_at_r)/len(op_carbon_at_r):.2f} kgCO2e")
     
-    ax1.scatter(r_values, operational_carbon_values, color=color1, s=100, alpha=0.6,
-               label='Operational Carbon', marker='o', zorder=3)
-    ax1.tick_params(axis='y', labelcolor=color1)
+    # Add baseline operational carbon as horizontal line spanning the plot
+    if r_baseline and op_baseline:
+        baseline_r_sorted = sorted(set(r_baseline))
+        baseline_op_avg = {r: sum([oc for r_b, oc in zip(r_baseline, op_baseline) if r_b == r]) / len([oc for r_b, oc in zip(r_baseline, op_baseline) if r_b == r]) for r in baseline_r_sorted}
+        
+        # Get the baseline value (assuming single baseline at R=0)
+        baseline_op_carbon = list(baseline_op_avg.values())[0] if baseline_op_avg else None
+        
+        if baseline_op_carbon:
+            # Add horizontal line across entire x-axis range
+            fig.add_trace(
+                go.Scatter(
+                    x=[min(r_values), max(r_values)],
+                    y=[baseline_op_carbon, baseline_op_carbon],
+                    mode='lines',
+                    line=dict(color='purple', dash='dash', width=3),
+                    name='Op. Baseline (R=0)',
+                    legendgroup='operational',
+                    showlegend=True
+                ),
+                secondary_y=False
+            )
     
-    # Add trendline for operational carbon
-    if len(r_values) >= 2:
-        z1 = np.polyfit(r_values, operational_carbon_values, 1)
-        p1 = np.poly1d(z1)
-        r_sorted = np.sort(unique_r_values)
-        ax1.plot(r_sorted, p1(r_sorted), color=color1, linestyle='--', linewidth=2,
-                alpha=0.8, label=f'Op. Carbon Trend (slope={z1[0]:.2f})', zorder=2)
+    # Add non-baseline operational carbon scatter plot with star markers (50% larger)
+    if r_non_baseline and op_non_baseline:
+        fig.add_trace(
+            go.Scatter(
+                x=r_non_baseline, y=op_non_baseline,
+                mode='markers',
+                marker=dict(size=18, color='purple', opacity=0.6, symbol='star'),
+                name='Operational Carbon',
+                legendgroup='operational',
+                showlegend=True
+            ),
+            secondary_y=False
+        )
     
-    ax1.grid(True, alpha=0.3)
+    # Calculate average embodied carbon for each material to sort legend
+    material_avg_carbon = {}
+    for material in material_colors.keys():
+        mask = [mat == material for mat in material_types]
+        embodied_vals = [ec for ec, m in zip(embodied_carbon_values, mask) if m]
+        if embodied_vals:
+            material_avg_carbon[material] = sum(embodied_vals) / len(embodied_vals)
+    
+    # Sort materials by average embodied carbon (descending order for legend)
+    sorted_materials = sorted(material_avg_carbon.keys(), key=lambda m: material_avg_carbon[m], reverse=True)
     
     # Right axis: Embodied Carbon with material-specific colors
-    ax2.set_ylabel('Embodied Carbon (kgCO2e)', fontsize=12, fontweight='bold')
-    
-    for material in material_colors.keys():
+    for material in sorted_materials:
         # Filter data for this material
         mask = [mat == material for mat in material_types]
         r_vals_mat = [r for r, m in zip(r_values, mask) if m]
@@ -924,46 +1092,107 @@ def create_carbon_comparison_plot(csv_path, measure_dir):
         
         if r_vals_mat:
             label = material.replace(' Foam Board', '').replace(' Blanket', '').replace(' Batts', '')
-            ax2.scatter(r_vals_mat, embodied_vals_mat,
-                       color=material_colors[material],
-                       s=100, alpha=0.7,
-                       label=label,
-                       marker='s',
-                       edgecolors='black',
-                       linewidths=0.5,
-                       zorder=3)
             
-            # Add trendline for each material type if there are at least 2 points
-            if len(r_vals_mat) >= 2:
-                z_mat = np.polyfit(r_vals_mat, embodied_vals_mat, 1)
-                p_mat = np.poly1d(z_mat)
-                r_mat_sorted = np.sort(r_vals_mat)
-                ax2.plot(r_mat_sorted, p_mat(r_mat_sorted),
+            # Add scatter plot
+            fig.add_trace(
+                go.Scatter(
+                    x=r_vals_mat, y=embodied_vals_mat,
+                    mode='markers',
+                    marker=dict(
+                        size=10,
                         color=material_colors[material],
-                        linestyle='--', linewidth=1.5, alpha=0.6, zorder=2)
+                        opacity=0.7,
+                        symbol='square',
+                        line=dict(color='black', width=0.5)
+                    ),
+                    name=label,
+                    legendgroup='embodied',
+                    showlegend=True
+                ),
+                secondary_y=True
+            )
     
-    ax2.tick_params(axis='y')
+    # Update layout
+    fig.update_xaxes(
+        title_text='Target R-value ((hr·ft²·°F)/BTU)', 
+        title_font=dict(size=16),
+        tickfont=dict(size=13),
+        showgrid=False,
+        showline=True,
+        linewidth=2,
+        linecolor='black',
+        mirror=True,
+        ticks='inside',
+        tickwidth=2,
+        ticklen=5,
+        tickcolor='black'
+    )
+    fig.update_yaxes(
+        title_text='Operational carbon (kg CO₂ eq/year)', 
+        title_font=dict(size=16, color='purple'), 
+        tickfont=dict(size=13, color='purple'),
+        secondary_y=False,
+        showgrid=False,
+        showline=True,
+        linewidth=2,
+        linecolor='purple',
+        mirror=True,
+        ticks='inside',
+        tickwidth=2,
+        ticklen=5,
+        tickcolor='purple'
+    )
+    fig.update_yaxes(
+        title_text='Embodied carbon (kg CO₂ eq)', 
+        title_font=dict(size=16), 
+        tickfont=dict(size=13),
+        secondary_y=True,
+        showgrid=False,
+        showline=True,
+        linewidth=2,
+        linecolor='black',
+        ticks='inside',
+        tickwidth=2,
+        ticklen=5,
+        tickcolor='black'
+    )
     
-    # Add title
-    plt.title('Operational vs Embodied Carbon Impact', fontsize=14, fontweight='bold', pad=20)
+    fig.update_layout(
+        title=dict(
+            text='Operational vs Embodied Carbon Impact',
+            font=dict(size=14)
+        ),
+        width=1100,
+        height=700,
+        hovermode='closest',
+        legend=dict(
+            orientation="v",
+            yanchor="top",
+            y=0.9,
+            xanchor="left",
+            x=0.02,
+            bordercolor="black",
+            borderwidth=1,
+            font=dict(size=11),
+            bgcolor='rgba(255,255,255,0.9)'
+        ),
+        showlegend=True,
+        plot_bgcolor='white',
+        paper_bgcolor='white',
+        margin=dict(l=80, r=80, t=80, b=80)
+    )
     
-    # Add legends
-    lines1, labels1 = ax1.get_legend_handles_labels()
-    ax1.legend(lines1, labels1, loc='upper left', fontsize=10, title='Operational Carbon')
+    # Save the plot as both JPEG and HTML
+    output_plot_jpeg = measure_dir / "resources" / "wall_insulation_carbon_comparison.jpeg"
+    output_plot_html = measure_dir / "resources" / "wall_insulation_carbon_comparison.html"
+    output_plot_jpeg.parent.mkdir(parents=True, exist_ok=True)
     
-    lines2, labels2 = ax2.get_legend_handles_labels()
-    ax2.legend(lines2, labels2, loc='upper right', fontsize=9, title='Embodied Carbon by Material', ncol=1)
+    fig.write_image(str(output_plot_jpeg), format='jpeg', width=1100, height=700, scale=2)
+    fig.write_html(str(output_plot_html))
     
-    # Adjust layout
-    fig.tight_layout()
-    
-    # Save the plot
-    output_plot = measure_dir / "resources" / "wall_insulation_carbon_comparison.png"
-    output_plot.parent.mkdir(parents=True, exist_ok=True)
-    plt.savefig(output_plot, dpi=300, bbox_inches='tight')
-    plt.close()
-    
-    print(f"✓ Carbon comparison plot saved: {output_plot}")
+    print(f"✓ Carbon comparison plot saved:")
+    print(f"  - JPEG: {output_plot_jpeg}")
+    print(f"  - HTML: {output_plot_html}")
     print(f"  Data points plotted: {len(r_values)}")
     print(f"  R-value range: {min(r_values):.1f} - {max(r_values):.1f}")
     print(f"  Operational carbon range: {min(operational_carbon_values):.2f} - {max(operational_carbon_values):.2f} kgCO2e")
@@ -976,12 +1205,10 @@ def create_stacked_bar_chart(csv_path, measure_dir):
     print(f"{'='*80}")
     
     try:
-        import matplotlib
-        matplotlib.use('Agg')
-        import matplotlib.pyplot as plt
+        import plotly.graph_objects as go
         import numpy as np
     except ImportError:
-        print("✗ matplotlib not found. Skipping stacked bar chart generation")
+        print("✗ Plotly not found. Skipping stacked bar chart generation")
         return
     
     import pandas as pd
@@ -1095,38 +1322,30 @@ def create_stacked_bar_chart(csv_path, measure_dir):
     operational_carbon = list(operational_carbon)
     embodied_carbon = list(embodied_carbon)
     
-    # Create figure and axis
-    fig, ax = plt.subplots(figsize=(20, 8))
-    
-    # Set up x-axis positions
-    x_pos = np.arange(len(scenario_names))
-    
     # Convert from kg to tons (divide by 1000)
     operational_carbon_tons = [oc / 1000 for oc in operational_carbon]
     embodied_carbon_tons = [ec / 1000 for ec in embodied_carbon]
     
-    # Create stacked bars
+    # Create stacked bar chart using Plotly
+    fig = go.Figure()
+    
     # Bottom: Operational carbon (blue)
-    bars1 = ax.bar(x_pos, operational_carbon_tons, 
-                   color='#4472C4', label='Operational Carbon',
-                   edgecolor='white', linewidth=0.5)
+    fig.add_trace(go.Bar(
+        x=scenario_names,
+        y=operational_carbon_tons,
+        name='Operational Carbon',
+        marker=dict(color='#4472C4', line=dict(color='white', width=0.5))
+    ))
     
     # Top: Embodied carbon (orange)
-    bars2 = ax.bar(x_pos, embodied_carbon_tons, bottom=operational_carbon_tons,
-                   color='#ED7D31', label='Embodied Carbon',
-                   edgecolor='white', linewidth=0.5)
-    
-    # Customize the plot
-    ax.set_xlabel('Scenarios', fontsize=12, fontweight='bold')
-    ax.set_ylabel('Total Carbon Emission at Year 1 (ton CO2e)', fontsize=12, fontweight='bold')
-    ax.set_title('Operational and Embodied Carbon by Scenario', fontsize=14, fontweight='bold', pad=20)
-    
-    # Set x-axis labels - rotate for readability
-    ax.set_xticks(x_pos)
-    ax.set_xticklabels(scenario_names, rotation=90, ha='right', fontsize=8)
+    fig.add_trace(go.Bar(
+        x=scenario_names,
+        y=embodied_carbon_tons,
+        name='Embodied Carbon',
+        marker=dict(color='#ED7D31', line=dict(color='white', width=0.5))
+    ))
     
     # Add horizontal dashed lines to show operational carbon levels for different R-values
-    # Extract R-value from scenario names and group operational carbon by R-value
     import re
     r_value_op_carbon = {}
     for scenario, op_carbon_kg in zip(scenario_names, operational_carbon):
@@ -1136,37 +1355,79 @@ def create_stacked_bar_chart(csv_path, measure_dir):
             if r_val not in r_value_op_carbon:
                 r_value_op_carbon[r_val] = op_carbon_kg
     
-    # Sort by R-value and add dashed lines
+    # Sort by R-value and add dashed lines with annotations
+    shapes = []
+    annotations = []
     for r_val in sorted(r_value_op_carbon.keys()):
         op_carbon_tons = r_value_op_carbon[r_val] / 1000
-        ax.axhline(y=op_carbon_tons, color='gray', linestyle='--', linewidth=1.5, alpha=0.7, zorder=1)
-        # Add R-value label at the right edge
-        ax.text(len(scenario_names) - 0.5, op_carbon_tons, f'  R={r_val:.1f}', 
-               verticalalignment='center', fontsize=9, color='gray', fontweight='bold')
+        shapes.append(dict(
+            type='line',
+            x0=0, x1=1,
+            y0=op_carbon_tons, y1=op_carbon_tons,
+            xref='paper', yref='y',
+            line=dict(color='gray', dash='dash', width=1.5),
+            opacity=0.7
+        ))
+        annotations.append(dict(
+            x=1, y=op_carbon_tons,
+            xref='paper', yref='y',
+            text=f'R={r_val:.1f}',
+            showarrow=False,
+            xanchor='left',
+            font=dict(size=9, color='gray')
+        ))
     
-    # Add legend
-    ax.legend(loc='upper right', frameon=True, shadow=True, fontsize=11)
+    # Update layout
+    fig.update_layout(
+        title=dict(
+            text='Operational and Embodied Carbon by Scenario',
+            font=dict(size=14)
+        ),
+        xaxis=dict(
+            title='Scenarios',
+            title_font=dict(size=12),
+            tickangle=-90,
+            tickfont=dict(size=8)
+        ),
+        yaxis=dict(
+            title='Total Carbon Emission at Year 1 (ton CO2e)',
+            title_font=dict(size=12),
+            gridcolor='lightgray',
+            gridwidth=0.5,
+            griddash='dash'
+        ),
+        barmode='stack',
+        width=2000,
+        height=800,
+        legend=dict(
+            x=1,
+            y=1,
+            xanchor='right',
+            yanchor='top',
+            bgcolor='rgba(255,255,255,0.8)',
+            bordercolor='gray',
+            borderwidth=1,
+            font=dict(size=11)
+        ),
+        shapes=shapes,
+        annotations=annotations,
+        hovermode='x unified'
+    )
     
-    # Add grid for better readability
-    ax.grid(axis='y', alpha=0.3, linestyle='--', linewidth=0.5)
-    ax.set_axisbelow(True)
+    # Save the plot as both JPEG and HTML
+    output_plot_jpeg = measure_dir / "resources" / "wall_insulation_stacked_bar.jpeg"
+    output_plot_html = measure_dir / "resources" / "wall_insulation_stacked_bar.html"
+    output_plot_jpeg.parent.mkdir(parents=True, exist_ok=True)
     
-    # Format y-axis
-    ax.yaxis.set_major_formatter(plt.FuncFormatter(lambda x, p: f'{x:,.0f}'))
-    
-    # Tight layout
-    plt.tight_layout()
-    
-    # Save the plot
-    output_plot = measure_dir / "resources" / "wall_insulation_stacked_bar.png"
-    output_plot.parent.mkdir(parents=True, exist_ok=True)
-    plt.savefig(output_plot, dpi=300, bbox_inches='tight')
-    plt.close()
+    fig.write_image(str(output_plot_jpeg), format='jpeg', width=2000, height=800, scale=2)
+    fig.write_html(str(output_plot_html))
     
     # Calculate statistics
     total_carbon = [op + em for op, em in zip(operational_carbon, embodied_carbon)]
     
-    print(f"✓ Stacked bar chart saved: {output_plot}")
+    print(f"✓ Stacked bar chart saved:")
+    print(f"  - JPEG: {output_plot_jpeg}")
+    print(f"  - HTML: {output_plot_html}")
     print(f"  Scenarios plotted: {len(scenario_names)}")
     print(f"  Operational carbon range: {min(operational_carbon):.2f} - {max(operational_carbon):.2f} kgCO2e")
     print(f"  Embodied carbon range: {min(embodied_carbon):.2f} - {max(embodied_carbon):.2f} kgCO2e")
