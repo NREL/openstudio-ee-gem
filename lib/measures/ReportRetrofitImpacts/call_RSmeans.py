@@ -271,7 +271,9 @@ def main():
     load_dotenv()
     client_id = os.getenv('client_id')
     client_secret = os.getenv('client_secret')
-    print(f"client_id: {client_id}, client_secret: {client_secret}")  # For debugging only, remove after checking!
+    # Mask the client_secret for display purposes
+    masked_secret = '*' * len(client_secret) if client_secret else 'None'
+    print(f"client_id: {client_id}, client_secret: {masked_secret}")
 
     # Initialize client with credentials
     client = RSMeansAPIClient(client_id, client_secret, use_sandbox=True)  # Set to False for production
