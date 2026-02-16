@@ -173,11 +173,39 @@ def extract_model_data(osm_path, emission_factors):
             water_pattern = r'Total End Uses</td>' + r'(?:\s*<td[^>]*>\s*[0-9.]+\s*</td>)' * 13 + r'\s*<td[^>]*>\s*([0-9.]+)\s*</td>'
             energy_data["total_end_uses_water_m3"] = extract_field(water_pattern, html_text)
             
+            # Extract individual end use categories
+            # Each category has: Electricity (1st col), Natural Gas (2nd col), Water (14th col)
+            end_use_categories = [
+                'Heating', 'Cooling', 'Interior Lighting', 'Exterior Lighting',
+                'Interior Equipment', 'Exterior Equipment', 'Fans', 'Pumps',
+                'Heat Rejection', 'Humidification', 'Heat Recovery', 'Water Systems',
+                'Refrigeration', 'Generators'
+            ]
+            
+            for category in end_use_categories:
+                # Create clean field names
+                field_prefix = category.lower().replace(' ', '_')
+                
+                # Electricity (1st column after category name)
+                elec_pattern = rf'{category}</td>\s*<td[^>]*>\s*([0-9.]+)\s*</td>'
+                energy_data[f"{field_prefix}_electricity_GJ"] = extract_field(elec_pattern, html_text)
+                
+                # Natural Gas (2nd column after category name)
+                gas_pattern = rf'{category}</td>\s*<td[^>]*>\s*[0-9.]+\s*</td>\s*<td[^>]*>\s*([0-9.]+)\s*</td>'
+                energy_data[f"{field_prefix}_natural_gas_GJ"] = extract_field(gas_pattern, html_text)
+                
+                # Water (14th column after category name)
+                water_pattern = rf'{category}</td>' + r'(?:\s*<td[^>]*>\s*[0-9.]+\s*</td>)' * 13 + r'\s*<td[^>]*>\s*([0-9.]+)\s*</td>'
+                energy_data[f"{field_prefix}_water_m3"] = extract_field(water_pattern, html_text)
+            
             # Debug: Print End Uses values
             print(f"  DEBUG - End Uses parsed:")
-            print(f"    Electricity: {energy_data.get('total_end_uses_electricity_GJ', 'N/A')}")
-            print(f"    Natural Gas: {energy_data.get('total_end_uses_natural_gas_GJ', 'N/A')}")
-            print(f"    Water: {energy_data.get('total_end_uses_water_m3', 'N/A')}")
+            print(f"    Total Electricity: {energy_data.get('total_end_uses_electricity_GJ', 'N/A')}")
+            print(f"    Total Natural Gas: {energy_data.get('total_end_uses_natural_gas_GJ', 'N/A')}")
+            print(f"    Total Water: {energy_data.get('total_end_uses_water_m3', 'N/A')}")
+            print(f"    Heating Electricity: {energy_data.get('heating_electricity_GJ', 'N/A')}")
+            print(f"    Cooling Electricity: {energy_data.get('cooling_electricity_GJ', 'N/A')}")
+            print(f"    Interior Lighting Electricity: {energy_data.get('interior_lighting_electricity_GJ', 'N/A')}")
             
             # Calculate total operational carbon
             try:
@@ -1079,17 +1107,21 @@ def create_stacked_bar_chart(csv_path, measure_dir):
     if n_cols == 1:
         axes = [axes]
     
-    # Find global max for consistent y-axis scaling
+    # Find global max and min for consistent y-axis scaling
     all_totals = []
+    all_reductions = []
     for r_val in sorted_r_values:
         group = r_value_groups[r_val]
-        for op_carbon in group['op_carbon']:
+        for op_carbon, em_carbon in zip(group['op_carbon'], group['em_carbon']):
+            # Operational carbon + embodied carbon (stacked above 0)
+            total = (op_carbon / 1000) + (em_carbon / 1000)
+            all_totals.append(total)
+            # Operational carbon reduction (below 0)
             op_reduction = abs(baseline_op_carbon - op_carbon)
-            totals = [(oc / 1000) + (abs(baseline_op_carbon - oc) / 1000) + (ec / 1000) 
-                     for oc, ec in zip(group['op_carbon'], group['em_carbon'])]
-            all_totals.extend(totals)
+            all_reductions.append(op_reduction / 1000)
     
     y_max = max(all_totals) * 1.15 if all_totals else 1
+    y_min = -max(all_reductions) * 1.15 if all_reductions else 0
     
     # Create a subplot for each R-value
     for col_idx, r_val in enumerate(sorted_r_values):
@@ -1120,19 +1152,18 @@ def create_stacked_bar_chart(csv_path, measure_dir):
             material_labels.append(material)
         
         # Create stacked bars
-        # Layer 1 (bottom): Operational Carbon
-        bars1 = ax.bar(x_pos, op_carbon_tons, 
-                       color='#4472C4', label='Operational Carbon',
-                       edgecolor='white', linewidth=0.5)
-        
-        # Layer 2 (middle): Operational Carbon Reduction
-        bars2 = ax.bar(x_pos, op_reduction_tons, bottom=op_carbon_tons,
+        # Layer 1 (below 0): Operational Carbon Reduction (as negative values)
+        bars1 = ax.bar(x_pos, [-r for r in op_reduction_tons], 
                        color='#70AD47', label='Op. Carbon Reduction',
                        edgecolor='white', linewidth=0.5)
         
+        # Layer 2 (bottom, above 0): Operational Carbon
+        bars2 = ax.bar(x_pos, op_carbon_tons,
+                       color='#4472C4', label='Operational Carbon',
+                       edgecolor='white', linewidth=0.5)
+        
         # Layer 3 (top): Embodied Carbon
-        bottom_for_embodied = [op + red for op, red in zip(op_carbon_tons, op_reduction_tons)]
-        bars3 = ax.bar(x_pos, em_carbon_tons, bottom=bottom_for_embodied,
+        bars3 = ax.bar(x_pos, em_carbon_tons, bottom=op_carbon_tons,
                        color='#ED7D31', label='Embodied Carbon',
                        edgecolor='white', linewidth=0.5)
         
@@ -1142,7 +1173,8 @@ def create_stacked_bar_chart(csv_path, measure_dir):
         ax.set_title(f'R = {r_val:.1f}', fontsize=12, fontweight='bold', pad=10)
         ax.set_xticks(x_pos)
         ax.set_xticklabels(material_labels, rotation=45, ha='right', fontsize=8)
-        ax.set_ylim(0, y_max)
+        ax.set_ylim(y_min, y_max)
+        ax.axhline(y=0, color='black', linewidth=0.8, linestyle='-')
         ax.grid(axis='y', alpha=0.3, linestyle='--', linewidth=0.5)
         ax.set_axisbelow(True)
         ax.yaxis.set_major_formatter(plt.FuncFormatter(lambda x, p: f'{x:,.0f}'))
@@ -1338,17 +1370,21 @@ def create_stacked_bar_chart_year30(csv_path, measure_dir):
     if n_cols == 1:
         axes = [axes]
     
-    # Find global max for consistent y-axis scaling
+    # Find global max and min for consistent y-axis scaling
     all_totals = []
+    all_reductions = []
     for r_val in sorted_r_values:
         group = r_value_groups[r_val]
         for op_carbon, em_carbon_30yr in zip(group['op_carbon'], group['em_carbon_30yr']):
-            # 30-year operational carbon reduction + embodied carbon (adjusted for replacements)
-            op_reduction_30yr = abs(baseline_op_carbon - op_carbon) * 30
-            total = (op_reduction_30yr / 1000) + (em_carbon_30yr / 1000)
+            # Embodied carbon only (above 0)
+            total = em_carbon_30yr / 1000
             all_totals.append(total)
+            # 30-year operational carbon reduction (below 0)
+            op_reduction_30yr = abs(baseline_op_carbon - op_carbon) * 30
+            all_reductions.append(op_reduction_30yr / 1000)
     
     y_max = max(all_totals) * 1.15 if all_totals else 1
+    y_min = -max(all_reductions) * 1.15 if all_reductions else 0
     
     # Create a subplot for each R-value
     for col_idx, r_val in enumerate(sorted_r_values):
@@ -1380,13 +1416,13 @@ def create_stacked_bar_chart_year30(csv_path, measure_dir):
             material_labels.append(material)
         
         # Create stacked bars
-        # Layer 1 (bottom): Operational Carbon Reduction (30 years)
-        bars1 = ax.bar(x_pos, op_reduction_30yr_tons, 
+        # Layer 1 (below 0): Operational Carbon Reduction (30 years, as negative values)
+        bars1 = ax.bar(x_pos, [-r for r in op_reduction_30yr_tons], 
                        color='#70AD47', label='Op. Carbon Reduction (30yr)',
                        edgecolor='white', linewidth=0.5)
         
-        # Layer 2 (top): Embodied Carbon (adjusted for 30 years and replacements)
-        bars2 = ax.bar(x_pos, em_carbon_30yr_tons, bottom=op_reduction_30yr_tons,
+        # Layer 2 (above 0): Embodied Carbon (adjusted for 30 years and replacements)
+        bars2 = ax.bar(x_pos, em_carbon_30yr_tons,
                        color='#ED7D31', label='Embodied Carbon (30yr)',
                        edgecolor='white', linewidth=0.5)
         
@@ -1396,7 +1432,8 @@ def create_stacked_bar_chart_year30(csv_path, measure_dir):
         ax.set_title(f'R = {r_val:.1f}', fontsize=12, fontweight='bold', pad=10)
         ax.set_xticks(x_pos)
         ax.set_xticklabels(material_labels, rotation=45, ha='right', fontsize=8)
-        ax.set_ylim(0, y_max)
+        ax.set_ylim(y_min, y_max)
+        ax.axhline(y=0, color='black', linewidth=0.8, linestyle='-')
         ax.grid(axis='y', alpha=0.3, linestyle='--', linewidth=0.5)
         ax.set_axisbelow(True)
         ax.yaxis.set_major_formatter(plt.FuncFormatter(lambda x, p: f'{x:,.0f}'))
