@@ -44,7 +44,7 @@ def load_config(config_path="workflow_config.json"):
     with open(config_file, 'r') as f:
         config = json.load(f)
     
-    print(f"✓ Loaded configuration from: {config_file}")
+    print(f"[OK] Loaded configuration from: {config_file}")
     return config
 
 # Load configuration
@@ -126,12 +126,13 @@ def find_openstudio_cli():
     raise FileNotFoundError("OpenStudio CLI not found. Please install OpenStudio.")
 
 
-def run_energyplus_simulation(osm_path):
+def run_energyplus_simulation(osm_path, weather_file=None):
     """
     Run EnergyPlus simulation using OpenStudio CLI.
     
     Args:
         osm_path: Path to the OpenStudio model file
+        weather_file: Path to the weather file (optional)
     
     Returns:
         Path to eplustbl.html report if successful, None otherwise
@@ -139,7 +140,7 @@ def run_energyplus_simulation(osm_path):
     osm_path = Path(osm_path)
     
     if not osm_path.exists():
-        print(f"✗ Model file not found: {osm_path}")
+        print(f"[ERROR] Model file not found: {osm_path}")
         return None
     
     # Find OpenStudio CLI
@@ -147,16 +148,21 @@ def run_energyplus_simulation(osm_path):
         cli_path = find_openstudio_cli()
         print(f"[OK] Found OpenStudio CLI: {cli_path}")
     except FileNotFoundError as e:
-        print(f"✗ {e}")
+        print(f"[ERROR] {e}")
         return None
     
     # Create workflow.osw in the same directory as the model
     workflow_dir = osm_path.parent
     workflow_path = workflow_dir / "workflow.osw"
     
+    # Determine weather file path
+    weather_file_str = ""
+    if weather_file and Path(weather_file).exists():
+        weather_file_str = str(Path(weather_file).absolute())
+    
     workflow_json = {
         "seed_file": osm_path.name,
-        "weather_file": "",
+        "weather_file": weather_file_str,
         "steps": [],
         "created_at": "2025-12-30T00:00:00Z",
         "updated_at": "2025-12-30T00:00:00Z"
@@ -186,10 +192,10 @@ def run_energyplus_simulation(osm_path):
                 print(f"STDERR: {result.stderr[:500]}")
     
     except subprocess.TimeoutExpired:
-        print("✗ Simulation timed out after 600 seconds")
+        print("[ERROR] Simulation timed out after 600 seconds")
         return None
     except Exception as e:
-        print(f"✗ Error running simulation: {e}")
+        print(f"[ERROR] Error running simulation: {e}")
         return None
     
     # Look for eplustbl.html in multiple possible locations
@@ -223,7 +229,7 @@ def extract_model_data(osm_path):
     model_opt = translator.loadModel(str(osm_path))
     
     if not model_opt.is_initialized():
-        print(f"✗ Failed to load model: {osm_path}")
+        print(f"[ERROR] Failed to load model: {osm_path}")
         return {}
     
     model = model_opt.get()
@@ -236,20 +242,55 @@ def extract_model_data(osm_path):
 
 
 def extract_embodied_carbon(model):
-    """Extract total embodied carbon from model AdditionalProperties."""
+    """Extract total embodied carbon from model AdditionalProperties.
+    
+    Checks constructions, surfaces, and subsurfaces for embodied carbon data.
+    Different measures store data in different places:
+    - Window enhancement: stores on subsurfaces
+    - Insulation measures: may store on constructions or surfaces
+    """
     total_carbon = 0.0
     carbon_by_component = {}
     
+    # Check constructions
     for construction in model.getConstructions():
         props = construction.additionalProperties()
         
-        # Look for embodied carbon properties
-        if props.hasFeature("total_embodied_carbon_kgCO2eq"):
-            value = props.getFeatureAsDouble("total_embodied_carbon_kgCO2eq")
-            if value.is_initialized():
-                carbon = value.get()
-                total_carbon += carbon
-                carbon_by_component[construction.nameString()] = carbon
+        # Look for embodied carbon properties (different naming conventions)
+        for feature_name in ["total_embodied_carbon_kgCO2eq", "embodied_carbon_kgCO2eq", "embodied_carbon_kg_co2_eq"]:
+            if props.hasFeature(feature_name):
+                value = props.getFeatureAsDouble(feature_name)
+                if value.is_initialized():
+                    carbon = value.get()
+                    total_carbon += carbon
+                    carbon_by_component[f"Construction: {construction.nameString()}"] = carbon
+                    break
+    
+    # Check subsurfaces (windows, doors) - where window_enhancement stores data
+    for subsurface in model.getSubSurfaces():
+        props = subsurface.additionalProperties()
+        
+        for feature_name in ["embodied_carbon_kg_co2_eq", "embodied_carbon_kgCO2eq", "total_embodied_carbon_kgCO2eq"]:
+            if props.hasFeature(feature_name):
+                value = props.getFeatureAsDouble(feature_name)
+                if value.is_initialized():
+                    carbon = value.get()
+                    total_carbon += carbon
+                    carbon_by_component[f"Subsurface: {subsurface.nameString()}"] = carbon
+                    break
+    
+    # Check surfaces (walls, roofs, floors) - where insulation measures might store data
+    for surface in model.getSurfaces():
+        props = surface.additionalProperties()
+        
+        for feature_name in ["embodied_carbon_kg_co2_eq", "embodied_carbon_kgCO2eq", "total_embodied_carbon_kgCO2eq"]:
+            if props.hasFeature(feature_name):
+                value = props.getFeatureAsDouble(feature_name)
+                if value.is_initialized():
+                    carbon = value.get()
+                    total_carbon += carbon
+                    carbon_by_component[f"Surface: {surface.nameString()}"] = carbon
+                    break
     
     return total_carbon, carbon_by_component
 
@@ -633,80 +674,58 @@ def generate_spider_chart(baseline_data, modified_data, output_path):
     for cat, norm in zip(categories, normalized_modified):
         print(f"  {cat.replace(chr(10), ' ')}: {norm:.1f}%")
     
-    # Create subplot with spider chart and bar chart side-by-side
-    from plotly.subplots import make_subplots
+    # Create spider chart
+    fig = go.Figure()
     
-    fig = make_subplots(
-        rows=1, cols=2,
-        specs=[[{'type': 'polar'}, {'type': 'bar'}]],
-        subplot_titles=('Normalized Comparison (% of Baseline)', 'Absolute Values'),
-        column_widths=[0.5, 0.5]
-    )
-    
-    # Spider chart (normalized)
+    # Baseline trace
     fig.add_trace(go.Scatterpolar(
         r=normalized_baseline,
         theta=categories,
         fill='toself',
         name='Baseline',
         line_color='blue',
-        showlegend=True
-    ), row=1, col=1)
+        line_width=2
+    ))
     
+    # Modified/Retrofit trace
     fig.add_trace(go.Scatterpolar(
         r=normalized_modified,
         theta=categories,
         fill='toself',
         name='Retrofit Package',
         line_color='red',
-        showlegend=True
-    ), row=1, col=1)
-    
-    # Bar chart (absolute values)
-    category_short = ['Embodied Carbon', 'Operational Energy', 'Cost']
-    
-    fig.add_trace(go.Bar(
-        name='Baseline',
-        x=category_short,
-        y=baseline_values,
-        marker_color='blue',
-        text=[f'{v:.2f}' for v in baseline_values],
-        textposition='outside',
-        showlegend=False
-    ), row=1, col=2)
-    
-    fig.add_trace(go.Bar(
-        name='Retrofit Package',
-        x=category_short,
-        y=modified_values,
-        marker_color='red',
-        text=[f'{v:.2f}' for v in modified_values],
-        textposition='outside',
-        showlegend=False
-    ), row=1, col=2)
+        line_width=2
+    ))
     
     # Update layout
     fig.update_layout(
         polar=dict(
             radialaxis=dict(
                 visible=True,
-                range=[0, 150]
+                range=[0, 150],
+                ticksuffix='%'
             )),
-        title_text="Window Retrofit Impact Analysis",
-        title_x=0.5,
-        height=500,
-        barmode='group'
+        title={
+            'text': "Building Retrofit Impact Analysis<br><sub>Values shown as % of baseline</sub>",
+            'x': 0.5,
+            'xanchor': 'center'
+        },
+        height=700,
+        width=900,
+        showlegend=True,
+        legend=dict(
+            orientation="h",
+            yanchor="bottom",
+            y=-0.15,
+            xanchor="center",
+            x=0.5
+        ),
+        margin=dict(l=120, r=150, t=100, b=100)
     )
-    
-    # Update y-axis labels for bar chart
-    fig.update_yaxes(title_text="Value", row=1, col=2)
     
     fig.write_html(output_path)
     print(f"[OK] Spider chart saved: {output_path}")
-    print(f"  Chart includes normalized % comparison and absolute values")
-    
-    # Also show in browser
-    fig.show()
+    print(f"  Chart shows normalized % comparison relative to baseline")
 
 
 def main():
@@ -724,7 +743,7 @@ def main():
     
     # Check if files exist
     if not baseline_model_path.exists():
-        print(f"✗ Baseline model not found: {baseline_model_path}")
+        print(f"[ERROR] Baseline model not found: {baseline_model_path}")
         sys.exit(1)
     
     if not weather_file.exists():
@@ -747,7 +766,7 @@ def main():
     baseline_model_opt = translator.loadModel(str(baseline_model_path))
     
     if not baseline_model_opt.is_initialized():
-        print("✗ Failed to load baseline model")
+        print("[ERROR] Failed to load baseline model")
         sys.exit(1)
     
     baseline_model = baseline_model_opt.get()
@@ -760,7 +779,7 @@ def main():
     # Run baseline simulation using existing function from apply_reporting_measure
     baseline_eplustbl_path = None
     if weather_file.exists():
-        baseline_eplustbl_path = run_energyplus_simulation(baseline_model_path)
+        baseline_eplustbl_path = run_energyplus_simulation(baseline_model_path, weather_file)
     
     # Parse baseline energy from eplustbl.html if available
     baseline_energy = 0.0
@@ -845,7 +864,7 @@ def main():
         success = apply_window_enhancement_measure(modified_model, window_args)
         
         if not success:
-            print("✗ Failed to apply window enhancement measure")
+            print("[ERROR] Failed to apply window enhancement measure")
             sys.exit(1)
     
     # Apply Wall Insulation if enabled
@@ -861,7 +880,7 @@ def main():
         success = apply_wall_insulation_measure(modified_model, wall_args)
         
         if not success:
-            print("✗ Failed to apply wall insulation measure")
+            print("[ERROR] Failed to apply wall insulation measure")
             sys.exit(1)
     
     # Apply Roof Insulation if enabled
@@ -877,7 +896,7 @@ def main():
         success = apply_roof_insulation_measure(modified_model, roof_args)
         
         if not success:
-            print("✗ Failed to apply roof insulation measure")
+            print("[ERROR] Failed to apply roof insulation measure")
             sys.exit(1)
     
     # Save modified model
@@ -899,7 +918,7 @@ def main():
     # Run modified simulation using existing function from apply_reporting_measure
     modified_eplustbl_path = None
     if weather_file.exists():
-        modified_eplustbl_path = run_energyplus_simulation(modified_model_path)
+        modified_eplustbl_path = run_energyplus_simulation(modified_model_path, weather_file)
     
     # Parse modified energy from eplustbl.html if available
     modified_energy = 0.0
@@ -971,7 +990,7 @@ def main():
     
     print(f"Applied Measures:")
     for measure in applied_measures:
-        print(f"  ✓ {measure}")
+        print(f"  [OK] {measure}")
     
     print(f"\nResults saved in: {output_dir}")
     print(f"  - Modified model: modified_model.osm")
