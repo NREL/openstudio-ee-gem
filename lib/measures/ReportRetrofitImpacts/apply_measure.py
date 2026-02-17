@@ -1,6 +1,19 @@
 import sys
-import openstudio
+import os
 from pathlib import Path
+
+try:
+    import openstudio
+except ImportError as e:
+    print(f"WARNING: Could not import openstudio: {e}")
+    print("This is typically due to Python version mismatch (OpenStudio 3.8 requires Python 3.8)")
+    print("\nTo fix:")
+    print("  1. Install Python 3.8")
+    print("  2. Create a Python 3.8 venv: python3.8 -m venv .venv38")
+    print("  3. Activate and install dependencies")
+    print("\nFor now, exiting...")
+    sys.exit(1)
+
 from measure import CReport
 
 # Set the current directory path and model path
@@ -39,5 +52,14 @@ for warning in runner.result().warnings():
 for error in runner.result().errors():
     print("ERROR:", error.logMessage())
 
-# Clean up the model
+# Clean up the model and related objects
 del model
+del model_opt
+del translator
+del runner
+del osw
+del measure
+
+# Force garbage collection
+import gc
+gc.collect()

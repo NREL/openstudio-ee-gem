@@ -7,10 +7,11 @@ import sys
 import os
 from pathlib import Path
 
-# Add measure directory to Python path for resource imports
+# Add resources directory to Python path for imports
 measure_dir = Path(__file__).parent
-if str(measure_dir) not in sys.path:
-    sys.path.insert(0, str(measure_dir))
+resources_dir = measure_dir / 'resources'
+if str(resources_dir) not in sys.path:
+    sys.path.insert(0, str(resources_dir))
 
 import openstudio
 import pandas as pd
@@ -22,10 +23,10 @@ from dotenv import load_dotenv
 from call_RSmeans import RSMeansAPIClient
 
 CURRENT_DIR_PATH = Path(__file__).absolute()
-optimization_excel_path = CURRENT_DIR_PATH.parent / 'resources' / 'optimization.xlsx'
-new_optimization_excel_output_path = CURRENT_DIR_PATH.parent / 'resources' / 'optimization_updated.xlsx'
-optimization_csv_output_path = CURRENT_DIR_PATH.parent / 'resources' / 'retrofit_measure_report.csv'
-html_template_path = CURRENT_DIR_PATH.parent / 'resources' / 'retrofit_report_template.html'
+optimization_excel_path = CURRENT_DIR_PATH.parent / 'Inputs' / 'optimization.xlsx'
+new_optimization_excel_output_path = CURRENT_DIR_PATH.parent / 'Outputs' / 'optimization_updated.xlsx'
+optimization_csv_output_path = CURRENT_DIR_PATH.parent / 'Outputs' / 'retrofit_measure_report.csv'
+html_template_path = CURRENT_DIR_PATH.parent / 'Inputs' / 'retrofit_report_template.html'
 
 # Paths for baseline and measure-applied scenarios
 tests_dir = CURRENT_DIR_PATH.parent / 'tests'
@@ -33,7 +34,7 @@ baseline_run_dir = tests_dir / 'run_baseline'
 measure_applied_run_dir = tests_dir / 'run_measure_applied'
 baseline_eplustbl_path = baseline_run_dir / 'eplustbl.html'
 measure_applied_eplustbl_path = measure_applied_run_dir / 'eplustbl.html'
-html_report_path = tests_dir / 'outputs' / 'retrofit_analysis_report.html'
+html_report_path = CURRENT_DIR_PATH.parent / 'Outputs' / 'retrofit_analysis_report.html'
 
 # Energy cost fallback ($/GJ)
 DEFAULT_ENERGY_COST_PER_GJ = 15.0  # Used only if no cost data can be derived
@@ -55,35 +56,37 @@ class CReport(openstudio.measure.ReportingMeasure):
 
         """Reads and modifies Excel spreadsheet for optimization visualizations"""
         wb = load_workbook(optimization_excel_path, data_only=False, keep_links=True)
+        try:
+            # Select the 'values' worksheet specifically
+            if 'values' not in wb.sheetnames:
+                raise ValueError("Sheet named 'values' not found in the Excel file.")
+            ws = wb['values']
 
-        # Select the 'values' worksheet specifically
-        if 'values' not in wb.sheetnames:
-            raise ValueError("Sheet named 'values' not found in the Excel file.")
-        ws = wb['values']
+            # Find the row with "Embodied Carbon" in the first column
+            target_row = None
+            for row in ws.iter_rows(min_row=1, max_col=1):
+                cell = row[0]
+                if str(cell.value).strip() == 'Embodied Carbon':
+                    target_row = cell.row
+                    break
 
-        # Find the row with "Embodied Carbon" in the first column
-        target_row = None
-        for row in ws.iter_rows(min_row=1, max_col=1):
-            cell = row[0]
-            if str(cell.value).strip() == 'Embodied Carbon':
-                target_row = cell.row
-                break
+            # Find the column with "Scenario_1" in the header row
+            target_col = None
+            for cell in ws[1]:  # First row is assumed to be the header
+                if str(cell.value).strip() == 'Scenario_1':
+                    target_col = cell.column
+                    break
 
-        # Find the column with "Scenario_1" in the header row
-        target_col = None
-        for cell in ws[1]:  # First row is assumed to be the header
-            if str(cell.value).strip() == 'Scenario_1':
-                target_col = cell.column
-                break
+            # Modify the value if both row and column are found
+            if target_row and target_col:
+                ws.cell(row=target_row, column=target_col).value = replacement_value
+            else:
+                raise ValueError("Could not find 'Embodied Carbon' row or 'Scenario_1' column.")
 
-        # Modify the value if both row and column are found
-        if target_row and target_col:
-            ws.cell(row=target_row, column=target_col).value = replacement_value
-        else:
-            raise ValueError("Could not find 'Embodied Carbon' row or 'Scenario_1' column.")
-
-        # Save updated workbook
-        wb.save(new_optimization_excel_output_path)
+            # Save updated workbook
+            wb.save(new_optimization_excel_output_path)
+        finally:
+            wb.close()
 
     def optimization(self):
         """Generate optimization visualization and save to HTML file."""
@@ -138,6 +141,73 @@ class CReport(openstudio.measure.ReportingMeasure):
             return float(cleaned) if cleaned else 0.0
         except ValueError:
             return 0.0
+
+    def extract_new_materials_from_model(self, model, runner):
+        """
+        Extract new retrofit materials from AdditionalProperties objects.
+        Returns list of materials with name, quantity, and unit.
+        
+        Assumes AdditionalProperties have keys like:
+          - 'retrofit_material_name': str
+          - 'retrofit_material_quantity': float
+          - 'retrofit_material_unit': str (optional, defaults to 'unit')
+        """
+        materials = []
+        
+        try:
+            # Iterate through all constructions and look for retrofit materials
+            for construction in model.getConstructions():
+                props = construction.additionalProperties()
+                feature_names = props.featureNames()
+                
+                if len(feature_names) == 0:
+                    continue
+                
+                # Extract material properties
+                material_name = None
+                material_quantity = 1.0
+                material_unit = "unit"
+                
+                for feature_name in feature_names:
+                    feature_name_lower = feature_name.lower()
+                    
+                    # Extract material name
+                    if 'retrofit_material_name' in feature_name_lower or 'material_name' in feature_name_lower:
+                        value_str = props.getFeatureAsString(feature_name)
+                        if value_str.is_initialized():
+                            material_name = value_str.get()
+                    
+                    # Extract quantity
+                    elif 'retrofit_material_quantity' in feature_name_lower or 'material_quantity' in feature_name_lower:
+                        value_double = props.getFeatureAsDouble(feature_name)
+                        if value_double.is_initialized():
+                            material_quantity = value_double.get()
+                        else:
+                            value_int = props.getFeatureAsInteger(feature_name)
+                            if value_int.is_initialized():
+                                material_quantity = float(value_int.get())
+                    
+                    # Extract unit
+                    elif 'retrofit_material_unit' in feature_name_lower or 'material_unit' in feature_name_lower:
+                        value_str = props.getFeatureAsString(feature_name)
+                        if value_str.is_initialized():
+                            material_unit = value_str.get()
+                
+                # If we found a material name, add it to the list
+                if material_name:
+                    materials.append({
+                        'name': material_name,
+                        'quantity': material_quantity,
+                        'unit': material_unit
+                    })
+                    runner.registerInfo(f"Found retrofit material: {material_name} (qty: {material_quantity} {material_unit})")
+            
+            runner.registerInfo(f"Extracted {len(materials)} retrofit materials from model AdditionalProperties")
+            return materials
+        
+        except Exception as e:
+            runner.registerWarning(f"Error extracting materials from model: {str(e)}")
+            return []
 
     def extract_building_string(self, html_text: str) -> str:
         """Extract building name from EnergyPlus HTML report."""
@@ -247,10 +317,15 @@ class CReport(openstudio.measure.ReportingMeasure):
         return DEFAULT_ENERGY_COST_PER_GJ
     
 
-    def pull_rsmeans_cost_from_api(self, runner):
+    def pull_rsmeans_cost_from_api(self, runner, materials=None):
         """
-        Pull RSMeans cost data from the API and write to Excel.
+        Pull RSMeans cost data for retrofit materials from the API and write to Excel.
         Uses credentials from environment variables (client_id, client_secret).
+        
+        Args:
+            runner: OpenStudio runner for logging
+            materials: Optional list of materials [{name, quantity, unit}, ...].
+                      If None, uses hardcoded example.
         """
         try:
             # Load environment variables
@@ -260,7 +335,7 @@ class CReport(openstudio.measure.ReportingMeasure):
             
             if not client_id or not client_secret:
                 runner.registerWarning("RSMeans API credentials (client_id, client_secret) not found in environment. Skipping RSMeans cost retrieval.")
-                return
+                return {}
             
             runner.registerInfo("Initializing RSMeans API client...")
             
@@ -270,66 +345,59 @@ class CReport(openstudio.measure.ReportingMeasure):
             # Authenticate with the API
             if not client.authenticate():
                 runner.registerWarning("Failed to authenticate with RSMeans API. Skipping cost retrieval.")
-                return
+                return {}
             
             runner.registerInfo("Successfully authenticated with RSMeans API.")
             
-            # Example: Search for a construction item and retrieve its cost
-            # This can be customized based on what materials are in your model
-            search_term = "continuous strip footing"  # Example search term
-            runner.registerInfo(f"Searching RSMeans database for: {search_term}")
+            # Use provided materials or default example
+            if not materials:
+                materials = [
+                    {'name': 'continuous strip footing', 'quantity': 1.0, 'unit': 'unit'}
+                ]
+                runner.registerInfo("Using default hardcoded material for backwards compatibility")
             
-            search_results = client.search_unit_costlines(
+            runner.registerInfo(f"Querying RSMeans API for {len(materials)} materials...")
+            
+            # Search for materials in batch
+            batch_results = client.search_materials_batch(
+                materials=materials,
                 release_id='2019-an',
-                measurement_system='imp',
-                searchTerm=search_term
+                catalog='bc-mf',
+                location_id='us-us-national',
+                labor_type='std',
+                measurement_system='imp'
             )
             
-            if search_results and 'items' in search_results and len(search_results['items']) > 0:
-                # Get the first result
-                first_item = search_results['items'][0]
-                division_code = first_item.get('id')
-                item_description = first_item.get('description', 'Unknown')
-                
-                runner.registerInfo(f"Found item: {item_description} (Code: {division_code})")
-                
-                # Get detailed cost information for this item
-                if division_code:
-                    cost_line = client.get_unit_costlines(
-                        release_id='2019-an',
-                        catalog='bc-mf',
-                        location_id='us-us-national',
-                        labor_type='std',
-                        measurement_system='imp',
-                        divisionCode=division_code
-                    )
-                    
-                    if cost_line and 'items' in cost_line:
-                        for item in cost_line['items']:
-                            if item.get('id') == division_code:
-                                total_op_cost = item.get('localizedCosts', {}).get('totalOpCost')
-                                
-                                if total_op_cost is not None:
-                                    runner.registerInfo(f"Total operational cost for {item_description}: ${total_op_cost}")
-                                    
-                                    # Write to Excel if the file exists
-                                    if new_optimization_excel_output_path.exists():
-                                        try:
-                                            wb = load_workbook(new_optimization_excel_output_path)
-                                            ws = wb.active
-                                            ws["B4"] = total_op_cost
-                                            wb.save(new_optimization_excel_output_path)
-                                            runner.registerInfo(f"RSMeans cost data written to Excel: {new_optimization_excel_output_path}")
-                                        except Exception as e:
-                                            runner.registerWarning(f"Could not write cost data to Excel: {str(e)}")
-                                else:
-                                    runner.registerWarning(f"Total operational cost not found for {division_code}")
-                                break
-            else:
-                runner.registerInfo(f"No results found for search term: {search_term}")
+            # Log results
+            runner.registerInfo(f"RSMeans query complete. Total cost: ${batch_results['total_cost']:.2f}")
+            
+            if batch_results['materials']:
+                for mat in batch_results['materials']:
+                    runner.registerInfo(f"  - {mat['name']}: ${mat['total_cost']:.2f} ({mat['quantity']} {mat.get('unit', 'units')})")
+            
+            if batch_results['errors']:
+                for error in batch_results['errors']:
+                    runner.registerWarning(f"  RSMeans lookup issue: {error}")
+            
+            # Write aggregated cost to Excel
+            if batch_results['total_cost'] > 0 and new_optimization_excel_output_path.exists():
+                try:
+                    wb = load_workbook(new_optimization_excel_output_path)
+                    try:
+                        ws = wb.active
+                        ws["B4"] = batch_results['total_cost']
+                        wb.save(new_optimization_excel_output_path)
+                        runner.registerInfo(f"Retrofit materials cost written to Excel: ${batch_results['total_cost']:.2f}")
+                    finally:
+                        wb.close()
+                except Exception as e:
+                    runner.registerWarning(f"Could not write cost data to Excel: {str(e)}")
+            
+            return batch_results
         
         except Exception as e:
             runner.registerWarning(f"Error retrieving RSMeans cost data: {str(e)}")
+            return {}
 
     def compare_energy_results(self, runner):
         """
@@ -389,13 +457,15 @@ class CReport(openstudio.measure.ReportingMeasure):
             return {}
 
     def generate_html_report(self, runner, energy_deltas):
-        """Generate a self-contained HTML report with real baseline/measure values."""
+        """Generate a self-contained HTML report with real baseline/measure values and retrofit material costs."""
         try:
             baseline_energy = energy_deltas.get('baseline_energy_GJ', 0.0)
             measure_energy = energy_deltas.get('measure_energy_GJ', 0.0)
             energy_delta = energy_deltas.get('energy_delta_GJ', 0.0)
             energy_delta_pct = energy_deltas.get('energy_delta_pct', 0.0)
             energy_cost_per_gj = energy_deltas.get('energy_cost_per_gj', DEFAULT_ENERGY_COST_PER_GJ)
+            retrofit_materials_cost = energy_deltas.get('retrofit_materials_cost', 0.0)
+            retrofit_materials = energy_deltas.get('retrofit_materials', [])
 
             baseline_cost = baseline_energy * energy_cost_per_gj
             measure_cost = measure_energy * energy_cost_per_gj
@@ -414,6 +484,19 @@ class CReport(openstudio.measure.ReportingMeasure):
                 return False
 
             template = html_template_path.read_text(encoding='utf-8')
+            
+            # Format retrofit materials table if available
+            materials_table_html = ""
+            if retrofit_materials:
+                materials_table_html = "<table>\n"
+                materials_table_html += "<tr><th>Material</th><th>Qty</th><th>Unit Cost</th><th>Total Cost</th></tr>\n"
+                for mat in retrofit_materials:
+                    materials_table_html += f"<tr><td>{mat.get('name', 'Unknown')}</td>"
+                    materials_table_html += f"<td>{mat.get('quantity', 0)}</td>"
+                    materials_table_html += f"<td>${mat.get('unit_cost', 0):.2f}</td>"
+                    materials_table_html += f"<td>${mat.get('total_cost', 0):.2f}</td></tr>\n"
+                materials_table_html += "</table>\n"
+            
             html = template.format(
                 baseline_energy=baseline_energy,
                 measure_energy=measure_energy,
@@ -427,6 +510,8 @@ class CReport(openstudio.measure.ReportingMeasure):
                 measure_cost=measure_cost,
                 baseline_cost_pct=baseline_cost_pct,
                 measure_cost_pct=measure_cost_pct,
+                retrofit_materials_cost=retrofit_materials_cost,
+                retrofit_materials_table=materials_table_html,
             )
 
             html_report_path.write_text(html, encoding='utf-8')
@@ -570,12 +655,20 @@ class CReport(openstudio.measure.ReportingMeasure):
         except Exception as e:
             runner.registerWarning(f"Could not generate optimization visualization: {str(e)}")
 
-        # Call RSMeans API to get cost data
-        self.pull_rsmeans_cost_from_api(runner)
+        # Extract retrofit materials from model AdditionalProperties
+        retrofit_materials = self.extract_new_materials_from_model(model, runner)
+
+        # Call RSMeans API to get cost data for retrofit materials
+        rsmeans_results = self.pull_rsmeans_cost_from_api(runner, materials=retrofit_materials if retrofit_materials else None)
 
         # Compare energy results between baseline and measure-applied scenarios
         runner.registerInfo("Starting energy comparison analysis...")
         energy_deltas = self.compare_energy_results(runner)
+
+        # Combine results for HTML report
+        if energy_deltas and rsmeans_results:
+            energy_deltas['retrofit_materials_cost'] = rsmeans_results.get('total_cost', 0.0)
+            energy_deltas['retrofit_materials'] = rsmeans_results.get('materials', [])
 
         # Generate HTML report with energy analysis and costs
         if energy_deltas:
