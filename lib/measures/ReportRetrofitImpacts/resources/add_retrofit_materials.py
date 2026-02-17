@@ -40,22 +40,23 @@ print(f"Model contains {len(model.objects())} objects.\n")
 constructions = list(model.getConstructions())
 print(f"Found {len(constructions)} constructions in model")
 
-# Example retrofit materials to add
+# Example retrofit materials to add - using actual RSMeans searchable terms
+# These are based on materials confirmed in RSMeans database from real API calls
 retrofit_materials = [
     {
-        'name': 'High-Performance Aluminum Framed Glass Door',
-        'quantity': 5.0,
-        'unit': 'door'
+        'name': 'Concrete',
+        'quantity': 50.0,
+        'unit': 'cubic yards'
     },
     {
-        'name': 'Foam Weatherstripping for Doors',
-        'quantity': 150.0,
-        'unit': 'linear_feet'
+        'name': 'Drywall',
+        'quantity': 2000.0,
+        'unit': 'square feet'
     },
     {
-        'name': 'Continuous strip footing',
-        'quantity': 2.5,
-        'unit': 'unit'
+        'name': 'Insulation',
+        'quantity': 1500.0,
+        'unit': 'square feet'
     }
 ]
 

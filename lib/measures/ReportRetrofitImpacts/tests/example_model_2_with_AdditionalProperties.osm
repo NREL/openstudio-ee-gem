@@ -16909,37 +16909,37 @@ OS:AdditionalProperties,
   {39644664-a9a1-417a-b9db-7b2c2b5f2148}, !- Object Name
   retrofit_material_name,                 !- Feature Name 1
   String,                                 !- Feature Data Type 1
-  High-Performance Aluminum Framed Glass Door, !- Feature Value 1
+  Concrete,                               !- Feature Value 1
   retrofit_material_quantity,             !- Feature Name 2
   Double,                                 !- Feature Data Type 2
-  5,                                      !- Feature Value 2
+  50,                                     !- Feature Value 2
   retrofit_material_unit,                 !- Feature Name 3
   String,                                 !- Feature Data Type 3
-  door;                                   !- Feature Value 3
+  cubic yards;                            !- Feature Value 3
 
 OS:AdditionalProperties,
   {f2039e8e-19cf-44af-bfb0-df82d5604df7}, !- Handle
   {b88691a7-e9b0-4ff0-87e4-858b5b50b56c}, !- Object Name
   retrofit_material_name,                 !- Feature Name 1
   String,                                 !- Feature Data Type 1
-  Foam Weatherstripping for Doors,        !- Feature Value 1
+  Drywall,                                !- Feature Value 1
   retrofit_material_quantity,             !- Feature Name 2
   Double,                                 !- Feature Data Type 2
-  150,                                    !- Feature Value 2
+  2000,                                   !- Feature Value 2
   retrofit_material_unit,                 !- Feature Name 3
   String,                                 !- Feature Data Type 3
-  linear_feet;                            !- Feature Value 3
+  square feet;                            !- Feature Value 3
 
 OS:AdditionalProperties,
   {97ea74e8-cb50-4f81-8b56-df4cee7caf7b}, !- Handle
   {8a7ba072-82ca-4f77-af03-922fb4e52b19}, !- Object Name
   retrofit_material_name,                 !- Feature Name 1
   String,                                 !- Feature Data Type 1
-  Continuous strip footing,               !- Feature Value 1
+  Insulation,                             !- Feature Value 1
   retrofit_material_quantity,             !- Feature Name 2
   Double,                                 !- Feature Data Type 2
-  2.5,                                    !- Feature Value 2
+  1500,                                   !- Feature Value 2
   retrofit_material_unit,                 !- Feature Name 3
   String,                                 !- Feature Data Type 3
-  unit;                                   !- Feature Value 3
+  square feet;                            !- Feature Value 3
 
