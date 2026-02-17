@@ -324,7 +324,7 @@ class CReport(openstudio.measure.ReportingMeasure):
         
         Args:
             runner: OpenStudio runner for logging
-            materials: Optional list of materials [{name, quantity, unit}, ...].
+            materials: Optional list of materials [{name, quantity, unit}, ...]
                       If None, uses hardcoded example.
         """
         try:
@@ -358,6 +358,9 @@ class CReport(openstudio.measure.ReportingMeasure):
             
             runner.registerInfo(f"Querying RSMeans API for {len(materials)} materials...")
             
+            # Path to save search results
+            search_results_path = CURRENT_DIR_PATH.parent / 'Outputs' / 'search_results.json'
+            
             # Search for materials in batch
             batch_results = client.search_materials_batch(
                 materials=materials,
@@ -365,11 +368,13 @@ class CReport(openstudio.measure.ReportingMeasure):
                 catalog='bc-mf',
                 location_id='us-us-national',
                 labor_type='std',
-                measurement_system='imp'
+                measurement_system='imp',
+                save_search_results_path=str(search_results_path)
             )
             
             # Log results
             runner.registerInfo(f"RSMeans query complete. Total cost: ${batch_results['total_cost']:.2f}")
+            runner.registerInfo(f"Search results saved to: {search_results_path}")
             
             if batch_results['materials']:
                 for mat in batch_results['materials']:

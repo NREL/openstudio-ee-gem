@@ -260,7 +260,8 @@ class RSMeansAPIClient:
                                catalog: str = 'bc-mf',
                                location_id: str = 'us-us-national',
                                labor_type: str = 'std',
-                               measurement_system: str = 'imp') -> Dict[str, Any]:
+                               measurement_system: str = 'imp',
+                               save_search_results_path: Optional[str] = None) -> Dict[str, Any]:
         """
         Search for multiple materials in RSMeans and return aggregated costs.
 
@@ -272,15 +273,17 @@ class RSMeansAPIClient:
             location_id: Location for cost localization
             labor_type: Type of labor
             measurement_system: 'imp' for imperial, 'met' for metric
+            save_search_results_path: Optional path to save raw search results JSON
 
         Returns:
             dict: Aggregated results with:
-                  {'total_cost': float, 'materials': [{...}, ...], 'errors': []}
+                  {'total_cost': float, 'materials': [{...}, ...], 'errors': [], 'search_log': []}
         """
         results = {
             'total_cost': 0.0,
             'materials': [],
-            'errors': []
+            'errors': [],
+            'search_log': []
         }
 
         for material in materials:
@@ -325,6 +328,16 @@ class RSMeansAPIClient:
                     divisionCode=division_code
                 )
 
+                # Log search results for debugging
+                search_log_entry = {
+                    'material_name': material_name,
+                    'search_results_count': len(search_results.get('items', [])),
+                    'division_code': division_code,
+                    'first_match': first_item.get('description', ''),
+                    'has_cost_data': cost_line is not None and 'items' in cost_line
+                }
+                results['search_log'].append(search_log_entry)
+
                 if cost_line and 'items' in cost_line:
                     for item in cost_line['items']:
                         if item.get('id') == division_code:
@@ -349,6 +362,19 @@ class RSMeansAPIClient:
 
             except Exception as e:
                 results['errors'].append(f"Error processing material '{material_name}': {str(e)}")
+        
+        # Save raw search results to JSON if path provided
+        if save_search_results_path:
+            try:
+                import json
+                from pathlib import Path
+                output_path = Path(save_search_results_path)
+                output_path.parent.mkdir(parents=True, exist_ok=True)
+                
+                with open(output_path, 'w', encoding='utf-8') as f:
+                    json.dump(results, f, indent=2)
+            except Exception as e:
+                results['errors'].append(f"Could not save search results to JSON: {str(e)}")
 
         return results
 
