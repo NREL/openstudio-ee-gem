@@ -76,7 +76,10 @@ jobs:
               python3 -m venv /opt/venv
               source /opt/venv/bin/activate
               pip install --upgrade pip
-              pip install openpyxl requests python-dotenv plotly pandas
+              pip install openpyxl requests python-dotenv plotly pandas pytest
+              
+              # Set EC3_API_TOKEN to allow test collection without config.ini
+              export EC3_API_TOKEN="dummy-token-for-ci-testing"
               
               # Install gem dependencies
               echo "Installing gem dependencies..."
