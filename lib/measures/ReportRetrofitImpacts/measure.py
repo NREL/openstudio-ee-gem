@@ -20,14 +20,32 @@ import requests
 import re
 from dotenv import load_dotenv
 from call_RSmeans import RSMeansAPIClient
+from reportlab.lib.pagesizes import letter, A4
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, Image, PageBreak
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.lib.units import inch
+from reportlab.lib import colors
 
 CURRENT_DIR_PATH = Path(__file__).absolute()
 optimization_excel_path = CURRENT_DIR_PATH.parent / 'resources' / 'optimization.xlsx'
 new_optimization_excel_output_path = CURRENT_DIR_PATH.parent / 'resources' / 'optimization_updated.xlsx'
 optimization_csv_output_path = CURRENT_DIR_PATH.parent / 'resources' / 'retrofit_measure_report.csv'
-rsmeans_data_path = CURRENT_DIR_PATH.parent / 'resources' / 'Master_Format_Codes.xlsx'
 
-class ECReport(openstudio.measure.ReportingMeasure):
+# Paths for baseline and measure-applied scenarios
+tests_dir = CURRENT_DIR_PATH.parent / 'tests'
+baseline_run_dir = tests_dir / 'run_baseline'
+measure_applied_run_dir = tests_dir / 'run_measure_applied'
+baseline_eplustbl_path = baseline_run_dir / 'eplustbl.html'
+measure_applied_eplustbl_path = measure_applied_run_dir / 'eplustbl.html'
+pdf_report_path = tests_dir / 'outputs' / 'retrofit_analysis_report.pdf'
+
+# Energy cost assumptions ($/GJ)
+ENERGY_COST_PER_GJ = 15.0  # Typical industrial energy cost
+
+# Visualization path
+optimization_viz_path = tests_dir / 'outputs' / 'optimization_visualization.html'
+
+class CReport(openstudio.measure.ReportingMeasure):
     def __init__(self):
         super().__init__()
 
@@ -99,25 +117,43 @@ class ECReport(openstudio.measure.ReportingMeasure):
         wb.save(new_optimization_excel_output_path)
 
     def optimization(self):
+        """Generate optimization visualization and save to HTML file."""
+        try:
+            # Read from the original optimization file for base data
+            factor_values = pd.read_excel(optimization_excel_path, sheet_name="values")
+            n_scenarios = 3
 
-        optimization_weights = pd.read_excel(optimization_excel_path, sheet_name = "weights") # Not being currently used
-        factor_values = pd.read_excel(optimization_excel_path, sheet_name = "values")
-        n_scenarios = 3
+            for scenario in range(1, n_scenarios + 1):
+                factor_values["Normalized_Scenario_" + str(scenario)] = factor_values["Scenario_" + str(scenario)] / factor_values["Basis"]
 
-        for scenario in range(1,n_scenarios+1):
-            #print(scenario)
-            factor_values["Normalized_Scenario_" + str(scenario)] = factor_values["Scenario_" + str(scenario)]/factor_values["Basis"]
+            fig = go.Figure()
 
-        fig = go.Figure()
+            for scenario in range(1, n_scenarios + 1):
+                fig.add_trace(
+                    go.Scatterpolar(
+                        theta=factor_values["Factor"],
+                        r=factor_values["Normalized_Scenario_" + str(scenario)],
+                        name="Scenario_" + str(scenario)
+                    ))
 
-        for scenario in range(1, n_scenarios+1):
-            fig.add_trace(
-                go.Scatterpolar(
-                    theta = factor_values["Factor"],
-                    r = factor_values["Normalized_Scenario_" + str (scenario)], name = "Scenario_" + str(scenario)
-                ))
+            # Update layout for better visibility
+            fig.update_layout(
+                polar=dict(
+                    radialaxis=dict(
+                        visible=True,
+                        range=[0, 1]
+                    )),
+                showlegend=True,
+                title="Retrofit Optimization Scenario Comparison"
+            )
 
-        fig.show()
+            # Save to HTML file instead of showing in browser
+            html_output_path = tests_dir / 'outputs' / 'optimization_visualization.html'
+            fig.write_html(str(html_output_path))
+            print(f"Visualization saved to: {html_output_path}")
+            
+        except Exception as e:
+            print(f"Error generating optimization visualization: {str(e)}")
 
     def extract_field(self, pattern: str, html_text: str) -> str:
         """Extract text matching the pattern from HTML."""
@@ -182,43 +218,6 @@ class ECReport(openstudio.measure.ReportingMeasure):
         runner.registerInfo(f"Parsed EnergyPlus report: {data.get('building_name', 'N/A')}")
         return data
     
-    def pull_rsmeans_cost_from_api(self, runner):
-        """
-        Pulls RSMeans cost data from the API using credentials from .env file.
-        """
-        # Load credentials from .env file
-        load_dotenv()
-        client_id = os.getenv('client_id')
-        client_secret = os.getenv('client_secret')
-        
-        if not client_id or not client_secret:
-            runner.registerWarning("RSMeans API credentials not found in .env file")
-            return None
-        
-        # Initialize client with credentials
-        client = RSMeansAPIClient(client_id, client_secret, use_sandbox=True)
-        
-        # Authenticate
-        if not client.authenticate():
-            runner.registerWarning("Failed to authenticate with RSMeans API")
-            return None
-        
-        runner.registerInfo("Successfully authenticated with RSMeans API")
-        
-        # Example: Search for a unit cost line
-        # You can customize this based on your needs
-        search_results = client.search_unit_costlines(
-            release_id='2019-an',
-            measurement_system='imp',
-            searchTerm='windows'
-        )
-        
-        if search_results:
-            runner.registerInfo(f"Found RSMeans search results")
-            # Process and use the results as needed
-        
-        return search_results
-
 
     def parse_osm_additional_properties(self, osm_path, runner):
         """Parse OS:AdditionalProperties objects directly from an OSM file."""
@@ -318,42 +317,307 @@ class ECReport(openstudio.measure.ReportingMeasure):
             runner.registerInfo("No AdditionalProperties found on constructions.")
             return pd.DataFrame()
 
-    def run(self, runner, user_arguments):
+    def pull_rsmeans_cost_from_api(self, runner):
+        """
+        Pull RSMeans cost data from the API and write to Excel.
+        Uses credentials from environment variables (client_id, client_secret).
+        """
+        try:
+            # Load environment variables
+            load_dotenv()
+            client_id = os.getenv('client_id')
+            client_secret = os.getenv('client_secret')
+            
+            if not client_id or not client_secret:
+                runner.registerWarning("RSMeans API credentials (client_id, client_secret) not found in environment. Skipping RSMeans cost retrieval.")
+                return
+            
+            runner.registerInfo("Initializing RSMeans API client...")
+            
+            # Initialize the API client
+            client = RSMeansAPIClient(client_id, client_secret, use_sandbox=True)
+            
+            # Authenticate with the API
+            if not client.authenticate():
+                runner.registerWarning("Failed to authenticate with RSMeans API. Skipping cost retrieval.")
+                return
+            
+            runner.registerInfo("Successfully authenticated with RSMeans API.")
+            
+            # Example: Search for a construction item and retrieve its cost
+            # This can be customized based on what materials are in your model
+            search_term = "continuous strip footing"  # Example search term
+            runner.registerInfo(f"Searching RSMeans database for: {search_term}")
+            
+            search_results = client.search_unit_costlines(
+                release_id='2019-an',
+                measurement_system='imp',
+                searchTerm=search_term
+            )
+            
+            if search_results and 'items' in search_results and len(search_results['items']) > 0:
+                # Get the first result
+                first_item = search_results['items'][0]
+                division_code = first_item.get('id')
+                item_description = first_item.get('description', 'Unknown')
+                
+                runner.registerInfo(f"Found item: {item_description} (Code: {division_code})")
+                
+                # Get detailed cost information for this item
+                if division_code:
+                    cost_line = client.get_unit_costlines(
+                        release_id='2019-an',
+                        catalog='bc-mf',
+                        location_id='us-us-national',
+                        labor_type='std',
+                        measurement_system='imp',
+                        divisionCode=division_code
+                    )
+                    
+                    if cost_line and 'items' in cost_line:
+                        for item in cost_line['items']:
+                            if item.get('id') == division_code:
+                                total_op_cost = item.get('localizedCosts', {}).get('totalOpCost')
+                                
+                                if total_op_cost is not None:
+                                    runner.registerInfo(f"Total operational cost for {item_description}: ${total_op_cost}")
+                                    
+                                    # Write to Excel if the file exists
+                                    if new_optimization_excel_output_path.exists():
+                                        try:
+                                            wb = load_workbook(new_optimization_excel_output_path)
+                                            ws = wb.active
+                                            ws["B4"] = total_op_cost
+                                            wb.save(new_optimization_excel_output_path)
+                                            runner.registerInfo(f"RSMeans cost data written to Excel: {new_optimization_excel_output_path}")
+                                        except Exception as e:
+                                            runner.registerWarning(f"Could not write cost data to Excel: {str(e)}")
+                                else:
+                                    runner.registerWarning(f"Total operational cost not found for {division_code}")
+                                break
+            else:
+                runner.registerInfo(f"No results found for search term: {search_term}")
+        
+        except Exception as e:
+            runner.registerWarning(f"Error retrieving RSMeans cost data: {str(e)}")
+
+    def compare_energy_results(self, runner):
+        """
+        Compare energy results between baseline and measure-applied scenarios.
+        Returns dictionary with energy deltas and costs.
+        """
+        baseline_data = {}
+        measure_data = {}
+        
+        try:
+            # Parse baseline energy results
+            if baseline_eplustbl_path.exists():
+                baseline_data = self.parse_eplustbl_html(baseline_eplustbl_path, runner)
+                runner.registerInfo(f"Baseline energy data loaded: {baseline_data.get('total_site_energy_GJ', 'N/A')} GJ")
+            else:
+                runner.registerWarning(f"Baseline eplustbl.html not found at {baseline_eplustbl_path}")
+            
+            # Parse measure-applied energy results
+            if measure_applied_eplustbl_path.exists():
+                measure_data = self.parse_eplustbl_html(measure_applied_eplustbl_path, runner)
+                runner.registerInfo(f"Measure-applied energy data loaded: {measure_data.get('total_site_energy_GJ', 'N/A')} GJ")
+            else:
+                runner.registerWarning(f"Measure-applied eplustbl.html not found at {measure_applied_eplustbl_path}")
+            
+            # Calculate energy deltas
+            deltas = {}
+            if baseline_data and measure_data:
+                try:
+                    baseline_energy = float(baseline_data.get('total_site_energy_GJ', 0))
+                    measure_energy = float(measure_data.get('total_site_energy_GJ', 0))
+                    
+                    energy_delta = baseline_energy - measure_energy
+                    energy_delta_pct = (energy_delta / baseline_energy * 100) if baseline_energy > 0 else 0
+                    cost_delta = energy_delta * ENERGY_COST_PER_GJ
+                    
+                    deltas = {
+                        'baseline_energy_GJ': baseline_energy,
+                        'measure_energy_GJ': measure_energy,
+                        'energy_delta_GJ': energy_delta,
+                        'energy_delta_pct': energy_delta_pct,
+                        'cost_delta_usd': cost_delta,
+                        'baseline_building': baseline_data.get('building_name', 'Baseline'),
+                        'measure_building': measure_data.get('building_name', 'Measure Applied')
+                    }
+                    
+                    runner.registerInfo(f"Energy Delta: {energy_delta:.2f} GJ ({energy_delta_pct:.1f}%)")
+                    runner.registerInfo(f"Cost Delta: ${cost_delta:.2f}/year")
+                except ValueError as e:
+                    runner.registerWarning(f"Could not convert energy values to float: {str(e)}")
+            
+            return deltas
+        
+        except Exception as e:
+            runner.registerWarning(f"Error comparing energy results: {str(e)}")
+            return {}
+
+    def generate_pdf_report(self, runner, energy_deltas, rsmeans_costs=None):
+        """
+        Generate a comprehensive PDF report with energy deltas, costs, and visualizations.
+        """
+        try:
+            from io import BytesIO
+            
+            # Create PDF
+            doc = SimpleDocTemplate(str(pdf_report_path), pagesize=letter,
+                                    rightMargin=72, leftMargin=72,
+                                    topMargin=72, bottomMargin=18)
+            
+            story = []
+            styles = getSampleStyleSheet()
+            title_style = ParagraphStyle(
+                'CustomTitle',
+                parent=styles['Heading1'],
+                fontSize=24,
+                textColor=colors.HexColor('#1f4788'),
+                spaceAfter=30,
+                alignment=1  # Center
+            )
+            
+            heading_style = ParagraphStyle(
+                'CustomHeading',
+                parent=styles['Heading2'],
+                fontSize=14,
+                textColor=colors.HexColor('#1f4788'),
+                spaceAfter=12,
+                spaceBefore=12
+            )
+            
+            # Title
+            story.append(Paragraph("Retrofit Measure Analysis Report", title_style))
+            story.append(Spacer(1, 0.3*inch))
+            
+            # Executive Summary
+            story.append(Paragraph("Executive Summary", heading_style))
+            if energy_deltas:
+                summary_text = f"""
+                This report compares energy consumption and operational costs between a baseline building model 
+                and the same building with proposed retrofit measures applied. The analysis includes energy savings 
+                calculations and estimated costs for implementing the retrofit measures.
+                """
+                story.append(Paragraph(summary_text, styles['Normal']))
+                story.append(Spacer(1, 0.2*inch))
+            
+            # Energy Analysis Section
+            story.append(Paragraph("Energy Analysis", heading_style))
+            if energy_deltas:
+                energy_table_data = [
+                    ['Metric', 'Baseline', 'Measure Applied', 'Delta', 'Savings %'],
+                    [
+                        'Total Site Energy (GJ)',
+                        f"{energy_deltas.get('baseline_energy_GJ', 0):.2f}",
+                        f"{energy_deltas.get('measure_energy_GJ', 0):.2f}",
+                        f"{energy_deltas.get('energy_delta_GJ', 0):.2f}",
+                        f"{energy_deltas.get('energy_delta_pct', 0):.1f}%"
+                    ]
+                ]
+                
+                energy_table = Table(energy_table_data, colWidths=[1.5*inch, 1.2*inch, 1.2*inch, 1*inch, 1*inch])
+                energy_table.setStyle(TableStyle([
+                    ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#1f4788')),
+                    ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+                    ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+                    ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+                    ('FONTSIZE', (0, 0), (-1, 0), 12),
+                    ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+                    ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
+                    ('GRID', (0, 0), (-1, -1), 1, colors.black),
+                    ('FONTSIZE', (0, 1), (-1, -1), 10),
+                ]))
+                story.append(energy_table)
+                story.append(Spacer(1, 0.2*inch))
+            
+            # Cost Analysis Section
+            story.append(Paragraph("Cost Analysis", heading_style))
+            if energy_deltas:
+                cost_delta = energy_deltas.get('cost_delta_usd', 0)
+                cost_text = f"""
+                Based on an assumed energy cost of ${ENERGY_COST_PER_GJ:.2f}/GJ, the annual operational cost savings 
+                from this retrofit measure is estimated at <b>${cost_delta:,.2f}</b>. This represents a significant 
+                opportunity for cost reduction and increased building efficiency.
+                """
+                story.append(Paragraph(cost_text, styles['Normal']))
+                story.append(Spacer(1, 0.2*inch))
+                
+                # Cost breakdown table
+                cost_table_data = [
+                    ['Cost Category', 'Amount (USD)'],
+                    ['Annual Operational Savings', f"${cost_delta:,.2f}"],
+                ]
+                
+                if rsmeans_costs:
+                    story.append(Paragraph("Capital Costs (RSMeans)", heading_style))
+                    for cost_item in rsmeans_costs:
+                        cost_table_data.append([cost_item.get('description', 'Unknown'), f"${cost_item.get('cost', 0):,.2f}"])
+                
+                cost_table = Table(cost_table_data, colWidths=[3*inch, 2*inch])
+                cost_table.setStyle(TableStyle([
+                    ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#1f4788')),
+                    ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+                    ('ALIGN', (0, 0), (-1, -1), 'RIGHT'),
+                    ('ALIGN', (0, 0), (0, -1), 'LEFT'),
+                    ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+                    ('FONTSIZE', (0, 0), (-1, 0), 12),
+                    ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+                    ('BACKGROUND', (0, 1), (-1, -1), colors.lightblue),
+                    ('GRID', (0, 0), (-1, -1), 1, colors.black),
+                ]))
+                story.append(cost_table)
+                story.append(Spacer(1, 0.3*inch))
+            
+            # Optimization Visualization
+            story.append(PageBreak())
+            story.append(Paragraph("Scenario Comparison - Optimization Metrics", heading_style))
+            
+            # Add the Plotly chart as an image if it exists
+            if optimization_viz_path.exists():
+                try:
+                    # Convert HTML to image (simplified - just reference the HTML for now)
+                    story.append(Paragraph(
+                        "Interactive optimization chart saved separately as: optimization_visualization.html",
+                        styles['Italic']
+                    ))
+                except Exception as e:
+                    runner.registerWarning(f"Could not embed visualization: {str(e)}")
+            
+            story.append(Spacer(1, 0.2*inch))
+            
+            # Recommendations
+            story.append(Paragraph("Recommendations", heading_style))
+            if energy_deltas and energy_deltas.get('energy_delta_pct', 0) > 10:
+                story.append(Paragraph(
+                    "Based on the analysis showing significant energy savings (>10%), implementation of this retrofit "
+                    "measure is recommended. The combination of operational cost savings and potential incentives makes "
+                    "this a viable investment.",
+                    styles['Normal']
+                ))
+            else:
+                story.append(Paragraph(
+                    "Further analysis may be needed to determine the cost-effectiveness of this measure.",
+                    styles['Normal']
+                ))
+            
+            # Build PDF
+            doc.build(story)
+            runner.registerInfo(f"PDF report generated: {pdf_report_path}")
+            return True
+        
+        except Exception as e:
+            runner.registerWarning(f"Error generating PDF report: {str(e)}")
+            return False
         # Don't call super().run() - it expects a real OSRunner, not our mock
         # super().run(runner, user_arguments)
         
         self.material_data.clear()
         
-        # Load the model from the output OSM file using OpenStudio API
-        model = None
-        if runner.workflow().is_initialized():
-            workflow = runner.workflow().get()
-            run_dir = Path(workflow.absoluteRunDir())
-            # Common locations for output OSM
-            possible_paths = [
-                run_dir / "in.osm",
-                run_dir / "out_DOE_small_office.osm",  # Test file name
-                run_dir.parent / "in.osm",
-                run_dir / "run" / "in.osm",
-            ]
-            # Also check for any .osm file in the directory
-            if run_dir.exists():
-                for osm_file in run_dir.glob("*.osm"):
-                    possible_paths.append(osm_file)
-            
-            for path in possible_paths:
-                if path.exists():
-                    runner.registerInfo(f"Loading model from: {path}")
-                    # Load model using OpenStudio API
-                    translator = openstudio.osversion.VersionTranslator()
-                    model_opt = translator.loadModel(str(path))
-                    if model_opt.is_initialized():
-                        model = model_opt.get()
-                        runner.registerInfo("Model loaded successfully via OpenStudio API")
-                        break
-        
+        # Verify model is provided
         if not model:
-            runner.registerError("Could not load model from output OSM file.")
+            runner.registerError("No model provided to measure.")
             return False
         
         # Extract AdditionalProperties using OpenStudio API
@@ -415,28 +679,31 @@ class ECReport(openstudio.measure.ReportingMeasure):
         
         # Parse EnergyPlus HTML report if available
         eplustbl_data = {}
-        if runner.workflow().is_initialized():
-            workflow = runner.workflow().get()
-            run_dir = Path(workflow.absoluteRunDir())
-            runner.registerInfo(f"Looking for eplustbl.html in run directory: {run_dir}")
-            
-            # Look for eplustbl.html in common locations
-            possible_html_paths = [
-                run_dir / "eplustbl.html",
-                run_dir / "run" / "eplustbl.html",
-                run_dir.parent / "eplustbl.html",
-                run_dir / "reports" / "eplustbl.html",
-            ]
-            
-            runner.registerInfo(f"Checking {len(possible_html_paths)} possible locations for eplustbl.html")
-            for html_path in possible_html_paths:
-                runner.registerInfo(f"  Checking: {html_path} - Exists: {html_path.exists()}")
-                if html_path.exists():
-                    eplustbl_data = self.parse_eplustbl_html(html_path, runner)
-                    break
-            
-            if not eplustbl_data:
-                runner.registerWarning("eplustbl.html not found in any expected location. EnergyPlus summary will be omitted.")
+        try:
+            workflow = runner.workflow()
+            if workflow:
+                run_dir = Path(workflow.absoluteRunDir())
+                runner.registerInfo(f"Looking for eplustbl.html in run directory: {run_dir}")
+                
+                # Look for eplustbl.html in common locations
+                possible_html_paths = [
+                    run_dir / "eplustbl.html",
+                    run_dir / "run" / "eplustbl.html",
+                    run_dir.parent / "eplustbl.html",
+                    run_dir / "reports" / "eplustbl.html",
+                ]
+                
+                runner.registerInfo(f"Checking {len(possible_html_paths)} possible locations for eplustbl.html")
+                for html_path in possible_html_paths:
+                    runner.registerInfo(f"  Checking: {html_path} - Exists: {html_path.exists()}")
+                    if html_path.exists():
+                        eplustbl_data = self.parse_eplustbl_html(html_path, runner)
+                        break
+                
+                if not eplustbl_data:
+                    runner.registerWarning("eplustbl.html not found in any expected location. EnergyPlus summary will be omitted.")
+        except Exception as e:
+            runner.registerWarning(f"Could not access workflow directory: {str(e)}")
         
         # Create merged output CSV
         if not props_df.empty or eplustbl_data:
@@ -467,18 +734,35 @@ class ECReport(openstudio.measure.ReportingMeasure):
             runner.registerInfo("No data to export.")
         
         runner.registerInfo(f"Extracted Material Data: {str(self.material_data)}")
-
-        # Write result to Excel
-        if total_gwp > 0:
-            self.modify_optimization_sheet(total_gwp)
-            self.optimization()
         
-        # Call RSMeans API
+        # Write result to Excel if we have embodied carbon data
+        if total_gwp > 0:
+            try:
+                self.modify_optimization_sheet(total_gwp)
+                runner.registerInfo(f"Updated Excel with embodied carbon value: {total_gwp:.2f} kg CO2 eq")
+            except Exception as e:
+                runner.registerWarning(f"Could not update Excel: {str(e)}")
+        
+        # Generate optimization visualization (always run this)
+        try:
+            self.optimization()
+            runner.registerInfo("Optimization visualization generated and saved to: tests/outputs/optimization_visualization.html")
+        except Exception as e:
+            runner.registerWarning(f"Could not generate optimization visualization: {str(e)}")
+        
+        # Call RSMeans API to get cost data
         self.pull_rsmeans_cost_from_api(runner)
+        
+        # Compare energy results between baseline and measure-applied scenarios
+        runner.registerInfo("Starting energy comparison analysis...")
+        energy_deltas = self.compare_energy_results(runner)
+        
+        # Generate PDF report with energy analysis and costs
+        if energy_deltas:
+            runner.registerInfo("Generating comprehensive PDF report...")
+            self.generate_pdf_report(runner, energy_deltas)
+            runner.registerInfo(f"PDF report saved to: tests/outputs/retrofit_analysis_report.pdf")
 
         runner.registerInfo("Report complete.")
 
         return True
-
-# Register the measure
-measure = ECReport()

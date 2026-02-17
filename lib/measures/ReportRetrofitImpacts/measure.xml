@@ -6,7 +6,7 @@
   <version_id>d4e5f6a7-b8c9-0123-def1-234567890123</version_id>
   <version_modified>2025-12-29T00:00:00Z</version_modified>
   <xml_checksum>00000000</xml_checksum>
-  <class_name>ECReport</class_name>
+  <class_name>CReport</class_name>
   <display_name>Report Retrofit Impacts</display_name>
   <description>Reports all AdditionalProperties and their key-value pairs in the model.</description>
   <modeler_description>Traverse model and extract AdditionalProperties content using Python.</modeler_description>

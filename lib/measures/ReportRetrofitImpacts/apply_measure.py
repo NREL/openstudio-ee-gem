@@ -1,7 +1,7 @@
 import sys
 import openstudio
 from pathlib import Path
-from measure import ECReport
+from measure import CReport
 
 # Set the current directory path and model path
 CURRENT_DIR_PATH = Path(__file__).parent.absolute()
@@ -25,9 +25,10 @@ print(f"Model contains {len(model.objects())} objects.")
 osw = openstudio.WorkflowJSON()
 runner = openstudio.measure.OSRunner(osw)
 
-# Create and run the measure
-measure = ECReport()
-result = measure.run(runner, model)
+# Create and run the measure - pass user_arguments as empty dict and model
+user_arguments = {}
+measure = CReport()
+result = measure.run(runner, user_arguments, model)
 
 # Print the result logs
 print("RESULT:", runner.result().value().valueName())
