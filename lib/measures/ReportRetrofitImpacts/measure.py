@@ -17,14 +17,10 @@ import pandas as pd
 from openpyxl import load_workbook
 import plotly.graph_objects as go
 import requests
+import configparser
 import re
 from dotenv import load_dotenv
 from call_RSmeans import RSMeansAPIClient
-from reportlab.lib.pagesizes import letter, A4
-from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, Image, PageBreak
-from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-from reportlab.lib.units import inch
-from reportlab.lib import colors
 
 CURRENT_DIR_PATH = Path(__file__).absolute()
 optimization_excel_path = CURRENT_DIR_PATH.parent / 'resources' / 'optimization.xlsx'
@@ -37,10 +33,10 @@ baseline_run_dir = tests_dir / 'run_baseline'
 measure_applied_run_dir = tests_dir / 'run_measure_applied'
 baseline_eplustbl_path = baseline_run_dir / 'eplustbl.html'
 measure_applied_eplustbl_path = measure_applied_run_dir / 'eplustbl.html'
-pdf_report_path = tests_dir / 'outputs' / 'retrofit_analysis_report.pdf'
+html_report_path = tests_dir / 'outputs' / 'retrofit_analysis_report.html'
 
-# Energy cost assumptions ($/GJ)
-ENERGY_COST_PER_GJ = 15.0  # Typical industrial energy cost
+# Energy cost fallback ($/GJ)
+DEFAULT_ENERGY_COST_PER_GJ = 15.0  # Used only if no cost data can be derived
 
 # Visualization path
 optimization_viz_path = tests_dir / 'outputs' / 'optimization_visualization.html'
@@ -160,6 +156,16 @@ class CReport(openstudio.measure.ReportingMeasure):
         m = re.search(pattern, html_text, flags=re.IGNORECASE | re.DOTALL)
         return m.group(1).strip() if m else ""
 
+    def parse_float(self, value: str) -> float:
+        """Parse a numeric string that may contain commas or currency symbols."""
+        if value is None:
+            return 0.0
+        cleaned = re.sub(r'[^0-9.+-]', '', str(value))
+        try:
+            return float(cleaned) if cleaned else 0.0
+        except ValueError:
+            return 0.0
+
     def extract_building_string(self, html_text: str) -> str:
         """Extract building name from EnergyPlus HTML report."""
         # Primary: find text inside <b> tag after 'Building:'
@@ -207,6 +213,10 @@ class CReport(openstudio.measure.ReportingMeasure):
         
         data["net_source_energy_GJ"] = self.extract_field(
             r'Net Source Energy</td>\s*<td[^>]*>\s*([0-9.]+)', html_text)
+
+        # Total Energy Cost (if present in Economics Summary)
+        data["total_energy_cost_usd"] = self.extract_field(
+            r'Total Energy Cost</td>\s*<td[^>]*>\s*\$?([0-9,\.]+)', html_text)
         
         # Building Areas
         data["total_building_area_m2"] = self.extract_field(
@@ -217,6 +227,51 @@ class CReport(openstudio.measure.ReportingMeasure):
         
         runner.registerInfo(f"Parsed EnergyPlus report: {data.get('building_name', 'N/A')}")
         return data
+
+    def resolve_energy_cost_per_gj(self, runner, baseline_data):
+        """Determine energy cost per GJ from report data or configuration."""
+        # 1) Try to derive from baseline report (total cost / total site energy)
+        baseline_energy = self.parse_float(baseline_data.get('total_site_energy_GJ'))
+        baseline_cost = self.parse_float(baseline_data.get('total_energy_cost_usd'))
+
+        if baseline_energy > 0 and baseline_cost > 0:
+            derived = baseline_cost / baseline_energy
+            runner.registerInfo(f"Derived energy cost from baseline report: ${derived:.2f}/GJ")
+            return derived
+
+        # 2) Check .env override
+        load_dotenv()
+        env_cost = os.getenv('ENERGY_COST_PER_GJ')
+        if env_cost:
+            try:
+                env_value = float(env_cost)
+                runner.registerInfo(f"Using ENERGY_COST_PER_GJ from .env: ${env_value:.2f}/GJ")
+                return env_value
+            except ValueError:
+                runner.registerWarning(f"Invalid ENERGY_COST_PER_GJ in .env: {env_cost}")
+
+        # 3) Check config.ini (if available)
+        try:
+            config_path = None
+            for parent in CURRENT_DIR_PATH.parents:
+                candidate = parent / 'config.ini'
+                if candidate.exists():
+                    config_path = candidate
+                    break
+
+            if config_path:
+                config = configparser.ConfigParser()
+                config.read(config_path)
+                if config.has_section('ENERGY_COST') and config.has_option('ENERGY_COST', 'ENERGY_COST_PER_GJ'):
+                    cfg_value = float(config.get('ENERGY_COST', 'ENERGY_COST_PER_GJ'))
+                    runner.registerInfo(f"Using ENERGY_COST_PER_GJ from config.ini: ${cfg_value:.2f}/GJ")
+                    return cfg_value
+        except Exception as e:
+            runner.registerWarning(f"Could not read ENERGY_COST from config.ini: {str(e)}")
+
+        # 4) Fallback
+        runner.registerWarning(f"Falling back to default energy cost: ${DEFAULT_ENERGY_COST_PER_GJ:.2f}/GJ")
+        return DEFAULT_ENERGY_COST_PER_GJ
     
 
     def parse_osm_additional_properties(self, osm_path, runner):
@@ -433,7 +488,8 @@ class CReport(openstudio.measure.ReportingMeasure):
                     
                     energy_delta = baseline_energy - measure_energy
                     energy_delta_pct = (energy_delta / baseline_energy * 100) if baseline_energy > 0 else 0
-                    cost_delta = energy_delta * ENERGY_COST_PER_GJ
+                    energy_cost_per_gj = self.resolve_energy_cost_per_gj(runner, baseline_data)
+                    cost_delta = energy_delta * energy_cost_per_gj
                     
                     deltas = {
                         'baseline_energy_GJ': baseline_energy,
@@ -441,6 +497,7 @@ class CReport(openstudio.measure.ReportingMeasure):
                         'energy_delta_GJ': energy_delta,
                         'energy_delta_pct': energy_delta_pct,
                         'cost_delta_usd': cost_delta,
+                        'energy_cost_per_gj': energy_cost_per_gj,
                         'baseline_building': baseline_data.get('building_name', 'Baseline'),
                         'measure_building': measure_data.get('building_name', 'Measure Applied')
                     }
@@ -456,160 +513,192 @@ class CReport(openstudio.measure.ReportingMeasure):
             runner.registerWarning(f"Error comparing energy results: {str(e)}")
             return {}
 
-    def generate_pdf_report(self, runner, energy_deltas, rsmeans_costs=None):
-        """
-        Generate a comprehensive PDF report with energy deltas, costs, and visualizations.
-        """
-        try:
-            from io import BytesIO
-            
-            # Create PDF
-            doc = SimpleDocTemplate(str(pdf_report_path), pagesize=letter,
-                                    rightMargin=72, leftMargin=72,
-                                    topMargin=72, bottomMargin=18)
-            
-            story = []
-            styles = getSampleStyleSheet()
-            title_style = ParagraphStyle(
-                'CustomTitle',
-                parent=styles['Heading1'],
-                fontSize=24,
-                textColor=colors.HexColor('#1f4788'),
-                spaceAfter=30,
-                alignment=1  # Center
-            )
-            
-            heading_style = ParagraphStyle(
-                'CustomHeading',
-                parent=styles['Heading2'],
-                fontSize=14,
-                textColor=colors.HexColor('#1f4788'),
-                spaceAfter=12,
-                spaceBefore=12
-            )
-            
-            # Title
-            story.append(Paragraph("Retrofit Measure Analysis Report", title_style))
-            story.append(Spacer(1, 0.3*inch))
-            
-            # Executive Summary
-            story.append(Paragraph("Executive Summary", heading_style))
-            if energy_deltas:
-                summary_text = f"""
-                This report compares energy consumption and operational costs between a baseline building model 
-                and the same building with proposed retrofit measures applied. The analysis includes energy savings 
-                calculations and estimated costs for implementing the retrofit measures.
-                """
-                story.append(Paragraph(summary_text, styles['Normal']))
-                story.append(Spacer(1, 0.2*inch))
-            
-            # Energy Analysis Section
-            story.append(Paragraph("Energy Analysis", heading_style))
-            if energy_deltas:
-                energy_table_data = [
-                    ['Metric', 'Baseline', 'Measure Applied', 'Delta', 'Savings %'],
-                    [
-                        'Total Site Energy (GJ)',
-                        f"{energy_deltas.get('baseline_energy_GJ', 0):.2f}",
-                        f"{energy_deltas.get('measure_energy_GJ', 0):.2f}",
-                        f"{energy_deltas.get('energy_delta_GJ', 0):.2f}",
-                        f"{energy_deltas.get('energy_delta_pct', 0):.1f}%"
-                    ]
-                ]
-                
-                energy_table = Table(energy_table_data, colWidths=[1.5*inch, 1.2*inch, 1.2*inch, 1*inch, 1*inch])
-                energy_table.setStyle(TableStyle([
-                    ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#1f4788')),
-                    ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
-                    ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-                    ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-                    ('FONTSIZE', (0, 0), (-1, 0), 12),
-                    ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
-                    ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
-                    ('GRID', (0, 0), (-1, -1), 1, colors.black),
-                    ('FONTSIZE', (0, 1), (-1, -1), 10),
-                ]))
-                story.append(energy_table)
-                story.append(Spacer(1, 0.2*inch))
-            
-            # Cost Analysis Section
-            story.append(Paragraph("Cost Analysis", heading_style))
-            if energy_deltas:
-                cost_delta = energy_deltas.get('cost_delta_usd', 0)
-                cost_text = f"""
-                Based on an assumed energy cost of ${ENERGY_COST_PER_GJ:.2f}/GJ, the annual operational cost savings 
-                from this retrofit measure is estimated at <b>${cost_delta:,.2f}</b>. This represents a significant 
-                opportunity for cost reduction and increased building efficiency.
-                """
-                story.append(Paragraph(cost_text, styles['Normal']))
-                story.append(Spacer(1, 0.2*inch))
-                
-                # Cost breakdown table
-                cost_table_data = [
-                    ['Cost Category', 'Amount (USD)'],
-                    ['Annual Operational Savings', f"${cost_delta:,.2f}"],
-                ]
-                
-                if rsmeans_costs:
-                    story.append(Paragraph("Capital Costs (RSMeans)", heading_style))
-                    for cost_item in rsmeans_costs:
-                        cost_table_data.append([cost_item.get('description', 'Unknown'), f"${cost_item.get('cost', 0):,.2f}"])
-                
-                cost_table = Table(cost_table_data, colWidths=[3*inch, 2*inch])
-                cost_table.setStyle(TableStyle([
-                    ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#1f4788')),
-                    ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
-                    ('ALIGN', (0, 0), (-1, -1), 'RIGHT'),
-                    ('ALIGN', (0, 0), (0, -1), 'LEFT'),
-                    ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-                    ('FONTSIZE', (0, 0), (-1, 0), 12),
-                    ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
-                    ('BACKGROUND', (0, 1), (-1, -1), colors.lightblue),
-                    ('GRID', (0, 0), (-1, -1), 1, colors.black),
-                ]))
-                story.append(cost_table)
-                story.append(Spacer(1, 0.3*inch))
-            
-            # Optimization Visualization
-            story.append(PageBreak())
-            story.append(Paragraph("Scenario Comparison - Optimization Metrics", heading_style))
-            
-            # Add the Plotly chart as an image if it exists
-            if optimization_viz_path.exists():
+
+        def generate_html_report(self, runner, energy_deltas):
+                """Generate a self-contained HTML report with real baseline/measure values."""
                 try:
-                    # Convert HTML to image (simplified - just reference the HTML for now)
-                    story.append(Paragraph(
-                        "Interactive optimization chart saved separately as: optimization_visualization.html",
-                        styles['Italic']
-                    ))
+                        baseline_energy = energy_deltas.get('baseline_energy_GJ', 0.0)
+                        measure_energy = energy_deltas.get('measure_energy_GJ', 0.0)
+                        energy_delta = energy_deltas.get('energy_delta_GJ', 0.0)
+                        energy_delta_pct = energy_deltas.get('energy_delta_pct', 0.0)
+                        energy_cost_per_gj = energy_deltas.get('energy_cost_per_gj', DEFAULT_ENERGY_COST_PER_GJ)
+
+                        baseline_cost = baseline_energy * energy_cost_per_gj
+                        measure_cost = measure_energy * energy_cost_per_gj
+                        cost_delta = energy_deltas.get('cost_delta_usd', baseline_cost - measure_cost)
+
+                        def pct(value, total):
+                                return (value / total * 100.0) if total > 0 else 0.0
+
+                        baseline_energy_pct = 100.0
+                        measure_energy_pct = min(pct(measure_energy, baseline_energy), 100.0) if baseline_energy > 0 else 0.0
+                        baseline_cost_pct = 100.0
+                        measure_cost_pct = min(pct(measure_cost, baseline_cost), 100.0) if baseline_cost > 0 else 0.0
+
+                        html = f"""<!DOCTYPE html>
+<html lang=\"en\">
+<head>
+    <meta charset=\"UTF-8\">
+    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">
+    <title>Retrofit Measure Analysis Report</title>
+    <style>
+        * {{ margin: 0; padding: 0; box-sizing: border-box; }}
+        body {{ font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6; color: #333; background-color: #f5f5f5; }}
+        .container {{ max-width: 900px; margin: 0 auto; background-color: white; padding: 40px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }}
+        .header {{ border-bottom: 3px solid #1f4788; padding-bottom: 20px; margin-bottom: 30px; }}
+        h1 {{ color: #1f4788; font-size: 28px; margin-bottom: 5px; }}
+        .subtitle {{ color: #666; font-size: 14px; margin-top: 5px; }}
+        h2 {{ color: #1f4788; font-size: 18px; margin-top: 30px; margin-bottom: 15px; border-left: 4px solid #1f4788; padding-left: 10px; }}
+        .section {{ margin-bottom: 30px; }}
+        .summary-box {{ background-color: #e8f0f8; border-left: 4px solid #1f4788; padding: 15px; margin-bottom: 20px; border-radius: 3px; }}
+        table {{ width: 100%; border-collapse: collapse; margin: 15px 0; }}
+        th {{ background-color: #1f4788; color: white; padding: 12px; text-align: left; font-weight: bold; border: 1px solid #ddd; }}
+        td {{ padding: 10px 12px; border: 1px solid #ddd; }}
+        tr:nth-child(even) {{ background-color: #f9f9f9; }}
+        .metric-box {{ display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin: 20px 0; }}
+        .metric-card {{ background-color: #f9f9f9; border: 1px solid #ddd; padding: 15px; border-radius: 5px; text-align: center; }}
+        .metric-value {{ font-size: 24px; font-weight: bold; color: #1f4788; margin: 10px 0; }}
+        .metric-label {{ font-size: 12px; color: #666; text-transform: uppercase; }}
+        .positive {{ color: #28a745; font-weight: bold; }}
+        .neutral {{ color: #666; }}
+        .recommendation {{ background-color: #d4edda; border-left: 4px solid #28a745; padding: 15px; margin: 20px 0; border-radius: 3px; }}
+        .recommendation-title {{ color: #155724; font-weight: bold; margin-bottom: 10px; }}
+        .viz-grid {{ display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 15px; }}
+        .chart-card {{ border: 1px solid #ddd; border-radius: 6px; padding: 15px; background: #fafafa; }}
+        .chart-title {{ font-size: 14px; font-weight: 600; color: #1f4788; margin-bottom: 10px; }}
+        .bar-chart {{ display: grid; gap: 10px; }}
+        .bar-row {{ display: grid; grid-template-columns: 130px 1fr 80px; align-items: center; gap: 10px; }}
+        .bar-label {{ font-size: 12px; color: #444; }}
+        .bar-track {{ height: 12px; background: #e6e6e6; border-radius: 6px; overflow: hidden; }}
+        .bar {{ height: 100%; border-radius: 6px; }}
+        .bar.baseline {{ background: #6c757d; }}
+        .bar.retrofit {{ background: #28a745; }}
+        .bar-value {{ font-size: 12px; color: #333; text-align: right; white-space: nowrap; }}
+        .legend {{ display: flex; gap: 12px; margin-top: 10px; font-size: 12px; color: #555; }}
+        .legend-item {{ display: inline-flex; align-items: center; gap: 6px; }}
+        .legend-swatch {{ width: 12px; height: 12px; border-radius: 3px; }}
+        .iframe-wrap {{ border: 1px solid #ddd; border-radius: 6px; overflow: hidden; background: #fff; margin-top: 10px; }}
+        .iframe-wrap iframe {{ width: 100%; height: 520px; border: 0; }}
+        .footer {{ margin-top: 40px; padding-top: 20px; border-top: 1px solid #ddd; color: #999; font-size: 12px; text-align: center; }}
+        @media print {{ body {{ background-color: white; }} .container {{ max-width: 100%; margin: 0; padding: 0; box-shadow: none; }} }}
+    </style>
+</head>
+<body>
+    <div class=\"container\">
+        <div class=\"header\">
+            <h1>Retrofit Measure Analysis Report</h1>
+            <div class=\"subtitle\">Comprehensive Energy and Financial Analysis</div>
+        </div>
+
+        <div class=\"section\">
+            <h2>Executive Summary</h2>
+            <div class=\"summary-box\">
+                <p>This report compares energy consumption and operational costs between a baseline building model and the same building with proposed retrofit measures applied. All energy-cost values are derived from the EnergyPlus Economics Summary where available.</p>
+            </div>
+        </div>
+
+        <div class=\"section\">
+            <h2>Energy Analysis</h2>
+            <table>
+                <tr><th>Metric</th><th>Baseline</th><th>Measure Applied</th><th>Delta</th><th>Savings %</th></tr>
+                <tr>
+                    <td>Total Site Energy (GJ)</td>
+                    <td>{baseline_energy:.2f}</td>
+                    <td>{measure_energy:.2f}</td>
+                    <td class=\"positive\">{energy_delta:.2f}</td>
+                    <td class=\"positive\">{energy_delta_pct:.1f}%</td>
+                </tr>
+            </table>
+        </div>
+
+        <div class=\"section\">
+            <h2>Key Performance Metrics</h2>
+            <div class=\"metric-box\">
+                <div class=\"metric-card\">
+                    <div class=\"metric-label\">Annual Energy Savings</div>
+                    <div class=\"metric-value positive\">{energy_delta:.2f} GJ</div>
+                </div>
+                <div class=\"metric-card\">
+                    <div class=\"metric-label\">Energy Cost</div>
+                    <div class=\"metric-value\">${energy_cost_per_gj:.2f}/GJ</div>
+                </div>
+                <div class=\"metric-card\">
+                    <div class=\"metric-label\">Annual Cost Savings</div>
+                    <div class=\"metric-value positive\">${cost_delta:,.2f}</div>
+                </div>
+                <div class=\"metric-card\">
+                    <div class=\"metric-label\">Savings Percent</div>
+                    <div class=\"metric-value positive\">{energy_delta_pct:.1f}%</div>
+                </div>
+            </div>
+        </div>
+
+        <div class=\"section\">
+            <h2>Comparative Visualizations</h2>
+            <div class=\"viz-grid\">
+                <div class=\"chart-card\">
+                    <div class=\"chart-title\">Energy Comparison (GJ)</div>
+                    <div class=\"bar-chart\">
+                        <div class=\"bar-row\">
+                            <div class=\"bar-label\">Baseline</div>
+                            <div class=\"bar-track\"><div class=\"bar baseline\" style=\"width: {baseline_energy_pct:.1f}%;\"></div></div>
+                            <div class=\"bar-value\">{baseline_energy:.2f}</div>
+                        </div>
+                        <div class=\"bar-row\">
+                            <div class=\"bar-label\">Measure Applied</div>
+                            <div class=\"bar-track\"><div class=\"bar retrofit\" style=\"width: {measure_energy_pct:.1f}%;\"></div></div>
+                            <div class=\"bar-value\">{measure_energy:.2f}</div>
+                        </div>
+                    </div>
+                    <div class=\"legend\">
+                        <span class=\"legend-item\"><span class=\"legend-swatch\" style=\"background:#6c757d\"></span>Baseline</span>
+                        <span class=\"legend-item\"><span class=\"legend-swatch\" style=\"background:#28a745\"></span>Measure Applied</span>
+                    </div>
+                </div>
+
+                <div class=\"chart-card\">
+                    <div class=\"chart-title\">Annual Energy Cost (USD)</div>
+                    <div class=\"bar-chart\">
+                        <div class=\"bar-row\">
+                            <div class=\"bar-label\">Baseline</div>
+                            <div class=\"bar-track\"><div class=\"bar baseline\" style=\"width: {baseline_cost_pct:.1f}%;\"></div></div>
+                            <div class=\"bar-value\">${baseline_cost:,.2f}</div>
+                        </div>
+                        <div class=\"bar-row\">
+                            <div class=\"bar-label\">Measure Applied</div>
+                            <div class=\"bar-track\"><div class=\"bar retrofit\" style=\"width: {measure_cost_pct:.1f}%;\"></div></div>
+                            <div class=\"bar-value\">${measure_cost:,.2f}</div>
+                        </div>
+                    </div>
+                    <div class=\"legend\">
+                        <span class=\"legend-item\"><span class=\"legend-swatch\" style=\"background:#6c757d\"></span>Baseline</span>
+                        <span class=\"legend-item\"><span class=\"legend-swatch\" style=\"background:#28a745\"></span>Measure Applied</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class=\"chart-card\" style=\"margin-top: 20px;\">
+                <div class=\"chart-title\">Optimization Visualization</div>
+                <p style=\"font-size:12px;color:#666;margin-bottom:8px;\">Embedded from optimization_visualization.html in the same output folder.</p>
+                <div class=\"iframe-wrap\">
+                    <iframe src=\"optimization_visualization.html\" title=\"Optimization Visualization\"></iframe>
+                </div>
+            </div>
+        </div>
+
+        <div class=\"footer\">
+            <p>Generated: February 16, 2026 | Report Type: Retrofit Impact Analysis | Measure: ReportRetrofitImpacts</p>
+        </div>
+    </div>
+</body>
+</html>"""
+
+                        html_report_path.write_text(html, encoding='utf-8')
+                        runner.registerInfo(f"HTML report generated: {html_report_path}")
+                        return True
                 except Exception as e:
-                    runner.registerWarning(f"Could not embed visualization: {str(e)}")
-            
-            story.append(Spacer(1, 0.2*inch))
-            
-            # Recommendations
-            story.append(Paragraph("Recommendations", heading_style))
-            if energy_deltas and energy_deltas.get('energy_delta_pct', 0) > 10:
-                story.append(Paragraph(
-                    "Based on the analysis showing significant energy savings (>10%), implementation of this retrofit "
-                    "measure is recommended. The combination of operational cost savings and potential incentives makes "
-                    "this a viable investment.",
-                    styles['Normal']
-                ))
-            else:
-                story.append(Paragraph(
-                    "Further analysis may be needed to determine the cost-effectiveness of this measure.",
-                    styles['Normal']
-                ))
-            
-            # Build PDF
-            doc.build(story)
-            runner.registerInfo(f"PDF report generated: {pdf_report_path}")
-            return True
-        
-        except Exception as e:
-            runner.registerWarning(f"Error generating PDF report: {str(e)}")
-            return False
+                        runner.registerWarning(f"Error generating HTML report: {str(e)}")
+                        return False
         # Don't call super().run() - it expects a real OSRunner, not our mock
         # super().run(runner, user_arguments)
         
@@ -757,11 +846,10 @@ class CReport(openstudio.measure.ReportingMeasure):
         runner.registerInfo("Starting energy comparison analysis...")
         energy_deltas = self.compare_energy_results(runner)
         
-        # Generate PDF report with energy analysis and costs
+        # Generate HTML report with energy analysis and costs
         if energy_deltas:
-            runner.registerInfo("Generating comprehensive PDF report...")
-            self.generate_pdf_report(runner, energy_deltas)
-            runner.registerInfo(f"PDF report saved to: tests/outputs/retrofit_analysis_report.pdf")
+            runner.registerInfo("Generating HTML report...")
+            self.generate_html_report(runner, energy_deltas)
 
         runner.registerInfo("Report complete.")
 
