@@ -16,7 +16,6 @@ import openstudio
 import pandas as pd
 from openpyxl import load_workbook
 import plotly.graph_objects as go
-import requests
 import configparser
 import re
 from dotenv import load_dotenv
@@ -26,6 +25,7 @@ CURRENT_DIR_PATH = Path(__file__).absolute()
 optimization_excel_path = CURRENT_DIR_PATH.parent / 'resources' / 'optimization.xlsx'
 new_optimization_excel_output_path = CURRENT_DIR_PATH.parent / 'resources' / 'optimization_updated.xlsx'
 optimization_csv_output_path = CURRENT_DIR_PATH.parent / 'resources' / 'retrofit_measure_report.csv'
+html_template_path = CURRENT_DIR_PATH.parent / 'resources' / 'retrofit_report_template.html'
 
 # Paths for baseline and measure-applied scenarios
 tests_dir = CURRENT_DIR_PATH.parent / 'tests'
@@ -38,14 +38,9 @@ html_report_path = tests_dir / 'outputs' / 'retrofit_analysis_report.html'
 # Energy cost fallback ($/GJ)
 DEFAULT_ENERGY_COST_PER_GJ = 15.0  # Used only if no cost data can be derived
 
-# Visualization path
-optimization_viz_path = tests_dir / 'outputs' / 'optimization_visualization.html'
-
 class CReport(openstudio.measure.ReportingMeasure):
     def __init__(self):
         super().__init__()
-
-        self.material_data = {}
 
     def name(self):
         return "ReportAdditionalProperties"
@@ -55,28 +50,6 @@ class CReport(openstudio.measure.ReportingMeasure):
 
     def modeler_description(self):
         return "Traverses the model and extracts data from AdditionalProperties objects."
-
-    def parse_workspace_objects(self, objects):
-        """Processes a list of OS:AdditionalProperties objects and returns the total numeric value."""
-        total = 0.0
-
-        for obj in objects:
-            num_fields = obj.numFields()
-            if num_fields < 5:
-                continue
-
-            material_name = obj.getString(1, True)
-            numeric_value = obj.getString(num_fields - 1, True)
-
-            if material_name.is_initialized() and numeric_value.is_initialized():
-                try:
-                    value = float(numeric_value.get())
-                    self.material_data[material_name.get()] = value
-                    total += value
-                except ValueError:
-                    print(f"Warning: Could not convert {numeric_value.get()} to float for {material_name.get()}")
-
-        return round(total, 2)
 
     def modify_optimization_sheet(self, replacement_value):
 
@@ -274,104 +247,6 @@ class CReport(openstudio.measure.ReportingMeasure):
         return DEFAULT_ENERGY_COST_PER_GJ
     
 
-    def parse_osm_additional_properties(self, osm_path, runner):
-        """Parse OS:AdditionalProperties objects directly from an OSM file."""
-        import re
-        
-        if not osm_path.exists():
-            runner.registerWarning(f"OSM file not found: {osm_path}")
-            return pd.DataFrame()
-        
-        text = osm_path.read_text(encoding='utf-8', errors='ignore')
-        
-        # Find all OS:AdditionalProperties blocks
-        pattern = r'OS:AdditionalProperties,\s*(.*?)(?=\n\s*(?:OS:|!----|$))'
-        matches = re.findall(pattern, text, re.DOTALL)
-        
-        props_data = []
-        for match in matches:
-            lines = [line.strip() for line in match.strip().split('\n') if line.strip()]
-            
-            # Parse the block: every 3 lines = feature_name, data_type, value
-            item = {}
-            i = 2  # Skip handle and object name lines
-            
-            while i < len(lines):
-                # Feature name
-                if i >= len(lines):
-                    break
-                feature_line = lines[i].split('!-')[0].strip().rstrip(',')
-                i += 1
-                
-                # Data type
-                if i >= len(lines):
-                    break
-                data_type = lines[i].split('!-')[0].strip().rstrip(',')
-                i += 1
-                
-                # Value
-                if i >= len(lines):
-                    break
-                value_line = lines[i].split('!-')[0].strip().rstrip(';,')
-                i += 1
-                
-                # Store the feature
-                if feature_line:
-                    # Convert value based on data type
-                    try:
-                        if data_type == "Integer":
-                            item[feature_line] = int(value_line)
-                        elif data_type == "Double":
-                            item[feature_line] = float(value_line)
-                        else:  # String
-                            item[feature_line] = value_line
-                    except ValueError:
-                        item[feature_line] = value_line
-            
-            if item:
-                props_data.append(item)
-        
-        if props_data:
-            df = pd.DataFrame(props_data)
-            runner.registerInfo(f"Parsed {len(props_data)} AdditionalProperties from OSM file.")
-            runner.registerInfo(f"AdditionalProperties DataFrame:\n{df.to_string()}")
-            return df
-        else:
-            runner.registerInfo("No AdditionalProperties found in OSM file.")
-            return pd.DataFrame()
-
-    def extract_additional_properties_from_model(self, model, runner):
-        """Extract AdditionalProperties from the model and return aggregated data."""
-        props_data = []
-        
-        # Get all construction objects and their additional properties
-        for construction in model.getConstructions():
-            props = construction.additionalProperties()
-            if props.hasFeature("total_embodied_carbon_kgCO2eq"):
-                item = {
-                    "object_type": "Construction",
-                    "object_name": construction.nameString(),
-                }
-                # Extract all features
-                for feature_name in props.featureNames():
-                    value = props.getFeatureAsString(feature_name)
-                    if value.is_initialized():
-                        item[feature_name] = value.get()
-                props_data.append(item)
-        
-        # Also check other model objects if needed
-        # (Add more object types here as needed: materials, spaces, etc.)
-        
-        if props_data:
-            runner.registerInfo(f"Found {len(props_data)} objects with AdditionalProperties.")
-            # Create DataFrame for easy aggregation
-            df = pd.DataFrame(props_data)
-            runner.registerInfo(f"AdditionalProperties DataFrame:\n{df.to_string()}")
-            return df
-        else:
-            runner.registerInfo("No AdditionalProperties found on constructions.")
-            return pd.DataFrame()
-
     def pull_rsmeans_cost_from_api(self, runner):
         """
         Pull RSMeans cost data from the API and write to Excel.
@@ -513,218 +388,76 @@ class CReport(openstudio.measure.ReportingMeasure):
             runner.registerWarning(f"Error comparing energy results: {str(e)}")
             return {}
 
+    def generate_html_report(self, runner, energy_deltas):
+        """Generate a self-contained HTML report with real baseline/measure values."""
+        try:
+            baseline_energy = energy_deltas.get('baseline_energy_GJ', 0.0)
+            measure_energy = energy_deltas.get('measure_energy_GJ', 0.0)
+            energy_delta = energy_deltas.get('energy_delta_GJ', 0.0)
+            energy_delta_pct = energy_deltas.get('energy_delta_pct', 0.0)
+            energy_cost_per_gj = energy_deltas.get('energy_cost_per_gj', DEFAULT_ENERGY_COST_PER_GJ)
 
-        def generate_html_report(self, runner, energy_deltas):
-                """Generate a self-contained HTML report with real baseline/measure values."""
-                try:
-                        baseline_energy = energy_deltas.get('baseline_energy_GJ', 0.0)
-                        measure_energy = energy_deltas.get('measure_energy_GJ', 0.0)
-                        energy_delta = energy_deltas.get('energy_delta_GJ', 0.0)
-                        energy_delta_pct = energy_deltas.get('energy_delta_pct', 0.0)
-                        energy_cost_per_gj = energy_deltas.get('energy_cost_per_gj', DEFAULT_ENERGY_COST_PER_GJ)
+            baseline_cost = baseline_energy * energy_cost_per_gj
+            measure_cost = measure_energy * energy_cost_per_gj
+            cost_delta = energy_deltas.get('cost_delta_usd', baseline_cost - measure_cost)
 
-                        baseline_cost = baseline_energy * energy_cost_per_gj
-                        measure_cost = measure_energy * energy_cost_per_gj
-                        cost_delta = energy_deltas.get('cost_delta_usd', baseline_cost - measure_cost)
+            def pct(value, total):
+                return (value / total * 100.0) if total > 0 else 0.0
 
-                        def pct(value, total):
-                                return (value / total * 100.0) if total > 0 else 0.0
+            baseline_energy_pct = 100.0
+            measure_energy_pct = min(pct(measure_energy, baseline_energy), 100.0) if baseline_energy > 0 else 0.0
+            baseline_cost_pct = 100.0
+            measure_cost_pct = min(pct(measure_cost, baseline_cost), 100.0) if baseline_cost > 0 else 0.0
 
-                        baseline_energy_pct = 100.0
-                        measure_energy_pct = min(pct(measure_energy, baseline_energy), 100.0) if baseline_energy > 0 else 0.0
-                        baseline_cost_pct = 100.0
-                        measure_cost_pct = min(pct(measure_cost, baseline_cost), 100.0) if baseline_cost > 0 else 0.0
+            if not html_template_path.exists():
+                runner.registerWarning(f"HTML template not found: {html_template_path}")
+                return False
 
-                        html = f"""<!DOCTYPE html>
-<html lang=\"en\">
-<head>
-    <meta charset=\"UTF-8\">
-    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">
-    <title>Retrofit Measure Analysis Report</title>
-    <style>
-        * {{ margin: 0; padding: 0; box-sizing: border-box; }}
-        body {{ font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6; color: #333; background-color: #f5f5f5; }}
-        .container {{ max-width: 900px; margin: 0 auto; background-color: white; padding: 40px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }}
-        .header {{ border-bottom: 3px solid #1f4788; padding-bottom: 20px; margin-bottom: 30px; }}
-        h1 {{ color: #1f4788; font-size: 28px; margin-bottom: 5px; }}
-        .subtitle {{ color: #666; font-size: 14px; margin-top: 5px; }}
-        h2 {{ color: #1f4788; font-size: 18px; margin-top: 30px; margin-bottom: 15px; border-left: 4px solid #1f4788; padding-left: 10px; }}
-        .section {{ margin-bottom: 30px; }}
-        .summary-box {{ background-color: #e8f0f8; border-left: 4px solid #1f4788; padding: 15px; margin-bottom: 20px; border-radius: 3px; }}
-        table {{ width: 100%; border-collapse: collapse; margin: 15px 0; }}
-        th {{ background-color: #1f4788; color: white; padding: 12px; text-align: left; font-weight: bold; border: 1px solid #ddd; }}
-        td {{ padding: 10px 12px; border: 1px solid #ddd; }}
-        tr:nth-child(even) {{ background-color: #f9f9f9; }}
-        .metric-box {{ display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin: 20px 0; }}
-        .metric-card {{ background-color: #f9f9f9; border: 1px solid #ddd; padding: 15px; border-radius: 5px; text-align: center; }}
-        .metric-value {{ font-size: 24px; font-weight: bold; color: #1f4788; margin: 10px 0; }}
-        .metric-label {{ font-size: 12px; color: #666; text-transform: uppercase; }}
-        .positive {{ color: #28a745; font-weight: bold; }}
-        .neutral {{ color: #666; }}
-        .recommendation {{ background-color: #d4edda; border-left: 4px solid #28a745; padding: 15px; margin: 20px 0; border-radius: 3px; }}
-        .recommendation-title {{ color: #155724; font-weight: bold; margin-bottom: 10px; }}
-        .viz-grid {{ display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 15px; }}
-        .chart-card {{ border: 1px solid #ddd; border-radius: 6px; padding: 15px; background: #fafafa; }}
-        .chart-title {{ font-size: 14px; font-weight: 600; color: #1f4788; margin-bottom: 10px; }}
-        .bar-chart {{ display: grid; gap: 10px; }}
-        .bar-row {{ display: grid; grid-template-columns: 130px 1fr 80px; align-items: center; gap: 10px; }}
-        .bar-label {{ font-size: 12px; color: #444; }}
-        .bar-track {{ height: 12px; background: #e6e6e6; border-radius: 6px; overflow: hidden; }}
-        .bar {{ height: 100%; border-radius: 6px; }}
-        .bar.baseline {{ background: #6c757d; }}
-        .bar.retrofit {{ background: #28a745; }}
-        .bar-value {{ font-size: 12px; color: #333; text-align: right; white-space: nowrap; }}
-        .legend {{ display: flex; gap: 12px; margin-top: 10px; font-size: 12px; color: #555; }}
-        .legend-item {{ display: inline-flex; align-items: center; gap: 6px; }}
-        .legend-swatch {{ width: 12px; height: 12px; border-radius: 3px; }}
-        .iframe-wrap {{ border: 1px solid #ddd; border-radius: 6px; overflow: hidden; background: #fff; margin-top: 10px; }}
-        .iframe-wrap iframe {{ width: 100%; height: 520px; border: 0; }}
-        .footer {{ margin-top: 40px; padding-top: 20px; border-top: 1px solid #ddd; color: #999; font-size: 12px; text-align: center; }}
-        @media print {{ body {{ background-color: white; }} .container {{ max-width: 100%; margin: 0; padding: 0; box-shadow: none; }} }}
-    </style>
-</head>
-<body>
-    <div class=\"container\">
-        <div class=\"header\">
-            <h1>Retrofit Measure Analysis Report</h1>
-            <div class=\"subtitle\">Comprehensive Energy and Financial Analysis</div>
-        </div>
+            template = html_template_path.read_text(encoding='utf-8')
+            html = template.format(
+                baseline_energy=baseline_energy,
+                measure_energy=measure_energy,
+                energy_delta=energy_delta,
+                energy_delta_pct=energy_delta_pct,
+                energy_cost_per_gj=energy_cost_per_gj,
+                cost_delta=cost_delta,
+                baseline_energy_pct=baseline_energy_pct,
+                measure_energy_pct=measure_energy_pct,
+                baseline_cost=baseline_cost,
+                measure_cost=measure_cost,
+                baseline_cost_pct=baseline_cost_pct,
+                measure_cost_pct=measure_cost_pct,
+            )
 
-        <div class=\"section\">
-            <h2>Executive Summary</h2>
-            <div class=\"summary-box\">
-                <p>This report compares energy consumption and operational costs between a baseline building model and the same building with proposed retrofit measures applied. All energy-cost values are derived from the EnergyPlus Economics Summary where available.</p>
-            </div>
-        </div>
+            html_report_path.write_text(html, encoding='utf-8')
+            runner.registerInfo(f"HTML report generated: {html_report_path}")
+            return True
+        except Exception as e:
+            runner.registerWarning(f"Error generating HTML report: {str(e)}")
+            return False
 
-        <div class=\"section\">
-            <h2>Energy Analysis</h2>
-            <table>
-                <tr><th>Metric</th><th>Baseline</th><th>Measure Applied</th><th>Delta</th><th>Savings %</th></tr>
-                <tr>
-                    <td>Total Site Energy (GJ)</td>
-                    <td>{baseline_energy:.2f}</td>
-                    <td>{measure_energy:.2f}</td>
-                    <td class=\"positive\">{energy_delta:.2f}</td>
-                    <td class=\"positive\">{energy_delta_pct:.1f}%</td>
-                </tr>
-            </table>
-        </div>
-
-        <div class=\"section\">
-            <h2>Key Performance Metrics</h2>
-            <div class=\"metric-box\">
-                <div class=\"metric-card\">
-                    <div class=\"metric-label\">Annual Energy Savings</div>
-                    <div class=\"metric-value positive\">{energy_delta:.2f} GJ</div>
-                </div>
-                <div class=\"metric-card\">
-                    <div class=\"metric-label\">Energy Cost</div>
-                    <div class=\"metric-value\">${energy_cost_per_gj:.2f}/GJ</div>
-                </div>
-                <div class=\"metric-card\">
-                    <div class=\"metric-label\">Annual Cost Savings</div>
-                    <div class=\"metric-value positive\">${cost_delta:,.2f}</div>
-                </div>
-                <div class=\"metric-card\">
-                    <div class=\"metric-label\">Savings Percent</div>
-                    <div class=\"metric-value positive\">{energy_delta_pct:.1f}%</div>
-                </div>
-            </div>
-        </div>
-
-        <div class=\"section\">
-            <h2>Comparative Visualizations</h2>
-            <div class=\"viz-grid\">
-                <div class=\"chart-card\">
-                    <div class=\"chart-title\">Energy Comparison (GJ)</div>
-                    <div class=\"bar-chart\">
-                        <div class=\"bar-row\">
-                            <div class=\"bar-label\">Baseline</div>
-                            <div class=\"bar-track\"><div class=\"bar baseline\" style=\"width: {baseline_energy_pct:.1f}%;\"></div></div>
-                            <div class=\"bar-value\">{baseline_energy:.2f}</div>
-                        </div>
-                        <div class=\"bar-row\">
-                            <div class=\"bar-label\">Measure Applied</div>
-                            <div class=\"bar-track\"><div class=\"bar retrofit\" style=\"width: {measure_energy_pct:.1f}%;\"></div></div>
-                            <div class=\"bar-value\">{measure_energy:.2f}</div>
-                        </div>
-                    </div>
-                    <div class=\"legend\">
-                        <span class=\"legend-item\"><span class=\"legend-swatch\" style=\"background:#6c757d\"></span>Baseline</span>
-                        <span class=\"legend-item\"><span class=\"legend-swatch\" style=\"background:#28a745\"></span>Measure Applied</span>
-                    </div>
-                </div>
-
-                <div class=\"chart-card\">
-                    <div class=\"chart-title\">Annual Energy Cost (USD)</div>
-                    <div class=\"bar-chart\">
-                        <div class=\"bar-row\">
-                            <div class=\"bar-label\">Baseline</div>
-                            <div class=\"bar-track\"><div class=\"bar baseline\" style=\"width: {baseline_cost_pct:.1f}%;\"></div></div>
-                            <div class=\"bar-value\">${baseline_cost:,.2f}</div>
-                        </div>
-                        <div class=\"bar-row\">
-                            <div class=\"bar-label\">Measure Applied</div>
-                            <div class=\"bar-track\"><div class=\"bar retrofit\" style=\"width: {measure_cost_pct:.1f}%;\"></div></div>
-                            <div class=\"bar-value\">${measure_cost:,.2f}</div>
-                        </div>
-                    </div>
-                    <div class=\"legend\">
-                        <span class=\"legend-item\"><span class=\"legend-swatch\" style=\"background:#6c757d\"></span>Baseline</span>
-                        <span class=\"legend-item\"><span class=\"legend-swatch\" style=\"background:#28a745\"></span>Measure Applied</span>
-                    </div>
-                </div>
-            </div>
-
-            <div class=\"chart-card\" style=\"margin-top: 20px;\">
-                <div class=\"chart-title\">Optimization Visualization</div>
-                <p style=\"font-size:12px;color:#666;margin-bottom:8px;\">Embedded from optimization_visualization.html in the same output folder.</p>
-                <div class=\"iframe-wrap\">
-                    <iframe src=\"optimization_visualization.html\" title=\"Optimization Visualization\"></iframe>
-                </div>
-            </div>
-        </div>
-
-        <div class=\"footer\">
-            <p>Generated: February 16, 2026 | Report Type: Retrofit Impact Analysis | Measure: ReportRetrofitImpacts</p>
-        </div>
-    </div>
-</body>
-</html>"""
-
-                        html_report_path.write_text(html, encoding='utf-8')
-                        runner.registerInfo(f"HTML report generated: {html_report_path}")
-                        return True
-                except Exception as e:
-                        runner.registerWarning(f"Error generating HTML report: {str(e)}")
-                        return False
-        # Don't call super().run() - it expects a real OSRunner, not our mock
-        # super().run(runner, user_arguments)
-        
-        self.material_data.clear()
-        
+    def run(self, runner, user_arguments, model):
         # Verify model is provided
         if not model:
             runner.registerError("No model provided to measure.")
             return False
-        
+
         # Extract AdditionalProperties using OpenStudio API
         props_data = []
-        
+
         # Iterate through all constructions and extract their additional properties
         for construction in model.getConstructions():
             props = construction.additionalProperties()
-            
+
             # Check if this construction has any features
             feature_names = props.featureNames()
             if len(feature_names) > 0:
                 item = {}
-                
+
                 # Extract each feature - try all type accessors
                 for feature_name in feature_names:
                     value = None
-                    
+
                     # Try Double first (most common for numeric data)
                     value_double = props.getFeatureAsDouble(feature_name)
                     if value_double.is_initialized():
@@ -739,24 +472,24 @@ class CReport(openstudio.measure.ReportingMeasure):
                             value_str = props.getFeatureAsString(feature_name)
                             if value_str.is_initialized():
                                 value = value_str.get()
-                    
+
                     # Store the value if we got something
                     if value is not None:
                         item[feature_name] = value
-                
+
                 if item:
                     item["construction_handle"] = construction.handle().__str__()
                     props_data.append(item)
-        
+
         # Create DataFrame
         props_df = pd.DataFrame(props_data)
-        
+
         if not props_df.empty:
             runner.registerInfo(f"Extracted AdditionalProperties from {len(props_data)} constructions.")
             runner.registerInfo(f"AdditionalProperties DataFrame:\n{props_df.to_string()}")
         else:
             runner.registerInfo("No AdditionalProperties found on constructions.")
-        
+
         # Calculate total embodied carbon if the column exists
         total_gwp = 0.0
         if not props_df.empty and "total_embodied_carbon_kgCO2eq" in props_df.columns:
@@ -765,7 +498,7 @@ class CReport(openstudio.measure.ReportingMeasure):
                 props_df["total_embodied_carbon_kgCO2eq"], errors='coerce')
             total_gwp = props_df["total_embodied_carbon_kgCO2eq"].sum()
             runner.registerInfo(f"Total Embodied Carbon (GWP): {total_gwp:.2f} kg CO2 eq")
-        
+
         # Parse EnergyPlus HTML report if available
         eplustbl_data = {}
         try:
@@ -773,7 +506,7 @@ class CReport(openstudio.measure.ReportingMeasure):
             if workflow:
                 run_dir = Path(workflow.absoluteRunDir())
                 runner.registerInfo(f"Looking for eplustbl.html in run directory: {run_dir}")
-                
+
                 # Look for eplustbl.html in common locations
                 possible_html_paths = [
                     run_dir / "eplustbl.html",
@@ -781,19 +514,19 @@ class CReport(openstudio.measure.ReportingMeasure):
                     run_dir.parent / "eplustbl.html",
                     run_dir / "reports" / "eplustbl.html",
                 ]
-                
+
                 runner.registerInfo(f"Checking {len(possible_html_paths)} possible locations for eplustbl.html")
                 for html_path in possible_html_paths:
                     runner.registerInfo(f"  Checking: {html_path} - Exists: {html_path.exists()}")
                     if html_path.exists():
                         eplustbl_data = self.parse_eplustbl_html(html_path, runner)
                         break
-                
+
                 if not eplustbl_data:
                     runner.registerWarning("eplustbl.html not found in any expected location. EnergyPlus summary will be omitted.")
         except Exception as e:
             runner.registerWarning(f"Could not access workflow directory: {str(e)}")
-        
+
         # Create merged output CSV
         if not props_df.empty or eplustbl_data:
             try:
@@ -808,22 +541,20 @@ class CReport(openstudio.measure.ReportingMeasure):
                         props_df_transposed.to_csv(f)
                         runner.registerInfo(f"Added {len(props_df)} construction records (transposed and reversed) to merged CSV.")
                         f.write("\n")
-                    
+
                     # Write EnergyPlus summary section if available
                     if eplustbl_data:
                         f.write("# EnergyPlus Simulation Summary\n")
                         for key, value in eplustbl_data.items():
                             f.write(f"{key},{value}\n")
                         runner.registerInfo("Added EnergyPlus summary to merged CSV.")
-                
+
                 runner.registerInfo(f"Merged data exported to CSV: {optimization_csv_output_path}")
             except Exception as e:
                 runner.registerWarning(f"Could not write merged CSV: {e}")
         else:
             runner.registerInfo("No data to export.")
-        
-        runner.registerInfo(f"Extracted Material Data: {str(self.material_data)}")
-        
+
         # Write result to Excel if we have embodied carbon data
         if total_gwp > 0:
             try:
@@ -831,21 +562,21 @@ class CReport(openstudio.measure.ReportingMeasure):
                 runner.registerInfo(f"Updated Excel with embodied carbon value: {total_gwp:.2f} kg CO2 eq")
             except Exception as e:
                 runner.registerWarning(f"Could not update Excel: {str(e)}")
-        
+
         # Generate optimization visualization (always run this)
         try:
             self.optimization()
             runner.registerInfo("Optimization visualization generated and saved to: tests/outputs/optimization_visualization.html")
         except Exception as e:
             runner.registerWarning(f"Could not generate optimization visualization: {str(e)}")
-        
+
         # Call RSMeans API to get cost data
         self.pull_rsmeans_cost_from_api(runner)
-        
+
         # Compare energy results between baseline and measure-applied scenarios
         runner.registerInfo("Starting energy comparison analysis...")
         energy_deltas = self.compare_energy_results(runner)
-        
+
         # Generate HTML report with energy analysis and costs
         if energy_deltas:
             runner.registerInfo("Generating HTML report...")

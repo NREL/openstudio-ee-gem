@@ -72,9 +72,11 @@ jobs:
               
               # Install Python dependencies for Python measures
               echo "Installing Python dependencies..."
-              DEBIAN_FRONTEND=noninteractive apt-get install -y -qq python3-pip
-              python3 -m pip install --upgrade pip
-              python3 -m pip install openpyxl requests python-dotenv plotly pandas
+              DEBIAN_FRONTEND=noninteractive apt-get install -y -qq python3-pip python3-venv
+              python3 -m venv /opt/venv
+              source /opt/venv/bin/activate
+              pip install --upgrade pip
+              pip install openpyxl requests python-dotenv plotly pandas
               
               # Install gem dependencies
               echo "Installing gem dependencies..."
