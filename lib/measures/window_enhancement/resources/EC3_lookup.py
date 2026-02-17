@@ -12,14 +12,22 @@ import urllib.parse
 
 script_dir = os.path.dirname(os.path.abspath(__file__))
 repo_root = os.path.abspath(os.path.join(script_dir, "../../../.."))
-config_path = os.path.join(repo_root, "config.ini")
 
-if not os.path.exists(config_path):
-    raise FileNotFoundError(f"Config file not found: {config_path}")
+# Check parametric_run folder first, then repo root
+parametric_config_path = os.path.join(repo_root, "lib", "parametric_run", "config.ini")
+repo_config_path = os.path.join(repo_root, "config.ini")
+
+if os.path.exists(parametric_config_path):
+    config_path = parametric_config_path
+elif os.path.exists(repo_config_path):
+    config_path = repo_config_path
+else:
+    raise FileNotFoundError(f"Config file not found in {parametric_config_path} or {repo_config_path}")
 
 config = configparser.ConfigParser()
 config.read(config_path)
 API_TOKEN= config["EC3_API_TOKEN"]["API_TOKEN"]
+print(f"[EC3_lookup] Loaded API token from {config_path}: {API_TOKEN[:10]}..." if API_TOKEN else "[EC3_lookup] WARNING: API_TOKEN is None!")
 
 # the dictionary below stores the material_name for generate_url function
 # material_category = {"concrete":{"ReadyMix","PrecastConcrete","CementGrout","FlowableFill"},
@@ -129,8 +137,14 @@ def fetch_epd_data(url,api_token):
         return None
     try: 
         print(f"Fetching data from URL: {url}")  # Log the URL being fetched
-        # API configuration
-        HEADERS = {"Accept": "application/json", "Authorization": "Bearer " + api_token}
+        print(f"[DEBUG] api_token length: {len(api_token) if api_token else 0}, value: {api_token}")
+        # API configuration - Try both authentication methods
+        HEADERS = {
+            "Accept": "application/json",
+            "Authorization": f"Bearer {api_token}",
+            "X-API-Key": api_token  # Some APIs use this instead
+        }
+        print(f"[DEBUG] Headers: Authorization=Bearer {api_token[:10]}..., X-API-Key={api_token[:10]}...")
         response = requests.get(url, headers=HEADERS, verify=False)
         response.raise_for_status() # HTTPError if failure 
         return response.json()

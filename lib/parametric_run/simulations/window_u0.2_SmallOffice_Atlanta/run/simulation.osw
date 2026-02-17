@@ -1,0 +1,9 @@
+{
+  "weather_file": "/Users/cbianchi/Documents/GitHub/openstudio-ee-gem/lib/parametric_run/weather/Atlanta/USA_GA_Atlanta-Hartsfield-Jackson.Intl.AP.722190_TMYx.epw",
+  "seed_file": "/Users/cbianchi/Documents/GitHub/openstudio-ee-gem/lib/parametric_run/simulations/window_u0.2_SmallOffice_Atlanta/run/modified.osm",
+  "file_paths": [
+    "/Users/cbianchi/Documents/GitHub/openstudio-ee-gem/lib/parametric_run/weather"
+  ],
+  "steps": [],
+  "name": "window_u0.2_SmallOffice_Atlanta"
+}

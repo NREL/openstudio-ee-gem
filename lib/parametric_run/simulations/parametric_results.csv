@@ -1,0 +1,9 @@
+scenario_name,city,building_type,is_baseline,is_all_measures,wall_r_value,roof_r_value,window_u_factor
+roof_r40_SmallOffice_Atlanta,Atlanta,SmallOffice,False,False,,,
+baseline_SmallOffice_Amarillo,Amarillo,SmallOffice,True,False,,,
+window_u0.2_SmallOffice_Amarillo,Amarillo,SmallOffice,False,False,,,
+wall_r30_SmallOffice_Atlanta,Atlanta,SmallOffice,False,False,,,
+roof_r40_SmallOffice_Amarillo,Amarillo,SmallOffice,False,False,,,
+baseline_SmallOffice_Atlanta,Atlanta,SmallOffice,True,False,,,
+wall_r30_SmallOffice_Amarillo,Amarillo,SmallOffice,False,False,,,
+window_u0.2_SmallOffice_Atlanta,Atlanta,SmallOffice,False,False,,,

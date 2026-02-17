@@ -1,0 +1,5 @@
+{
+  "seed_file": "/Users/cbianchi/Documents/GitHub/openstudio-ee-gem/lib/measures/OperatingCostCarbonReportingMeasure/tests/run/in.osm",
+  "weather_file": "/Users/cbianchi/Documents/GitHub/openstudio-ee-gem/lib/measures/OperatingCostCarbonReportingMeasure/tests/in.epw",
+  "steps": []
+}
