@@ -8201,7 +8201,7 @@ OS:Daylighting:Control,
   22;                                     !- Maximum Allowable Discomfort Glare Index
 
 OS:AdditionalProperties,
-  {6d71e258-2bbe-4964-9005-a3b74265aed7}, !- Handle
+  {49cd648c-a2d7-495b-ab49-b0eff1888b95}, !- Handle
   {6b25c3c7-39e4-4be7-84a9-17e80feecaf5}, !- Object Name
   measure_name,                           !- Feature Name 1
   String,                                 !- Feature Data Type 1

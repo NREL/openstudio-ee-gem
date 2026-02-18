@@ -8201,14 +8201,14 @@ OS:Daylighting:Control,
   22;                                     !- Maximum Allowable Discomfort Glare Index
 
 OS:Output:Variable,
-  {a6a991fb-5a27-4e6c-95e5-22b15df431b8}, !- Handle
+  {2874d4a9-a329-41ff-ae6e-9f8f67131b18}, !- Handle
   Output Variable 1,                      !- Name
   ,                                       !- Key Value
   Electricity:Facility,                   !- Variable Name
   Hourly;                                 !- Reporting Frequency
 
 OS:Output:Variable,
-  {7d83a126-320a-4b52-9369-1f550208486e}, !- Handle
+  {b8ef0c8a-b7bd-43c1-b149-1a62026c1b4e}, !- Handle
   Output Variable 2,                      !- Name
   ,                                       !- Key Value
   NaturalGas:Facility,                    !- Variable Name

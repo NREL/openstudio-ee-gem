@@ -938,8 +938,13 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
         if num_vertical_dividers >= 0:
             building_props.setFeature("window_enhancement_num_vertical_dividers", num_vertical_dividers)
         
-        # Store aggregate results
-        building_props.setFeature("window_enhancement_total_embodied_carbon_kgCO2eq", total_embodied_carbon)
+        # Store aggregate results (including standardized fields for all measures)
+        building_props.setFeature("measure_name", "Window Enhancement")
+        building_props.setFeature("window_enhancement_total_additional_embodied_carbon_kg", total_embodied_carbon)
+        building_props.setFeature("window_enhancement_total_additional_material_cost_$", 0.0)  # Placeholder
+        building_props.setFeature("window_enhancement_total_additional_overhead_profit_cost_$", 0.0)  # Placeholder
+        building_props.setFeature("window_enhancement_total_additional_labour_cost_$", 0.0)  # Placeholder
+        building_props.setFeature("window_enhancement_total_embodied_carbon_kgCO2eq", total_embodied_carbon)  # Keep for backwards compatibility
         building_props.setFeature("window_enhancement_total_window_area_m2", total_window_area_m2)
         building_props.setFeature("window_enhancement_total_glazing_area_m2", total_glazing_area_m2)
         building_props.setFeature("window_enhancement_total_frame_area_m2", total_frame_area_m2)
@@ -1098,7 +1103,8 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
             runner.registerInfo(f"  ℹ Number of panes: {num_panes} (user-specified, applied to all windows)")
         elif user_num_panes > 3:
             num_panes = 3
-            runner.registerInfo("  ℹ Number of panes adjusted to 3 (maximum supported due to EPD data availability)")
+            # Reduced verbosity
+            pass
         elif glass_option != "none" and user_num_panes == 0:
             if layered_construction is None:
                 runner.registerError(f"Cannot derive number of panes from SimpleGlazing construction. Please specify num_panes explicitly.")
@@ -1241,7 +1247,8 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
         if wf_option != "none":
             urls["frame"] = generate_url_byname(name_like=wf_option, plant_geography='150')
         else:
-            runner.registerInfo("  ○ Window frame: No renovation selected, skipping EPD fetch")
+            # Reduced verbosity
+            pass
         
         # Glass pane EPD
         urls["glass"] = None
@@ -1253,7 +1260,8 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
             elif num_panes == 3:
                 urls["glass"] = generate_url_byname(category='ade3ad3405124279955e7d3085f59383', name_like='triple pane')
         else:
-            runner.registerInfo("  ○ Glass pane: No renovation selected, skipping EPD fetch")
+            # Reduced verbosity
+            pass
         
         # Caulking sealant EPD
         urls["caulking"] = None
@@ -1262,21 +1270,24 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
         elif caulking_option == "polyurethane":
             urls["caulking"] = generate_url_byname(category='e95e0d13de844101beb364b47af73d45', description_like='window')
         else:
-            runner.registerInfo("  ○ Caulking: No renovation selected, skipping EPD fetch")
+            # Reduced verbosity
+            pass
         
         # Glazing film EPD
         urls["film"] = None
         if film_option != "none":
             urls["film"] = generate_url_byname(category='3aa3a34fae9a400fa297339ba88e1fab', name_like=film_option)
         else:
-            runner.registerInfo("  ○ Glazing film: No renovation selected, skipping EPD fetch")
+            # Reduced verbosity
+            pass
         
         # Weatherstrip EPD
         urls["weatherstrip"] = None
         if weatherstrip_option != "none":
             urls["weatherstrip"] = generate_url_byname(category='ca54e842c0fc4bf2b4f3a8564c3b1a4d', name_like=weatherstrip_option)
         else:
-            runner.registerInfo("  ○ Weatherstrip: No renovation selected, skipping EPD fetch")
+            # Reduced verbosity
+            pass
         
         # Secondary glazing EPD
         urls["second_glazing"] = None
@@ -1291,13 +1302,15 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
                     glazing_count = self.count_glazing_layers(current_construction)
                     if glazing_count == 1:
                         urls["second_glazing"] = generate_url_byname(category='6daae3d967104f5c8c85199b259f58c8', name_like='monolithic glass')
-                        runner.registerInfo(f"  → Fetching EPD data for secondary glazing for {subsurface_name}")
+                        # Reduced verbosity
+                        pass
                     elif glazing_count > 1:
                         runner.registerWarning(f"Construction in {subsurface_name} has {glazing_count} glazing layers, skipping secondary glazing EPD fetch.")
                     else:
                         runner.registerWarning(f"Unable to determine glazing layers in {subsurface_name}, skipping secondary glazing EPD fetch.")
         else:
-            runner.registerInfo("  ○ Secondary glazing: No installation selected, skipping EPD fetch")
+            # Reduced verbosity
+            pass
         
         return urls
 
@@ -1311,7 +1324,8 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
         """
         for material_name, epd_data in epd_datalist.items():
             if epd_data is None:
-                runner.registerInfo(f"  ○ {material_name}: No EPD data (renovation option not selected)")
+                # Reduced verbosity
+                pass
                 subsurface_data[material_name]["gwp_per_m2"] = None
                 subsurface_data[material_name]["gwp_per_kg"] = None
                 subsurface_data[material_name]["gwp_per_m3"] = None
@@ -1326,7 +1340,8 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
             user_lifetime = subsurface_data[material_name]["lifetime"]
             if len(lifetime_values) == 0:
                 epd_lifetime = user_lifetime
-                runner.registerInfo(f"    ℹ No lifetime data in EPD for {material_name}, using user input: {user_lifetime} years")
+                # Reduced verbosity
+                pass
             else:
                 # Apply the same statistic method as GWP values
                 if len(lifetime_values) == 1:
@@ -1341,7 +1356,8 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
                     epd_lifetime = float(np.median(lifetime_values))
                 else:
                     epd_lifetime = float(np.mean(lifetime_values))  # Default to mean
-                runner.registerInfo(f"    ✓ {material_name.replace('_', ' ').title()} lifetime from EPD: {epd_lifetime:.1f} years (was {user_lifetime} from user input)")
+                # Reduced verbosity
+                pass
             
             subsurface_data[material_name]["lifetime"] = epd_lifetime
             subsurface_data[material_name]["lifetime_source"] = "EPD" if epd_lifetime != user_lifetime else "user_input"
@@ -1350,7 +1366,8 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
             for functional_unit, list in gwp_values.items():
                 if len(list) == 0:
                     gwp = None
-                    runner.registerInfo(f"    ⚠ No GWP values available for {functional_unit}")
+                    # Reduced verbosity
+                    pass
                 elif len(list) == 1:
                     gwp = list[0]
                 elif gwp_statistic == "minimum":

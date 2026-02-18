@@ -136,15 +136,15 @@ def fetch_epd_data(url,api_token):
         print("Renovation option is None, fetch_epd_data: URL is None, skipping request.")
         return None
     try: 
-        print(f"Fetching data from URL: {url}")  # Log the URL being fetched
-        print(f"[DEBUG] api_token length: {len(api_token) if api_token else 0}, value: {api_token}")
+        # print(f"Fetching data from URL: {url}")  # Log the URL being fetched
+        # print(f"[DEBUG] api_token length: {len(api_token) if api_token else 0}, value: {api_token}")
         # API configuration - Try both authentication methods
         HEADERS = {
             "Accept": "application/json",
             "Authorization": f"Bearer {api_token}",
             "X-API-Key": api_token  # Some APIs use this instead
         }
-        print(f"[DEBUG] Headers: Authorization=Bearer {api_token[:10]}..., X-API-Key={api_token[:10]}...")
+        # print(f"[DEBUG] Headers: Authorization=Bearer {api_token[:10]}..., X-API-Key={api_token[:10]}...")
         response = requests.get(url, headers=HEADERS, verify=False)
         response.raise_for_status() # HTTPError if failure 
         return response.json()
@@ -202,7 +202,7 @@ def parse_product_epd(epd: Dict[str, Any]) -> Dict[str, Any]:
     reference_service_life = epd.get('reference_service_life')
 
     mass_per_area = 0.0
-    if "kg" in category_mass_per_declared_unit and "m2" in category_declared_unit:
+    if category_mass_per_declared_unit and category_declared_unit and "kg" in category_mass_per_declared_unit and "m2" in category_declared_unit:
         mass_per_area = divide(category_mass_per_declared_unit, category_declared_unit)
 
     if mass_per_declared_unit is None and category_mass_per_declared_unit is not None and any(x in category_declared_unit for x in ["m2", "m^2"]):
@@ -474,13 +474,13 @@ def compute_gwp_data(keys, epd_list_by_material, epd_type, gwp_statistic):
                 original_count = len(gwp_values[unit_key])
                 gwp_values[unit_key] = remove_outliers_iqr(gwp_values[unit_key])
                 filtered_count = len(gwp_values[unit_key])
-                if original_count != filtered_count:
-                    print(f"Removed {original_count - filtered_count} outliers from {unit_key} for {key}: {original_count} -> {filtered_count} values")
+                # if original_count != filtered_count:
+                #     print(f"Removed {original_count - filtered_count} outliers from {unit_key} for {key}: {original_count} -> {filtered_count} values")
         
         for unit_key, values_list in gwp_values.items():
-            if len(values_list) == 0:
-                print(f"No GWP values for {unit_key} in {key} using {epd_type}")
-            elif len(values_list) == 1:
+            # if len(values_list) == 0:
+            #     print(f"No GWP values for {unit_key} in {key} using {epd_type}")
+            if len(values_list) == 1:
                 gwp_data[key][unit_key] = values_list[0]
             elif gwp_statistic == "minimum":
                 gwp_data[key][unit_key] = float(np.min(values_list))

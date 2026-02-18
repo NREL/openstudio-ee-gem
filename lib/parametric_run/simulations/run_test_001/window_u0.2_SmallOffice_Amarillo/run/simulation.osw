@@ -1,0 +1,12 @@
+{
+  "weather_file": "/Users/cbianchi/Documents/GitHub/openstudio-ee-gem/lib/parametric_run/weather/Amarillo/USA_TX_Amarillo-Husband.Amarillo.Intl.AP.723630_TMYx.epw",
+  "seed_file": "/Users/cbianchi/Documents/GitHub/openstudio-ee-gem/lib/parametric_run/simulations/run_test_001/window_u0.2_SmallOffice_Amarillo/run/modified.osm",
+  "file_paths": [
+    "/Users/cbianchi/Documents/GitHub/openstudio-ee-gem/lib/parametric_run/weather"
+  ],
+  "measure_paths": [
+    "/Users/cbianchi/Documents/GitHub/openstudio-ee-gem/lib/measures"
+  ],
+  "steps": [],
+  "name": "window_u0.2_SmallOffice_Amarillo"
+}

@@ -153,61 +153,85 @@
       <name>annual_electricity_kwh</name>
       <display_name>Annual Electricity Consumption (kWh)</display_name>
       <type>Double</type>
+      <units>kWh</units>
+      <model_dependent>false</model_dependent>
     </output>
     <output>
       <name>annual_gas_therm</name>
       <display_name>Annual Natural Gas Consumption (therms)</display_name>
       <type>Double</type>
+      <units>therms</units>
+      <model_dependent>false</model_dependent>
     </output>
     <output>
       <name>annual_electricity_emissions_kg</name>
       <display_name>Annual Electricity Emissions (kg CO2e)</display_name>
       <type>Double</type>
+      <units>kg</units>
+      <model_dependent>false</model_dependent>
     </output>
     <output>
       <name>annual_gas_emissions_kg</name>
       <display_name>Annual Gas Emissions (kg CO2e)</display_name>
       <type>Double</type>
+      <units>kg</units>
+      <model_dependent>false</model_dependent>
     </output>
     <output>
       <name>annual_total_emissions_kg</name>
       <display_name>Annual Total Emissions (kg CO2e)</display_name>
       <type>Double</type>
+      <units>kg</units>
+      <model_dependent>false</model_dependent>
     </output>
     <output>
       <name>annual_total_emissions_mt</name>
       <display_name>Annual Total Emissions (metric tons CO2e)</display_name>
       <type>Double</type>
+      <units>metric tons</units>
+      <model_dependent>false</model_dependent>
     </output>
     <output>
       <name>on_peak_electricity_kwh</name>
       <display_name>On-Peak Electricity Consumption (kWh)</display_name>
       <type>Double</type>
+      <units>kWh</units>
+      <model_dependent>false</model_dependent>
     </output>
     <output>
       <name>off_peak_electricity_kwh</name>
       <display_name>Off-Peak Electricity Consumption (kWh)</display_name>
       <type>Double</type>
+      <units>kWh</units>
+      <model_dependent>false</model_dependent>
     </output>
     <output>
       <name>peak_demand_kw</name>
       <display_name>Peak Demand (kW)</display_name>
       <type>Double</type>
+      <units>kW</units>
+      <model_dependent>false</model_dependent>
     </output>
     <output>
       <name>annual_electricity_cost</name>
       <display_name>Annual Electricity Cost ($)</display_name>
       <type>Double</type>
+      <units>$</units>
+      <model_dependent>false</model_dependent>
     </output>
     <output>
       <name>annual_gas_cost</name>
       <display_name>Annual Gas Cost ($)</display_name>
       <type>Double</type>
+      <units>$</units>
+      <model_dependent>false</model_dependent>
     </output>
     <output>
       <name>annual_total_utility_cost</name>
       <display_name>Annual Total Utility Cost ($)</display_name>
       <type>Double</type>
+      <units>$</units>
+      <model_dependent>false</model_dependent>
     </output>
   </outputs>
   <provenances />
