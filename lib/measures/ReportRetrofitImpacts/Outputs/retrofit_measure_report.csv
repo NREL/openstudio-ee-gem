@@ -1,7 +1,7 @@
 # Construction AdditionalProperties
-,0,1,2
-construction_handle,{39644664-a9a1-417a-b9db-7b2c2b5f2148},{b88691a7-e9b0-4ff0-87e4-858b5b50b56c},{8a7ba072-82ca-4f77-af03-922fb4e52b19}
-retrofit_material_unit,cubic yards,square feet,square feet
-retrofit_material_quantity,50.0,2000.0,1500.0
-retrofit_material_name,Concrete,Drywall,Insulation
+,0
+construction_handle,{0963de92-4b23-49d3-a415-68cb0a85069a}
+retrofit_material_unit,square feet
+retrofit_material_quantity,1000.0
+retrofit_material_name,Fiberglass batt insulation
 

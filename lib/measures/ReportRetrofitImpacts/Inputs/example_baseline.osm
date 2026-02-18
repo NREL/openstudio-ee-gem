@@ -1,7 +1,7 @@
 
 OS:Version,
-  {29d90b64-1ea6-4abb-bc9e-8b60b8004110}, !- Handle
-  3.9.0;                                  !- Version Identifier
+  {1c9e9b4a-b84d-4347-bfbc-1adb124ee156}, !- Handle
+  3.8.0;                                  !- Version Identifier
 
 OS:Schedule:Constant,
   {5cf5dbf5-2a36-4a19-8fee-8c4ff95f7763}, !- Handle
@@ -2217,10 +2217,10 @@ OS:DefaultConstructionSet,
   {2e810e0d-ecf9-45e8-9ca3-721e0260733e}, ! Handle
   ASHRAE_189.1-2009_ClimateZone 1 (l_htl) alt-res_ConstSet, ! Name
   {4b1fbc55-7415-42d9-a2f3-46e4e19768cc}, ! Default Exterior Surface Constructions Name
-  {7973fb2b-19c8-4a8c-a4a2-bda61c00c562}, ! Default Interior Surface Constructions Name
-  {4aa32f00-92df-45a7-a40d-a21078d547b5}, ! Default Ground Contact Surface Constructions Name
+  {487507ea-1774-481e-b489-d05a021aff20}, ! Default Interior Surface Constructions Name
+  {25ffdbef-5dcf-4b7d-a59e-aa457695706e}, ! Default Ground Contact Surface Constructions Name
   {37cd51bf-b5b9-45d8-aea0-e94c88311d0f}, ! Default Exterior SubSurface Constructions Name
-  {14bf7598-a430-47d9-afb3-33b8b41fdf25}, ! Default Interior SubSurface Constructions Name
+  {5785442c-2a01-438a-bb92-58e724fdc459}, ! Default Interior SubSurface Constructions Name
   {7637dc40-61ee-48cd-b120-3672a87ad41e}, ! Interior Partition Construction Name
   ,                                       ! Space Shading Construction Name
   ,                                       ! Building Shading Construction Name
@@ -2231,10 +2231,10 @@ OS:DefaultConstructionSet,
   {ea1bb136-509e-446c-a596-32083149d761}, ! Handle
   ASHRAE_189.1-2009_ClimateZone 1 (l_htl)_ConstSet, ! Name
   {aecb2351-2bd3-4bdc-994e-960bb202883f}, ! Default Exterior Surface Constructions Name
-  {0d220591-3c51-4782-b520-03dd9f5da7d5}, ! Default Interior Surface Constructions Name
-  {c168cb27-d7e5-45fb-9a24-af1076465268}, ! Default Ground Contact Surface Constructions Name
+  {487507ea-1774-481e-b489-d05a021aff20}, ! Default Interior Surface Constructions Name
+  {25ffdbef-5dcf-4b7d-a59e-aa457695706e}, ! Default Ground Contact Surface Constructions Name
   {93d23d58-f073-434a-a970-a2e5d51744c9}, ! Default Exterior SubSurface Constructions Name
-  {c1e4fa36-9210-4d7b-9099-554edab16a86}, ! Default Interior SubSurface Constructions Name
+  {5785442c-2a01-438a-bb92-58e724fdc459}, ! Default Interior SubSurface Constructions Name
   {7637dc40-61ee-48cd-b120-3672a87ad41e}, ! Interior Partition Construction Name
   ,                                       ! Space Shading Construction Name
   ,                                       ! Building Shading Construction Name
@@ -2245,10 +2245,10 @@ OS:DefaultConstructionSet,
   {044e7e61-e44e-434b-99c2-e916962cbca2}, ! Handle
   ASHRAE_189.1-2009_ClimateZone 2 (l_htl) alt-res_ConstSet, ! Name
   {700a2982-3fd3-49ad-a06b-dc99ceeb140a}, ! Default Exterior Surface Constructions Name
-  {41ca17c6-174c-4b33-a45a-b4213efafc9a}, ! Default Interior Surface Constructions Name
-  {01af45ec-723d-42be-aef6-d9fd87c69f21}, ! Default Ground Contact Surface Constructions Name
+  {487507ea-1774-481e-b489-d05a021aff20}, ! Default Interior Surface Constructions Name
+  {25ffdbef-5dcf-4b7d-a59e-aa457695706e}, ! Default Ground Contact Surface Constructions Name
   {f4507a1c-076f-46ea-bc4a-ccfe6767b0c1}, ! Default Exterior SubSurface Constructions Name
-  {994b0826-db01-4b8e-bfed-ea775fcf1dd5}, ! Default Interior SubSurface Constructions Name
+  {5785442c-2a01-438a-bb92-58e724fdc459}, ! Default Interior SubSurface Constructions Name
   {7637dc40-61ee-48cd-b120-3672a87ad41e}, ! Interior Partition Construction Name
   ,                                       ! Space Shading Construction Name
   ,                                       ! Building Shading Construction Name
@@ -10211,7 +10211,7 @@ OS:WindowMaterial:Glazing,
   000_Clear 3mm,                          ! Name
   SpectralAverage,                        ! Optical Data Type
   ,                                       ! Window Glass Spectral Data Set Name
-  0.005,                                  ! Thickness
+  0.0030000000000000001,                  ! Thickness
   0.83699999999999997,                    ! Solar Transmittance at Normal Incidence
   0.074999999999999997,                   ! Front Side Solar Reflectance at Normal Incidence
   0.074999999999999997,                   ! Back Side Solar Reflectance at Normal Incidence
@@ -13845,14 +13845,7 @@ OS:Sizing:Zone,
   0.005,                                  !- Zone Cooling Design Supply Air Humidity Ratio Difference {kgWater/kgDryAir}
   HumidityRatioDifference,                !- Zone Latent Heating Design Supply Air Humidity Ratio Input Method
   ,                                       !- Zone Humidification Design Supply Air Humidity Ratio {kgWater/kgDryAir}
-  0.005,                                  !- Zone Humidification Design Supply Air Humidity Ratio Difference {kgWater/kgDryAir}
-  ,                                       !- Zone Humidistat Dehumidification Set Point Schedule Name
-  ,                                       !- Zone Humidistat Humidification Set Point Schedule Name
-  ,                                       !- Design Zone Air Distribution Effectiveness in Cooling Mode
-  ,                                       !- Design Zone Air Distribution Effectiveness in Heating Mode
-  ,                                       !- Design Zone Secondary Recirculation Fraction {dimensionless}
-  ,                                       !- Design Minimum Zone Ventilation Efficiency {dimensionless}
-  Coincident;                             !- Sizing Option
+  0.005;                                  !- Zone Humidification Design Supply Air Humidity Ratio Difference {kgWater/kgDryAir}
 
 OS:ZoneHVAC:EquipmentList,
   {0995ae80-e138-4527-b0fb-3b510a82d5d1}, !- Handle
@@ -13941,14 +13934,7 @@ OS:Sizing:Zone,
   0.005,                                  !- Zone Cooling Design Supply Air Humidity Ratio Difference {kgWater/kgDryAir}
   HumidityRatioDifference,                !- Zone Latent Heating Design Supply Air Humidity Ratio Input Method
   ,                                       !- Zone Humidification Design Supply Air Humidity Ratio {kgWater/kgDryAir}
-  0.005,                                  !- Zone Humidification Design Supply Air Humidity Ratio Difference {kgWater/kgDryAir}
-  ,                                       !- Zone Humidistat Dehumidification Set Point Schedule Name
-  ,                                       !- Zone Humidistat Humidification Set Point Schedule Name
-  ,                                       !- Design Zone Air Distribution Effectiveness in Cooling Mode
-  ,                                       !- Design Zone Air Distribution Effectiveness in Heating Mode
-  ,                                       !- Design Zone Secondary Recirculation Fraction {dimensionless}
-  ,                                       !- Design Minimum Zone Ventilation Efficiency {dimensionless}
-  Coincident;                             !- Sizing Option
+  0.005;                                  !- Zone Humidification Design Supply Air Humidity Ratio Difference {kgWater/kgDryAir}
 
 OS:ZoneHVAC:EquipmentList,
   {0facef9e-3404-4a0a-ad50-b07c8088a044}, !- Handle
@@ -14037,14 +14023,7 @@ OS:Sizing:Zone,
   0.005,                                  !- Zone Cooling Design Supply Air Humidity Ratio Difference {kgWater/kgDryAir}
   HumidityRatioDifference,                !- Zone Latent Heating Design Supply Air Humidity Ratio Input Method
   ,                                       !- Zone Humidification Design Supply Air Humidity Ratio {kgWater/kgDryAir}
-  0.005,                                  !- Zone Humidification Design Supply Air Humidity Ratio Difference {kgWater/kgDryAir}
-  ,                                       !- Zone Humidistat Dehumidification Set Point Schedule Name
-  ,                                       !- Zone Humidistat Humidification Set Point Schedule Name
-  ,                                       !- Design Zone Air Distribution Effectiveness in Cooling Mode
-  ,                                       !- Design Zone Air Distribution Effectiveness in Heating Mode
-  ,                                       !- Design Zone Secondary Recirculation Fraction {dimensionless}
-  ,                                       !- Design Minimum Zone Ventilation Efficiency {dimensionless}
-  Coincident;                             !- Sizing Option
+  0.005;                                  !- Zone Humidification Design Supply Air Humidity Ratio Difference {kgWater/kgDryAir}
 
 OS:ZoneHVAC:EquipmentList,
   {2e30fe7d-8176-4d43-bab9-ef1cbc09dcd4}, !- Handle
@@ -14133,14 +14112,7 @@ OS:Sizing:Zone,
   0.005,                                  !- Zone Cooling Design Supply Air Humidity Ratio Difference {kgWater/kgDryAir}
   HumidityRatioDifference,                !- Zone Latent Heating Design Supply Air Humidity Ratio Input Method
   ,                                       !- Zone Humidification Design Supply Air Humidity Ratio {kgWater/kgDryAir}
-  0.005,                                  !- Zone Humidification Design Supply Air Humidity Ratio Difference {kgWater/kgDryAir}
-  ,                                       !- Zone Humidistat Dehumidification Set Point Schedule Name
-  ,                                       !- Zone Humidistat Humidification Set Point Schedule Name
-  ,                                       !- Design Zone Air Distribution Effectiveness in Cooling Mode
-  ,                                       !- Design Zone Air Distribution Effectiveness in Heating Mode
-  ,                                       !- Design Zone Secondary Recirculation Fraction {dimensionless}
-  ,                                       !- Design Minimum Zone Ventilation Efficiency {dimensionless}
-  Coincident;                             !- Sizing Option
+  0.005;                                  !- Zone Humidification Design Supply Air Humidity Ratio Difference {kgWater/kgDryAir}
 
 OS:ZoneHVAC:EquipmentList,
   {75d200a3-3564-4c8d-bf3e-f5f8db217152}, !- Handle
@@ -14486,11 +14458,11 @@ OS:Building,
 
 OS:Site,
   {69e0c157-1761-45d4-8f89-01835c1d1cd1}, !- Handle
-  Golden,                                 !- Name
-  39.74,                                  !- Latitude {deg}
-  -105.18,                                !- Longitude {deg}
+  Denver Intl Ap,                         !- Name
+  39.83,                                  !- Latitude {deg}
+  -104.65,                                !- Longitude {deg}
   -7,                                     !- Time Zone {hr}
-  1829,                                   !- Elevation {m}
+  1650,                                   !- Elevation {m}
   ;                                       !- Terrain
 
 OS:ClimateZones,
@@ -16754,17 +16726,17 @@ OS:WindowProperty:FrameAndDivider,
 
 OS:WeatherFile,
   {5637dacf-72c8-4fed-8525-45638ed5ffcc}, !- Handle
-  Golden,                                 !- City
+  Denver Intl Ap,                         !- City
   CO,                                     !- State Province Region
   USA,                                    !- Country
-  Custom-724666,                          !- Data Source
-  724666,                                 !- WMO Number
-  39.74,                                  !- Latitude {deg}
-  -105.18,                                !- Longitude {deg}
+  TMY3,                                   !- Data Source
+  725650,                                 !- WMO Number
+  39.83,                                  !- Latitude {deg}
+  -104.65,                                !- Longitude {deg}
   -7,                                     !- Time Zone {hr}
-  1829,                                   !- Elevation {m}
-  C:/Users/jhu1/AppData/Local/Temp/1/osmodel-c0e1-3bcc-aa12-2a9a-1763679864-0/resources/files/srrl_2013_amy.epw, !- Url
-  7AC1BB48,                               !- Checksum
+  1650,                                   !- Elevation {m}
+  USA_CO_Denver.Intl.AP.725650_TMY3.epw,  !- Url
+  E23378AA,                               !- Checksum
   ,                                       !- Start Date Actual Year
   Sunday;                                 !- Start Day of Week
 
@@ -16783,163 +16755,6 @@ OS:Output:Diagnostics,
   {6a79fb3e-3411-4ce0-9492-923cbbe13c1f}; !- Handle
 
 OS:StandardsInformation:Construction,
-  {d876b0ea-c87f-4af2-a013-466e20c27e96}, !- Handle
+  {80d833bf-b869-4172-9595-ee888a4002f3}, !- Handle
   {a618bef4-afe5-4dde-bcf5-8057338cba27}; !- Construction Name
-
-OS:DefaultSurfaceConstructions,
-  {7973fb2b-19c8-4a8c-a4a2-bda61c00c562}, ! Handle
-  000_Interior_DefSurfCons 2,             ! Name
-  {128499cd-b542-41a5-9306-748b7a658703}, ! Floor Construction Name
-  {bebe4adc-f849-444f-9b2f-fed9b735e166}, ! Wall Construction Name
-  {224cc0f9-077e-428d-bc7c-ac2fb3dd8241}; ! Roof Ceiling Construction Name
-
-OS:DefaultSurfaceConstructions,
-  {4aa32f00-92df-45a7-a40d-a21078d547b5}, ! Handle
-  000_Ground_DefSurfCons 2,               ! Name
-  {b88691a7-e9b0-4ff0-87e4-858b5b50b56c}, ! Floor Construction Name
-  {b88691a7-e9b0-4ff0-87e4-858b5b50b56c}, ! Wall Construction Name
-  {b88691a7-e9b0-4ff0-87e4-858b5b50b56c}; ! Roof Ceiling Construction Name
-
-OS:DefaultSubSurfaceConstructions,
-  {14bf7598-a430-47d9-afb3-33b8b41fdf25}, ! Handle
-  000_Interior_DefSubCons 2,              ! Name
-  {84ce7365-ed93-4f6e-bb34-aea6faca9c6e}, ! Fixed Window Construction Name
-  {84ce7365-ed93-4f6e-bb34-aea6faca9c6e}, ! Operable Window Construction Name
-  {8a7ba072-82ca-4f77-af03-922fb4e52b19}, ! Door Construction Name
-  {a618bef4-afe5-4dde-bcf5-8057338cba27}, ! Glass Door Construction Name
-  ,                                       ! Overhead Door Construction Name
-  {a618bef4-afe5-4dde-bcf5-8057338cba27}, ! Skylight Construction Name
-  {84ce7365-ed93-4f6e-bb34-aea6faca9c6e}, ! Tubular Daylight Dome Construction Name
-  {84ce7365-ed93-4f6e-bb34-aea6faca9c6e}; ! Tubular Daylight Diffuser Construction Name
-
-OS:DefaultSurfaceConstructions,
-  {0d220591-3c51-4782-b520-03dd9f5da7d5}, ! Handle
-  000_Interior_DefSurfCons 3,             ! Name
-  {128499cd-b542-41a5-9306-748b7a658703}, ! Floor Construction Name
-  {bebe4adc-f849-444f-9b2f-fed9b735e166}, ! Wall Construction Name
-  {224cc0f9-077e-428d-bc7c-ac2fb3dd8241}; ! Roof Ceiling Construction Name
-
-OS:DefaultSurfaceConstructions,
-  {c168cb27-d7e5-45fb-9a24-af1076465268}, ! Handle
-  000_Ground_DefSurfCons 3,               ! Name
-  {b88691a7-e9b0-4ff0-87e4-858b5b50b56c}, ! Floor Construction Name
-  {b88691a7-e9b0-4ff0-87e4-858b5b50b56c}, ! Wall Construction Name
-  {b88691a7-e9b0-4ff0-87e4-858b5b50b56c}; ! Roof Ceiling Construction Name
-
-OS:DefaultSubSurfaceConstructions,
-  {c1e4fa36-9210-4d7b-9099-554edab16a86}, ! Handle
-  000_Interior_DefSubCons 3,              ! Name
-  {84ce7365-ed93-4f6e-bb34-aea6faca9c6e}, ! Fixed Window Construction Name
-  {84ce7365-ed93-4f6e-bb34-aea6faca9c6e}, ! Operable Window Construction Name
-  {8a7ba072-82ca-4f77-af03-922fb4e52b19}, ! Door Construction Name
-  {a618bef4-afe5-4dde-bcf5-8057338cba27}, ! Glass Door Construction Name
-  ,                                       ! Overhead Door Construction Name
-  {a618bef4-afe5-4dde-bcf5-8057338cba27}, ! Skylight Construction Name
-  {84ce7365-ed93-4f6e-bb34-aea6faca9c6e}, ! Tubular Daylight Dome Construction Name
-  {84ce7365-ed93-4f6e-bb34-aea6faca9c6e}; ! Tubular Daylight Diffuser Construction Name
-
-OS:DefaultSurfaceConstructions,
-  {41ca17c6-174c-4b33-a45a-b4213efafc9a}, ! Handle
-  000_Interior_DefSurfCons 4,             ! Name
-  {128499cd-b542-41a5-9306-748b7a658703}, ! Floor Construction Name
-  {bebe4adc-f849-444f-9b2f-fed9b735e166}, ! Wall Construction Name
-  {224cc0f9-077e-428d-bc7c-ac2fb3dd8241}; ! Roof Ceiling Construction Name
-
-OS:DefaultSurfaceConstructions,
-  {01af45ec-723d-42be-aef6-d9fd87c69f21}, ! Handle
-  000_Ground_DefSurfCons 4,               ! Name
-  {b88691a7-e9b0-4ff0-87e4-858b5b50b56c}, ! Floor Construction Name
-  {b88691a7-e9b0-4ff0-87e4-858b5b50b56c}, ! Wall Construction Name
-  {b88691a7-e9b0-4ff0-87e4-858b5b50b56c}; ! Roof Ceiling Construction Name
-
-OS:DefaultSubSurfaceConstructions,
-  {994b0826-db01-4b8e-bfed-ea775fcf1dd5}, ! Handle
-  000_Interior_DefSubCons 4,              ! Name
-  {84ce7365-ed93-4f6e-bb34-aea6faca9c6e}, ! Fixed Window Construction Name
-  {84ce7365-ed93-4f6e-bb34-aea6faca9c6e}, ! Operable Window Construction Name
-  {8a7ba072-82ca-4f77-af03-922fb4e52b19}, ! Door Construction Name
-  {a618bef4-afe5-4dde-bcf5-8057338cba27}, ! Glass Door Construction Name
-  ,                                       ! Overhead Door Construction Name
-  {a618bef4-afe5-4dde-bcf5-8057338cba27}, ! Skylight Construction Name
-  {84ce7365-ed93-4f6e-bb34-aea6faca9c6e}, ! Tubular Daylight Dome Construction Name
-  {84ce7365-ed93-4f6e-bb34-aea6faca9c6e}; ! Tubular Daylight Diffuser Construction Name
-
-OS:AdditionalProperties,
-  {712a7305-3e2e-4cc9-8f88-55f517371208}, !- Handle
-  {92286139-e776-43b2-8e87-a7d8d086b0b1}, !- Object Name
-  Subsurface name,                        !- Feature Name 1
-  String,                                 !- Feature Data Type 1
-  Sub Surface 5,                          !- Feature Value 1
-  Embodied carbon,                        !- Feature Name 2
-  Double,                                 !- Feature Data Type 2
-  1344.2172926546946;                     !- Feature Value 2
-
-OS:AdditionalProperties,
-  {65fa368b-78ba-420b-82f8-eb15f941d192}, !- Handle
-  {f0240b10-b10b-405d-b40f-baa8e72b2d9b}, !- Object Name
-  Subsurface name,                        !- Feature Name 1
-  String,                                 !- Feature Data Type 1
-  Sub Surface 1,                          !- Feature Value 1
-  Embodied carbon,                        !- Feature Name 2
-  Double,                                 !- Feature Data Type 2
-  1683.3299085707811;                     !- Feature Value 2
-
-OS:AdditionalProperties,
-  {a7ea3fea-7c5d-41eb-9453-a61288fb02eb}, !- Handle
-  {79b7f9a9-235d-43ef-9002-60ab5487953e}, !- Object Name
-  Subsurface name,                        !- Feature Name 1
-  String,                                 !- Feature Data Type 1
-  Sub Surface 3,                          !- Feature Value 1
-  Embodied carbon,                        !- Feature Name 2
-  Double,                                 !- Feature Data Type 2
-  1364.8641989616569;                     !- Feature Value 2
-
-OS:AdditionalProperties,
-  {40ecc37d-3e8a-4e98-916f-5f41ad1aa26a}, !- Handle
-  {c7c7f7f0-ab31-4413-b812-8a2b6a373a3c}, !- Object Name
-  Subsurface name,                        !- Feature Name 1
-  String,                                 !- Feature Data Type 1
-  Sub Surface 4,                          !- Feature Value 1
-  Embodied carbon,                        !- Feature Name 2
-  Double,                                 !- Feature Data Type 2
-  1079.4095977551908;                     !- Feature Value 2
-
-OS:AdditionalProperties,
-  {9b2896f5-000c-4469-97e1-8d13c3779807}, !- Handle
-  {39644664-a9a1-417a-b9db-7b2c2b5f2148}, !- Object Name
-  retrofit_material_name,                 !- Feature Name 1
-  String,                                 !- Feature Data Type 1
-  Concrete,                               !- Feature Value 1
-  retrofit_material_quantity,             !- Feature Name 2
-  Double,                                 !- Feature Data Type 2
-  50,                                     !- Feature Value 2
-  retrofit_material_unit,                 !- Feature Name 3
-  String,                                 !- Feature Data Type 3
-  cubic yards;                            !- Feature Value 3
-
-OS:AdditionalProperties,
-  {f2039e8e-19cf-44af-bfb0-df82d5604df7}, !- Handle
-  {b88691a7-e9b0-4ff0-87e4-858b5b50b56c}, !- Object Name
-  retrofit_material_name,                 !- Feature Name 1
-  String,                                 !- Feature Data Type 1
-  Drywall,                                !- Feature Value 1
-  retrofit_material_quantity,             !- Feature Name 2
-  Double,                                 !- Feature Data Type 2
-  2000,                                   !- Feature Value 2
-  retrofit_material_unit,                 !- Feature Name 3
-  String,                                 !- Feature Data Type 3
-  square feet;                            !- Feature Value 3
-
-OS:AdditionalProperties,
-  {97ea74e8-cb50-4f81-8b56-df4cee7caf7b}, !- Handle
-  {8a7ba072-82ca-4f77-af03-922fb4e52b19}, !- Object Name
-  retrofit_material_name,                 !- Feature Name 1
-  String,                                 !- Feature Data Type 1
-  Insulation,                             !- Feature Value 1
-  retrofit_material_quantity,             !- Feature Name 2
-  Double,                                 !- Feature Data Type 2
-  1500,                                   !- Feature Value 2
-  retrofit_material_unit,                 !- Feature Name 3
-  String,                                 !- Feature Data Type 3
-  square feet;                            !- Feature Value 3
 

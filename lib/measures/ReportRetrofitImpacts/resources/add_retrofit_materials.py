@@ -15,7 +15,7 @@ from pathlib import Path
 
 # Set the model path
 CURRENT_DIR_PATH = Path(__file__).parent.absolute()
-model_path = CURRENT_DIR_PATH.parent / "tests" / "example_model_2_with_AdditionalProperties.osm"
+model_path = CURRENT_DIR_PATH.parent / "Inputs" / "example_measure_applied.osm"
 
 print(f"Processing model: {model_path}")
 print(f"File exists: {model_path.exists()}\n")

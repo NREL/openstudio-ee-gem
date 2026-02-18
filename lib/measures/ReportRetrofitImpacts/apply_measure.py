@@ -18,7 +18,7 @@ from measure import CReport
 
 # Set the current directory path and model path
 CURRENT_DIR_PATH = Path(__file__).parent.absolute()
-model_path = CURRENT_DIR_PATH / "tests/example_model_2_with_AdditionalProperties.osm"
+model_path = CURRENT_DIR_PATH / "Inputs/example_measure_applied.osm"
 
 # Load the model
 translator = openstudio.osversion.VersionTranslator()

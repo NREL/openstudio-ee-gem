@@ -6,6 +6,7 @@ from sys import argv
 from dotenv import load_dotenv
 import os
 import openpyxl
+from pathlib import Path
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
@@ -380,3 +381,38 @@ class RSMeansAPIClient:
 
     def get_unit_labor_cost():
         pass
+
+
+if __name__ == "__main__":
+    load_dotenv()
+    client_id = os.getenv("client_id")
+    client_secret = os.getenv("client_secret")
+
+    if not client_id or not client_secret:
+        print("RSMeans API credentials (client_id, client_secret) not found in environment.")
+        raise SystemExit(1)
+
+    client = RSMeansAPIClient(client_id, client_secret, use_sandbox=True)
+    if not client.authenticate():
+        raise SystemExit(1)
+
+    default_materials = [
+        {"name": "continuous strip footing", "quantity": 1.0, "unit": "unit"},
+        {"name": "concrete", "quantity": 1.0, "unit": "unit"},
+        {"name": "insulation", "quantity": 1.0, "unit": "unit"}
+    ]
+
+    output_path = Path(__file__).resolve().parent.parent / "Outputs" / "search_results.json"
+
+    results = client.search_materials_batch(
+        materials=default_materials,
+        release_id="2019-an",
+        catalog="bc-mf",
+        location_id="us-us-national",
+        labor_type="std",
+        measurement_system="imp",
+        save_search_results_path=str(output_path)
+    )
+
+    print(f"Search results saved to: {output_path}")
+    print(f"Total cost: ${results.get('total_cost', 0.0):.2f}")

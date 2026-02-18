@@ -19,6 +19,7 @@ from openpyxl import load_workbook
 import plotly.graph_objects as go
 import configparser
 import re
+import json
 from dotenv import load_dotenv
 from call_RSmeans import RSMeansAPIClient
 
@@ -26,12 +27,12 @@ CURRENT_DIR_PATH = Path(__file__).absolute()
 optimization_excel_path = CURRENT_DIR_PATH.parent / 'Inputs' / 'optimization.xlsx'
 new_optimization_excel_output_path = CURRENT_DIR_PATH.parent / 'Outputs' / 'optimization_updated.xlsx'
 optimization_csv_output_path = CURRENT_DIR_PATH.parent / 'Outputs' / 'retrofit_measure_report.csv'
-html_template_path = CURRENT_DIR_PATH.parent / 'Inputs' / 'retrofit_report_template.html'
+html_template_path = CURRENT_DIR_PATH.parent / 'resources' / 'retrofit_report_template.html'
 
 # Paths for baseline and measure-applied scenarios
-tests_dir = CURRENT_DIR_PATH.parent / 'tests'
-baseline_run_dir = tests_dir / 'run_baseline'
-measure_applied_run_dir = tests_dir / 'run_measure_applied'
+inputs_dir = CURRENT_DIR_PATH.parent / 'Inputs'
+baseline_run_dir = inputs_dir / 'run_baseline'
+measure_applied_run_dir = inputs_dir / 'run_measure_applied'
 baseline_eplustbl_path = baseline_run_dir / 'eplustbl.html'
 measure_applied_eplustbl_path = measure_applied_run_dir / 'eplustbl.html'
 html_report_path = CURRENT_DIR_PATH.parent / 'Outputs' / 'retrofit_analysis_report.html'
@@ -207,6 +208,44 @@ class CReport(openstudio.measure.ReportingMeasure):
         
         except Exception as e:
             runner.registerWarning(f"Error extracting materials from model: {str(e)}")
+            return []
+
+    def load_retrofit_materials_from_inputs(self, runner):
+        """Load retrofit materials from Inputs/retrofit_materials.json if present."""
+        materials_path = CURRENT_DIR_PATH.parent / 'Inputs' / 'retrofit_materials.json'
+        if not materials_path.exists():
+            return []
+
+        try:
+            with open(materials_path, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+
+            if isinstance(data, dict):
+                materials = data.get('materials', [])
+            elif isinstance(data, list):
+                materials = data
+            else:
+                runner.registerWarning(f"Unexpected JSON format in {materials_path}; expected list or dict with 'materials'.")
+                return []
+
+            # Basic validation
+            cleaned = []
+            for item in materials:
+                if not isinstance(item, dict):
+                    continue
+                name = item.get('name')
+                if not name:
+                    continue
+                cleaned.append({
+                    'name': name,
+                    'quantity': float(item.get('quantity', 1.0)),
+                    'unit': item.get('unit', 'unit')
+                })
+
+            runner.registerInfo(f"Loaded {len(cleaned)} retrofit materials from Inputs/retrofit_materials.json")
+            return cleaned
+        except Exception as e:
+            runner.registerWarning(f"Could not read Inputs/retrofit_materials.json: {str(e)}")
             return []
 
     def extract_building_string(self, html_text: str) -> str:
@@ -660,8 +699,10 @@ class CReport(openstudio.measure.ReportingMeasure):
         except Exception as e:
             runner.registerWarning(f"Could not generate optimization visualization: {str(e)}")
 
-        # Extract retrofit materials from model AdditionalProperties
-        retrofit_materials = self.extract_new_materials_from_model(model, runner)
+        # Extract retrofit materials from model AdditionalProperties (or override via Inputs file)
+        retrofit_materials = self.load_retrofit_materials_from_inputs(runner)
+        if not retrofit_materials:
+            retrofit_materials = self.extract_new_materials_from_model(model, runner)
 
         # Call RSMeans API to get cost data for retrofit materials
         rsmeans_results = self.pull_rsmeans_cost_from_api(runner, materials=retrofit_materials if retrofit_materials else None)

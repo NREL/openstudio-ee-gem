@@ -2,9 +2,10 @@
   "total_cost": 0.0,
   "materials": [],
   "errors": [
-    "No RSMeans match found for: Concrete",
-    "No RSMeans match found for: Drywall",
-    "No RSMeans match found for: Insulation"
+    "No RSMeans match found for: ready mix concrete",
+    "No RSMeans match found for: gypsum board 1/2 in",
+    "No RSMeans match found for: fiberglass batt insulation",
+    "No RSMeans match found for: acoustic ceiling tile"
   ],
   "search_log": []
 }

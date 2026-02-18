@@ -23,13 +23,14 @@ ReportingMeasure
 ## Arguments
 
 ## Inputs Required Before Running
-- Baseline EnergyPlus report: tests/run_baseline/eplustbl.html
-- Measure-applied EnergyPlus report: tests/run_measure_applied/eplustbl.html
-- Optional: .env with ENERGY_COST_PER_GJ to override (only used if Economics Summary is missing)
-- Optional: config.ini with [ENERGY_COST] ENERGY_COST_PER_GJ (fallback if .env missing)
-
+1) Baseline EnergyPlus report: Inputs/run_baseline/eplustbl.html
+2) Measure-applied EnergyPlus report: Inputs/run_measure_applied/eplustbl.html
+3) Retrofit materials list: Inputs/retrofit_materials.json (optional; overrides model-derived materials if present)
+4) HTML template: resources/retrofit_report_template.html
+5) Example model for local run: Inputs/example_measure_applied.osm
+6) Baseline seed model for workflow: Inputs/example_baseline.osm
 ## How to Run
-1) Ensure the baseline and measure-applied eplustbl.html files exist in tests/run_baseline and tests/run_measure_applied.
+1) Ensure the baseline and measure-applied eplustbl.html files exist in Inputs/run_baseline and Inputs/run_measure_applied.
 2) Run the test harness:
 	python apply_measure.py
 3) Open the final report at tests/outputs/retrofit_analysis_report.html.
