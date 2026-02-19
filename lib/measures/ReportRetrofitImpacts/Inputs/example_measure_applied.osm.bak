@@ -7117,3 +7117,21 @@ OS:Curve:Cubic,
   0.7,                                    !- Minimum Value of x
   1;                                      !- Maximum Value of x
 
+OS:AdditionalProperties,
+  {49cd648c-a2d7-495b-ab49-b0eff1888b95}, !- Handle
+  {6b25c3c7-39e4-4be7-84a9-17e80feecaf5}, !- Object Name
+  measure_name,                           !- Feature Name 1
+  String,                                 !- Feature Data Type 1
+  Operating Cost Carbon Reporting Measure, !- Feature Value 1
+  annual_electricity_cost_usd,            !- Feature Name 2
+  Double,                                 !- Feature Data Type 2
+  9273.677285587255,                      !- Feature Value 2
+  annual_gas_cost_usd,                    !- Feature Name 3
+  Insulation,                             !- Feature Data Type 3
+  3.7613410502853641,                     !- Feature Value 3
+  annual_electricity_operating_emissions_kg_co2e, !- Feature Name 4
+  Double,                                 !- Feature Data Type 4
+  26567.161144358608,                     !- Feature Value 4
+  annual_gas_operating_emissions_kg_co2e, !- Feature Name 5
+  Double,                                 !- Feature Data Type 5
+  19.821370888278874;                     !- Feature Value 5

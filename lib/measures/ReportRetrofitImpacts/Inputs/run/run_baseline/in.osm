@@ -1,7 +1,7 @@
 
 OS:Version,
-  {d2d8ee6a-17e5-4faa-9154-4e560ce91f88}, !- Handle
-  3.9.0;                                  !- Version Identifier
+  {82d9fcf5-678b-44f3-8685-b0a5e7584340}, !- Handle
+  3.11.0;                                 !- Version Identifier
 
 OS:Site,
   {272d9a4d-ec25-4bbb-b083-822aef42268c}, !- Handle
@@ -263,17 +263,17 @@ OS:Output:Diagnostics,
 
 OS:WeatherFile,
   {708b5976-aa45-460a-bbe4-15fd61a403d4}, !- Handle
-  Denver-Aurora-Buckley AFB,              !- City
+  Denver Intl Ap,                         !- City
   CO,                                     !- State Province Region
   USA,                                    !- Country
   TMY3,                                   !- Data Source
-  724695,                                 !- WMO Number
-  39.72,                                  !- Latitude {deg}
-  -104.75,                                !- Longitude {deg}
+  725650,                                 !- WMO Number
+  39.83,                                  !- Latitude {deg}
+  -104.65,                                !- Longitude {deg}
   -7,                                     !- Time Zone {hr}
-  1726,                                   !- Elevation {m}
-  C:/Users/jhu1/AppData/Local/Temp/1/osmodel-1431-e238-3606-4156-1764789450-0/resources/files/USA_CO_Denver-Aurora-Buckley.AFB_.724695_TMY3.epw, !- Url
-  A0C64037,                               !- Checksum
+  1650,                                   !- Elevation {m}
+  C:/All_repos/openstudio-ee-gem/lib/measures/ReportRetrofitImpacts/tests/weather/USA_CO_Denver.Intl.AP.725650_TMY3.epw, !- Url
+  E23378AA,                               !- Checksum
   ,                                       !- Start Date Actual Year
   Sunday;                                 !- Start Day of Week
 
@@ -509,7 +509,9 @@ OS:Sizing:Zone,
   ,                                       !- Design Zone Air Distribution Effectiveness in Heating Mode
   ,                                       !- Design Zone Secondary Recirculation Fraction {dimensionless}
   ,                                       !- Design Minimum Zone Ventilation Efficiency {dimensionless}
-  Coincident;                             !- Sizing Option
+  Coincident,                             !- Sizing Option
+  None,                                   !- Heating Coil Sizing Method
+  1;                                      !- Maximum Heating Capacity To Cooling Load Sizing Ratio {W/W}
 
 OS:ZoneHVAC:EquipmentList,
   {568afaef-b516-4f12-aad4-00d0df8121a9}, !- Handle
@@ -727,7 +729,9 @@ OS:Sizing:Zone,
   ,                                       !- Design Zone Air Distribution Effectiveness in Heating Mode
   ,                                       !- Design Zone Secondary Recirculation Fraction {dimensionless}
   ,                                       !- Design Minimum Zone Ventilation Efficiency {dimensionless}
-  Coincident;                             !- Sizing Option
+  Coincident,                             !- Sizing Option
+  None,                                   !- Heating Coil Sizing Method
+  1;                                      !- Maximum Heating Capacity To Cooling Load Sizing Ratio {W/W}
 
 OS:ZoneHVAC:EquipmentList,
   {3c0e67bc-3bd9-45fe-83ad-7721dc767ad6}, !- Handle
@@ -945,7 +949,9 @@ OS:Sizing:Zone,
   ,                                       !- Design Zone Air Distribution Effectiveness in Heating Mode
   ,                                       !- Design Zone Secondary Recirculation Fraction {dimensionless}
   ,                                       !- Design Minimum Zone Ventilation Efficiency {dimensionless}
-  Coincident;                             !- Sizing Option
+  Coincident,                             !- Sizing Option
+  None,                                   !- Heating Coil Sizing Method
+  1;                                      !- Maximum Heating Capacity To Cooling Load Sizing Ratio {W/W}
 
 OS:ZoneHVAC:EquipmentList,
   {d85f434a-82e9-4875-90f5-cc6a721c854a}, !- Handle
@@ -1163,7 +1169,9 @@ OS:Sizing:Zone,
   ,                                       !- Design Zone Air Distribution Effectiveness in Heating Mode
   ,                                       !- Design Zone Secondary Recirculation Fraction {dimensionless}
   ,                                       !- Design Minimum Zone Ventilation Efficiency {dimensionless}
-  Coincident;                             !- Sizing Option
+  Coincident,                             !- Sizing Option
+  None,                                   !- Heating Coil Sizing Method
+  1;                                      !- Maximum Heating Capacity To Cooling Load Sizing Ratio {W/W}
 
 OS:ZoneHVAC:EquipmentList,
   {b99c81c2-afd5-490f-8ef3-1d6f8755e2d2}, !- Handle
@@ -1381,7 +1389,9 @@ OS:Sizing:Zone,
   ,                                       !- Design Zone Air Distribution Effectiveness in Heating Mode
   ,                                       !- Design Zone Secondary Recirculation Fraction {dimensionless}
   ,                                       !- Design Minimum Zone Ventilation Efficiency {dimensionless}
-  Coincident;                             !- Sizing Option
+  Coincident,                             !- Sizing Option
+  None,                                   !- Heating Coil Sizing Method
+  1;                                      !- Maximum Heating Capacity To Cooling Load Sizing Ratio {W/W}
 
 OS:ZoneHVAC:EquipmentList,
   {660a7d2c-2749-43e0-a6a7-2fbba294b0d2}, !- Handle
@@ -1481,6 +1491,8 @@ OS:People,
   ,                                       !- Activity Level Schedule Name
   ,                                       !- Surface Name/Angle Factor List Name
   {0d8591cc-8d2c-42aa-9fa3-7f7c4b5a37ee}, !- Work Efficiency Schedule Name
+  ClothingInsulationSchedule,             !- Clothing Insulation Calculation Method
+  ,                                       !- Clothing Insulation Calculation Method Schedule Name
   {3ec81975-b0aa-4b11-b049-17e1fcfd2635}, !- Clothing Insulation Schedule Name
   {92ed4178-172e-41f3-9d6d-57670ec8cb2b}, !- Air Velocity Schedule Name
   1;                                      !- Multiplier
@@ -2731,7 +2743,8 @@ OS:SpaceInfiltration:DesignFlowRate,
   0,                                      !- Constant Term Coefficient
   0,                                      !- Temperature Term Coefficient
   0.224,                                  !- Velocity Term Coefficient
-  0;                                      !- Velocity Squared Term Coefficient
+  0,                                      !- Velocity Squared Term Coefficient
+  Outdoor;                                !- Density Basis
 
 OS:SpaceInfiltration:DesignFlowRate,
   {375dc417-41b9-40e9-87fa-375a2b11e991}, !- Handle
@@ -2746,7 +2759,8 @@ OS:SpaceInfiltration:DesignFlowRate,
   0,                                      !- Constant Term Coefficient
   0,                                      !- Temperature Term Coefficient
   0.224,                                  !- Velocity Term Coefficient
-  0;                                      !- Velocity Squared Term Coefficient
+  0,                                      !- Velocity Squared Term Coefficient
+  Outdoor;                                !- Density Basis
 
 OS:SpaceInfiltration:DesignFlowRate,
   {1bbf02db-37f4-4228-a74e-dc6446e350ec}, !- Handle
@@ -2761,7 +2775,8 @@ OS:SpaceInfiltration:DesignFlowRate,
   0,                                      !- Constant Term Coefficient
   0,                                      !- Temperature Term Coefficient
   0.224,                                  !- Velocity Term Coefficient
-  0;                                      !- Velocity Squared Term Coefficient
+  0,                                      !- Velocity Squared Term Coefficient
+  Outdoor;                                !- Density Basis
 
 OS:SpaceInfiltration:DesignFlowRate,
   {12736a6a-f699-42fa-b401-aef48b95131e}, !- Handle
@@ -2776,7 +2791,8 @@ OS:SpaceInfiltration:DesignFlowRate,
   0,                                      !- Constant Term Coefficient
   0,                                      !- Temperature Term Coefficient
   0.224,                                  !- Velocity Term Coefficient
-  0;                                      !- Velocity Squared Term Coefficient
+  0,                                      !- Velocity Squared Term Coefficient
+  Outdoor;                                !- Density Basis
 
 OS:Site:GroundTemperature:BuildingSurface,
   {4f22dbd4-1455-49e2-bc2e-7519c691ffb3}, !- Handle
@@ -4043,7 +4059,9 @@ OS:Sizing:System,
   157,                                    !- Heating Design Capacity Per Floor Area {W/m2}
   1,                                      !- Fraction of Autosized Heating Design Capacity
   OnOff,                                  !- Central Cooling Capacity Control Method
-  autosize;                               !- Occupant Diversity
+  autosize,                               !- Occupant Diversity
+  None,                                   !- Heating Coil Sizing Method
+  1;                                      !- Maximum Heating Capacity To Cooling Capacity Sizing Ratio {W/W}
 
 OS:AvailabilityManagerAssignmentList,
   {e0bc06b1-3220-4dfc-a9dd-18e60b8bdbbb}, !- Handle
@@ -4555,7 +4573,9 @@ OS:Sizing:System,
   157,                                    !- Heating Design Capacity Per Floor Area {W/m2}
   1,                                      !- Fraction of Autosized Heating Design Capacity
   OnOff,                                  !- Central Cooling Capacity Control Method
-  autosize;                               !- Occupant Diversity
+  autosize,                               !- Occupant Diversity
+  None,                                   !- Heating Coil Sizing Method
+  1;                                      !- Maximum Heating Capacity To Cooling Capacity Sizing Ratio {W/W}
 
 OS:AvailabilityManagerAssignmentList,
   {2f0cf975-de1a-45df-9fbf-720307c19ae3}, !- Handle
@@ -5053,7 +5073,9 @@ OS:Sizing:System,
   157,                                    !- Heating Design Capacity Per Floor Area {W/m2}
   1,                                      !- Fraction of Autosized Heating Design Capacity
   OnOff,                                  !- Central Cooling Capacity Control Method
-  autosize;                               !- Occupant Diversity
+  autosize,                               !- Occupant Diversity
+  None,                                   !- Heating Coil Sizing Method
+  1;                                      !- Maximum Heating Capacity To Cooling Capacity Sizing Ratio {W/W}
 
 OS:AvailabilityManagerAssignmentList,
   {8dfc6249-0890-4c6a-958a-b161873b2020}, !- Handle
@@ -5551,7 +5573,9 @@ OS:Sizing:System,
   157,                                    !- Heating Design Capacity Per Floor Area {W/m2}
   1,                                      !- Fraction of Autosized Heating Design Capacity
   OnOff,                                  !- Central Cooling Capacity Control Method
-  autosize;                               !- Occupant Diversity
+  autosize,                               !- Occupant Diversity
+  None,                                   !- Heating Coil Sizing Method
+  1;                                      !- Maximum Heating Capacity To Cooling Capacity Sizing Ratio {W/W}
 
 OS:AvailabilityManagerAssignmentList,
   {4cb45233-d540-4e9c-992d-e7f26452f02e}, !- Handle
@@ -6049,7 +6073,9 @@ OS:Sizing:System,
   157,                                    !- Heating Design Capacity Per Floor Area {W/m2}
   1,                                      !- Fraction of Autosized Heating Design Capacity
   OnOff,                                  !- Central Cooling Capacity Control Method
-  autosize;                               !- Occupant Diversity
+  autosize,                               !- Occupant Diversity
+  None,                                   !- Heating Coil Sizing Method
+  1;                                      !- Maximum Heating Capacity To Cooling Capacity Sizing Ratio {W/W}
 
 OS:AvailabilityManagerAssignmentList,
   {4f7b4698-d735-409f-8381-988d3a46e4ce}, !- Handle
