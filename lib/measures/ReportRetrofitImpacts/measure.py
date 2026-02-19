@@ -31,10 +31,11 @@ html_template_path = CURRENT_DIR_PATH.parent / 'resources' / 'retrofit_report_te
 
 # Paths for baseline and measure-applied scenarios
 inputs_dir = CURRENT_DIR_PATH.parent / 'Inputs'
-baseline_run_dir = inputs_dir / 'run_baseline'
-measure_applied_run_dir = inputs_dir / 'run_measure_applied'
-baseline_eplustbl_path = baseline_run_dir / 'eplustbl.html'
-measure_applied_eplustbl_path = measure_applied_run_dir / 'eplustbl.html'
+run_dir = inputs_dir / 'run'
+baseline_run_dir = run_dir / 'run_baseline'
+measure_applied_run_dir = run_dir / 'run_measure_applied'
+baseline_eplustbl_path = baseline_run_dir / 'eplustbl.htm'  # EnergyPlus creates .htm not .html
+measure_applied_eplustbl_path = measure_applied_run_dir / 'eplustbl.htm'  # EnergyPlus creates .htm not .html
 html_report_path = CURRENT_DIR_PATH.parent / 'Outputs' / 'retrofit_analysis_report.html'
 
 # Energy cost fallback ($/GJ)
@@ -120,8 +121,9 @@ class CReport(openstudio.measure.ReportingMeasure):
                 title="Retrofit Optimization Scenario Comparison"
             )
 
-            # Save to HTML file instead of showing in browser
-            html_output_path = tests_dir / 'outputs' / 'optimization_visualization.html'
+            # Save to Outputs directory
+            html_output_path = CURRENT_DIR_PATH.parent / 'Outputs' / 'optimization_visualization.html'
+            html_output_path.parent.mkdir(exist_ok=True)
             fig.write_html(str(html_output_path))
             print(f"Visualization saved to: {html_output_path}")
             
@@ -168,6 +170,8 @@ class CReport(openstudio.measure.ReportingMeasure):
                 material_name = None
                 material_quantity = 1.0
                 material_unit = "unit"
+                unit_cost = None
+                total_cost = None
                 
                 for feature_name in feature_names:
                     feature_name_lower = feature_name.lower()
@@ -193,14 +197,32 @@ class CReport(openstudio.measure.ReportingMeasure):
                         value_str = props.getFeatureAsString(feature_name)
                         if value_str.is_initialized():
                             material_unit = value_str.get()
+                    
+                    # Extract RSMeans unit cost
+                    elif 'rsmeans_unit_cost' in feature_name_lower:
+                        value_double = props.getFeatureAsDouble(feature_name)
+                        if value_double.is_initialized():
+                            unit_cost = value_double.get()
+                    
+                    # Extract RSMeans total cost
+                    elif 'rsmeans_total_cost' in feature_name_lower:
+                        value_double = props.getFeatureAsDouble(feature_name)
+                        if value_double.is_initialized():
+                            total_cost = value_double.get()
                 
                 # If we found a material name, add it to the list
                 if material_name:
-                    materials.append({
+                    material_dict = {
                         'name': material_name,
                         'quantity': material_quantity,
                         'unit': material_unit
-                    })
+                    }
+                    if unit_cost is not None:
+                        material_dict['unit_cost'] = unit_cost
+                    if total_cost is not None:
+                        material_dict['total_cost'] = total_cost
+                    
+                    materials.append(material_dict)
                     runner.registerInfo(f"Found retrofit material: {material_name} (qty: {material_quantity} {material_unit})")
             
             runner.registerInfo(f"Extracted {len(materials)} retrofit materials from model AdditionalProperties")
@@ -378,8 +400,22 @@ class CReport(openstudio.measure.ReportingMeasure):
             
             runner.registerInfo("Initializing RSMeans API client...")
             
-            # Initialize the API client
-            client = RSMeansAPIClient(client_id, client_secret, use_sandbox=True)
+            # Check if materials already have cost data from AdditionalProperties
+            materials_with_costs = [m for m in materials if 'total_cost' in m and m['total_cost'] is not None]
+            
+            if len(materials_with_costs) == len(materials):
+                # All materials have costs, skip API call
+                runner.registerInfo(f"All {len(materials)} materials already have cost data from AdditionalProperties. Skipping RSMeans API query.")
+                total_cost = sum(m['total_cost'] for m in materials)
+                return {
+                    'total_cost': total_cost,
+                    'materials': materials,
+                    'errors': [],
+                    'search_log': []
+                }
+            
+            # Initialize the API client (production environment)
+            client = RSMeansAPIClient(client_id, client_secret, use_sandbox=False)
             
             # Authenticate with the API
             if not client.authenticate():
@@ -400,11 +436,11 @@ class CReport(openstudio.measure.ReportingMeasure):
             # Path to save search results
             search_results_path = CURRENT_DIR_PATH.parent / 'Outputs' / 'search_results.json'
             
-            # Search for materials in batch
+            # Search for materials in batch (using latest 2025 Q4 release, Green Building catalog)
             batch_results = client.search_materials_batch(
                 materials=materials,
-                release_id='2019-an',
-                catalog='bc-mf',
+                release_id='2025-q4',
+                catalog='gb-mf',
                 location_id='us-us-national',
                 labor_type='std',
                 measurement_system='imp',
@@ -695,7 +731,7 @@ class CReport(openstudio.measure.ReportingMeasure):
         # Generate optimization visualization (always run this)
         try:
             self.optimization()
-            runner.registerInfo("Optimization visualization generated and saved to: tests/outputs/optimization_visualization.html")
+            runner.registerInfo("Optimization visualization generated and saved to: Outputs/optimization_visualization.html")
         except Exception as e:
             runner.registerWarning(f"Could not generate optimization visualization: {str(e)}")
 

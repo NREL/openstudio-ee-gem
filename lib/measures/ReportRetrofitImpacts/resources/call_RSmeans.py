@@ -11,6 +11,84 @@ from pathlib import Path
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 
+def get_division_from_material_type(material_type: str) -> Optional[str]:
+    """
+    Map material type to RSMeans MasterFormat division code.
+    
+    Args:
+        material_type: Material type string (e.g., 'insulation', 'concrete', 'drywall')
+    
+    Returns:
+        str: Two-digit division code (e.g., '07' for insulation) or None if not found
+    """
+    mapping = {
+        # Division 03 - Concrete
+        'concrete': '03',
+        'footing': '03',
+        'slab': '03',
+        
+        # Division 04 - Masonry
+        'brick': '04',
+        'masonry': '04',
+        'block': '04',
+        
+        # Division 05 - Metals
+        'steel': '05',
+        'metal': '05',
+        
+        # Division 06 - Wood, Plastics, and Composites
+        'wood': '06',
+        'lumber': '06',
+        
+        # Division 07 - Thermal and Moisture Protection
+        'insulation': '07',
+        'roofing': '07',
+        'waterproofing': '07',
+        'sealant': '07',
+        
+        # Division 08 - Openings
+        'door': '08',
+        'window': '08',
+        'glazing': '08',
+        
+        # Division 09 - Finishes
+        'drywall': '09',
+        'gypsum': '09',
+        'paint': '09',
+        'flooring': '09',
+        'ceiling': '09',
+        'tile': '09',
+        
+        # Division 22 - Plumbing
+        'plumbing': '22',
+        'pipe': '22',
+        
+        # Division 23 - HVAC
+        'hvac': '23',
+        'duct': '23',
+        'boiler': '23',
+        'chiller': '23',
+        
+        # Division 26 - Electrical
+        'electrical': '26',
+        'lighting': '26',
+        'wiring': '26',
+    }
+    
+    # Try exact match first, then partial match
+    material_lower = material_type.lower().strip()
+    
+    if material_lower in mapping:
+        return mapping[material_lower]
+    
+    # Try partial matching
+    for key, division in mapping.items():
+        if key in material_lower or material_lower in key:
+            return division
+    
+    return None
+
+
 class RSMeansAPIClient:
     """
     Client for interacting with the RSMeans Sandbox API.
@@ -20,7 +98,7 @@ class RSMeansAPIClient:
     def __init__(self,
                 client_id,
                 client_secret,
-                use_sandbox: bool = True):
+                use_sandbox: bool = False):
         """
         Initialize the RSMeans API client with credentials.
 
@@ -268,7 +346,7 @@ class RSMeansAPIClient:
 
         Args:
             materials: List of material dicts with keys:
-                      {'name': str, 'quantity': float, 'unit': str}
+                      {'name': str, 'quantity': float, 'unit': str, 'division_code': str (optional)}
             release_id: Cost data release ID
             catalog: Catalog code
             location_id: Location for cost localization
@@ -290,20 +368,28 @@ class RSMeansAPIClient:
         for material in materials:
             material_name = material.get('name', '')
             quantity = material.get('quantity', 1.0)
+            division_hint = material.get('division_code')
 
             if not material_name:
                 results['errors'].append("Material name is required")
                 continue
 
+            # Auto-detect division if not provided
+            if not division_hint:
+                division_hint = get_division_from_material_type(material_name)
+                if division_hint:
+                    print(f"Auto-detected division {division_hint} for material: {material_name}")
+
             try:
-                # Search for the material
+                # Search for the material with optional division filter
                 search_results = self.search_unit_costlines(
                     release_id=release_id,
                     measurement_system=measurement_system,
                     searchTerm=material_name,
                     catalog=catalog,
                     location_id=location_id,
-                    labor_type=labor_type
+                    labor_type=labor_type,
+                    divisionCode=division_hint  # Use division filter if available
                 )
 
                 if not search_results or 'items' not in search_results or len(search_results['items']) == 0:
@@ -332,6 +418,7 @@ class RSMeansAPIClient:
                 # Log search results for debugging
                 search_log_entry = {
                     'material_name': material_name,
+                    'division_hint': division_hint,
                     'search_results_count': len(search_results.get('items', [])),
                     'division_code': division_code,
                     'first_match': first_item.get('description', ''),
@@ -392,27 +479,45 @@ if __name__ == "__main__":
         print("RSMeans API credentials (client_id, client_secret) not found in environment.")
         raise SystemExit(1)
 
-    client = RSMeansAPIClient(client_id, client_secret, use_sandbox=True)
+    client = RSMeansAPIClient(client_id, client_secret, use_sandbox=False)
     if not client.authenticate():
         raise SystemExit(1)
 
+    # Default materials to search
     default_materials = [
-        {"name": "continuous strip footing", "quantity": 1.0, "unit": "unit"},
-        {"name": "concrete", "quantity": 1.0, "unit": "unit"},
-        {"name": "insulation", "quantity": 1.0, "unit": "unit"}
+        {"name": "continuous strip footing", "quantity": 10.0, "unit": "C.Y."},
+        {"name": "insulation", "quantity": 1260.0, "unit": "S.F."}
     ]
 
     output_path = Path(__file__).resolve().parent.parent / "Outputs" / "search_results.json"
 
     results = client.search_materials_batch(
         materials=default_materials,
-        release_id="2019-an",
-        catalog="bc-mf",
+        release_id="2025-q4",
+        catalog="gb-mf",
         location_id="us-us-national",
         labor_type="std",
         measurement_system="imp",
         save_search_results_path=str(output_path)
     )
 
-    print(f"Search results saved to: {output_path}")
+    print(f"\nSearch results saved to: {output_path}")
     print(f"Total cost: ${results.get('total_cost', 0.0):.2f}")
+    
+    if results.get('errors'):
+        print(f"\nErrors encountered:")
+        for error in results['errors']:
+            print(f"  - {error}")
+            materials=default_materials,
+            release_id="2019-an",
+            catalog="bc-mf",
+            location_id="us-us-national",
+            labor_type="std",
+            measurement_system="imp",
+            save_search_results_path=str(output_path)
+        
+
+        print(f"Processed search results saved to: {output_path}")
+        print(f"Total cost: ${results.get('total_cost', 0.0):.2f}")
+
+
