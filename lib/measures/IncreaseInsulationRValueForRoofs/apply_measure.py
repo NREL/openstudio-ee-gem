@@ -1,199 +1,264 @@
+"""
+Apply IncreaseInsulationRValueForRoofs measure to a test model.
+
+This script:
+1. Loads a test OSM file from the tests/ folder
+2. Runs the ModelMeasure with a set of configurable arguments
+3. Saves the modified model to tests/output/
+4. Verifies that AdditionalProperties were attached to modified constructions
+"""
+
 from pathlib import Path
+import sys
+import json
+import os
+import configparser
+
+# ---------------------------------------------------------------------------
+# OpenStudio path setup
+# ---------------------------------------------------------------------------
+OPENSTUDIO_VERSION = "3.11.0"
+openstudio_path = f"/Applications/OpenStudio-{OPENSTUDIO_VERSION}/Python"
+
+if Path(openstudio_path).exists():
+    sys.path.insert(0, openstudio_path)
+    print(f"Using OpenStudio from: {openstudio_path}")
+else:
+    print(f"Warning: OpenStudio path not found at {openstudio_path}")
+    print("Will attempt to use system OpenStudio installation")
+
 import openstudio
 from measure import IncreaseInsulationRValueForRoofs
-import configparser
-import os
-import subprocess
 
-# read API Token from local
-script_dir = os.path.dirname(os.path.abspath(__file__))
-repo_root = os.path.abspath(os.path.join(script_dir, "../../.."))
-config_path = os.path.join(repo_root, "config.ini")
+print(f"OpenStudio version: {openstudio.openStudioVersion()}")
 
-if not os.path.exists(config_path):
-    raise FileNotFoundError(f"Config file not found: {config_path}")
+# ---------------------------------------------------------------------------
+# Read API token from repo-level config.ini
+# ---------------------------------------------------------------------------
+SCRIPT_DIR = Path(__file__).parent.absolute()
+REPO_ROOT = SCRIPT_DIR.parent.parent.parent
+CONFIG_PATH = REPO_ROOT / "config.ini"
 
-config = configparser.ConfigParser()
-config.read(config_path)
-API_TOKEN= config["EC3_API_TOKEN"]["API_TOKEN"]
+API_TOKEN = "PLACEHOLDER"
+if CONFIG_PATH.exists():
+    config = configparser.ConfigParser()
+    config.read(CONFIG_PATH)
+    try:
+        API_TOKEN = config["EC3_API_TOKEN"]["API_TOKEN"]
+        print(f"API token loaded from: {CONFIG_PATH}")
+    except KeyError:
+        print(f"Warning: could not read API_TOKEN from {CONFIG_PATH}")
+else:
+    print(f"Warning: config.ini not found at {CONFIG_PATH}")
 
-def run_measure():
-    CURRENT_DIR_PATH = Path(__file__).parent.absolute()
-    model_path = CURRENT_DIR_PATH / "tests/Warehouse-ASHRAE.osm"
-    
-    # Define test parameters
-    r_values = [0,24.4,27.0,32.3,34.5,38.5]
-    #r_values = [0]
-    insulation_materials = [
-        "Blown Cellulose",
-        "Blown Fiberglass",
-        "Blown Mineral Wool",
-        "Polyiso Insulation Foam Board",
-        "Graphite Polystyrene (GPS) Foam Board",
-        "Expanded Polystyrene (EPS) Foam Board",
-        "Extruded Polystyrene (XPS) Foam Board",
-        "Mineral Wool Heavy Density Blanket",
-        "Mineral Wool Light Density Blanket",
-        "Fiberglass Batts",
-        "Pure Wool Batts"
-    ]
-    
-    # Create output directory
-    out_dir = CURRENT_DIR_PATH / "tests" / "output"
-    out_dir.mkdir(parents=True, exist_ok=True)
-    
-    total_runs = len(r_values) * len(insulation_materials)
-    current_run = 0
-    
-    print(f"\n{'='*80}")
-    print(f"Starting parametric study: {len(r_values)} R-values × {len(insulation_materials)} materials = {total_runs} total runs")
-    print(f"{'='*80}\n")
-    
-    # Nested loops for parametric study
-    for r_value in r_values:
-        for material in insulation_materials:
-            current_run += 1
-            
-            # Create a sanitized material name for filename
-            material_short = material.replace(" ", "_").replace("(", "").replace(")", "")
-            
-            print(f"\n{'='*80}")
-            print(f"Run {current_run}/{total_runs}: R-{r_value} with {material}")
-            print(f"{'='*80}")
-            
-            # Load a fresh copy of the model for each run
-            translator = openstudio.osversion.VersionTranslator()
-            model_path_os = openstudio.toPath(str(model_path))
-            loaded_model = translator.loadModel(model_path_os)
 
-            if loaded_model.is_initialized():
-                model = loaded_model.get()
-            else:
-                print(f"ERROR: Failed to load model at {model_path}")
-                continue
+def load_model(model_path):
+    """Load an OSM file and return the Model object."""
+    translator = openstudio.osversion.VersionTranslator()
+    translator.setAllowNewerVersions(True)
+    loaded = translator.loadModel(openstudio.toPath(str(model_path)))
+    if not loaded.is_initialized():
+        raise RuntimeError(f"Failed to load model: {model_path}\n"
+                           f"Errors: {translator.errors()}")
+    return loaded.get()
 
-            # Create runner and measure instance
-            osw = openstudio.WorkflowJSON()
-            runner = openstudio.measure.OSRunner(osw)
-            measure = IncreaseInsulationRValueForRoofs()
 
-            # Setup arguments
-            args = measure.arguments(model)
-            arg_map = openstudio.measure.convertOSArgumentVectorToMap(args)
+def run_measure(model, args_overrides=None):
+    """
+    Instantiate and run the measure.
 
-            def set_arg(name, value):
-                if name in arg_map:
-                    arg = arg_map[name]
-                    arg.setValue(value)
-                    arg_map[name] = arg
+    Args:
+        model: openstudio.model.Model
+        args_overrides: dict of {arg_name: value} to override defaults
 
-            # Set arguments for this run
-            set_arg("r_value", r_value)
-            set_arg("analysis_period", 30)
-            set_arg("gwp_statistic", "median")
-            set_arg("api_key", API_TOKEN)
-            set_arg("insulation_material_type", material)
-            set_arg("insulation_material_lifetime", 30)
-            set_arg("insulation_thermal_conductivity", 0.0)
-            set_arg("insulation_material_density", 0.0)
+    Returns:
+        (success: bool, runner: OSRunner)
+    """
+    osw = openstudio.WorkflowJSON()
+    runner = openstudio.measure.OSRunner(osw)
+    measure = IncreaseInsulationRValueForRoofs()
 
-            # Run the measure
-            result = measure.run(model, runner, arg_map)
+    args = measure.arguments(model)
+    arg_map = openstudio.measure.convertOSArgumentVectorToMap(args)
 
-            # Display results
-            print(f"\nRESULT: {runner.result().value().valueName()}")
-            
-            # Show summary of important info
-            info_count = len(list(runner.result().info()))
-            warning_count = len(list(runner.result().warnings()))
-            error_count = len(list(runner.result().errors()))
-            
-            if info_count > 0:
-                print(f"  Info messages: {info_count}")
-            if warning_count > 0:
-                print(f"  Warnings: {warning_count}")
-                for warning in runner.result().warnings():
-                    print(f"    WARNING: {warning.logMessage()}")
-            if error_count > 0:
-                print(f"  Errors: {error_count}")
-                for error in runner.result().errors():
-                    print(f"    ERROR: {error.logMessage()}")
+    def set_arg(name, value):
+        if name in arg_map:
+            arg = arg_map[name]
+            arg.setValue(value)
+            arg_map[name] = arg
+        else:
+            print(f"  Warning: argument '{name}' not found in measure arguments")
 
-            # Save modified model with descriptive name
-            save_path = out_dir / f"out_R{r_value}_{material_short}.osm"
-            model.save(openstudio.toPath(str(save_path)), True)
-            print(f"✓ Saved: {save_path.name}")
-            
-            # Run EnergyPlus simulation using OpenStudio workflow
-            print(f"  Running EnergyPlus simulation...")
-            
-            # Get weather file (look for .epw in tests directory)
-            epw_path = None
-            for epw_file in (CURRENT_DIR_PATH / "tests").glob("*.epw"):
-                epw_path = epw_file
-                break
-            
-            if epw_path and epw_path.exists():
-                # Create run directory
-                run_dir = out_dir / f"run_R{r_value}_{material_short}"
-                run_dir.mkdir(parents=True, exist_ok=True)
-                
-                try:
-                    # Create a workflow JSON to run the model
-                    workflow = openstudio.WorkflowJSON()
-                    workflow.setOswPath(openstudio.toPath(str(run_dir / "workflow.osw")))
-                    workflow.setSeedFile(openstudio.toPath(str(save_path)))
-                    workflow.setWeatherFile(openstudio.toPath(str(epw_path)))
-                    
-                    # Save the workflow
-                    workflow.save()
-                    
-                    # Run using OpenStudio CLI
-                    osw_path = run_dir / "workflow.osw"
-                    cmd = ["openstudio", "run", "-w", str(osw_path)]
-                    
-                    result = subprocess.run(
-                        cmd,
-                        cwd=str(run_dir),
-                        capture_output=True,
-                        text=True,
-                        timeout=300  # 5 minute timeout
-                    )
-                    
-                    # Check for SQL output in the run subdirectory
-                    sql_path = run_dir / "run" / "eplusout.sql"
-                    if not sql_path.exists():
-                        # Try alternative location
-                        sql_path = run_dir / "eplusout.sql"
-                    
-                    if sql_path.exists():
-                        print(f"  ✓ Simulation complete: SQL output generated")
-                    else:
-                        print(f"  ✗ Simulation failed - no SQL output")
-                        if result.returncode != 0:
-                            # Print stderr for debugging
-                            stderr_lines = result.stderr.split('\n')
-                            for line in stderr_lines[-5:]:  # Last 5 lines
-                                if line.strip():
-                                    print(f"    {line[:150]}")
-                            
-                except subprocess.TimeoutExpired:
-                    print(f"  ✗ Simulation timed out after 5 minutes")
-                except FileNotFoundError:
-                    print(f"  ✗ OpenStudio CLI not found - skipping simulation")
-                except Exception as e:
-                    print(f"  ✗ Simulation error: {str(e)[:100]}")
-            else:
-                print(f"  ✗ Weather file not found in {CURRENT_DIR_PATH / 'tests'}")
-                print(f"    Please add a .epw file to run simulations")
+    # --- Default argument values ---
+    set_arg("r_value", 30.0)                          # ft²·h·°F/Btu
+    set_arg("analysis_period", 30)                    # years
+    set_arg("gwp_statistic", "median")
+    set_arg("api_key", API_TOKEN)
+    set_arg("insulation_material_type", "Polyiso Insulation Foam Board")
+    set_arg("insulation_material_lifetime", 30)
+    set_arg("insulation_thermal_conductivity", 0.0)   # 0 = use typical
+    set_arg("insulation_material_density", 0.0)       # 0 = use typical
 
-            del model
-    
-    print(f"\n{'='*80}")
-    print(f"Parametric study complete: {total_runs} models generated")
-    print(f"Output directory: {out_dir}")
-    print(f"{'='*80}\n")
+    # Apply any caller-supplied overrides
+    if args_overrides:
+        for name, value in args_overrides.items():
+            set_arg(name, value)
+
+    print("\nRunning measure...")
+    measure.run(model, runner, arg_map)
+    success = runner.result().value().valueName() == "Success"
+    return success, runner
+
+
+def print_runner_output(runner):
+    """Print info, warnings, and errors from the runner."""
+    result = runner.result()
+    print(f"\nResult: {result.value().valueName()}")
+
+    if result.info():
+        print("\nInfo:")
+        for msg in result.info():
+            print(f"  [INFO] {msg.logMessage()}")
+
+    if result.warnings():
+        print("\nWarnings:")
+        for msg in result.warnings():
+            print(f"  [WARN] {msg.logMessage()}")
+
+    if result.errors():
+        print("\nErrors:")
+        for msg in result.errors():
+            print(f"  [ERR ] {msg.logMessage()}")
+
+
+def verify_additional_properties(model):
+    """
+    Check the new separate Facility AdditionalProperties (summary block).
+    Returns a list of (object_name, prop_name, value) tuples.
+    """
+    found = []
+    facility = model.getFacility()
+    ap = facility.additionalProperties()
+    for feature_name in ap.featureNames():
+        val_opt = ap.getFeatureAsDouble(feature_name)
+        if val_opt.is_initialized():
+            found.append(("Facility", feature_name, val_opt.get()))
+        else:
+            val_str = ap.getFeatureAsString(feature_name)
+            if val_str.is_initialized():
+                found.append(("Facility", feature_name, val_str.get()))
+    return found
+
+
+def main():
+    print("=" * 80)
+    print("IncreaseInsulationRValueForRoofs – apply_measure.py")
+    print("=" * 80)
+
+    # Paths
+    model_path = SCRIPT_DIR / "tests" / "DOE_small_office.osm"
+    output_dir = SCRIPT_DIR / "tests" / "output"
+    output_model_path = output_dir / "DOE_small_office_roof_insulation_upgraded.osm"
+    results_json_path = output_dir / "apply_measure_results.json"
+
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    print(f"\nInput model : {model_path}")
+    print(f"Output model: {output_model_path}")
+
+    if not model_path.exists():
+        print(f"\nERROR: Model file not found: {model_path}")
+        sys.exit(1)
+
+    # Load model
+    print("\nLoading model...")
+    model = load_model(model_path)
+    print("  Model loaded successfully.")
+
+    # Run measure
+    print("\n" + "=" * 80)
+    print("RUNNING MEASURE")
+    print("=" * 80)
+
+    success, runner = run_measure(model)
+    print_runner_output(runner)
+
+    def _sv_value(sv):
+        """Safely extract a StepValue's value regardless of return type."""
+        vtype = sv.variantType().valueName()
+        extractors = {
+            "Double": sv.valueAsDouble,
+            "Integer": sv.valueAsInteger,
+            "Boolean": sv.valueAsBoolean,
+            "String": sv.valueAsString,
+        }
+        fn = extractors.get(vtype)
+        if fn is None:
+            return None
+        val = fn()
+        # OpenStudio may return an Optional wrapper or a native Python type
+        if hasattr(val, "is_initialized"):
+            return val.get() if val.is_initialized() else None
+        return val
+
+    # Collect step values
+    step_values = {}
+    for sv in runner.result().stepValues():
+        try:
+            step_values[sv.name()] = _sv_value(sv)
+        except Exception as exc:
+            step_values[sv.name()] = f"<error: {exc}>"
+
+    if step_values:
+        print("\nStep Values reported by measure:")
+        for k, v in step_values.items():
+            print(f"  {k}: {v}")
+
+    # Verify AdditionalProperties
+    print("\n" + "=" * 80)
+    print("VERIFYING SEPARATE FACILITY ADDITIONAL PROPERTIES")
+    print("=" * 80)
+
+    ap_data = verify_additional_properties(model)
+    if ap_data:
+        print(f"Found {len(ap_data)} properties in separate Facility AdditionalProperties:")
+        for obj_name, prop_name, value in ap_data:
+            print(f"  [{obj_name}] {prop_name}: {value}")
+    else:
+        print("  No properties found on Facility.")
+
+    # Save modified model
+    print("\n" + "=" * 80)
+    print("SAVING RESULTS")
+    print("=" * 80)
+
+    model.save(openstudio.toPath(str(output_model_path)), True)
+    print(f"  Modified model saved to: {output_model_path}")
+
+    # Save JSON summary
+    results = {
+        "measure": "IncreaseInsulationRValueForRoofs",
+        "success": success,
+        "step_values": step_values,
+        "additional_properties_count": len(ap_data),
+        "additional_properties_sample": [
+            {"construction": c, "property": p, "value": v}
+            for c, p, v in ap_data[:10]
+        ]
+    }
+    with open(results_json_path, "w") as f:
+        json.dump(results, f, indent=2)
+    print(f"  Results JSON saved to: {results_json_path}")
+
+    print("\n" + "=" * 80)
+    if success:
+        print("SUCCESS: Measure applied successfully!")
+    else:
+        print("FAILURE: Measure did not complete successfully.")
+    print("=" * 80 + "\n")
+
+    return 0 if success else 1
 
 
 if __name__ == "__main__":
-    run_measure()
+    sys.exit(main())

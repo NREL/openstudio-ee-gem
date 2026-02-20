@@ -524,19 +524,18 @@ class OperatingCostCarbonReport(openstudio.measure.ReportingMeasure):
         model_opt = runner.lastOpenStudioModel()
         if model_opt.is_initialized():
             model = model_opt.get()
-            building = model.getBuilding()
             
-            # Attach results as additional properties to the building object
-            additional_properties = building.additionalProperties()
-            # Add measure name at the beginning
-            additional_properties.setFeature("measure_name", self.name())
-            # Add cost and emissions data
-            additional_properties.setFeature("annual_electricity_cost_usd", total_elec_cost)
-            additional_properties.setFeature("annual_gas_cost_usd", total_gas_cost)
-            additional_properties.setFeature("annual_electricity_operating_emissions_kg_co2e", elec_emissions_kg)
-            additional_properties.setFeature("annual_gas_operating_emissions_kg_co2e", gas_emissions_kg)
+            # Attach results as additional properties to the Site object
+            # (separate from Building AdditionalProperties used by envelope measures)
+            site = model.getSite()
+            site_props = site.additionalProperties()
+            site_props.setFeature("measure_name", self.name())
+            site_props.setFeature("annual_electricity_cost_usd", total_elec_cost)
+            site_props.setFeature("annual_gas_cost_usd", total_gas_cost)
+            site_props.setFeature("annual_electricity_operating_emissions_kg_co2e", elec_emissions_kg)
+            site_props.setFeature("annual_gas_operating_emissions_kg_co2e", gas_emissions_kg)
             
-            runner.registerInfo("Attached utility cost and emissions data as AdditionalProperties to building object.")
+            runner.registerInfo("Attached utility cost and emissions data as AdditionalProperties to Site object.")
         else:
             runner.registerWarning("Could not retrieve model to attach AdditionalProperties.")
 

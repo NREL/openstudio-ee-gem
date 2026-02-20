@@ -1037,6 +1037,11 @@ class DoorEnhancement(openstudio.measure.ModelMeasure):
         if construction_names:
             building_props.setFeature("door_enhancement_construction_names", ', '.join(construction_names))
             building_props.setFeature("door_enhancement_construction_handles", ', '.join(construction_handles))
+
+        # Separate summary AdditionalProperties on Facility for standardized cross-measure extraction
+        facility_props = model.getFacility().additionalProperties()
+        facility_props.setFeature("name", "Door_Enhancement")
+        facility_props.setFeature("total_additional_embodied_carbon_kgCO2", total_embodied_carbon)
         
         runner.registerInfo(f"\n✓ Door enhancement summary stored in building additional properties")
         

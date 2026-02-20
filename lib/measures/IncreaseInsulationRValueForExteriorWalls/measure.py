@@ -553,6 +553,11 @@ class IncreaseInsulationRValueForExteriorWalls(openstudio.measure.ModelMeasure):
         building_props.setFeature("wall_insulation_r_value_ip", r_value_ip)
         building_props.setFeature("wall_insulation_material_type", insulation_material_type)
         building_props.setFeature("wall_insulation_renovated_area_m2", total_wall_area)
+
+        # Separate summary AdditionalProperties on Facility for standardized cross-measure extraction
+        facility_props = model.getFacility().additionalProperties()
+        facility_props.setFeature("name", "Increase_Insulation_R-Value_for_Exterior_Walls")
+        facility_props.setFeature("total_additional_embodied_carbon_kgCO2", total_embodied_carbon)
         
         runner.registerInfo(
             f"Building-level summary: Total embodied carbon = {total_embodied_carbon:.2f} kg CO2 eq "

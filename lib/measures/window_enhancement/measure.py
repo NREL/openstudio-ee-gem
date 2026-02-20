@@ -1041,6 +1041,11 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
         if construction_names:
             building_props.setFeature("window_enhancement_construction_names", ', '.join(construction_names))
             building_props.setFeature("window_enhancement_construction_handles", ', '.join(construction_handles))
+
+        # Separate summary AdditionalProperties on Facility for standardized cross-measure extraction
+        facility_props = model.getFacility().additionalProperties()
+        facility_props.setFeature("name", "Window_Enhancement")
+        facility_props.setFeature("total_additional_embodied_carbon_kgCO2", total_embodied_carbon)
         
         runner.registerInfo(f"\n✓ Window enhancement summary stored in building additional properties")
         

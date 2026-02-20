@@ -1,0 +1,68 @@
+# import sys
+import os
+import openstudio
+from pathlib import Path
+from measure import WindowEnhancement
+import configparser
+
+# read API Token from local
+script_dir = os.path.dirname(os.path.abspath(__file__))
+repo_root = os.path.abspath(os.path.join(script_dir, "../../.."))
+config_path = os.path.join(repo_root, "config.ini")
+
+if not os.path.exists(config_path):
+    raise FileNotFoundError(f"Config file not found: {config_path}")
+
+config = configparser.ConfigParser()
+config.read(config_path)
+API_TOKEN= config["EC3_API_TOKEN"]["API_TOKEN"]
+
+CURRENT_DIR_PATH = Path(__file__).parent.absolute()
+model_path = Path(CURRENT_DIR_PATH / "tests/new_example_model.osm")
+
+translator = openstudio.osversion.VersionTranslator()
+model = translator.loadModel(openstudio.toPath(str(model_path))).get()
+
+osw = openstudio.WorkflowJSON()
+runner = openstudio.measure.OSRunner(osw)
+
+measure = WindowEnhancement()
+args = measure.arguments(model)
+arg_map = openstudio.measure.convertOSArgumentVectorToMap(args)
+
+# Set all required arguments
+def set_arg(name, value):
+    arg = arg_map[name]
+    arg.setValue(value)
+    arg_map[name] = arg  
+
+set_arg("analysis_period", 30)
+set_arg("wf_lifetime", 15)
+set_arg("wf_option", "wood window frame")
+set_arg("caulking_option","acrylic")
+set_arg("film_option","solar control film")
+set_arg("weatherstrip_option","silicone adhesive smoke gasket")
+set_arg("glass_option","provide user_num_panes")
+set_arg('user_num_panes', 1)
+#set_arg("window_option","none")
+set_arg("gwp_statistic", "median")
+set_arg("secondary_glazing_option", "install secondary glazing")
+set_arg("api_key", API_TOKEN)
+
+# Run the measure
+result = measure.run(model, runner, arg_map)
+
+# Print stdout logs
+print("RESULT:", runner.result().value().valueName())
+for info in runner.result().info():
+    print("INFO:", info.logMessage())
+for warning in runner.result().warnings():
+    print("WARNING:", warning.logMessage())
+for error in runner.result().errors():
+    print("ERROR:", error.logMessage())
+
+# Save the modified model
+save_path = Path(CURRENT_DIR_PATH/"tests/output/new_example_model_with_AdditionalProperties.osm")
+model.save(openstudio.toPath(str(save_path)), True)
+
+del model
