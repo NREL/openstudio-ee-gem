@@ -1,0 +1,1284 @@
+
+ Meters for 7,BACK_SPACE RETAIL BACK_SPACE LIGHTS:Lights Electricity Energy [J]
+  OnMeter=Electricity:Facility [J]
+  OnMeter=Electricity:Building [J]
+  OnMeter=Electricity:Zone:BACK_SPACE ZN [J]
+  OnMeter=Electricity:SpaceType:RETAIL BACK_SPACE [J]
+  OnMeter=InteriorLights:Electricity [J]
+  OnMeter=InteriorLights:Electricity:Zone:BACK_SPACE ZN [J]
+  OnMeter=InteriorLights:Electricity:SpaceType:RETAIL BACK_SPACE [J]
+  OnMeter=General:InteriorLights:Electricity [J]
+  OnMeter=General:InteriorLights:Electricity:Zone:BACK_SPACE ZN [J]
+  OnMeter=General:InteriorLights:Electricity:SpaceType:RETAIL BACK_SPACE [J]
+
+ Meters for 128,CORE_RETAIL RETAIL RETAIL LIGHTS:Lights Electricity Energy [J]
+  OnMeter=Electricity:Facility [J]
+  OnMeter=Electricity:Building [J]
+  OnMeter=Electricity:Zone:CORE_RETAIL ZN [J]
+  OnMeter=Electricity:SpaceType:RETAIL RETAIL [J]
+  OnMeter=InteriorLights:Electricity [J]
+  OnMeter=InteriorLights:Electricity:Zone:CORE_RETAIL ZN [J]
+  OnMeter=InteriorLights:Electricity:SpaceType:RETAIL RETAIL [J]
+  OnMeter=General:InteriorLights:Electricity [J]
+  OnMeter=General:InteriorLights:Electricity:Zone:CORE_RETAIL ZN [J]
+  OnMeter=General:InteriorLights:Electricity:SpaceType:RETAIL RETAIL [J]
+
+ Meters for 201,FRONT_RETAIL RETAIL RETAIL LIGHTS:Lights Electricity Energy [J]
+  OnMeter=Electricity:Facility [J]
+  OnMeter=Electricity:Building [J]
+  OnMeter=Electricity:Zone:FRONT_RETAIL ZN [J]
+  OnMeter=Electricity:SpaceType:RETAIL RETAIL [J]
+  OnMeter=InteriorLights:Electricity [J]
+  OnMeter=InteriorLights:Electricity:Zone:FRONT_RETAIL ZN [J]
+  OnMeter=InteriorLights:Electricity:SpaceType:RETAIL RETAIL [J]
+  OnMeter=General:InteriorLights:Electricity [J]
+  OnMeter=General:InteriorLights:Electricity:Zone:FRONT_RETAIL ZN [J]
+  OnMeter=General:InteriorLights:Electricity:SpaceType:RETAIL RETAIL [J]
+
+ Meters for 238,FRONT_ENTRY RETAIL ENTRY LIGHTS:Lights Electricity Energy [J]
+  OnMeter=Electricity:Facility [J]
+  OnMeter=Electricity:Building [J]
+  OnMeter=Electricity:Zone:FRONT_ENTRY ZN [J]
+  OnMeter=Electricity:SpaceType:RETAIL ENTRY [J]
+  OnMeter=InteriorLights:Electricity [J]
+  OnMeter=InteriorLights:Electricity:Zone:FRONT_ENTRY ZN [J]
+  OnMeter=InteriorLights:Electricity:SpaceType:RETAIL ENTRY [J]
+  OnMeter=General:InteriorLights:Electricity [J]
+  OnMeter=General:InteriorLights:Electricity:Zone:FRONT_ENTRY ZN [J]
+  OnMeter=General:InteriorLights:Electricity:SpaceType:RETAIL ENTRY [J]
+
+ Meters for 311,POINT_OF_SALE RETAIL POINT_OF_SALE LIGHTS:Lights Electricity Energy [J]
+  OnMeter=Electricity:Facility [J]
+  OnMeter=Electricity:Building [J]
+  OnMeter=Electricity:Zone:POINT_OF_SALE ZN [J]
+  OnMeter=Electricity:SpaceType:RETAIL POINT_OF_SALE [J]
+  OnMeter=InteriorLights:Electricity [J]
+  OnMeter=InteriorLights:Electricity:Zone:POINT_OF_SALE ZN [J]
+  OnMeter=InteriorLights:Electricity:SpaceType:RETAIL POINT_OF_SALE [J]
+  OnMeter=General:InteriorLights:Electricity [J]
+  OnMeter=General:InteriorLights:Electricity:Zone:POINT_OF_SALE ZN [J]
+  OnMeter=General:InteriorLights:Electricity:SpaceType:RETAIL POINT_OF_SALE [J]
+
+ Meters for 384,BACK_SPACE RETAIL BACK_SPACE ELEC EQUIP:Electric Equipment Electricity Energy [J]
+  OnMeter=Electricity:Facility [J]
+  OnMeter=Electricity:Building [J]
+  OnMeter=Electricity:Zone:BACK_SPACE ZN [J]
+  OnMeter=Electricity:SpaceType:RETAIL BACK_SPACE [J]
+  OnMeter=InteriorEquipment:Electricity [J]
+  OnMeter=InteriorEquipment:Electricity:Zone:BACK_SPACE ZN [J]
+  OnMeter=InteriorEquipment:Electricity:SpaceType:RETAIL BACK_SPACE [J]
+  OnMeter=General:InteriorEquipment:Electricity [J]
+  OnMeter=General:InteriorEquipment:Electricity:Zone:BACK_SPACE ZN [J]
+  OnMeter=General:InteriorEquipment:Electricity:SpaceType:RETAIL BACK_SPACE [J]
+
+ Meters for 457,CORE_RETAIL RETAIL RETAIL ELEC EQUIP:Electric Equipment Electricity Energy [J]
+  OnMeter=Electricity:Facility [J]
+  OnMeter=Electricity:Building [J]
+  OnMeter=Electricity:Zone:CORE_RETAIL ZN [J]
+  OnMeter=Electricity:SpaceType:RETAIL RETAIL [J]
+  OnMeter=InteriorEquipment:Electricity [J]
+  OnMeter=InteriorEquipment:Electricity:Zone:CORE_RETAIL ZN [J]
+  OnMeter=InteriorEquipment:Electricity:SpaceType:RETAIL RETAIL [J]
+  OnMeter=General:InteriorEquipment:Electricity [J]
+  OnMeter=General:InteriorEquipment:Electricity:Zone:CORE_RETAIL ZN [J]
+  OnMeter=General:InteriorEquipment:Electricity:SpaceType:RETAIL RETAIL [J]
+
+ Meters for 506,FRONT_RETAIL RETAIL RETAIL ELEC EQUIP:Electric Equipment Electricity Energy [J]
+  OnMeter=Electricity:Facility [J]
+  OnMeter=Electricity:Building [J]
+  OnMeter=Electricity:Zone:FRONT_RETAIL ZN [J]
+  OnMeter=Electricity:SpaceType:RETAIL RETAIL [J]
+  OnMeter=InteriorEquipment:Electricity [J]
+  OnMeter=InteriorEquipment:Electricity:Zone:FRONT_RETAIL ZN [J]
+  OnMeter=InteriorEquipment:Electricity:SpaceType:RETAIL RETAIL [J]
+  OnMeter=General:InteriorEquipment:Electricity [J]
+  OnMeter=General:InteriorEquipment:Electricity:Zone:FRONT_RETAIL ZN [J]
+  OnMeter=General:InteriorEquipment:Electricity:SpaceType:RETAIL RETAIL [J]
+
+ Meters for 531,FRONT_ENTRY RETAIL ENTRY ELEC EQUIP:Electric Equipment Electricity Energy [J]
+  OnMeter=Electricity:Facility [J]
+  OnMeter=Electricity:Building [J]
+  OnMeter=Electricity:Zone:FRONT_ENTRY ZN [J]
+  OnMeter=Electricity:SpaceType:RETAIL ENTRY [J]
+  OnMeter=InteriorEquipment:Electricity [J]
+  OnMeter=InteriorEquipment:Electricity:Zone:FRONT_ENTRY ZN [J]
+  OnMeter=InteriorEquipment:Electricity:SpaceType:RETAIL ENTRY [J]
+  OnMeter=General:InteriorEquipment:Electricity [J]
+  OnMeter=General:InteriorEquipment:Electricity:Zone:FRONT_ENTRY ZN [J]
+  OnMeter=General:InteriorEquipment:Electricity:SpaceType:RETAIL ENTRY [J]
+
+ Meters for 580,POINT_OF_SALE RETAIL POINT_OF_SALE ELEC EQUIP:Electric Equipment Electricity Energy [J]
+  OnMeter=Electricity:Facility [J]
+  OnMeter=Electricity:Building [J]
+  OnMeter=Electricity:Zone:POINT_OF_SALE ZN [J]
+  OnMeter=Electricity:SpaceType:RETAIL POINT_OF_SALE [J]
+  OnMeter=InteriorEquipment:Electricity [J]
+  OnMeter=InteriorEquipment:Electricity:Zone:POINT_OF_SALE ZN [J]
+  OnMeter=InteriorEquipment:Electricity:SpaceType:RETAIL POINT_OF_SALE [J]
+  OnMeter=General:InteriorEquipment:Electricity [J]
+  OnMeter=General:InteriorEquipment:Electricity:Zone:POINT_OF_SALE ZN [J]
+  OnMeter=General:InteriorEquipment:Electricity:SpaceType:RETAIL POINT_OF_SALE [J]
+
+ Meters for 629,BACK_SPACE ZN:Zone Air System Sensible Heating Energy [J]
+  OnMeter=EnergyTransfer:Facility [J]
+  OnMeter=EnergyTransfer:Building [J]
+  OnMeter=EnergyTransfer:Zone:BACK_SPACE ZN [J]
+  OnMeter=Heating:EnergyTransfer [J]
+  OnMeter=Heating:EnergyTransfer:Zone:BACK_SPACE ZN [J]
+  OnMeter=General:Heating:EnergyTransfer [J]
+  OnMeter=General:Heating:EnergyTransfer:Zone:BACK_SPACE ZN [J]
+
+ Meters for 714,BACK_SPACE ZN:Zone Air System Sensible Cooling Energy [J]
+  OnMeter=EnergyTransfer:Facility [J]
+  OnMeter=EnergyTransfer:Building [J]
+  OnMeter=EnergyTransfer:Zone:BACK_SPACE ZN [J]
+  OnMeter=Cooling:EnergyTransfer [J]
+  OnMeter=Cooling:EnergyTransfer:Zone:BACK_SPACE ZN [J]
+  OnMeter=General:Cooling:EnergyTransfer [J]
+  OnMeter=General:Cooling:EnergyTransfer:Zone:BACK_SPACE ZN [J]
+
+ Meters for 763,CORE_RETAIL ZN:Zone Air System Sensible Heating Energy [J]
+  OnMeter=EnergyTransfer:Facility [J]
+  OnMeter=EnergyTransfer:Building [J]
+  OnMeter=EnergyTransfer:Zone:CORE_RETAIL ZN [J]
+  OnMeter=Heating:EnergyTransfer [J]
+  OnMeter=Heating:EnergyTransfer:Zone:CORE_RETAIL ZN [J]
+  OnMeter=General:Heating:EnergyTransfer [J]
+  OnMeter=General:Heating:EnergyTransfer:Zone:CORE_RETAIL ZN [J]
+
+ Meters for 800,CORE_RETAIL ZN:Zone Air System Sensible Cooling Energy [J]
+  OnMeter=EnergyTransfer:Facility [J]
+  OnMeter=EnergyTransfer:Building [J]
+  OnMeter=EnergyTransfer:Zone:CORE_RETAIL ZN [J]
+  OnMeter=Cooling:EnergyTransfer [J]
+  OnMeter=Cooling:EnergyTransfer:Zone:CORE_RETAIL ZN [J]
+  OnMeter=General:Cooling:EnergyTransfer [J]
+  OnMeter=General:Cooling:EnergyTransfer:Zone:CORE_RETAIL ZN [J]
+
+ Meters for 825,FRONT_ENTRY ZN:Zone Air System Sensible Heating Energy [J]
+  OnMeter=EnergyTransfer:Facility [J]
+  OnMeter=EnergyTransfer:Building [J]
+  OnMeter=EnergyTransfer:Zone:FRONT_ENTRY ZN [J]
+  OnMeter=Heating:EnergyTransfer [J]
+  OnMeter=Heating:EnergyTransfer:Zone:FRONT_ENTRY ZN [J]
+  OnMeter=General:Heating:EnergyTransfer [J]
+  OnMeter=General:Heating:EnergyTransfer:Zone:FRONT_ENTRY ZN [J]
+
+ Meters for 862,FRONT_ENTRY ZN:Zone Air System Sensible Cooling Energy [J]
+  OnMeter=EnergyTransfer:Facility [J]
+  OnMeter=EnergyTransfer:Building [J]
+  OnMeter=EnergyTransfer:Zone:FRONT_ENTRY ZN [J]
+  OnMeter=Cooling:EnergyTransfer [J]
+  OnMeter=Cooling:EnergyTransfer:Zone:FRONT_ENTRY ZN [J]
+  OnMeter=General:Cooling:EnergyTransfer [J]
+  OnMeter=General:Cooling:EnergyTransfer:Zone:FRONT_ENTRY ZN [J]
+
+ Meters for 887,FRONT_RETAIL ZN:Zone Air System Sensible Heating Energy [J]
+  OnMeter=EnergyTransfer:Facility [J]
+  OnMeter=EnergyTransfer:Building [J]
+  OnMeter=EnergyTransfer:Zone:FRONT_RETAIL ZN [J]
+  OnMeter=Heating:EnergyTransfer [J]
+  OnMeter=Heating:EnergyTransfer:Zone:FRONT_RETAIL ZN [J]
+  OnMeter=General:Heating:EnergyTransfer [J]
+  OnMeter=General:Heating:EnergyTransfer:Zone:FRONT_RETAIL ZN [J]
+
+ Meters for 924,FRONT_RETAIL ZN:Zone Air System Sensible Cooling Energy [J]
+  OnMeter=EnergyTransfer:Facility [J]
+  OnMeter=EnergyTransfer:Building [J]
+  OnMeter=EnergyTransfer:Zone:FRONT_RETAIL ZN [J]
+  OnMeter=Cooling:EnergyTransfer [J]
+  OnMeter=Cooling:EnergyTransfer:Zone:FRONT_RETAIL ZN [J]
+  OnMeter=General:Cooling:EnergyTransfer [J]
+  OnMeter=General:Cooling:EnergyTransfer:Zone:FRONT_RETAIL ZN [J]
+
+ Meters for 949,POINT_OF_SALE ZN:Zone Air System Sensible Heating Energy [J]
+  OnMeter=EnergyTransfer:Facility [J]
+  OnMeter=EnergyTransfer:Building [J]
+  OnMeter=EnergyTransfer:Zone:POINT_OF_SALE ZN [J]
+  OnMeter=Heating:EnergyTransfer [J]
+  OnMeter=Heating:EnergyTransfer:Zone:POINT_OF_SALE ZN [J]
+  OnMeter=General:Heating:EnergyTransfer [J]
+  OnMeter=General:Heating:EnergyTransfer:Zone:POINT_OF_SALE ZN [J]
+
+ Meters for 986,POINT_OF_SALE ZN:Zone Air System Sensible Cooling Energy [J]
+  OnMeter=EnergyTransfer:Facility [J]
+  OnMeter=EnergyTransfer:Building [J]
+  OnMeter=EnergyTransfer:Zone:POINT_OF_SALE ZN [J]
+  OnMeter=Cooling:EnergyTransfer [J]
+  OnMeter=Cooling:EnergyTransfer:Zone:POINT_OF_SALE ZN [J]
+  OnMeter=General:Cooling:EnergyTransfer [J]
+  OnMeter=General:Cooling:EnergyTransfer:Zone:POINT_OF_SALE ZN [J]
+
+ Meters for 1011,MAIN WUC 0.3GPM 140F:Water Use Connections Plant Hot Water Energy [J]
+  OnMeter=PlantLoopHeatingDemand:Facility [J]
+  OnMeter=PlantLoopHeatingDemand:Plant [J]
+  OnMeter=WaterSystems:PlantLoopHeatingDemand [J]
+  OnMeter=General:WaterSystems:PlantLoopHeatingDemand [J]
+
+ Meters for 1060,Whole Building:Facility Total Purchased Electricity Energy [J]
+  OnMeter=ElectricityPurchased:Facility [J]
+  OnMeter=ElectricityPurchased:Plant [J]
+  OnMeter=Cogeneration:ElectricityPurchased [J]
+  OnMeter=General:Cogeneration:ElectricityPurchased [J]
+
+ Meters for 1109,Whole Building:Facility Total Surplus Electricity Energy [J]
+  OnMeter=ElectricitySurplusSold:Facility [J]
+  OnMeter=ElectricitySurplusSold:Plant [J]
+  OnMeter=Cogeneration:ElectricitySurplusSold [J]
+  OnMeter=General:Cogeneration:ElectricitySurplusSold [J]
+
+ Meters for 1158,Whole Building:Facility Net Purchased Electricity Energy [J]
+  OnMeter=ElectricityNet:Facility [J]
+  OnMeter=ElectricityNet:Plant [J]
+  OnMeter=Cogeneration:ElectricityNet [J]
+  OnMeter=General:Cogeneration:ElectricityNet [J]
+
+ Meters for 1207,FRONT_ENTRY ZN UNITHEATER FAN:Fan Electricity Energy [J]
+  OnMeter=Electricity:Facility [J]
+  OnMeter=Electricity:HVAC [J]
+  OnMeter=Fans:Electricity [J]
+  OnMeter=General:Fans:Electricity [J]
+
+ Meters for 1244,BACK_SPACE ZN PSZ-AC FAN:Fan Electricity Energy [J]
+  OnMeter=Electricity:Facility [J]
+  OnMeter=Electricity:HVAC [J]
+  OnMeter=Fans:Electricity [J]
+  OnMeter=General:Fans:Electricity [J]
+
+ Meters for 1245,CORE_RETAIL ZN PSZ-AC FAN:Fan Electricity Energy [J]
+  OnMeter=Electricity:Facility [J]
+  OnMeter=Electricity:HVAC [J]
+  OnMeter=Fans:Electricity [J]
+  OnMeter=General:Fans:Electricity [J]
+
+ Meters for 1246,FRONT_RETAIL ZN PSZ-AC FAN:Fan Electricity Energy [J]
+  OnMeter=Electricity:Facility [J]
+  OnMeter=Electricity:HVAC [J]
+  OnMeter=Fans:Electricity [J]
+  OnMeter=General:Fans:Electricity [J]
+
+ Meters for 1247,POINT_OF_SALE ZN PSZ-AC FAN:Fan Electricity Energy [J]
+  OnMeter=Electricity:Facility [J]
+  OnMeter=Electricity:HVAC [J]
+  OnMeter=Fans:Electricity [J]
+  OnMeter=General:Fans:Electricity [J]
+
+ Meters for 1248,BACK_SPACE ZN PSZ-AC NO HEAT:Heating Coil Heating Energy [J]
+  OnMeter=EnergyTransfer:Facility [J]
+  OnMeter=EnergyTransfer:HVAC [J]
+  OnMeter=HeatingCoils:EnergyTransfer [J]
+
+ Meters for 1273,BACK_SPACE ZN PSZ-AC NO HEAT:Heating Coil Electricity Energy [J]
+  OnMeter=Electricity:Facility [J]
+  OnMeter=Electricity:HVAC [J]
+  OnMeter=Heating:Electricity [J]
+  OnMeter=General:Heating:Electricity [J]
+
+ Meters for 1298,CORE_RETAIL ZN PSZ-AC NO HEAT:Heating Coil Heating Energy [J]
+  OnMeter=EnergyTransfer:Facility [J]
+  OnMeter=EnergyTransfer:HVAC [J]
+  OnMeter=HeatingCoils:EnergyTransfer [J]
+
+ Meters for 1299,CORE_RETAIL ZN PSZ-AC NO HEAT:Heating Coil Electricity Energy [J]
+  OnMeter=Electricity:Facility [J]
+  OnMeter=Electricity:HVAC [J]
+  OnMeter=Heating:Electricity [J]
+  OnMeter=General:Heating:Electricity [J]
+
+ Meters for 1300,FRONT_RETAIL ZN PSZ-AC NO HEAT:Heating Coil Heating Energy [J]
+  OnMeter=EnergyTransfer:Facility [J]
+  OnMeter=EnergyTransfer:HVAC [J]
+  OnMeter=HeatingCoils:EnergyTransfer [J]
+
+ Meters for 1301,FRONT_RETAIL ZN PSZ-AC NO HEAT:Heating Coil Electricity Energy [J]
+  OnMeter=Electricity:Facility [J]
+  OnMeter=Electricity:HVAC [J]
+  OnMeter=Heating:Electricity [J]
+  OnMeter=General:Heating:Electricity [J]
+
+ Meters for 1302,POINT_OF_SALE ZN PSZ-AC NO HEAT:Heating Coil Heating Energy [J]
+  OnMeter=EnergyTransfer:Facility [J]
+  OnMeter=EnergyTransfer:HVAC [J]
+  OnMeter=HeatingCoils:EnergyTransfer [J]
+
+ Meters for 1303,POINT_OF_SALE ZN PSZ-AC NO HEAT:Heating Coil Electricity Energy [J]
+  OnMeter=Electricity:Facility [J]
+  OnMeter=Electricity:HVAC [J]
+  OnMeter=Heating:Electricity [J]
+  OnMeter=General:Heating:Electricity [J]
+
+ Meters for 1304,FRONT_ENTRY ZN UNITHEATER GAS HTG COIL:Heating Coil Heating Energy [J]
+  OnMeter=EnergyTransfer:Facility [J]
+  OnMeter=EnergyTransfer:HVAC [J]
+  OnMeter=HeatingCoils:EnergyTransfer [J]
+
+ Meters for 1305,FRONT_ENTRY ZN UNITHEATER GAS HTG COIL:Heating Coil NaturalGas Energy [J]
+  OnMeter=NaturalGas:Facility [J]
+  OnMeter=NaturalGas:HVAC [J]
+  OnMeter=Heating:NaturalGas [J]
+  OnMeter=General:Heating:NaturalGas [J]
+
+ Meters for 1354,FRONT_ENTRY ZN UNITHEATER GAS HTG COIL:Heating Coil Electricity Energy [J]
+  OnMeter=Electricity:Facility [J]
+  OnMeter=Electricity:HVAC [J]
+  OnMeter=Heating:Electricity [J]
+  OnMeter=General:Heating:Electricity [J]
+
+ Meters for 1355,FRONT_ENTRY ZN UNITHEATER GAS HTG COIL:Heating Coil Ancillary NaturalGas Energy [J]
+  OnMeter=NaturalGas:Facility [J]
+  OnMeter=NaturalGas:HVAC [J]
+  OnMeter=Heating:NaturalGas [J]
+  OnMeter=General:Heating:NaturalGas [J]
+
+ Meters for 1356,BACK_SPACE ZN PSZ-AC GAS HTG COIL:Heating Coil Heating Energy [J]
+  OnMeter=EnergyTransfer:Facility [J]
+  OnMeter=EnergyTransfer:HVAC [J]
+  OnMeter=HeatingCoils:EnergyTransfer [J]
+
+ Meters for 1357,BACK_SPACE ZN PSZ-AC GAS HTG COIL:Heating Coil NaturalGas Energy [J]
+  OnMeter=NaturalGas:Facility [J]
+  OnMeter=NaturalGas:HVAC [J]
+  OnMeter=Heating:NaturalGas [J]
+  OnMeter=General:Heating:NaturalGas [J]
+
+ Meters for 1358,BACK_SPACE ZN PSZ-AC GAS HTG COIL:Heating Coil Electricity Energy [J]
+  OnMeter=Electricity:Facility [J]
+  OnMeter=Electricity:HVAC [J]
+  OnMeter=Heating:Electricity [J]
+  OnMeter=General:Heating:Electricity [J]
+
+ Meters for 1359,BACK_SPACE ZN PSZ-AC GAS HTG COIL:Heating Coil Ancillary NaturalGas Energy [J]
+  OnMeter=NaturalGas:Facility [J]
+  OnMeter=NaturalGas:HVAC [J]
+  OnMeter=Heating:NaturalGas [J]
+  OnMeter=General:Heating:NaturalGas [J]
+
+ Meters for 1360,CORE_RETAIL ZN PSZ-AC GAS HTG COIL:Heating Coil Heating Energy [J]
+  OnMeter=EnergyTransfer:Facility [J]
+  OnMeter=EnergyTransfer:HVAC [J]
+  OnMeter=HeatingCoils:EnergyTransfer [J]
+
+ Meters for 1361,CORE_RETAIL ZN PSZ-AC GAS HTG COIL:Heating Coil NaturalGas Energy [J]
+  OnMeter=NaturalGas:Facility [J]
+  OnMeter=NaturalGas:HVAC [J]
+  OnMeter=Heating:NaturalGas [J]
+  OnMeter=General:Heating:NaturalGas [J]
+
+ Meters for 1362,CORE_RETAIL ZN PSZ-AC GAS HTG COIL:Heating Coil Electricity Energy [J]
+  OnMeter=Electricity:Facility [J]
+  OnMeter=Electricity:HVAC [J]
+  OnMeter=Heating:Electricity [J]
+  OnMeter=General:Heating:Electricity [J]
+
+ Meters for 1363,CORE_RETAIL ZN PSZ-AC GAS HTG COIL:Heating Coil Ancillary NaturalGas Energy [J]
+  OnMeter=NaturalGas:Facility [J]
+  OnMeter=NaturalGas:HVAC [J]
+  OnMeter=Heating:NaturalGas [J]
+  OnMeter=General:Heating:NaturalGas [J]
+
+ Meters for 1364,FRONT_RETAIL ZN PSZ-AC GAS HTG COIL:Heating Coil Heating Energy [J]
+  OnMeter=EnergyTransfer:Facility [J]
+  OnMeter=EnergyTransfer:HVAC [J]
+  OnMeter=HeatingCoils:EnergyTransfer [J]
+
+ Meters for 1365,FRONT_RETAIL ZN PSZ-AC GAS HTG COIL:Heating Coil NaturalGas Energy [J]
+  OnMeter=NaturalGas:Facility [J]
+  OnMeter=NaturalGas:HVAC [J]
+  OnMeter=Heating:NaturalGas [J]
+  OnMeter=General:Heating:NaturalGas [J]
+
+ Meters for 1366,FRONT_RETAIL ZN PSZ-AC GAS HTG COIL:Heating Coil Electricity Energy [J]
+  OnMeter=Electricity:Facility [J]
+  OnMeter=Electricity:HVAC [J]
+  OnMeter=Heating:Electricity [J]
+  OnMeter=General:Heating:Electricity [J]
+
+ Meters for 1367,FRONT_RETAIL ZN PSZ-AC GAS HTG COIL:Heating Coil Ancillary NaturalGas Energy [J]
+  OnMeter=NaturalGas:Facility [J]
+  OnMeter=NaturalGas:HVAC [J]
+  OnMeter=Heating:NaturalGas [J]
+  OnMeter=General:Heating:NaturalGas [J]
+
+ Meters for 1368,POINT_OF_SALE ZN PSZ-AC GAS HTG COIL:Heating Coil Heating Energy [J]
+  OnMeter=EnergyTransfer:Facility [J]
+  OnMeter=EnergyTransfer:HVAC [J]
+  OnMeter=HeatingCoils:EnergyTransfer [J]
+
+ Meters for 1369,POINT_OF_SALE ZN PSZ-AC GAS HTG COIL:Heating Coil NaturalGas Energy [J]
+  OnMeter=NaturalGas:Facility [J]
+  OnMeter=NaturalGas:HVAC [J]
+  OnMeter=Heating:NaturalGas [J]
+  OnMeter=General:Heating:NaturalGas [J]
+
+ Meters for 1370,POINT_OF_SALE ZN PSZ-AC GAS HTG COIL:Heating Coil Electricity Energy [J]
+  OnMeter=Electricity:Facility [J]
+  OnMeter=Electricity:HVAC [J]
+  OnMeter=Heating:Electricity [J]
+  OnMeter=General:Heating:Electricity [J]
+
+ Meters for 1371,POINT_OF_SALE ZN PSZ-AC GAS HTG COIL:Heating Coil Ancillary NaturalGas Energy [J]
+  OnMeter=NaturalGas:Facility [J]
+  OnMeter=NaturalGas:HVAC [J]
+  OnMeter=Heating:NaturalGas [J]
+  OnMeter=General:Heating:NaturalGas [J]
+
+ Meters for 1372,BACK_SPACE ZN PSZ-AC UNITARY AC:Unitary System Cooling Ancillary Electricity Energy [J]
+  OnMeter=Electricity:Facility [J]
+  OnMeter=Electricity:HVAC [J]
+  OnMeter=Cooling:Electricity [J]
+  OnMeter=General:Cooling:Electricity [J]
+
+ Meters for 1397,BACK_SPACE ZN PSZ-AC UNITARY AC:Unitary System Heating Ancillary Electricity Energy [J]
+  OnMeter=Electricity:Facility [J]
+  OnMeter=Electricity:HVAC [J]
+  OnMeter=Heating:Electricity [J]
+  OnMeter=General:Heating:Electricity [J]
+
+ Meters for 1398,CORE_RETAIL ZN PSZ-AC UNITARY AC:Unitary System Cooling Ancillary Electricity Energy [J]
+  OnMeter=Electricity:Facility [J]
+  OnMeter=Electricity:HVAC [J]
+  OnMeter=Cooling:Electricity [J]
+  OnMeter=General:Cooling:Electricity [J]
+
+ Meters for 1399,CORE_RETAIL ZN PSZ-AC UNITARY AC:Unitary System Heating Ancillary Electricity Energy [J]
+  OnMeter=Electricity:Facility [J]
+  OnMeter=Electricity:HVAC [J]
+  OnMeter=Heating:Electricity [J]
+  OnMeter=General:Heating:Electricity [J]
+
+ Meters for 1400,FRONT_RETAIL ZN PSZ-AC UNITARY AC:Unitary System Cooling Ancillary Electricity Energy [J]
+  OnMeter=Electricity:Facility [J]
+  OnMeter=Electricity:HVAC [J]
+  OnMeter=Cooling:Electricity [J]
+  OnMeter=General:Cooling:Electricity [J]
+
+ Meters for 1401,FRONT_RETAIL ZN PSZ-AC UNITARY AC:Unitary System Heating Ancillary Electricity Energy [J]
+  OnMeter=Electricity:Facility [J]
+  OnMeter=Electricity:HVAC [J]
+  OnMeter=Heating:Electricity [J]
+  OnMeter=General:Heating:Electricity [J]
+
+ Meters for 1402,POINT_OF_SALE ZN PSZ-AC UNITARY AC:Unitary System Cooling Ancillary Electricity Energy [J]
+  OnMeter=Electricity:Facility [J]
+  OnMeter=Electricity:HVAC [J]
+  OnMeter=Cooling:Electricity [J]
+  OnMeter=General:Cooling:Electricity [J]
+
+ Meters for 1403,POINT_OF_SALE ZN PSZ-AC UNITARY AC:Unitary System Heating Ancillary Electricity Energy [J]
+  OnMeter=Electricity:Facility [J]
+  OnMeter=Electricity:HVAC [J]
+  OnMeter=Heating:Electricity [J]
+  OnMeter=General:Heating:Electricity [J]
+
+ Meters for 1404,BACK_SPACE ZN PSZ-AC 2SPD DX AC CLG COIL:Cooling Coil Total Cooling Energy [J]
+  OnMeter=EnergyTransfer:Facility [J]
+  OnMeter=EnergyTransfer:HVAC [J]
+  OnMeter=CoolingCoils:EnergyTransfer [J]
+
+ Meters for 1417,BACK_SPACE ZN PSZ-AC 2SPD DX AC CLG COIL:Cooling Coil Electricity Energy [J]
+  OnMeter=Electricity:Facility [J]
+  OnMeter=Electricity:HVAC [J]
+  OnMeter=Cooling:Electricity [J]
+  OnMeter=General:Cooling:Electricity [J]
+
+ Meters for 1418,CORE_RETAIL ZN PSZ-AC 2SPD DX AC CLG COIL:Cooling Coil Total Cooling Energy [J]
+  OnMeter=EnergyTransfer:Facility [J]
+  OnMeter=EnergyTransfer:HVAC [J]
+  OnMeter=CoolingCoils:EnergyTransfer [J]
+
+ Meters for 1419,CORE_RETAIL ZN PSZ-AC 2SPD DX AC CLG COIL:Cooling Coil Electricity Energy [J]
+  OnMeter=Electricity:Facility [J]
+  OnMeter=Electricity:HVAC [J]
+  OnMeter=Cooling:Electricity [J]
+  OnMeter=General:Cooling:Electricity [J]
+
+ Meters for 1420,FRONT_RETAIL ZN PSZ-AC 2SPD DX AC CLG COIL:Cooling Coil Total Cooling Energy [J]
+  OnMeter=EnergyTransfer:Facility [J]
+  OnMeter=EnergyTransfer:HVAC [J]
+  OnMeter=CoolingCoils:EnergyTransfer [J]
+
+ Meters for 1421,FRONT_RETAIL ZN PSZ-AC 2SPD DX AC CLG COIL:Cooling Coil Electricity Energy [J]
+  OnMeter=Electricity:Facility [J]
+  OnMeter=Electricity:HVAC [J]
+  OnMeter=Cooling:Electricity [J]
+  OnMeter=General:Cooling:Electricity [J]
+
+ Meters for 1422,POINT_OF_SALE ZN PSZ-AC 2SPD DX AC CLG COIL:Cooling Coil Total Cooling Energy [J]
+  OnMeter=EnergyTransfer:Facility [J]
+  OnMeter=EnergyTransfer:HVAC [J]
+  OnMeter=CoolingCoils:EnergyTransfer [J]
+
+ Meters for 1423,POINT_OF_SALE ZN PSZ-AC 2SPD DX AC CLG COIL:Cooling Coil Electricity Energy [J]
+  OnMeter=Electricity:Facility [J]
+  OnMeter=Electricity:HVAC [J]
+  OnMeter=Cooling:Electricity [J]
+  OnMeter=General:Cooling:Electricity [J]
+
+ Meters for 1424,NONDIMMING EXTERIOR LIGHTS DEF:Exterior Lights Electricity Energy [J]
+  OnMeter=Electricity:Facility [J]
+  OnMeter=ExteriorLights:Electricity [J]
+  OnMeter=General:ExteriorLights:Electricity [J]
+
+ Meters for 1449,OCC SENSING EXTERIOR LIGHTS DEF:Exterior Lights Electricity Energy [J]
+  OnMeter=Electricity:Facility [J]
+  OnMeter=ExteriorLights:Electricity [J]
+  OnMeter=General:ExteriorLights:Electricity [J]
+
+ Meters for 1450,MAIN SERVICE WATER USE 0.3GPM 140F:Water Use Equipment Total Volume [m3]
+  OnMeter=Water:Facility [m3]
+  OnMeter=Water:Plant [m3]
+  OnMeter=WaterSystems:Water [m3]
+  OnMeter=General:WaterSystems:Water [m3]
+
+ Meters for 1499,MAIN SERVICE WATER USE 0.3GPM 140F:Water Use Equipment Mains Water Volume [m3]
+  OnMeter=MainsWater:Facility [m3]
+  OnMeter=MainsWater:Plant [m3]
+  OnMeter=WaterSystems:MainsWater [m3]
+  OnMeter=General:WaterSystems:MainsWater [m3]
+
+ Meters for 1548,MAIN SERVICE WATER USE 0.3GPM 140F:Water Use Equipment Heating Energy [J]
+  OnMeter=EnergyTransfer:Facility [J]
+  OnMeter=EnergyTransfer:Plant [J]
+  OnMeter=WaterSystems:EnergyTransfer [J]
+  OnMeter=General:WaterSystems:EnergyTransfer [J]
+
+ Meters for 1585,40GAL NATURAL GAS WATER HEATER - 40KBTU/HR:Water Heater Source Side Heat Transfer Energy [J]
+  OnMeter=PlantLoopHeatingDemand:Facility [J]
+  OnMeter=PlantLoopHeatingDemand:Plant [J]
+  OnMeter=WaterSystems:PlantLoopHeatingDemand [J]
+  OnMeter=General:WaterSystems:PlantLoopHeatingDemand [J]
+
+ Meters for 1586,40GAL NATURAL GAS WATER HEATER - 40KBTU/HR:Water Heater NaturalGas Energy [J]
+  OnMeter=NaturalGas:Facility [J]
+  OnMeter=NaturalGas:Plant [J]
+  OnMeter=WaterSystems:NaturalGas [J]
+  OnMeter=General:WaterSystems:NaturalGas [J]
+
+ Meters for 1623,40GAL NATURAL GAS WATER HEATER - 40KBTU/HR:Water Heater Off Cycle Parasitic NaturalGas Energy [J]
+  OnMeter=NaturalGas:Facility [J]
+  OnMeter=NaturalGas:Plant [J]
+  OnMeter=WaterSystems:NaturalGas [J]
+  OnMeter=General:WaterSystems:NaturalGas [J]
+
+ Meters for 1624,40GAL NATURAL GAS WATER HEATER - 40KBTU/HR:Water Heater On Cycle Parasitic NaturalGas Energy [J]
+  OnMeter=NaturalGas:Facility [J]
+  OnMeter=NaturalGas:Plant [J]
+  OnMeter=WaterSystems:NaturalGas [J]
+  OnMeter=General:WaterSystems:NaturalGas [J]
+
+ Meters for 1625,40GAL NATURAL GAS WATER HEATER - 40KBTU/HR:Water Heater Water Volume [m3]
+  OnMeter=Water:Facility [m3]
+  OnMeter=Water:Plant [m3]
+  OnMeter=WaterSystems:Water [m3]
+  OnMeter=General:WaterSystems:Water [m3]
+
+ Meters for 1626,40GAL NATURAL GAS WATER HEATER - 40KBTU/HR:Water Heater Mains Water Volume [m3]
+  OnMeter=MainsWater:Facility [m3]
+  OnMeter=MainsWater:Plant [m3]
+  OnMeter=WaterSystems:MainsWater [m3]
+  OnMeter=General:WaterSystems:MainsWater [m3]
+
+ Meters for 1627,MAIN SERVICE WATER LOOP WATER MAINS PRESSURE DRIVEN:Pump Electricity Energy [J]
+  OnMeter=Electricity:Facility [J]
+  OnMeter=Electricity:Plant [J]
+  OnMeter=Pumps:Electricity [J]
+  OnMeter=General:Pumps:Electricity [J]
+
+ Meters for 1664,Site:Environmental Impact Total N2O Emissions Carbon Equivalent Mass [kg]
+  OnMeter=Carbon Equivalent:Facility [kg]
+  OnMeter=CarbonEquivalentEmissions:Carbon Equivalent [kg]
+
+ Meters for 1689,Site:Environmental Impact Total CH4 Emissions Carbon Equivalent Mass [kg]
+  OnMeter=Carbon Equivalent:Facility [kg]
+  OnMeter=CarbonEquivalentEmissions:Carbon Equivalent [kg]
+
+ Meters for 1690,Site:Environmental Impact Total CO2 Emissions Carbon Equivalent Mass [kg]
+  OnMeter=Carbon Equivalent:Facility [kg]
+  OnMeter=CarbonEquivalentEmissions:Carbon Equivalent [kg]
+
+ For Meter=Electricity:Facility [J], ResourceType=Electricity, contents are:
+  BACK_SPACE RETAIL BACK_SPACE LIGHTS:Lights Electricity Energy
+  CORE_RETAIL RETAIL RETAIL LIGHTS:Lights Electricity Energy
+  FRONT_RETAIL RETAIL RETAIL LIGHTS:Lights Electricity Energy
+  FRONT_ENTRY RETAIL ENTRY LIGHTS:Lights Electricity Energy
+  POINT_OF_SALE RETAIL POINT_OF_SALE LIGHTS:Lights Electricity Energy
+  BACK_SPACE RETAIL BACK_SPACE ELEC EQUIP:Electric Equipment Electricity Energy
+  CORE_RETAIL RETAIL RETAIL ELEC EQUIP:Electric Equipment Electricity Energy
+  FRONT_RETAIL RETAIL RETAIL ELEC EQUIP:Electric Equipment Electricity Energy
+  FRONT_ENTRY RETAIL ENTRY ELEC EQUIP:Electric Equipment Electricity Energy
+  POINT_OF_SALE RETAIL POINT_OF_SALE ELEC EQUIP:Electric Equipment Electricity Energy
+  FRONT_ENTRY ZN UNITHEATER FAN:Fan Electricity Energy
+  BACK_SPACE ZN PSZ-AC FAN:Fan Electricity Energy
+  CORE_RETAIL ZN PSZ-AC FAN:Fan Electricity Energy
+  FRONT_RETAIL ZN PSZ-AC FAN:Fan Electricity Energy
+  POINT_OF_SALE ZN PSZ-AC FAN:Fan Electricity Energy
+  BACK_SPACE ZN PSZ-AC NO HEAT:Heating Coil Electricity Energy
+  CORE_RETAIL ZN PSZ-AC NO HEAT:Heating Coil Electricity Energy
+  FRONT_RETAIL ZN PSZ-AC NO HEAT:Heating Coil Electricity Energy
+  POINT_OF_SALE ZN PSZ-AC NO HEAT:Heating Coil Electricity Energy
+  FRONT_ENTRY ZN UNITHEATER GAS HTG COIL:Heating Coil Electricity Energy
+  BACK_SPACE ZN PSZ-AC GAS HTG COIL:Heating Coil Electricity Energy
+  CORE_RETAIL ZN PSZ-AC GAS HTG COIL:Heating Coil Electricity Energy
+  FRONT_RETAIL ZN PSZ-AC GAS HTG COIL:Heating Coil Electricity Energy
+  POINT_OF_SALE ZN PSZ-AC GAS HTG COIL:Heating Coil Electricity Energy
+  BACK_SPACE ZN PSZ-AC UNITARY AC:Unitary System Cooling Ancillary Electricity Energy
+  BACK_SPACE ZN PSZ-AC UNITARY AC:Unitary System Heating Ancillary Electricity Energy
+  CORE_RETAIL ZN PSZ-AC UNITARY AC:Unitary System Cooling Ancillary Electricity Energy
+  CORE_RETAIL ZN PSZ-AC UNITARY AC:Unitary System Heating Ancillary Electricity Energy
+  FRONT_RETAIL ZN PSZ-AC UNITARY AC:Unitary System Cooling Ancillary Electricity Energy
+  FRONT_RETAIL ZN PSZ-AC UNITARY AC:Unitary System Heating Ancillary Electricity Energy
+  POINT_OF_SALE ZN PSZ-AC UNITARY AC:Unitary System Cooling Ancillary Electricity Energy
+  POINT_OF_SALE ZN PSZ-AC UNITARY AC:Unitary System Heating Ancillary Electricity Energy
+  BACK_SPACE ZN PSZ-AC 2SPD DX AC CLG COIL:Cooling Coil Electricity Energy
+  CORE_RETAIL ZN PSZ-AC 2SPD DX AC CLG COIL:Cooling Coil Electricity Energy
+  FRONT_RETAIL ZN PSZ-AC 2SPD DX AC CLG COIL:Cooling Coil Electricity Energy
+  POINT_OF_SALE ZN PSZ-AC 2SPD DX AC CLG COIL:Cooling Coil Electricity Energy
+  NONDIMMING EXTERIOR LIGHTS DEF:Exterior Lights Electricity Energy
+  OCC SENSING EXTERIOR LIGHTS DEF:Exterior Lights Electricity Energy
+  MAIN SERVICE WATER LOOP WATER MAINS PRESSURE DRIVEN:Pump Electricity Energy
+
+ For Meter=Electricity:Building [J], ResourceType=Electricity, Group=Building, contents are:
+  BACK_SPACE RETAIL BACK_SPACE LIGHTS:Lights Electricity Energy
+  CORE_RETAIL RETAIL RETAIL LIGHTS:Lights Electricity Energy
+  FRONT_RETAIL RETAIL RETAIL LIGHTS:Lights Electricity Energy
+  FRONT_ENTRY RETAIL ENTRY LIGHTS:Lights Electricity Energy
+  POINT_OF_SALE RETAIL POINT_OF_SALE LIGHTS:Lights Electricity Energy
+  BACK_SPACE RETAIL BACK_SPACE ELEC EQUIP:Electric Equipment Electricity Energy
+  CORE_RETAIL RETAIL RETAIL ELEC EQUIP:Electric Equipment Electricity Energy
+  FRONT_RETAIL RETAIL RETAIL ELEC EQUIP:Electric Equipment Electricity Energy
+  FRONT_ENTRY RETAIL ENTRY ELEC EQUIP:Electric Equipment Electricity Energy
+  POINT_OF_SALE RETAIL POINT_OF_SALE ELEC EQUIP:Electric Equipment Electricity Energy
+
+ For Meter=Electricity:Zone:BACK_SPACE ZN [J], ResourceType=Electricity, Group=Zone, contents are:
+  BACK_SPACE RETAIL BACK_SPACE LIGHTS:Lights Electricity Energy
+  BACK_SPACE RETAIL BACK_SPACE ELEC EQUIP:Electric Equipment Electricity Energy
+
+ For Meter=Electricity:SpaceType:RETAIL BACK_SPACE [J], ResourceType=Electricity, Group=SpaceType, contents are:
+  BACK_SPACE RETAIL BACK_SPACE LIGHTS:Lights Electricity Energy
+  BACK_SPACE RETAIL BACK_SPACE ELEC EQUIP:Electric Equipment Electricity Energy
+
+ For Meter=InteriorLights:Electricity [J], ResourceType=Electricity, EndUse=InteriorLights, contents are:
+  BACK_SPACE RETAIL BACK_SPACE LIGHTS:Lights Electricity Energy
+  CORE_RETAIL RETAIL RETAIL LIGHTS:Lights Electricity Energy
+  FRONT_RETAIL RETAIL RETAIL LIGHTS:Lights Electricity Energy
+  FRONT_ENTRY RETAIL ENTRY LIGHTS:Lights Electricity Energy
+  POINT_OF_SALE RETAIL POINT_OF_SALE LIGHTS:Lights Electricity Energy
+
+ For Meter=InteriorLights:Electricity:Zone:BACK_SPACE ZN [J], ResourceType=Electricity, EndUse=InteriorLights, Group=Zone, contents are:
+  BACK_SPACE RETAIL BACK_SPACE LIGHTS:Lights Electricity Energy
+
+ For Meter=InteriorLights:Electricity:SpaceType:RETAIL BACK_SPACE [J], ResourceType=Electricity, EndUse=InteriorLights, Group=SpaceType, contents are:
+  BACK_SPACE RETAIL BACK_SPACE LIGHTS:Lights Electricity Energy
+
+ For Meter=General:InteriorLights:Electricity [J], ResourceType=Electricity, EndUse=InteriorLights, contents are:
+  BACK_SPACE RETAIL BACK_SPACE LIGHTS:Lights Electricity Energy
+  CORE_RETAIL RETAIL RETAIL LIGHTS:Lights Electricity Energy
+  FRONT_RETAIL RETAIL RETAIL LIGHTS:Lights Electricity Energy
+  FRONT_ENTRY RETAIL ENTRY LIGHTS:Lights Electricity Energy
+  POINT_OF_SALE RETAIL POINT_OF_SALE LIGHTS:Lights Electricity Energy
+
+ For Meter=General:InteriorLights:Electricity:Zone:BACK_SPACE ZN [J], ResourceType=Electricity, EndUse=InteriorLights, Group=Zone, contents are:
+  BACK_SPACE RETAIL BACK_SPACE LIGHTS:Lights Electricity Energy
+
+ For Meter=General:InteriorLights:Electricity:SpaceType:RETAIL BACK_SPACE [J], ResourceType=Electricity, EndUse=InteriorLights, Group=SpaceType, contents are:
+  BACK_SPACE RETAIL BACK_SPACE LIGHTS:Lights Electricity Energy
+
+ For Meter=Electricity:Zone:CORE_RETAIL ZN [J], ResourceType=Electricity, Group=Zone, contents are:
+  CORE_RETAIL RETAIL RETAIL LIGHTS:Lights Electricity Energy
+  CORE_RETAIL RETAIL RETAIL ELEC EQUIP:Electric Equipment Electricity Energy
+
+ For Meter=Electricity:SpaceType:RETAIL RETAIL [J], ResourceType=Electricity, Group=SpaceType, contents are:
+  CORE_RETAIL RETAIL RETAIL LIGHTS:Lights Electricity Energy
+  FRONT_RETAIL RETAIL RETAIL LIGHTS:Lights Electricity Energy
+  CORE_RETAIL RETAIL RETAIL ELEC EQUIP:Electric Equipment Electricity Energy
+  FRONT_RETAIL RETAIL RETAIL ELEC EQUIP:Electric Equipment Electricity Energy
+
+ For Meter=InteriorLights:Electricity:Zone:CORE_RETAIL ZN [J], ResourceType=Electricity, EndUse=InteriorLights, Group=Zone, contents are:
+  CORE_RETAIL RETAIL RETAIL LIGHTS:Lights Electricity Energy
+
+ For Meter=InteriorLights:Electricity:SpaceType:RETAIL RETAIL [J], ResourceType=Electricity, EndUse=InteriorLights, Group=SpaceType, contents are:
+  CORE_RETAIL RETAIL RETAIL LIGHTS:Lights Electricity Energy
+  FRONT_RETAIL RETAIL RETAIL LIGHTS:Lights Electricity Energy
+
+ For Meter=General:InteriorLights:Electricity:Zone:CORE_RETAIL ZN [J], ResourceType=Electricity, EndUse=InteriorLights, Group=Zone, contents are:
+  CORE_RETAIL RETAIL RETAIL LIGHTS:Lights Electricity Energy
+
+ For Meter=General:InteriorLights:Electricity:SpaceType:RETAIL RETAIL [J], ResourceType=Electricity, EndUse=InteriorLights, Group=SpaceType, contents are:
+  CORE_RETAIL RETAIL RETAIL LIGHTS:Lights Electricity Energy
+  FRONT_RETAIL RETAIL RETAIL LIGHTS:Lights Electricity Energy
+
+ For Meter=Electricity:Zone:FRONT_RETAIL ZN [J], ResourceType=Electricity, Group=Zone, contents are:
+  FRONT_RETAIL RETAIL RETAIL LIGHTS:Lights Electricity Energy
+  FRONT_RETAIL RETAIL RETAIL ELEC EQUIP:Electric Equipment Electricity Energy
+
+ For Meter=InteriorLights:Electricity:Zone:FRONT_RETAIL ZN [J], ResourceType=Electricity, EndUse=InteriorLights, Group=Zone, contents are:
+  FRONT_RETAIL RETAIL RETAIL LIGHTS:Lights Electricity Energy
+
+ For Meter=General:InteriorLights:Electricity:Zone:FRONT_RETAIL ZN [J], ResourceType=Electricity, EndUse=InteriorLights, Group=Zone, contents are:
+  FRONT_RETAIL RETAIL RETAIL LIGHTS:Lights Electricity Energy
+
+ For Meter=Electricity:Zone:FRONT_ENTRY ZN [J], ResourceType=Electricity, Group=Zone, contents are:
+  FRONT_ENTRY RETAIL ENTRY LIGHTS:Lights Electricity Energy
+  FRONT_ENTRY RETAIL ENTRY ELEC EQUIP:Electric Equipment Electricity Energy
+
+ For Meter=Electricity:SpaceType:RETAIL ENTRY [J], ResourceType=Electricity, Group=SpaceType, contents are:
+  FRONT_ENTRY RETAIL ENTRY LIGHTS:Lights Electricity Energy
+  FRONT_ENTRY RETAIL ENTRY ELEC EQUIP:Electric Equipment Electricity Energy
+
+ For Meter=InteriorLights:Electricity:Zone:FRONT_ENTRY ZN [J], ResourceType=Electricity, EndUse=InteriorLights, Group=Zone, contents are:
+  FRONT_ENTRY RETAIL ENTRY LIGHTS:Lights Electricity Energy
+
+ For Meter=InteriorLights:Electricity:SpaceType:RETAIL ENTRY [J], ResourceType=Electricity, EndUse=InteriorLights, Group=SpaceType, contents are:
+  FRONT_ENTRY RETAIL ENTRY LIGHTS:Lights Electricity Energy
+
+ For Meter=General:InteriorLights:Electricity:Zone:FRONT_ENTRY ZN [J], ResourceType=Electricity, EndUse=InteriorLights, Group=Zone, contents are:
+  FRONT_ENTRY RETAIL ENTRY LIGHTS:Lights Electricity Energy
+
+ For Meter=General:InteriorLights:Electricity:SpaceType:RETAIL ENTRY [J], ResourceType=Electricity, EndUse=InteriorLights, Group=SpaceType, contents are:
+  FRONT_ENTRY RETAIL ENTRY LIGHTS:Lights Electricity Energy
+
+ For Meter=Electricity:Zone:POINT_OF_SALE ZN [J], ResourceType=Electricity, Group=Zone, contents are:
+  POINT_OF_SALE RETAIL POINT_OF_SALE LIGHTS:Lights Electricity Energy
+  POINT_OF_SALE RETAIL POINT_OF_SALE ELEC EQUIP:Electric Equipment Electricity Energy
+
+ For Meter=Electricity:SpaceType:RETAIL POINT_OF_SALE [J], ResourceType=Electricity, Group=SpaceType, contents are:
+  POINT_OF_SALE RETAIL POINT_OF_SALE LIGHTS:Lights Electricity Energy
+  POINT_OF_SALE RETAIL POINT_OF_SALE ELEC EQUIP:Electric Equipment Electricity Energy
+
+ For Meter=InteriorLights:Electricity:Zone:POINT_OF_SALE ZN [J], ResourceType=Electricity, EndUse=InteriorLights, Group=Zone, contents are:
+  POINT_OF_SALE RETAIL POINT_OF_SALE LIGHTS:Lights Electricity Energy
+
+ For Meter=InteriorLights:Electricity:SpaceType:RETAIL POINT_OF_SALE [J], ResourceType=Electricity, EndUse=InteriorLights, Group=SpaceType, contents are:
+  POINT_OF_SALE RETAIL POINT_OF_SALE LIGHTS:Lights Electricity Energy
+
+ For Meter=General:InteriorLights:Electricity:Zone:POINT_OF_SALE ZN [J], ResourceType=Electricity, EndUse=InteriorLights, Group=Zone, contents are:
+  POINT_OF_SALE RETAIL POINT_OF_SALE LIGHTS:Lights Electricity Energy
+
+ For Meter=General:InteriorLights:Electricity:SpaceType:RETAIL POINT_OF_SALE [J], ResourceType=Electricity, EndUse=InteriorLights, Group=SpaceType, contents are:
+  POINT_OF_SALE RETAIL POINT_OF_SALE LIGHTS:Lights Electricity Energy
+
+ For Meter=InteriorEquipment:Electricity [J], ResourceType=Electricity, EndUse=InteriorEquipment, contents are:
+  BACK_SPACE RETAIL BACK_SPACE ELEC EQUIP:Electric Equipment Electricity Energy
+  CORE_RETAIL RETAIL RETAIL ELEC EQUIP:Electric Equipment Electricity Energy
+  FRONT_RETAIL RETAIL RETAIL ELEC EQUIP:Electric Equipment Electricity Energy
+  FRONT_ENTRY RETAIL ENTRY ELEC EQUIP:Electric Equipment Electricity Energy
+  POINT_OF_SALE RETAIL POINT_OF_SALE ELEC EQUIP:Electric Equipment Electricity Energy
+
+ For Meter=InteriorEquipment:Electricity:Zone:BACK_SPACE ZN [J], ResourceType=Electricity, EndUse=InteriorEquipment, Group=Zone, contents are:
+  BACK_SPACE RETAIL BACK_SPACE ELEC EQUIP:Electric Equipment Electricity Energy
+
+ For Meter=InteriorEquipment:Electricity:SpaceType:RETAIL BACK_SPACE [J], ResourceType=Electricity, EndUse=InteriorEquipment, Group=SpaceType, contents are:
+  BACK_SPACE RETAIL BACK_SPACE ELEC EQUIP:Electric Equipment Electricity Energy
+
+ For Meter=General:InteriorEquipment:Electricity [J], ResourceType=Electricity, EndUse=InteriorEquipment, contents are:
+  BACK_SPACE RETAIL BACK_SPACE ELEC EQUIP:Electric Equipment Electricity Energy
+  CORE_RETAIL RETAIL RETAIL ELEC EQUIP:Electric Equipment Electricity Energy
+  FRONT_RETAIL RETAIL RETAIL ELEC EQUIP:Electric Equipment Electricity Energy
+  FRONT_ENTRY RETAIL ENTRY ELEC EQUIP:Electric Equipment Electricity Energy
+  POINT_OF_SALE RETAIL POINT_OF_SALE ELEC EQUIP:Electric Equipment Electricity Energy
+
+ For Meter=General:InteriorEquipment:Electricity:Zone:BACK_SPACE ZN [J], ResourceType=Electricity, EndUse=InteriorEquipment, Group=Zone, contents are:
+  BACK_SPACE RETAIL BACK_SPACE ELEC EQUIP:Electric Equipment Electricity Energy
+
+ For Meter=General:InteriorEquipment:Electricity:SpaceType:RETAIL BACK_SPACE [J], ResourceType=Electricity, EndUse=InteriorEquipment, Group=SpaceType, contents are:
+  BACK_SPACE RETAIL BACK_SPACE ELEC EQUIP:Electric Equipment Electricity Energy
+
+ For Meter=InteriorEquipment:Electricity:Zone:CORE_RETAIL ZN [J], ResourceType=Electricity, EndUse=InteriorEquipment, Group=Zone, contents are:
+  CORE_RETAIL RETAIL RETAIL ELEC EQUIP:Electric Equipment Electricity Energy
+
+ For Meter=InteriorEquipment:Electricity:SpaceType:RETAIL RETAIL [J], ResourceType=Electricity, EndUse=InteriorEquipment, Group=SpaceType, contents are:
+  CORE_RETAIL RETAIL RETAIL ELEC EQUIP:Electric Equipment Electricity Energy
+  FRONT_RETAIL RETAIL RETAIL ELEC EQUIP:Electric Equipment Electricity Energy
+
+ For Meter=General:InteriorEquipment:Electricity:Zone:CORE_RETAIL ZN [J], ResourceType=Electricity, EndUse=InteriorEquipment, Group=Zone, contents are:
+  CORE_RETAIL RETAIL RETAIL ELEC EQUIP:Electric Equipment Electricity Energy
+
+ For Meter=General:InteriorEquipment:Electricity:SpaceType:RETAIL RETAIL [J], ResourceType=Electricity, EndUse=InteriorEquipment, Group=SpaceType, contents are:
+  CORE_RETAIL RETAIL RETAIL ELEC EQUIP:Electric Equipment Electricity Energy
+  FRONT_RETAIL RETAIL RETAIL ELEC EQUIP:Electric Equipment Electricity Energy
+
+ For Meter=InteriorEquipment:Electricity:Zone:FRONT_RETAIL ZN [J], ResourceType=Electricity, EndUse=InteriorEquipment, Group=Zone, contents are:
+  FRONT_RETAIL RETAIL RETAIL ELEC EQUIP:Electric Equipment Electricity Energy
+
+ For Meter=General:InteriorEquipment:Electricity:Zone:FRONT_RETAIL ZN [J], ResourceType=Electricity, EndUse=InteriorEquipment, Group=Zone, contents are:
+  FRONT_RETAIL RETAIL RETAIL ELEC EQUIP:Electric Equipment Electricity Energy
+
+ For Meter=InteriorEquipment:Electricity:Zone:FRONT_ENTRY ZN [J], ResourceType=Electricity, EndUse=InteriorEquipment, Group=Zone, contents are:
+  FRONT_ENTRY RETAIL ENTRY ELEC EQUIP:Electric Equipment Electricity Energy
+
+ For Meter=InteriorEquipment:Electricity:SpaceType:RETAIL ENTRY [J], ResourceType=Electricity, EndUse=InteriorEquipment, Group=SpaceType, contents are:
+  FRONT_ENTRY RETAIL ENTRY ELEC EQUIP:Electric Equipment Electricity Energy
+
+ For Meter=General:InteriorEquipment:Electricity:Zone:FRONT_ENTRY ZN [J], ResourceType=Electricity, EndUse=InteriorEquipment, Group=Zone, contents are:
+  FRONT_ENTRY RETAIL ENTRY ELEC EQUIP:Electric Equipment Electricity Energy
+
+ For Meter=General:InteriorEquipment:Electricity:SpaceType:RETAIL ENTRY [J], ResourceType=Electricity, EndUse=InteriorEquipment, Group=SpaceType, contents are:
+  FRONT_ENTRY RETAIL ENTRY ELEC EQUIP:Electric Equipment Electricity Energy
+
+ For Meter=InteriorEquipment:Electricity:Zone:POINT_OF_SALE ZN [J], ResourceType=Electricity, EndUse=InteriorEquipment, Group=Zone, contents are:
+  POINT_OF_SALE RETAIL POINT_OF_SALE ELEC EQUIP:Electric Equipment Electricity Energy
+
+ For Meter=InteriorEquipment:Electricity:SpaceType:RETAIL POINT_OF_SALE [J], ResourceType=Electricity, EndUse=InteriorEquipment, Group=SpaceType, contents are:
+  POINT_OF_SALE RETAIL POINT_OF_SALE ELEC EQUIP:Electric Equipment Electricity Energy
+
+ For Meter=General:InteriorEquipment:Electricity:Zone:POINT_OF_SALE ZN [J], ResourceType=Electricity, EndUse=InteriorEquipment, Group=Zone, contents are:
+  POINT_OF_SALE RETAIL POINT_OF_SALE ELEC EQUIP:Electric Equipment Electricity Energy
+
+ For Meter=General:InteriorEquipment:Electricity:SpaceType:RETAIL POINT_OF_SALE [J], ResourceType=Electricity, EndUse=InteriorEquipment, Group=SpaceType, contents are:
+  POINT_OF_SALE RETAIL POINT_OF_SALE ELEC EQUIP:Electric Equipment Electricity Energy
+
+ For Meter=EnergyTransfer:Facility [J], ResourceType=EnergyTransfer, contents are:
+  BACK_SPACE ZN:Zone Air System Sensible Heating Energy
+  BACK_SPACE ZN:Zone Air System Sensible Cooling Energy
+  CORE_RETAIL ZN:Zone Air System Sensible Heating Energy
+  CORE_RETAIL ZN:Zone Air System Sensible Cooling Energy
+  FRONT_ENTRY ZN:Zone Air System Sensible Heating Energy
+  FRONT_ENTRY ZN:Zone Air System Sensible Cooling Energy
+  FRONT_RETAIL ZN:Zone Air System Sensible Heating Energy
+  FRONT_RETAIL ZN:Zone Air System Sensible Cooling Energy
+  POINT_OF_SALE ZN:Zone Air System Sensible Heating Energy
+  POINT_OF_SALE ZN:Zone Air System Sensible Cooling Energy
+  BACK_SPACE ZN PSZ-AC NO HEAT:Heating Coil Heating Energy
+  CORE_RETAIL ZN PSZ-AC NO HEAT:Heating Coil Heating Energy
+  FRONT_RETAIL ZN PSZ-AC NO HEAT:Heating Coil Heating Energy
+  POINT_OF_SALE ZN PSZ-AC NO HEAT:Heating Coil Heating Energy
+  FRONT_ENTRY ZN UNITHEATER GAS HTG COIL:Heating Coil Heating Energy
+  BACK_SPACE ZN PSZ-AC GAS HTG COIL:Heating Coil Heating Energy
+  CORE_RETAIL ZN PSZ-AC GAS HTG COIL:Heating Coil Heating Energy
+  FRONT_RETAIL ZN PSZ-AC GAS HTG COIL:Heating Coil Heating Energy
+  POINT_OF_SALE ZN PSZ-AC GAS HTG COIL:Heating Coil Heating Energy
+  BACK_SPACE ZN PSZ-AC 2SPD DX AC CLG COIL:Cooling Coil Total Cooling Energy
+  CORE_RETAIL ZN PSZ-AC 2SPD DX AC CLG COIL:Cooling Coil Total Cooling Energy
+  FRONT_RETAIL ZN PSZ-AC 2SPD DX AC CLG COIL:Cooling Coil Total Cooling Energy
+  POINT_OF_SALE ZN PSZ-AC 2SPD DX AC CLG COIL:Cooling Coil Total Cooling Energy
+  MAIN SERVICE WATER USE 0.3GPM 140F:Water Use Equipment Heating Energy
+
+ For Meter=EnergyTransfer:Building [J], ResourceType=EnergyTransfer, Group=Building, contents are:
+  BACK_SPACE ZN:Zone Air System Sensible Heating Energy
+  BACK_SPACE ZN:Zone Air System Sensible Cooling Energy
+  CORE_RETAIL ZN:Zone Air System Sensible Heating Energy
+  CORE_RETAIL ZN:Zone Air System Sensible Cooling Energy
+  FRONT_ENTRY ZN:Zone Air System Sensible Heating Energy
+  FRONT_ENTRY ZN:Zone Air System Sensible Cooling Energy
+  FRONT_RETAIL ZN:Zone Air System Sensible Heating Energy
+  FRONT_RETAIL ZN:Zone Air System Sensible Cooling Energy
+  POINT_OF_SALE ZN:Zone Air System Sensible Heating Energy
+  POINT_OF_SALE ZN:Zone Air System Sensible Cooling Energy
+
+ For Meter=EnergyTransfer:Zone:BACK_SPACE ZN [J], ResourceType=EnergyTransfer, Group=Zone, contents are:
+  BACK_SPACE ZN:Zone Air System Sensible Heating Energy
+  BACK_SPACE ZN:Zone Air System Sensible Cooling Energy
+
+ For Meter=Heating:EnergyTransfer [J], ResourceType=EnergyTransfer, EndUse=Heating, contents are:
+  BACK_SPACE ZN:Zone Air System Sensible Heating Energy
+  CORE_RETAIL ZN:Zone Air System Sensible Heating Energy
+  FRONT_ENTRY ZN:Zone Air System Sensible Heating Energy
+  FRONT_RETAIL ZN:Zone Air System Sensible Heating Energy
+  POINT_OF_SALE ZN:Zone Air System Sensible Heating Energy
+
+ For Meter=Heating:EnergyTransfer:Zone:BACK_SPACE ZN [J], ResourceType=EnergyTransfer, EndUse=Heating, Group=Zone, contents are:
+  BACK_SPACE ZN:Zone Air System Sensible Heating Energy
+
+ For Meter=General:Heating:EnergyTransfer [J], ResourceType=EnergyTransfer, EndUse=Heating, contents are:
+  BACK_SPACE ZN:Zone Air System Sensible Heating Energy
+  CORE_RETAIL ZN:Zone Air System Sensible Heating Energy
+  FRONT_ENTRY ZN:Zone Air System Sensible Heating Energy
+  FRONT_RETAIL ZN:Zone Air System Sensible Heating Energy
+  POINT_OF_SALE ZN:Zone Air System Sensible Heating Energy
+
+ For Meter=General:Heating:EnergyTransfer:Zone:BACK_SPACE ZN [J], ResourceType=EnergyTransfer, EndUse=Heating, Group=Zone, contents are:
+  BACK_SPACE ZN:Zone Air System Sensible Heating Energy
+
+ For Meter=Cooling:EnergyTransfer [J], ResourceType=EnergyTransfer, EndUse=Cooling, contents are:
+  BACK_SPACE ZN:Zone Air System Sensible Cooling Energy
+  CORE_RETAIL ZN:Zone Air System Sensible Cooling Energy
+  FRONT_ENTRY ZN:Zone Air System Sensible Cooling Energy
+  FRONT_RETAIL ZN:Zone Air System Sensible Cooling Energy
+  POINT_OF_SALE ZN:Zone Air System Sensible Cooling Energy
+
+ For Meter=Cooling:EnergyTransfer:Zone:BACK_SPACE ZN [J], ResourceType=EnergyTransfer, EndUse=Cooling, Group=Zone, contents are:
+  BACK_SPACE ZN:Zone Air System Sensible Cooling Energy
+
+ For Meter=General:Cooling:EnergyTransfer [J], ResourceType=EnergyTransfer, EndUse=Cooling, contents are:
+  BACK_SPACE ZN:Zone Air System Sensible Cooling Energy
+  CORE_RETAIL ZN:Zone Air System Sensible Cooling Energy
+  FRONT_ENTRY ZN:Zone Air System Sensible Cooling Energy
+  FRONT_RETAIL ZN:Zone Air System Sensible Cooling Energy
+  POINT_OF_SALE ZN:Zone Air System Sensible Cooling Energy
+
+ For Meter=General:Cooling:EnergyTransfer:Zone:BACK_SPACE ZN [J], ResourceType=EnergyTransfer, EndUse=Cooling, Group=Zone, contents are:
+  BACK_SPACE ZN:Zone Air System Sensible Cooling Energy
+
+ For Meter=EnergyTransfer:Zone:CORE_RETAIL ZN [J], ResourceType=EnergyTransfer, Group=Zone, contents are:
+  CORE_RETAIL ZN:Zone Air System Sensible Heating Energy
+  CORE_RETAIL ZN:Zone Air System Sensible Cooling Energy
+
+ For Meter=Heating:EnergyTransfer:Zone:CORE_RETAIL ZN [J], ResourceType=EnergyTransfer, EndUse=Heating, Group=Zone, contents are:
+  CORE_RETAIL ZN:Zone Air System Sensible Heating Energy
+
+ For Meter=General:Heating:EnergyTransfer:Zone:CORE_RETAIL ZN [J], ResourceType=EnergyTransfer, EndUse=Heating, Group=Zone, contents are:
+  CORE_RETAIL ZN:Zone Air System Sensible Heating Energy
+
+ For Meter=Cooling:EnergyTransfer:Zone:CORE_RETAIL ZN [J], ResourceType=EnergyTransfer, EndUse=Cooling, Group=Zone, contents are:
+  CORE_RETAIL ZN:Zone Air System Sensible Cooling Energy
+
+ For Meter=General:Cooling:EnergyTransfer:Zone:CORE_RETAIL ZN [J], ResourceType=EnergyTransfer, EndUse=Cooling, Group=Zone, contents are:
+  CORE_RETAIL ZN:Zone Air System Sensible Cooling Energy
+
+ For Meter=EnergyTransfer:Zone:FRONT_ENTRY ZN [J], ResourceType=EnergyTransfer, Group=Zone, contents are:
+  FRONT_ENTRY ZN:Zone Air System Sensible Heating Energy
+  FRONT_ENTRY ZN:Zone Air System Sensible Cooling Energy
+
+ For Meter=Heating:EnergyTransfer:Zone:FRONT_ENTRY ZN [J], ResourceType=EnergyTransfer, EndUse=Heating, Group=Zone, contents are:
+  FRONT_ENTRY ZN:Zone Air System Sensible Heating Energy
+
+ For Meter=General:Heating:EnergyTransfer:Zone:FRONT_ENTRY ZN [J], ResourceType=EnergyTransfer, EndUse=Heating, Group=Zone, contents are:
+  FRONT_ENTRY ZN:Zone Air System Sensible Heating Energy
+
+ For Meter=Cooling:EnergyTransfer:Zone:FRONT_ENTRY ZN [J], ResourceType=EnergyTransfer, EndUse=Cooling, Group=Zone, contents are:
+  FRONT_ENTRY ZN:Zone Air System Sensible Cooling Energy
+
+ For Meter=General:Cooling:EnergyTransfer:Zone:FRONT_ENTRY ZN [J], ResourceType=EnergyTransfer, EndUse=Cooling, Group=Zone, contents are:
+  FRONT_ENTRY ZN:Zone Air System Sensible Cooling Energy
+
+ For Meter=EnergyTransfer:Zone:FRONT_RETAIL ZN [J], ResourceType=EnergyTransfer, Group=Zone, contents are:
+  FRONT_RETAIL ZN:Zone Air System Sensible Heating Energy
+  FRONT_RETAIL ZN:Zone Air System Sensible Cooling Energy
+
+ For Meter=Heating:EnergyTransfer:Zone:FRONT_RETAIL ZN [J], ResourceType=EnergyTransfer, EndUse=Heating, Group=Zone, contents are:
+  FRONT_RETAIL ZN:Zone Air System Sensible Heating Energy
+
+ For Meter=General:Heating:EnergyTransfer:Zone:FRONT_RETAIL ZN [J], ResourceType=EnergyTransfer, EndUse=Heating, Group=Zone, contents are:
+  FRONT_RETAIL ZN:Zone Air System Sensible Heating Energy
+
+ For Meter=Cooling:EnergyTransfer:Zone:FRONT_RETAIL ZN [J], ResourceType=EnergyTransfer, EndUse=Cooling, Group=Zone, contents are:
+  FRONT_RETAIL ZN:Zone Air System Sensible Cooling Energy
+
+ For Meter=General:Cooling:EnergyTransfer:Zone:FRONT_RETAIL ZN [J], ResourceType=EnergyTransfer, EndUse=Cooling, Group=Zone, contents are:
+  FRONT_RETAIL ZN:Zone Air System Sensible Cooling Energy
+
+ For Meter=EnergyTransfer:Zone:POINT_OF_SALE ZN [J], ResourceType=EnergyTransfer, Group=Zone, contents are:
+  POINT_OF_SALE ZN:Zone Air System Sensible Heating Energy
+  POINT_OF_SALE ZN:Zone Air System Sensible Cooling Energy
+
+ For Meter=Heating:EnergyTransfer:Zone:POINT_OF_SALE ZN [J], ResourceType=EnergyTransfer, EndUse=Heating, Group=Zone, contents are:
+  POINT_OF_SALE ZN:Zone Air System Sensible Heating Energy
+
+ For Meter=General:Heating:EnergyTransfer:Zone:POINT_OF_SALE ZN [J], ResourceType=EnergyTransfer, EndUse=Heating, Group=Zone, contents are:
+  POINT_OF_SALE ZN:Zone Air System Sensible Heating Energy
+
+ For Meter=Cooling:EnergyTransfer:Zone:POINT_OF_SALE ZN [J], ResourceType=EnergyTransfer, EndUse=Cooling, Group=Zone, contents are:
+  POINT_OF_SALE ZN:Zone Air System Sensible Cooling Energy
+
+ For Meter=General:Cooling:EnergyTransfer:Zone:POINT_OF_SALE ZN [J], ResourceType=EnergyTransfer, EndUse=Cooling, Group=Zone, contents are:
+  POINT_OF_SALE ZN:Zone Air System Sensible Cooling Energy
+
+ For Meter=PlantLoopHeatingDemand:Facility [J], ResourceType=PlantLoopHeatingDemand, contents are:
+  MAIN WUC 0.3GPM 140F:Water Use Connections Plant Hot Water Energy
+  40GAL NATURAL GAS WATER HEATER - 40KBTU/HR:Water Heater Source Side Heat Transfer Energy
+
+ For Meter=PlantLoopHeatingDemand:Plant [J], ResourceType=PlantLoopHeatingDemand, Group=Plant, contents are:
+  MAIN WUC 0.3GPM 140F:Water Use Connections Plant Hot Water Energy
+  40GAL NATURAL GAS WATER HEATER - 40KBTU/HR:Water Heater Source Side Heat Transfer Energy
+
+ For Meter=WaterSystems:PlantLoopHeatingDemand [J], ResourceType=PlantLoopHeatingDemand, EndUse=WaterSystems, contents are:
+  MAIN WUC 0.3GPM 140F:Water Use Connections Plant Hot Water Energy
+  40GAL NATURAL GAS WATER HEATER - 40KBTU/HR:Water Heater Source Side Heat Transfer Energy
+
+ For Meter=General:WaterSystems:PlantLoopHeatingDemand [J], ResourceType=PlantLoopHeatingDemand, EndUse=WaterSystems, contents are:
+  MAIN WUC 0.3GPM 140F:Water Use Connections Plant Hot Water Energy
+  40GAL NATURAL GAS WATER HEATER - 40KBTU/HR:Water Heater Source Side Heat Transfer Energy
+
+ For Meter=ElectricityPurchased:Facility [J], ResourceType=ElectricityPurchased, contents are:
+  Whole Building:Facility Total Purchased Electricity Energy
+
+ For Meter=ElectricityPurchased:Plant [J], ResourceType=ElectricityPurchased, Group=Plant, contents are:
+  Whole Building:Facility Total Purchased Electricity Energy
+
+ For Meter=Cogeneration:ElectricityPurchased [J], ResourceType=ElectricityPurchased, EndUse=Cogeneration, contents are:
+  Whole Building:Facility Total Purchased Electricity Energy
+
+ For Meter=General:Cogeneration:ElectricityPurchased [J], ResourceType=ElectricityPurchased, EndUse=Cogeneration, contents are:
+  Whole Building:Facility Total Purchased Electricity Energy
+
+ For Meter=ElectricitySurplusSold:Facility [J], ResourceType=ElectricitySurplusSold, contents are:
+  Whole Building:Facility Total Surplus Electricity Energy
+
+ For Meter=ElectricitySurplusSold:Plant [J], ResourceType=ElectricitySurplusSold, Group=Plant, contents are:
+  Whole Building:Facility Total Surplus Electricity Energy
+
+ For Meter=Cogeneration:ElectricitySurplusSold [J], ResourceType=ElectricitySurplusSold, EndUse=Cogeneration, contents are:
+  Whole Building:Facility Total Surplus Electricity Energy
+
+ For Meter=General:Cogeneration:ElectricitySurplusSold [J], ResourceType=ElectricitySurplusSold, EndUse=Cogeneration, contents are:
+  Whole Building:Facility Total Surplus Electricity Energy
+
+ For Meter=ElectricityNet:Facility [J], ResourceType=ElectricityNet, contents are:
+  Whole Building:Facility Net Purchased Electricity Energy
+
+ For Meter=ElectricityNet:Plant [J], ResourceType=ElectricityNet, Group=Plant, contents are:
+  Whole Building:Facility Net Purchased Electricity Energy
+
+ For Meter=Cogeneration:ElectricityNet [J], ResourceType=ElectricityNet, EndUse=Cogeneration, contents are:
+  Whole Building:Facility Net Purchased Electricity Energy
+
+ For Meter=General:Cogeneration:ElectricityNet [J], ResourceType=ElectricityNet, EndUse=Cogeneration, contents are:
+  Whole Building:Facility Net Purchased Electricity Energy
+
+ For Meter=Electricity:HVAC [J], ResourceType=Electricity, Group=HVAC, contents are:
+  FRONT_ENTRY ZN UNITHEATER FAN:Fan Electricity Energy
+  BACK_SPACE ZN PSZ-AC FAN:Fan Electricity Energy
+  CORE_RETAIL ZN PSZ-AC FAN:Fan Electricity Energy
+  FRONT_RETAIL ZN PSZ-AC FAN:Fan Electricity Energy
+  POINT_OF_SALE ZN PSZ-AC FAN:Fan Electricity Energy
+  BACK_SPACE ZN PSZ-AC NO HEAT:Heating Coil Electricity Energy
+  CORE_RETAIL ZN PSZ-AC NO HEAT:Heating Coil Electricity Energy
+  FRONT_RETAIL ZN PSZ-AC NO HEAT:Heating Coil Electricity Energy
+  POINT_OF_SALE ZN PSZ-AC NO HEAT:Heating Coil Electricity Energy
+  FRONT_ENTRY ZN UNITHEATER GAS HTG COIL:Heating Coil Electricity Energy
+  BACK_SPACE ZN PSZ-AC GAS HTG COIL:Heating Coil Electricity Energy
+  CORE_RETAIL ZN PSZ-AC GAS HTG COIL:Heating Coil Electricity Energy
+  FRONT_RETAIL ZN PSZ-AC GAS HTG COIL:Heating Coil Electricity Energy
+  POINT_OF_SALE ZN PSZ-AC GAS HTG COIL:Heating Coil Electricity Energy
+  BACK_SPACE ZN PSZ-AC UNITARY AC:Unitary System Cooling Ancillary Electricity Energy
+  BACK_SPACE ZN PSZ-AC UNITARY AC:Unitary System Heating Ancillary Electricity Energy
+  CORE_RETAIL ZN PSZ-AC UNITARY AC:Unitary System Cooling Ancillary Electricity Energy
+  CORE_RETAIL ZN PSZ-AC UNITARY AC:Unitary System Heating Ancillary Electricity Energy
+  FRONT_RETAIL ZN PSZ-AC UNITARY AC:Unitary System Cooling Ancillary Electricity Energy
+  FRONT_RETAIL ZN PSZ-AC UNITARY AC:Unitary System Heating Ancillary Electricity Energy
+  POINT_OF_SALE ZN PSZ-AC UNITARY AC:Unitary System Cooling Ancillary Electricity Energy
+  POINT_OF_SALE ZN PSZ-AC UNITARY AC:Unitary System Heating Ancillary Electricity Energy
+  BACK_SPACE ZN PSZ-AC 2SPD DX AC CLG COIL:Cooling Coil Electricity Energy
+  CORE_RETAIL ZN PSZ-AC 2SPD DX AC CLG COIL:Cooling Coil Electricity Energy
+  FRONT_RETAIL ZN PSZ-AC 2SPD DX AC CLG COIL:Cooling Coil Electricity Energy
+  POINT_OF_SALE ZN PSZ-AC 2SPD DX AC CLG COIL:Cooling Coil Electricity Energy
+
+ For Meter=Fans:Electricity [J], ResourceType=Electricity, EndUse=Fans, contents are:
+  FRONT_ENTRY ZN UNITHEATER FAN:Fan Electricity Energy
+  BACK_SPACE ZN PSZ-AC FAN:Fan Electricity Energy
+  CORE_RETAIL ZN PSZ-AC FAN:Fan Electricity Energy
+  FRONT_RETAIL ZN PSZ-AC FAN:Fan Electricity Energy
+  POINT_OF_SALE ZN PSZ-AC FAN:Fan Electricity Energy
+
+ For Meter=General:Fans:Electricity [J], ResourceType=Electricity, EndUse=Fans, contents are:
+  FRONT_ENTRY ZN UNITHEATER FAN:Fan Electricity Energy
+  BACK_SPACE ZN PSZ-AC FAN:Fan Electricity Energy
+  CORE_RETAIL ZN PSZ-AC FAN:Fan Electricity Energy
+  FRONT_RETAIL ZN PSZ-AC FAN:Fan Electricity Energy
+  POINT_OF_SALE ZN PSZ-AC FAN:Fan Electricity Energy
+
+ For Meter=EnergyTransfer:HVAC [J], ResourceType=EnergyTransfer, Group=HVAC, contents are:
+  BACK_SPACE ZN PSZ-AC NO HEAT:Heating Coil Heating Energy
+  CORE_RETAIL ZN PSZ-AC NO HEAT:Heating Coil Heating Energy
+  FRONT_RETAIL ZN PSZ-AC NO HEAT:Heating Coil Heating Energy
+  POINT_OF_SALE ZN PSZ-AC NO HEAT:Heating Coil Heating Energy
+  FRONT_ENTRY ZN UNITHEATER GAS HTG COIL:Heating Coil Heating Energy
+  BACK_SPACE ZN PSZ-AC GAS HTG COIL:Heating Coil Heating Energy
+  CORE_RETAIL ZN PSZ-AC GAS HTG COIL:Heating Coil Heating Energy
+  FRONT_RETAIL ZN PSZ-AC GAS HTG COIL:Heating Coil Heating Energy
+  POINT_OF_SALE ZN PSZ-AC GAS HTG COIL:Heating Coil Heating Energy
+  BACK_SPACE ZN PSZ-AC 2SPD DX AC CLG COIL:Cooling Coil Total Cooling Energy
+  CORE_RETAIL ZN PSZ-AC 2SPD DX AC CLG COIL:Cooling Coil Total Cooling Energy
+  FRONT_RETAIL ZN PSZ-AC 2SPD DX AC CLG COIL:Cooling Coil Total Cooling Energy
+  POINT_OF_SALE ZN PSZ-AC 2SPD DX AC CLG COIL:Cooling Coil Total Cooling Energy
+
+ For Meter=HeatingCoils:EnergyTransfer [J], ResourceType=EnergyTransfer, EndUse=HeatingCoils, contents are:
+  BACK_SPACE ZN PSZ-AC NO HEAT:Heating Coil Heating Energy
+  CORE_RETAIL ZN PSZ-AC NO HEAT:Heating Coil Heating Energy
+  FRONT_RETAIL ZN PSZ-AC NO HEAT:Heating Coil Heating Energy
+  POINT_OF_SALE ZN PSZ-AC NO HEAT:Heating Coil Heating Energy
+  FRONT_ENTRY ZN UNITHEATER GAS HTG COIL:Heating Coil Heating Energy
+  BACK_SPACE ZN PSZ-AC GAS HTG COIL:Heating Coil Heating Energy
+  CORE_RETAIL ZN PSZ-AC GAS HTG COIL:Heating Coil Heating Energy
+  FRONT_RETAIL ZN PSZ-AC GAS HTG COIL:Heating Coil Heating Energy
+  POINT_OF_SALE ZN PSZ-AC GAS HTG COIL:Heating Coil Heating Energy
+
+ For Meter=Heating:Electricity [J], ResourceType=Electricity, EndUse=Heating, contents are:
+  BACK_SPACE ZN PSZ-AC NO HEAT:Heating Coil Electricity Energy
+  CORE_RETAIL ZN PSZ-AC NO HEAT:Heating Coil Electricity Energy
+  FRONT_RETAIL ZN PSZ-AC NO HEAT:Heating Coil Electricity Energy
+  POINT_OF_SALE ZN PSZ-AC NO HEAT:Heating Coil Electricity Energy
+  FRONT_ENTRY ZN UNITHEATER GAS HTG COIL:Heating Coil Electricity Energy
+  BACK_SPACE ZN PSZ-AC GAS HTG COIL:Heating Coil Electricity Energy
+  CORE_RETAIL ZN PSZ-AC GAS HTG COIL:Heating Coil Electricity Energy
+  FRONT_RETAIL ZN PSZ-AC GAS HTG COIL:Heating Coil Electricity Energy
+  POINT_OF_SALE ZN PSZ-AC GAS HTG COIL:Heating Coil Electricity Energy
+  BACK_SPACE ZN PSZ-AC UNITARY AC:Unitary System Heating Ancillary Electricity Energy
+  CORE_RETAIL ZN PSZ-AC UNITARY AC:Unitary System Heating Ancillary Electricity Energy
+  FRONT_RETAIL ZN PSZ-AC UNITARY AC:Unitary System Heating Ancillary Electricity Energy
+  POINT_OF_SALE ZN PSZ-AC UNITARY AC:Unitary System Heating Ancillary Electricity Energy
+
+ For Meter=General:Heating:Electricity [J], ResourceType=Electricity, EndUse=Heating, contents are:
+  BACK_SPACE ZN PSZ-AC NO HEAT:Heating Coil Electricity Energy
+  CORE_RETAIL ZN PSZ-AC NO HEAT:Heating Coil Electricity Energy
+  FRONT_RETAIL ZN PSZ-AC NO HEAT:Heating Coil Electricity Energy
+  POINT_OF_SALE ZN PSZ-AC NO HEAT:Heating Coil Electricity Energy
+  FRONT_ENTRY ZN UNITHEATER GAS HTG COIL:Heating Coil Electricity Energy
+  BACK_SPACE ZN PSZ-AC GAS HTG COIL:Heating Coil Electricity Energy
+  CORE_RETAIL ZN PSZ-AC GAS HTG COIL:Heating Coil Electricity Energy
+  FRONT_RETAIL ZN PSZ-AC GAS HTG COIL:Heating Coil Electricity Energy
+  POINT_OF_SALE ZN PSZ-AC GAS HTG COIL:Heating Coil Electricity Energy
+  BACK_SPACE ZN PSZ-AC UNITARY AC:Unitary System Heating Ancillary Electricity Energy
+  CORE_RETAIL ZN PSZ-AC UNITARY AC:Unitary System Heating Ancillary Electricity Energy
+  FRONT_RETAIL ZN PSZ-AC UNITARY AC:Unitary System Heating Ancillary Electricity Energy
+  POINT_OF_SALE ZN PSZ-AC UNITARY AC:Unitary System Heating Ancillary Electricity Energy
+
+ For Meter=NaturalGas:Facility [J], ResourceType=NaturalGas, contents are:
+  FRONT_ENTRY ZN UNITHEATER GAS HTG COIL:Heating Coil NaturalGas Energy
+  FRONT_ENTRY ZN UNITHEATER GAS HTG COIL:Heating Coil Ancillary NaturalGas Energy
+  BACK_SPACE ZN PSZ-AC GAS HTG COIL:Heating Coil NaturalGas Energy
+  BACK_SPACE ZN PSZ-AC GAS HTG COIL:Heating Coil Ancillary NaturalGas Energy
+  CORE_RETAIL ZN PSZ-AC GAS HTG COIL:Heating Coil NaturalGas Energy
+  CORE_RETAIL ZN PSZ-AC GAS HTG COIL:Heating Coil Ancillary NaturalGas Energy
+  FRONT_RETAIL ZN PSZ-AC GAS HTG COIL:Heating Coil NaturalGas Energy
+  FRONT_RETAIL ZN PSZ-AC GAS HTG COIL:Heating Coil Ancillary NaturalGas Energy
+  POINT_OF_SALE ZN PSZ-AC GAS HTG COIL:Heating Coil NaturalGas Energy
+  POINT_OF_SALE ZN PSZ-AC GAS HTG COIL:Heating Coil Ancillary NaturalGas Energy
+  40GAL NATURAL GAS WATER HEATER - 40KBTU/HR:Water Heater NaturalGas Energy
+  40GAL NATURAL GAS WATER HEATER - 40KBTU/HR:Water Heater Off Cycle Parasitic NaturalGas Energy
+  40GAL NATURAL GAS WATER HEATER - 40KBTU/HR:Water Heater On Cycle Parasitic NaturalGas Energy
+
+ For Meter=NaturalGas:HVAC [J], ResourceType=NaturalGas, Group=HVAC, contents are:
+  FRONT_ENTRY ZN UNITHEATER GAS HTG COIL:Heating Coil NaturalGas Energy
+  FRONT_ENTRY ZN UNITHEATER GAS HTG COIL:Heating Coil Ancillary NaturalGas Energy
+  BACK_SPACE ZN PSZ-AC GAS HTG COIL:Heating Coil NaturalGas Energy
+  BACK_SPACE ZN PSZ-AC GAS HTG COIL:Heating Coil Ancillary NaturalGas Energy
+  CORE_RETAIL ZN PSZ-AC GAS HTG COIL:Heating Coil NaturalGas Energy
+  CORE_RETAIL ZN PSZ-AC GAS HTG COIL:Heating Coil Ancillary NaturalGas Energy
+  FRONT_RETAIL ZN PSZ-AC GAS HTG COIL:Heating Coil NaturalGas Energy
+  FRONT_RETAIL ZN PSZ-AC GAS HTG COIL:Heating Coil Ancillary NaturalGas Energy
+  POINT_OF_SALE ZN PSZ-AC GAS HTG COIL:Heating Coil NaturalGas Energy
+  POINT_OF_SALE ZN PSZ-AC GAS HTG COIL:Heating Coil Ancillary NaturalGas Energy
+
+ For Meter=Heating:NaturalGas [J], ResourceType=NaturalGas, EndUse=Heating, contents are:
+  FRONT_ENTRY ZN UNITHEATER GAS HTG COIL:Heating Coil NaturalGas Energy
+  FRONT_ENTRY ZN UNITHEATER GAS HTG COIL:Heating Coil Ancillary NaturalGas Energy
+  BACK_SPACE ZN PSZ-AC GAS HTG COIL:Heating Coil NaturalGas Energy
+  BACK_SPACE ZN PSZ-AC GAS HTG COIL:Heating Coil Ancillary NaturalGas Energy
+  CORE_RETAIL ZN PSZ-AC GAS HTG COIL:Heating Coil NaturalGas Energy
+  CORE_RETAIL ZN PSZ-AC GAS HTG COIL:Heating Coil Ancillary NaturalGas Energy
+  FRONT_RETAIL ZN PSZ-AC GAS HTG COIL:Heating Coil NaturalGas Energy
+  FRONT_RETAIL ZN PSZ-AC GAS HTG COIL:Heating Coil Ancillary NaturalGas Energy
+  POINT_OF_SALE ZN PSZ-AC GAS HTG COIL:Heating Coil NaturalGas Energy
+  POINT_OF_SALE ZN PSZ-AC GAS HTG COIL:Heating Coil Ancillary NaturalGas Energy
+
+ For Meter=General:Heating:NaturalGas [J], ResourceType=NaturalGas, EndUse=Heating, contents are:
+  FRONT_ENTRY ZN UNITHEATER GAS HTG COIL:Heating Coil NaturalGas Energy
+  FRONT_ENTRY ZN UNITHEATER GAS HTG COIL:Heating Coil Ancillary NaturalGas Energy
+  BACK_SPACE ZN PSZ-AC GAS HTG COIL:Heating Coil NaturalGas Energy
+  BACK_SPACE ZN PSZ-AC GAS HTG COIL:Heating Coil Ancillary NaturalGas Energy
+  CORE_RETAIL ZN PSZ-AC GAS HTG COIL:Heating Coil NaturalGas Energy
+  CORE_RETAIL ZN PSZ-AC GAS HTG COIL:Heating Coil Ancillary NaturalGas Energy
+  FRONT_RETAIL ZN PSZ-AC GAS HTG COIL:Heating Coil NaturalGas Energy
+  FRONT_RETAIL ZN PSZ-AC GAS HTG COIL:Heating Coil Ancillary NaturalGas Energy
+  POINT_OF_SALE ZN PSZ-AC GAS HTG COIL:Heating Coil NaturalGas Energy
+  POINT_OF_SALE ZN PSZ-AC GAS HTG COIL:Heating Coil Ancillary NaturalGas Energy
+
+ For Meter=Cooling:Electricity [J], ResourceType=Electricity, EndUse=Cooling, contents are:
+  BACK_SPACE ZN PSZ-AC UNITARY AC:Unitary System Cooling Ancillary Electricity Energy
+  CORE_RETAIL ZN PSZ-AC UNITARY AC:Unitary System Cooling Ancillary Electricity Energy
+  FRONT_RETAIL ZN PSZ-AC UNITARY AC:Unitary System Cooling Ancillary Electricity Energy
+  POINT_OF_SALE ZN PSZ-AC UNITARY AC:Unitary System Cooling Ancillary Electricity Energy
+  BACK_SPACE ZN PSZ-AC 2SPD DX AC CLG COIL:Cooling Coil Electricity Energy
+  CORE_RETAIL ZN PSZ-AC 2SPD DX AC CLG COIL:Cooling Coil Electricity Energy
+  FRONT_RETAIL ZN PSZ-AC 2SPD DX AC CLG COIL:Cooling Coil Electricity Energy
+  POINT_OF_SALE ZN PSZ-AC 2SPD DX AC CLG COIL:Cooling Coil Electricity Energy
+
+ For Meter=General:Cooling:Electricity [J], ResourceType=Electricity, EndUse=Cooling, contents are:
+  BACK_SPACE ZN PSZ-AC UNITARY AC:Unitary System Cooling Ancillary Electricity Energy
+  CORE_RETAIL ZN PSZ-AC UNITARY AC:Unitary System Cooling Ancillary Electricity Energy
+  FRONT_RETAIL ZN PSZ-AC UNITARY AC:Unitary System Cooling Ancillary Electricity Energy
+  POINT_OF_SALE ZN PSZ-AC UNITARY AC:Unitary System Cooling Ancillary Electricity Energy
+  BACK_SPACE ZN PSZ-AC 2SPD DX AC CLG COIL:Cooling Coil Electricity Energy
+  CORE_RETAIL ZN PSZ-AC 2SPD DX AC CLG COIL:Cooling Coil Electricity Energy
+  FRONT_RETAIL ZN PSZ-AC 2SPD DX AC CLG COIL:Cooling Coil Electricity Energy
+  POINT_OF_SALE ZN PSZ-AC 2SPD DX AC CLG COIL:Cooling Coil Electricity Energy
+
+ For Meter=CoolingCoils:EnergyTransfer [J], ResourceType=EnergyTransfer, EndUse=CoolingCoils, contents are:
+  BACK_SPACE ZN PSZ-AC 2SPD DX AC CLG COIL:Cooling Coil Total Cooling Energy
+  CORE_RETAIL ZN PSZ-AC 2SPD DX AC CLG COIL:Cooling Coil Total Cooling Energy
+  FRONT_RETAIL ZN PSZ-AC 2SPD DX AC CLG COIL:Cooling Coil Total Cooling Energy
+  POINT_OF_SALE ZN PSZ-AC 2SPD DX AC CLG COIL:Cooling Coil Total Cooling Energy
+
+ For Meter=ExteriorLights:Electricity [J], ResourceType=Electricity, EndUse=ExteriorLights, contents are:
+  NONDIMMING EXTERIOR LIGHTS DEF:Exterior Lights Electricity Energy
+  OCC SENSING EXTERIOR LIGHTS DEF:Exterior Lights Electricity Energy
+
+ For Meter=General:ExteriorLights:Electricity [J], ResourceType=Electricity, EndUse=ExteriorLights, contents are:
+  NONDIMMING EXTERIOR LIGHTS DEF:Exterior Lights Electricity Energy
+  OCC SENSING EXTERIOR LIGHTS DEF:Exterior Lights Electricity Energy
+
+ For Meter=Water:Facility [m3], ResourceType=Water, contents are:
+  MAIN SERVICE WATER USE 0.3GPM 140F:Water Use Equipment Total Volume
+  40GAL NATURAL GAS WATER HEATER - 40KBTU/HR:Water Heater Water Volume
+
+ For Meter=Water:Plant [m3], ResourceType=Water, Group=Plant, contents are:
+  MAIN SERVICE WATER USE 0.3GPM 140F:Water Use Equipment Total Volume
+  40GAL NATURAL GAS WATER HEATER - 40KBTU/HR:Water Heater Water Volume
+
+ For Meter=WaterSystems:Water [m3], ResourceType=Water, EndUse=WaterSystems, contents are:
+  MAIN SERVICE WATER USE 0.3GPM 140F:Water Use Equipment Total Volume
+  40GAL NATURAL GAS WATER HEATER - 40KBTU/HR:Water Heater Water Volume
+
+ For Meter=General:WaterSystems:Water [m3], ResourceType=Water, EndUse=WaterSystems, contents are:
+  MAIN SERVICE WATER USE 0.3GPM 140F:Water Use Equipment Total Volume
+  40GAL NATURAL GAS WATER HEATER - 40KBTU/HR:Water Heater Water Volume
+
+ For Meter=MainsWater:Facility [m3], ResourceType=MainsWater, contents are:
+  MAIN SERVICE WATER USE 0.3GPM 140F:Water Use Equipment Mains Water Volume
+  40GAL NATURAL GAS WATER HEATER - 40KBTU/HR:Water Heater Mains Water Volume
+
+ For Meter=MainsWater:Plant [m3], ResourceType=MainsWater, Group=Plant, contents are:
+  MAIN SERVICE WATER USE 0.3GPM 140F:Water Use Equipment Mains Water Volume
+  40GAL NATURAL GAS WATER HEATER - 40KBTU/HR:Water Heater Mains Water Volume
+
+ For Meter=WaterSystems:MainsWater [m3], ResourceType=MainsWater, EndUse=WaterSystems, contents are:
+  MAIN SERVICE WATER USE 0.3GPM 140F:Water Use Equipment Mains Water Volume
+  40GAL NATURAL GAS WATER HEATER - 40KBTU/HR:Water Heater Mains Water Volume
+
+ For Meter=General:WaterSystems:MainsWater [m3], ResourceType=MainsWater, EndUse=WaterSystems, contents are:
+  MAIN SERVICE WATER USE 0.3GPM 140F:Water Use Equipment Mains Water Volume
+  40GAL NATURAL GAS WATER HEATER - 40KBTU/HR:Water Heater Mains Water Volume
+
+ For Meter=EnergyTransfer:Plant [J], ResourceType=EnergyTransfer, Group=Plant, contents are:
+  MAIN SERVICE WATER USE 0.3GPM 140F:Water Use Equipment Heating Energy
+
+ For Meter=WaterSystems:EnergyTransfer [J], ResourceType=EnergyTransfer, EndUse=WaterSystems, contents are:
+  MAIN SERVICE WATER USE 0.3GPM 140F:Water Use Equipment Heating Energy
+
+ For Meter=General:WaterSystems:EnergyTransfer [J], ResourceType=EnergyTransfer, EndUse=WaterSystems, contents are:
+  MAIN SERVICE WATER USE 0.3GPM 140F:Water Use Equipment Heating Energy
+
+ For Meter=NaturalGas:Plant [J], ResourceType=NaturalGas, Group=Plant, contents are:
+  40GAL NATURAL GAS WATER HEATER - 40KBTU/HR:Water Heater NaturalGas Energy
+  40GAL NATURAL GAS WATER HEATER - 40KBTU/HR:Water Heater Off Cycle Parasitic NaturalGas Energy
+  40GAL NATURAL GAS WATER HEATER - 40KBTU/HR:Water Heater On Cycle Parasitic NaturalGas Energy
+
+ For Meter=WaterSystems:NaturalGas [J], ResourceType=NaturalGas, EndUse=WaterSystems, contents are:
+  40GAL NATURAL GAS WATER HEATER - 40KBTU/HR:Water Heater NaturalGas Energy
+  40GAL NATURAL GAS WATER HEATER - 40KBTU/HR:Water Heater Off Cycle Parasitic NaturalGas Energy
+  40GAL NATURAL GAS WATER HEATER - 40KBTU/HR:Water Heater On Cycle Parasitic NaturalGas Energy
+
+ For Meter=General:WaterSystems:NaturalGas [J], ResourceType=NaturalGas, EndUse=WaterSystems, contents are:
+  40GAL NATURAL GAS WATER HEATER - 40KBTU/HR:Water Heater NaturalGas Energy
+  40GAL NATURAL GAS WATER HEATER - 40KBTU/HR:Water Heater Off Cycle Parasitic NaturalGas Energy
+  40GAL NATURAL GAS WATER HEATER - 40KBTU/HR:Water Heater On Cycle Parasitic NaturalGas Energy
+
+ For Meter=Electricity:Plant [J], ResourceType=Electricity, Group=Plant, contents are:
+  MAIN SERVICE WATER LOOP WATER MAINS PRESSURE DRIVEN:Pump Electricity Energy
+
+ For Meter=Pumps:Electricity [J], ResourceType=Electricity, EndUse=Pumps, contents are:
+  MAIN SERVICE WATER LOOP WATER MAINS PRESSURE DRIVEN:Pump Electricity Energy
+
+ For Meter=General:Pumps:Electricity [J], ResourceType=Electricity, EndUse=Pumps, contents are:
+  MAIN SERVICE WATER LOOP WATER MAINS PRESSURE DRIVEN:Pump Electricity Energy
+
+ For Meter=Carbon Equivalent:Facility [kg], ResourceType=Carbon Equivalent, contents are:
+  Site:Environmental Impact Total N2O Emissions Carbon Equivalent Mass
+  Site:Environmental Impact Total CH4 Emissions Carbon Equivalent Mass
+  Site:Environmental Impact Total CO2 Emissions Carbon Equivalent Mass
+
+ For Meter=CarbonEquivalentEmissions:Carbon Equivalent [kg], ResourceType=Carbon Equivalent, EndUse=CarbonEquivalentEmissions, contents are:
+  Site:Environmental Impact Total N2O Emissions Carbon Equivalent Mass
+  Site:Environmental Impact Total CH4 Emissions Carbon Equivalent Mass
+  Site:Environmental Impact Total CO2 Emissions Carbon Equivalent Mass
