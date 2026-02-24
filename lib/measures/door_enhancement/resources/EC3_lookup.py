@@ -11,10 +11,17 @@ import urllib.parse
 
 script_dir = os.path.dirname(os.path.abspath(__file__))
 repo_root = os.path.abspath(os.path.join(script_dir, "../../../.."))
-config_path = os.path.join(repo_root, "config.ini")
 
-if not os.path.exists(config_path):
-    raise FileNotFoundError(f"Config file not found: {config_path}")
+# Check parametric_run folder first, then repo root
+parametric_config_path = os.path.join(repo_root, "lib", "parametric_run", "config.ini")
+repo_config_path = os.path.join(repo_root, "config.ini")
+
+if os.path.exists(parametric_config_path):
+    config_path = parametric_config_path
+elif os.path.exists(repo_config_path):
+    config_path = repo_config_path
+else:
+    raise FileNotFoundError(f"Config file not found in {parametric_config_path} or {repo_config_path}")
 
 config = configparser.ConfigParser()
 config.read(config_path)

@@ -928,6 +928,13 @@ class DoorEnhancement(openstudio.measure.ModelMeasure):
         building = model.getBuilding()
         building_props = building.additionalProperties()
         
+        # Standardized fields for all measures (placed at beginning for CSV extraction)
+        building_props.setFeature("measure_name", "Door Enhancement")
+        building_props.setFeature("door_enhancement_total_additional_embodied_carbon_kg", total_embodied_carbon)
+        building_props.setFeature("door_enhancement_total_additional_material_cost_$", 0.0)  # Placeholder
+        building_props.setFeature("door_enhancement_total_additional_overhead_profit_cost_$", 0.0)  # Placeholder
+        building_props.setFeature("door_enhancement_total_additional_labour_cost_$", 0.0)  # Placeholder
+        
         # Store basic measure parameters
         building_props.setFeature("door_enhancement_analysis_period_years", analysis_period)
         building_props.setFeature("door_enhancement_strip_lifetime_years", strip_lifetime)
@@ -1030,6 +1037,11 @@ class DoorEnhancement(openstudio.measure.ModelMeasure):
         if construction_names:
             building_props.setFeature("door_enhancement_construction_names", ', '.join(construction_names))
             building_props.setFeature("door_enhancement_construction_handles", ', '.join(construction_handles))
+
+        # Separate summary AdditionalProperties on Facility for standardized cross-measure extraction
+        facility_props = model.getFacility().additionalProperties()
+        facility_props.setFeature("name", "Door_Enhancement")
+        facility_props.setFeature("total_additional_embodied_carbon_kgCO2", total_embodied_carbon)
         
         runner.registerInfo(f"\n✓ Door enhancement summary stored in building additional properties")
         

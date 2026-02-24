@@ -330,9 +330,9 @@ class IncreaseInsulationRValueForRoofs(openstudio.measure.ModelMeasure):
                 target_layer = layers[target_index]
                 target_R = used_R_for_ratio
 
-            # Sanity: minimal insulation
-            if target_R <= self._unit_convert(1.0, "ft^2*h*R/Btu", "m^2*K/W"):
-                runner.registerWarning(f"Construction '{cname}' does not appear to have an insulation layer and was not altered.")
+            # Sanity: minimal insulation - only skip if there's essentially no insulation layer
+            if target_R <= self._unit_convert(0.1, "ft^2*h*R/Btu", "m^2*K/W"):
+                runner.registerWarning(f"Construction '{cname}' does not appear to have an insulation layer (R < 0.1) and was not altered.")
                 continue
 
             # Clone construction to modify
@@ -406,7 +406,8 @@ class IncreaseInsulationRValueForRoofs(openstudio.measure.ModelMeasure):
                 new_construction.setLayers(layer_list)
 
                 materials_hash[target_layer.nameString()] = new_mat_obj
-                runner.registerInfo(f"For construction '{new_construction.nameString()}', material '{new_mat_obj.nameString()}' was altered.")
+                # Reduced verbosity
+                # runner.registerInfo(f"For construction '{new_construction.nameString()}', material '{new_mat_obj.nameString()}' was altered.")
 
             # Map old->new
             constructions_hash_old_new[cname] = new_construction
@@ -461,19 +462,23 @@ class IncreaseInsulationRValueForRoofs(openstudio.measure.ModelMeasure):
                             bldg = src.to_Building()
                             if bldg.is_initialized():
                                 bldg.get().setDefaultConstructionSet(new_dcs)
-                                runner.registerInfo(f"Updated Building with new construction set '{new_dcs.nameString()}'")
+                                # Reduced verbosity
+                                pass
                             story = src.to_BuildingStory()
                             if story.is_initialized():
                                 story.get().setDefaultConstructionSet(new_dcs)
-                                runner.registerInfo(f"Updated BuildingStory with new construction set '{new_dcs.nameString()}'")
+                                # Reduced verbosity
+                                pass
                             stype = src.to_SpaceType()
                             if stype.is_initialized():
                                 stype.get().setDefaultConstructionSet(new_dcs)
-                                runner.registerInfo(f"Updated SpaceType '{stype.get().nameString()}' with new construction set '{new_dcs.nameString()}'")
+                                # Reduced verbosity
+                                pass
                             sp = src.to_Space()
                             if sp.is_initialized():
                                 sp.get().setDefaultConstructionSet(new_dcs)
-                                runner.registerInfo(f"Updated Space '{sp.get().nameString()}' with new construction set '{new_dcs.nameString()}'")
+                                # Reduced verbosity
+                                pass
 
         # ===================== EC3 embodied carbon =====================
         # 1) Pull EPDs for the selected insulation material type once
@@ -499,22 +504,26 @@ class IncreaseInsulationRValueForRoofs(openstudio.measure.ModelMeasure):
                 density_value = extract_numeric_value(density_str)
                 if density_value > 0.0:
                     density_values.append(density_value)
-                    runner.registerInfo(f"EPD {idx}: Extracted density = {density_value} kg/m³ from '{density_str}'")
-            else:
-                runner.registerInfo(f"EPD {idx}: No density data found")
+# Reduced verbosity
+                    pass
+                else:
+                    # Reduced verbosity
+                    pass
             
             # Extract reference service life
             reference_service_life = parsed_data.get("reference_service_life")
             if reference_service_life is not None:
                 if isinstance(reference_service_life, (int, float)):
                     lifetime_values.append(float(reference_service_life))
-                    runner.registerInfo(f"EPD {idx}: Extracted lifetime = {reference_service_life} years")
+                    # Reduced verbosity
+                    pass
                 elif isinstance(reference_service_life, str):
                     # Extract numeric value from string (e.g., "25 years" -> 25)
                     numeric_value = extract_numeric_value(reference_service_life)
                     if numeric_value is not None and numeric_value > 0:
                         lifetime_values.append(float(numeric_value))
-                        runner.registerInfo(f"EPD {idx}: Extracted lifetime = {numeric_value} years from '{reference_service_life}'")
+                        # Reduced verbosity
+                        pass
             else:
                 runner.registerInfo(f"EPD {idx}: No lifetime data found")
             
@@ -538,7 +547,8 @@ class IncreaseInsulationRValueForRoofs(openstudio.measure.ModelMeasure):
                 gwp_values[key] = self.remove_outliers_iqr(gwp_values[key])
                 filtered_count = len(gwp_values[key])
                 if original_count != filtered_count:
-                    runner.registerInfo(f"Removed {original_count - filtered_count} outliers from {key}: {original_count} -> {filtered_count} values")
+                    # Reduced verbosity
+                    pass
         
         # Remove outliers from lifetime values
         if len(lifetime_values) > 0:
@@ -546,7 +556,8 @@ class IncreaseInsulationRValueForRoofs(openstudio.measure.ModelMeasure):
             lifetime_values = self.remove_outliers_iqr(lifetime_values)
             filtered_lifetime_count = len(lifetime_values)
             if original_lifetime_count != filtered_lifetime_count:
-                runner.registerInfo(f"Removed {original_lifetime_count - filtered_lifetime_count} outliers from lifetime: {original_lifetime_count} -> {filtered_lifetime_count} values")
+                # Reduced verbosity
+                pass
         
         # Process lifetime from EPD (with fallback to user input)
         user_lifetime = insulation_material_lifetime
@@ -554,7 +565,8 @@ class IncreaseInsulationRValueForRoofs(openstudio.measure.ModelMeasure):
         if len(lifetime_values) == 0:
             # No EPD lifetime - use user input
             epd_lifetime = user_lifetime
-            runner.registerInfo(f"No lifetime data in EPD for {insulation_material_type}, using user input: {user_lifetime} years")
+            # Reduced verbosity
+            pass
         else:
             # Apply the same statistic method as GWP values
             if len(lifetime_values) == 1:
@@ -569,7 +581,8 @@ class IncreaseInsulationRValueForRoofs(openstudio.measure.ModelMeasure):
                 epd_lifetime = float(np.median(lifetime_values))
             else:
                 epd_lifetime = float(np.mean(lifetime_values))  # Default to mean
-            runner.registerInfo(f"Using EPD-derived lifetime: {epd_lifetime:.1f} years for {insulation_material_type} (was {user_lifetime} from user input, based on {len(lifetime_values)} EPD values)")
+            # Reduced verbosity
+            pass
         
         # Use the EPD-derived or user-specified lifetime for calculations
         selected_lifetime = epd_lifetime
@@ -583,7 +596,8 @@ class IncreaseInsulationRValueForRoofs(openstudio.measure.ModelMeasure):
                 density_values = self.remove_outliers_iqr(density_values)
                 filtered_count = len(density_values)
                 if original_count != filtered_count:
-                    runner.registerInfo(f"Removed {original_count - filtered_count} density outliers: {original_count} -> {filtered_count} values")
+                    # Reduced verbosity
+                    pass
             
             # Apply statistic based on user selection
             epd_density = 0.0
@@ -603,17 +617,20 @@ class IncreaseInsulationRValueForRoofs(openstudio.measure.ModelMeasure):
             # Use EPD density if user didn't provide a specific value (was using default 0.0)
             if not user_specified_density:
                 selected_rho = epd_density
-                runner.registerInfo(f"Using EPD-derived density: {selected_rho:.2f} kg/m³ (based on {len(density_values)} EPD values)")
+                # Reduced verbosity
+                pass
             else:
                 selected_rho = insulation_material_density
-                runner.registerInfo(f"Using user-specified density: {selected_rho:.2f} kg/m³ (EPD {gwp_statistic}: {epd_density:.2f} kg/m³)")
+                # Reduced verbosity
+                pass
         else:
             selected_rho = insulation_material_density
             runner.registerInfo(f"No density data found in EPDs. Using {'user-specified' if user_specified_density else 'default'} density: {selected_rho:.2f} kg/m³")
 
         # Analysis-period multiplier (using EPD-derived or user-specified lifetime)
         mult = lifetime_multiplier(selected_lifetime, analysis_period)
-        runner.registerInfo(f"Lifetime multiplier: {mult} (lifetime: {selected_lifetime} years, analysis period: {analysis_period} years)")
+        # Reduced verbosity
+        # runner.registerInfo(f"Lifetime multiplier: {mult} (lifetime: {selected_lifetime} years, analysis period: {analysis_period} years)")
 
         # Compute and tag embodied carbon for each modified construction
         gwp_summary_rows = []
@@ -628,7 +645,8 @@ class IncreaseInsulationRValueForRoofs(openstudio.measure.ModelMeasure):
             for functional_unit, gwp_list in gwp_values.items():
                 gwp = 0.0
                 if len(gwp_list) == 0:
-                    runner.registerInfo(f"No GWP values returned from {functional_unit}")
+                    # Reduced verbosity
+                    pass
                 elif len(gwp_list) == 1:
                     gwp = gwp_list[0]
                 elif gwp_statistic == "minimum":
@@ -708,9 +726,35 @@ class IncreaseInsulationRValueForRoofs(openstudio.measure.ModelMeasure):
                 f"{total_gwp:.2f} kg CO₂ eq over {area_m2:.2f} m²"
             )
 
-        # Pretty print or save
-        print("\n==== GWP Summary for Modified Constructions ====")
-        pp.pprint(gwp_summary_rows)
+        # Calculate building-level totals for summarization
+        total_embodied_carbon = sum(row["total_gwp_kg_co2_eq"] for row in gwp_summary_rows)
+        total_roof_area = sum(row["added_total_area_m2"] for row in gwp_summary_rows)
+        
+        # Store building-level summary in building's AdditionalProperties
+        building = model.getBuilding()
+        building_props = building.additionalProperties()
+        building_props.setFeature("measure_name", "Increase Insulation R-Value for Roofs")
+        building_props.setFeature("roof_insulation_total_additional_embodied_carbon_kg", total_embodied_carbon)
+        building_props.setFeature("roof_insulation_total_additional_material_cost_$", 0.0)  # Placeholder
+        building_props.setFeature("roof_insulation_total_additional_overhead_profit_cost_$", 0.0)  # Placeholder
+        building_props.setFeature("roof_insulation_total_additional_labour_cost_$", 0.0)  # Placeholder
+        building_props.setFeature("roof_insulation_r_value_ip", r_value_ip)
+        building_props.setFeature("roof_insulation_material_type", insulation_material_type)
+        building_props.setFeature("roof_insulation_renovated_area_m2", total_roof_area)
+
+        # Separate summary AdditionalProperties on Facility for standardized cross-measure extraction
+        facility_props = model.getFacility().additionalProperties()
+        facility_props.setFeature("name", "Increase_Insulation_R-Value_for_Roofs")
+        facility_props.setFeature("total_additional_embodied_carbon_kgCO2", total_embodied_carbon)
+        
+        runner.registerInfo(
+            f"Building-level summary: Total embodied carbon = {total_embodied_carbon:.2f} kg CO2 eq "
+            f"across {total_roof_area:.2f} m² of roofs"
+        )
+
+        # Pretty print or save (commented out for production)
+        # print("\n==== GWP Summary for Modified Constructions ====")
+        # pp.pprint(gwp_summary_rows)
 
         # ===================== Final reporting =====================
         if not final_constructions_array:
