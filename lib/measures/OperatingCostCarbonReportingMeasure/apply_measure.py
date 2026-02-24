@@ -12,17 +12,44 @@ import sys
 import json
 import shutil
 
-# Add OpenStudio Python bindings path for macOS installation
-# Update version number if you have a different version installed
 OPENSTUDIO_VERSION = "3.11.0"
-openstudio_path = f"/Applications/OpenStudio-{OPENSTUDIO_VERSION}/Python"
 
-if Path(openstudio_path).exists():
-    sys.path.insert(0, openstudio_path)
-    print(f"Using OpenStudio from: {openstudio_path}")
+
+def detect_openstudio_paths(version: str):
+    """Detect OpenStudio Python bindings and CLI executable path."""
+    candidate_python_paths = [
+        Path(f"C:/Program Files/openstudio-{version}/Python"),
+        Path(f"/Applications/OpenStudio-{version}/Python")
+    ]
+    candidate_cli_paths = [
+        Path(f"C:/Program Files/openstudio-{version}/bin/openstudio.exe"),
+        Path(f"/Applications/OpenStudio-{version}/bin/openstudio")
+    ]
+
+    py_path = next((p for p in candidate_python_paths if p.exists()), None)
+    cli_path = next((p for p in candidate_cli_paths if p.exists()), None)
+    return py_path, cli_path
+
+
+openstudio_path, openstudio_cli_path = detect_openstudio_paths(OPENSTUDIO_VERSION)
+
+if openstudio_path:
+    sys.path.insert(0, str(openstudio_path))
+    print(f"Using OpenStudio Python bindings from: {openstudio_path}")
 else:
-    print(f"Warning: OpenStudio path not found at {openstudio_path}")
-    print("Will attempt to use system OpenStudio installation")
+    print("Warning: OpenStudio Python bindings path not found in standard locations")
+    print("Will attempt to use system Python OpenStudio package")
+
+if openstudio_cli_path:
+    print(f"Using OpenStudio CLI from: {openstudio_cli_path}")
+else:
+    print("Warning: OpenStudio CLI not found in standard locations; will use PATH lookup")
+
+if openstudio_path and sys.version_info[:2] != (3, 12):
+    print(
+        f"Warning: Detected Python {sys.version_info.major}.{sys.version_info.minor}. "
+        "OpenStudio 3.11 Python bindings require Python 3.12."
+    )
 
 import openstudio
 from measure import OperatingCostCarbonReport
@@ -106,8 +133,9 @@ def run_simulation(model_path, epw_path, run_dir):
             json.dump(osw_dict, f, indent=2)
         
         # Run with openstudio CLI
+        openstudio_cmd = str(openstudio_cli_path) if openstudio_cli_path else "openstudio"
         result = subprocess.run(
-            ["openstudio", "run", "-w", str(osw_path)],
+            [openstudio_cmd, "run", "-w", str(osw_path)],
             cwd=str(run_dir),
             capture_output=True,
             text=True,
@@ -353,14 +381,14 @@ def main():
     
     if loaded_verify.is_initialized():
         verify_model = loaded_verify.get()
-        building = verify_model.getBuilding()
+        site = verify_model.getSite()
     else:
         # Fall back to the modified model in memory
-        building = modified_model.getBuilding()
+        site = modified_model.getSite()
     
-    additional_properties = building.additionalProperties()
+    additional_properties = site.additionalProperties()
     
-    print("\nAdditionalProperties on Building:")
+    print("\nAdditionalProperties on Site:")
     property_names = [
         ("measure_name", "String"),
         ("annual_electricity_cost_usd", "Double"),
@@ -390,7 +418,7 @@ def main():
         print("✓ SUCCESS: Measure applied successfully!")
         print(f"   - Simulation completed")
         print(f"   - Costs and emissions calculated")
-        print(f"   - AdditionalProperties attached to model")
+        print(f"   - AdditionalProperties attached to site")
         print(f"   - Modified model saved to: {output_model_path.name}")
     else:
         print("⚠ WARNING: Some AdditionalProperties were not attached")

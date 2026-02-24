@@ -93,21 +93,24 @@ class OperatingCostCarbonReport(openstudio.measure.ReportingMeasure):
         
         emissions_data = {}
         try:
-            with open(emissions_file, 'r') as f:
+            with open(emissions_file, 'r', encoding='utf-8-sig') as f:
                 reader = csv.DictReader(f)
                 for row in reader:
-                    if row.get('BACODE'):  # Skip header row if present
-                        ba_code = row.get('Balancing Authority Code', '').strip()
-                        emission_rate_str = row.get('BA annual CO2 equivalent total output emission rate (lb/MWh)', '0').strip()
-                        
-                        # Remove commas from numbers like "1,457.392"
-                        emission_rate_str = emission_rate_str.replace(',', '')
-                        
-                        try:
-                            emission_rate = float(emission_rate_str)
-                            emissions_data[ba_code] = emission_rate
-                        except ValueError:
-                            continue
+                    ba_code = row.get('Balancing Authority Code', '').strip()
+                    emission_rate_str = row.get('BA annual CO2 equivalent total output emission rate (lb/MWh)', '0').strip()
+
+                    # Skip shorthand header row and empty rows
+                    if not ba_code or ba_code.upper() == 'BACODE':
+                        continue
+
+                    # Remove commas from numbers like "1,457.392"
+                    emission_rate_str = emission_rate_str.replace(',', '')
+
+                    try:
+                        emission_rate = float(emission_rate_str)
+                        emissions_data[ba_code] = emission_rate
+                    except ValueError:
+                        continue
             
             runner.registerInfo(f"Loaded {len(emissions_data)} emission factors from {emissions_file}")
             return emissions_data

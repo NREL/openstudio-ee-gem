@@ -1,13 +1,14 @@
 ﻿Data Year,Balancing Authority Name,Balancing Authority Code,BA annual CO2 equivalent total output emission rate (lb/MWh)
 YEAR,BANAME,BACODE,BAC2ERTA
-2023,"Alcoa Power Generating, Inc. - Yadkin Division",YAD,0.000
-2023,Arizona Public Service Company,AZPS,"1,457.392"
+2023,National Average,National Average,770.884
+2023,"Alcoa Power Generating, Inc. - Yadkin Division",YAD,0
+2023,Arizona Public Service Company,AZPS,"1,457.39"
 2023,"Arlington Valley, LLC - AVBA",DEAA,873.897
-2023,"Associated Electric Cooperative, Inc.",AECI,"1,292.208"
+2023,"Associated Electric Cooperative, Inc.",AECI,"1,292.21"
 2023,Avangrid Renewables LLC,AVRN,369.716
 2023,Avista Corporation,AVA,363.542
 2023,Balancing Authority of Northern California,BANC,384.072
-2023,Bonneville Power Administration,BPAT,213.650
+2023,Bonneville Power Administration,BPAT,213.65
 2023,California Independent System Operator,CISO,370.651
 2023,Chugach Electric Assn Inc,CEA,829.964
 2023,City of Homestead,HST,-26.607
@@ -16,57 +17,57 @@ YEAR,BANAME,BACODE,BAC2ERTA
 2023,Duke Energy Carolinas,DUK,486.302
 2023,Duke Energy Florida Inc,FPC,972.803
 2023,Duke Energy Progress East,CPLE,483.557
-2023,Duke Energy Progress West,CPLW,0.000
-2023,El Paso Electric Company,EPE,"1,011.755"
+2023,Duke Energy Progress West,CPLW,0
+2023,El Paso Electric Company,EPE,"1,011.76"
 2023,"Electric Reliability Council of Texas, Inc.",ERCO,736.779
-2023,Florida Municipal Power Pool,FMPP,"1,156.316"
+2023,Florida Municipal Power Pool,FMPP,"1,156.32"
 2023,Florida Power & Light Company,FPL,598.609
-2023,Gainesville Regional Utilities,GVL,"1,585.184"
+2023,Gainesville Regional Utilities,GVL,"1,585.18"
 2023,"Gridforce Energy Management, LLC",GRID,879.808
-2023,Gridforce South,GRIS,0.000
+2023,Gridforce South,GRIS,0
 2023,"Griffith Energy, LLC",GRIF,861.901
-2023,Hawaiian Electric Co Inc,HECO,"1,486.040"
+2023,Hawaiian Electric Co Inc,HECO,"1,486.04"
 2023,ISO New England Inc.,ISNE,545.267
 2023,Idaho Power Company,IPCO,225.324
 2023,Imperial Irrigation District,IID,251.225
-2023,JEA,JEA,"1,171.826"
-2023,LG&E and KU Services Company as agent for Louisville Gas and Electric Company and Kentucky Utilities,LGEE,"1,908.055"
-2023,Los Angeles Department of Water and Power,LDWP,"1,017.531"
+2023,JEA,JEA,"1,171.83"
+2023,LG&E and KU Services Company as agent for Louisville Gas and Electric Company and Kentucky Utilities,LGEE,"1,908.06"
+2023,Los Angeles Department of Water and Power,LDWP,"1,017.53"
 2023,"Midcontinent Independent Transmission System Operator, Inc..",MISO,987.438
-2023,"NaturEner Power Watch, LLC (GWA)",GWA,0.000
-2023,"NaturEner Wind Watch, LLC",WWA,0.000
+2023,"NaturEner Power Watch, LLC (GWA)",GWA,0
+2023,"NaturEner Wind Watch, LLC",WWA,0
 2023,Nevada Power Company,NEVP,706.558
 2023,New Brunswick System Operator,NBSO,173.292
 2023,"New Harquahala Generating Company, LLC - HGBA",HGMA,833.526
-2023,New York Independent System Operator,NYIS,480.660
-2023,No balancing authority,NA,"1,847.164"
+2023,New York Independent System Operator,NYIS,480.66
+2023,No balancing authority,NA,"1,847.16"
 2023,No balancing authority - AK,NA - AK,806.924
-2023,No balancing authority - HI,NA - HI,"1,170.736"
-2023,No balancing authority - PR,NA - PR,"1,548.530"
-2023,NorthWestern Energy (NWMT),NWMT,"1,594.721"
+2023,No balancing authority - HI,NA - HI,"1,170.74"
+2023,No balancing authority - PR,NA - PR,"1,548.53"
+2023,NorthWestern Energy (NWMT),NWMT,"1,594.72"
 2023,"PJM Interconnection, LLC",PJM,719.405
-2023,PUD No. 1 of Douglas County,DOPD,0.000
-2023,PacifiCorp - East,PACE,"1,418.897"
+2023,PUD No. 1 of Douglas County,DOPD,0
+2023,PacifiCorp - East,PACE,"1,418.90"
 2023,PacifiCorp - West,PACW,309.116
-2023,Portland General Electric Company,PGE,796.140
+2023,Portland General Electric Company,PGE,796.14
 2023,Public Service Company of Colorado,PSCO,806.261
 2023,Public Service Company of New Mexico,PNM,394.657
-2023,Public Utility District No. 1 of Chelan County,CHPD,0.000
-2023,"Public Utility District No. 2 of Grant County, Washington",GCPD,0.000
+2023,Public Utility District No. 1 of Chelan County,CHPD,0
+2023,"Public Utility District No. 2 of Grant County, Washington",GCPD,0
 2023,Puget Sound Energy,PSEI,642.683
 2023,Salt River Project,SRP,552.707
 2023,Seattle City Light,SCL,0.875
-2023,Seminole Electric Cooperative,SEC,"1,213.680"
+2023,Seminole Electric Cooperative,SEC,"1,213.68"
 2023,South Carolina Electric & Gas Company,SCEG,748.563
-2023,South Carolina Public Service Authority,SC,"1,690.202"
-2023,Southeastern Power Administration,SEPA,0.080
+2023,South Carolina Public Service Authority,SC,"1,690.20"
+2023,Southeastern Power Administration,SEPA,0.08
 2023,"Southern Company Services, Inc. - Trans",SOCO,846.471
 2023,Southwest Power Pool,SWPP,876.354
 2023,Southwestern Power Administration,SPA,521.771
 2023,Tampa Electric Company,TEC,857.455
 2023,Tennessee Valley Authority,TVA,643.921
-2023,Tucson Electric Power Company,TEPC,"1,633.065"
+2023,Tucson Electric Power Company,TEPC,"1,633.07"
 2023,Turlock Irrigation District,TIDC,772.958
 2023,Western Area Power Administration - Desert Southwest Region,WALC,481.873
-2023,Western Area Power Administration - Rocky Mountain Region,WACM,"1,882.276"
-2023,Western Area Power Administration UGP West,WAUW,0.000
+2023,Western Area Power Administration - Rocky Mountain Region,WACM,"1,882.28"
+2023,Western Area Power Administration UGP West,WAUW,0
