@@ -21,7 +21,7 @@ import configparser
 import re
 import json
 from dotenv import load_dotenv
-from call_RSmeans import RSMeansAPIClient
+from call_rsmeans_api import RSMeansAPIClient
 
 CURRENT_DIR_PATH = Path(__file__).absolute()
 optimization_excel_path = CURRENT_DIR_PATH.parent / 'Inputs' / 'optimization.xlsx'
