@@ -32,8 +32,8 @@ def calculate_geometry(self, sub_surface):
     area = length * width
 
     return {
-        "length": length,
-        "width": width,
-        "perimeter": perimeter,
-        "area": area
+        "length_m": length,
+        "width_m": width,
+        "perimeter_m": perimeter,
+        "area_m2": area
     }

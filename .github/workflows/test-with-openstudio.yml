@@ -70,6 +70,17 @@ jobs:
               /tmp/aws/install
               rm -rf /tmp/aws /tmp/awscliv2.zip
               
+              # Install Python dependencies for Python measures
+              echo "Installing Python dependencies..."
+              DEBIAN_FRONTEND=noninteractive apt-get install -y -qq python3-pip python3-venv
+              python3 -m venv /opt/venv
+              source /opt/venv/bin/activate
+              pip install --upgrade pip
+              pip install openpyxl requests python-dotenv plotly pandas pytest
+              
+              # Set EC3_API_TOKEN to allow test collection without config.ini
+              export EC3_API_TOKEN="dummy-token-for-ci-testing"
+              
               # Install gem dependencies
               echo "Installing gem dependencies..."
               

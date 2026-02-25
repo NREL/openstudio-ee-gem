@@ -1,0 +1,7 @@
+{
+   "created_at" : "20251108T044120Z",
+   "seed_file" : "../example_model.osm",
+   "steps" : [],
+   "updated_at" : "20251113T172029Z",
+   "weather_file" : "srrl_2013_amy.epw"
+}

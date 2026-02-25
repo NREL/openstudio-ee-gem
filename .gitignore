@@ -18,6 +18,7 @@
 
 .rubocop*s3*
 
+
 # rspec failure tracking
 .rspec_status
 
@@ -39,11 +40,27 @@ lib/measures/window_enhancement/tests/__pycache__
 lib/measures/window_enhancement/resources/__pycache__
 lib/measures/window_enhancement/tests/.pytest_cache
 lib/measures/window_enhancement/tests/example_model/run
+lib/measures/ReportRetrofitImpacts/tests/.pytest_cache
+lib/measures/ReportRetrofitImpacts/tests
+lib/measures/ReportRetrofitImpacts/__pycache__/
 **/__pycache__/
+*.pyc
+*.log
 config.ini
 
+# Ignore OSW workflow files with API keys
+lib/measures/workflow_with_reporting.osw
+
+
 # Environment variables (contains secrets)
+venv/
+.venv/
+env/
+.env/
 .env
+*.env
+config.env
+lib/measures/ReportRetrofitImpacts/venv
 
 # Act secrets file
 .secrets
