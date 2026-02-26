@@ -1,1 +1,0 @@
-[16:06:45.007577 WARN] [openstudio.energyplus.ForwardTranslator] SubSurface 'Perimeter_ZN_1_wall_south_door' uses non-fenestration construction, changing SubSurfaceType to Door
