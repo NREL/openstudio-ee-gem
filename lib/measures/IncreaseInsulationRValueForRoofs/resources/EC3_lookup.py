@@ -26,7 +26,7 @@ else:
 config = configparser.ConfigParser()
 config.read(config_path)
 API_TOKEN= config["EC3_API_TOKEN"]["API_TOKEN"]
-print(f"[EC3_lookup] Loaded API token from {config_path}: {API_TOKEN[:10]}..." if API_TOKEN else "[EC3_lookup] WARNING: API_TOKEN is None!")
+print(f"[EC3_lookup] API token loaded from {config_path}" if API_TOKEN else "[EC3_lookup] WARNING: API token is not set.")
 
 # the dictionary below stores the material_name for generate_url function
 # material_category = {"concrete":{"ReadyMix","PrecastConcrete","CementGrout","FlowableFill"},
@@ -136,23 +136,18 @@ def fetch_epd_data(url,api_token):
         return None
     try: 
         # print(f"Fetching data from URL: {url}")  # Log the URL being fetched
-        # print(f"[DEBUG] api_token length: {len(api_token) if api_token else 0}, value: {api_token}")
         # API configuration - Try both authentication methods
         HEADERS = {
             "Accept": "application/json",
             "Authorization": f"Bearer {api_token}",
             "X-API-Key": api_token  # Some APIs use this instead
         }
-        # print(f"[DEBUG] Headers: Authorization=Bearer {api_token[:10]}..., X-API-Key={api_token[:10]}...")
         response = requests.get(url, headers=HEADERS, verify=False)
         response.raise_for_status() # HTTPError if failure 
         return response.json()
     except requests.exceptions.RequestException as e:
-        # print(f"Error fetching data from {url}: {e}")
-        if 'response' in locals():  # Check if response was defined
-            print(f"Response content: {response.text}")
-        else:
-            print("No response content available.")
+        print(f"Error fetching data from {url}: {e}")
+        print("Request failed; response content is suppressed for security.")
         return []
     
 # process the json response obtained from fetch_epd_data function for product epds

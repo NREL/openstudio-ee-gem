@@ -23,6 +23,8 @@ elif os.path.exists(repo_config_path):
 else:
     raise FileNotFoundError(f"Config file not found in {parametric_config_path} or {repo_config_path}")
 
+API_TOKEN = os.getenv("EC3_API_TOKEN")
+
 if not API_TOKEN:
     if os.path.exists(config_path):
         config = configparser.ConfigParser()
@@ -165,10 +167,7 @@ def fetch_epd_data(url,api_token):
             return []
     except requests.exceptions.RequestException as e:
         print(f"Error fetching data from {url}: {e}")
-        if 'response' in locals():  # Check if response was defined
-            print(f"Response content: {response.text}")
-        else:
-            print("No response content available.")
+        print("Request failed; response content is suppressed for security.")
         return []
     
 # process the json response obtained from fetch_epd_data function for product epds
