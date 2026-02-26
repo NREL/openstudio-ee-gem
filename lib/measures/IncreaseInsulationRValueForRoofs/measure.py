@@ -7,7 +7,7 @@ import openstudio
 import numpy as np
 import pandas as pd
 import pprint as pp
-from resources.EC3_lookup import *
+from EC3_lookup import *
 
 class IncreaseInsulationRValueForRoofs(openstudio.measure.ModelMeasure):
     # ---- Metadata ----

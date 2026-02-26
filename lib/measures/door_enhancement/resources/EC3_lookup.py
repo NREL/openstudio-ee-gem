@@ -23,9 +23,16 @@ elif os.path.exists(repo_config_path):
 else:
     raise FileNotFoundError(f"Config file not found in {parametric_config_path} or {repo_config_path}")
 
-config = configparser.ConfigParser()
-config.read(config_path)
-API_TOKEN= config["EC3_API_TOKEN"]["API_TOKEN"]
+if not API_TOKEN:
+    if os.path.exists(config_path):
+        config = configparser.ConfigParser()
+        config.read(config_path)
+        # Be defensive if section/key missing
+        API_TOKEN = config.get("EC3_API_TOKEN", "API_TOKEN", fallback=None)
+
+if not API_TOKEN:
+    # Don't crash at import time; let callers/tests decide behavior
+    API_TOKEN = ""
 
 # the dictionary below stores the material_name for generate_url function
 # material_category = {"concrete":{"ReadyMix","PrecastConcrete","CementGrout","FlowableFill"},
@@ -133,6 +140,11 @@ def fetch_epd_data(url,api_token):
     if url is None:
         print("Renovation option is None, fetch_epd_data: URL is None, skipping request.")
         return None
+    
+    if not api_token:
+        print("EC3_API_TOKEN not set; skipping EC3 API request.")
+        return []
+    
     try: 
         print(f"Fetching data from URL: {url}")  # Log the URL being fetched
         # API configuration

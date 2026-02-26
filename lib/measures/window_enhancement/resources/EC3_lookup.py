@@ -135,6 +135,11 @@ def fetch_epd_data(url,api_token):
     if url is None:
         print("Renovation option is None, fetch_epd_data: URL is None, skipping request.")
         return None
+    
+    if not api_token:
+        print("EC3_API_TOKEN not set; skipping EC3 API request.")
+        return []
+    
     try: 
         # print(f"Fetching data from URL: {url}")  # Log the URL being fetched
         # print(f"[DEBUG] api_token length: {len(api_token) if api_token else 0}, value: {api_token}")

@@ -1,4 +1,8 @@
 {
     "python.REPL.enableREPLSmartSend": false,
     "python-envs.defaultEnvManager": "ms-python.python:system"
+}{
+    "files.exclude": {
+        "**/.git": false
+    }
 }

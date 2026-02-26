@@ -15,7 +15,7 @@ if not MEASURE_PATH.exists():
     raise ImportError(f"Could not find measure.py at {MEASURE_PATH}")
 
 sys.path.insert(0, str(CURRENT_DIR_PATH.parent))
-from measure import WindowEnhancement
+from measure import DoorEnhancement
 sys.path.pop(0)
 del sys.modules['measure']
 
@@ -29,7 +29,7 @@ def model():
 
 @pytest.fixture
 def measure():
-    return WindowEnhancement()
+    return DoorEnhancement()
 
 @pytest.fixture
 def argument_map(model, measure):
@@ -66,14 +66,14 @@ def argument_map(model, measure):
 
     return argument_map
 
-class TestWindowEnhancement:
-    """Py.test module for WindowEnhancement."""
+class TestDoorEnhancement:
+    """Py.test module for DoorEnhancement."""
 
     def test_number_of_arguments_and_argument_names(self, measure, model):
         """Test that the arguments are what we expect."""
         print("Running test_number_of_arguments_and_argument_names()...")
 
-        measure = WindowEnhancement()
+        measure = DoorEnhancement()
         model = openstudio.model.Model()
         arguments = measure.arguments(model)
 
