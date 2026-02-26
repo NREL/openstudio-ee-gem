@@ -62,7 +62,7 @@ class DoorEnhancement(openstudio.measure.ModelMeasure):
     
     @staticmethod
     def door_options():
-        return ['none','wooden door','garage door','glass door','polystyrene core steel door', 'polyurethane core steel door','honeycomb core steel door','stiffened core steel door','defined by model']
+        return ['none','wooden door','garage door','glass door','polystyrene core steel door', 'polyurethane core steel door','honeycomb core steel door','stiffened core steel door']
 
     @staticmethod
     def door_service_life(door_option):
@@ -106,8 +106,7 @@ class DoorEnhancement(openstudio.measure.ModelMeasure):
             'polystyrene core steel door': {'conductivity': 0.104, 'density': 472.3, 'thickness': 0.04445, 'service_life': 30}, # RSL,Density,thickness and thermal conductivity is from: EPD of DE LA FONTAINE's commercial steel door
             'polyurethane core steel door': {'conductivity': 0.096, 'density': 490, 'thickness': 0.04445, 'service_life': 30}, # RSL,Density, thickness and thermal conductivity is from: EPD of DE LA FONTAINE's commercial steel door
             'honeycomb core steel door': {'conductivity': 0.05, 'density': 481.6, 'thickness': 0.04445, 'service_life': 30}, # RSL,Density, thickness and thermal conductivity is from: EPD of DE LA FONTAINE's commercial steel door
-            'stiffened core steel door': {'conductivity': 0.139, 'density': 570.9, 'thickness': 0.04445, 'service_life': 30}, # RSL,Density, thickness and thermal conductivity is from: EPD of DE LA FONTAINE's commercial steel door
-            'defined by model': {'conductivity': 0.0, 'density': 0.0, 'thickness': 0.0, 'service_life': 30}
+            'stiffened core steel door': {'conductivity': 0.139, 'density': 570.9, 'thickness': 0.04445, 'service_life': 30} # RSL,Density, thickness and thermal conductivity is from: EPD of DE LA FONTAINE's commercial steel door
         }
 
     def generate_sealing_url(self,option):
@@ -126,14 +125,7 @@ class DoorEnhancement(openstudio.measure.ModelMeasure):
     
     def generate_door_url(self, option, subsurface_type):
         door_product_url = None
-        if option == 'defined by model':
-            if subsurface_type == "Door":
-                door_product_url = generate_url_byname(name_like = 'wood door leaf')
-            elif subsurface_type == "GlassDoor":
-                door_product_url = generate_url_byname(name_like = 'window door system', plant_geography = '150')
-            elif subsurface_type == "OverheadDoor":
-                door_product_url = generate_url_byname(name_like = 'garage door', plant_geography = '150')
-        elif option == 'wooden door':
+        if option == 'wooden door':
             door_product_url = generate_url_byname(name_like = 'wood door leaf')
         elif option == 'glass door':
             door_product_url = generate_url_byname(name_like = 'window door system', plant_geography = '150')
@@ -238,7 +230,7 @@ class DoorEnhancement(openstudio.measure.ModelMeasure):
             door_options_chs.append(option)
         door_option = openstudio.measure.OSArgument.makeChoiceArgument("door_option", door_options_chs, True)
         door_option.setDisplayName("door option")   
-        door_option.setDescription("Select none if no door is to be installed, otherwise select the type of door to be installed. Select 'defined by model' to use the existing door construction types in the model.")
+        door_option.setDescription("Select none if no door is to be installed, otherwise select the type of door to be installed.")
         door_option.setDefaultValue("wooden door")
         args.append(door_option)
 
@@ -391,7 +383,7 @@ class DoorEnhancement(openstudio.measure.ModelMeasure):
             runner.registerError("Door thickness must be non-negative.")
         
         # Check for conflicting door options
-        if door_option != 'none' and door_option != 'defined by model':
+        if door_option != 'none':
             if door_thermal_conductivity > 0.0 and door_density > 0.0 and door_thickness > 0.0:
                 # All three custom properties provided - this is fine
                 runner.registerInfo(f"Using custom door material properties for {door_option}")
@@ -810,7 +802,7 @@ class DoorEnhancement(openstudio.measure.ModelMeasure):
             runner.registerInfo(f"{'─' * 80}")
 
             # Modify door construction based on material properties if door replacement is selected
-            if door_option != 'none' and door_option != 'defined by model':
+            if door_option != 'none':
                 # Get material properties for selected door type
                 mat_props = self.door_material_properties()[door_option].copy()
                 
@@ -877,14 +869,14 @@ class DoorEnhancement(openstudio.measure.ModelMeasure):
                 else:
                     runner.registerWarning(f"No construction found for {subsurface_name}, R-value not modified.")
 
-            # attach additional properties to openstudio material
-            additional_properties = subsurface_dict[subsurface_name]["subsurface object"].additionalProperties()
-            additional_properties.setFeature("Subsurface name", subsurface_name)
-            additional_properties.setFeature("embodied_carbon_kg_co2_eq", subsurface_dict[subsurface_name]["door_renovation_embodied_carbon_kg_co2_eq"])
-            if door_option != 'none' and door_option != 'defined by model':
-                additional_properties.setFeature("door_type", door_option)
-                additional_properties.setFeature("old_r_value_si_m2KperW", subsurface_dict[subsurface_name].get('old_r_value_si', 0.0))
-                additional_properties.setFeature("new_r_value_si_m2KperW", subsurface_dict[subsurface_name].get('new_r_value_si', 0.0))
+            # # attach additional properties to openstudio material
+            # additional_properties = subsurface_dict[subsurface_name]["subsurface object"].additionalProperties()
+            # additional_properties.setFeature("Subsurface name", subsurface_name)
+            # additional_properties.setFeature("embodied_carbon_kg_co2_eq", subsurface_dict[subsurface_name]["door_renovation_embodied_carbon_kg_co2_eq"])
+            # if door_option != 'none':
+            #     additional_properties.setFeature("door_type", door_option)
+            #     additional_properties.setFeature("old_r_value_si_m2KperW", subsurface_dict[subsurface_name].get('old_r_value_si', 0.0))
+            #     additional_properties.setFeature("new_r_value_si_m2KperW", subsurface_dict[subsurface_name].get('new_r_value_si', 0.0))
    
         pp.pprint(subsurface_dict)
 
@@ -924,29 +916,38 @@ class DoorEnhancement(openstudio.measure.ModelMeasure):
                                           subsurface_dict[name]['dimension']['width_m'])
                     total_sealing_side_length_m += sealing_side_length
         
-        # Store summary in building's additional properties
+        # Store summary in organized additional properties buckets (same pattern as window enhancement)
         building = model.getBuilding()
-        building_props = building.additionalProperties()
-        
-        # Standardized fields for all measures (placed at beginning for CSV extraction)
-        building_props.setFeature("measure_name", "Door Enhancement")
-        building_props.setFeature("door_enhancement_total_additional_embodied_carbon_kg", total_embodied_carbon)
-        building_props.setFeature("door_enhancement_total_additional_material_cost_$", 0.0)  # Placeholder
-        building_props.setFeature("door_enhancement_total_additional_overhead_profit_cost_$", 0.0)  # Placeholder
-        building_props.setFeature("door_enhancement_total_additional_labour_cost_$", 0.0)  # Placeholder
-        
+        basic_input = building.additionalProperties()
+        site = model.getSite()
+        reno_detail = site.additionalProperties()
+        facility = model.getFacility()
+        factors = facility.additionalProperties()
+        simcontrol = model.getSimulationControl()
+        results = simcontrol.additionalProperties()
+        sizingpara = model.getSizingParameters()
+        mtrl_prop = sizingpara.additionalProperties()
+
         # Store basic measure parameters
-        building_props.setFeature("door_enhancement_analysis_period_years", analysis_period)
-        building_props.setFeature("door_enhancement_strip_lifetime_years", strip_lifetime)
-        building_props.setFeature("door_enhancement_door_lifetime_years", door_lifetime)
-        building_props.setFeature("door_enhancement_door_area_per_unit_m2", door_area_per_unit)
-        building_props.setFeature("door_enhancement_gwp_statistic", gwp_statistic)
-        
+        basic_input.setFeature("measure_name", "Door Enhancement")
+        basic_input.setFeature("analysis_period_years", analysis_period)
+        reno_detail.setFeature("door_area_per_unit_m2", door_area_per_unit)
+        basic_input.setFeature("gwp_statistic", gwp_statistic)
+
+        # Store construction material lifetimes
+        mtrl_prop.setFeature("door_strip_lifetime_years", strip_lifetime)
+        mtrl_prop.setFeature("door_lifetime_years", door_lifetime)
+
+        # Store infiltration reduction and selected renovation options
+        reno_detail.setFeature("door_enhancement_infiltration_reduction_percent", space_infiltration_reduction_percent)
+        reno_detail.setFeature("door_bottom_seal_option", door_bottom_seal_option)
+        reno_detail.setFeature("door_top_side_seal_option", door_top_side_seal_option)
+        reno_detail.setFeature("door_option", door_option)
+
         # Store door option and properties
-        building_props.setFeature("door_enhancement_door_option", door_option)
         if door_option != 'none':
             door_r_value = self.door_r_values().get(door_option, 0.0)
-            building_props.setFeature("door_enhancement_door_r_value_m2KperW", door_r_value)
+            mtrl_prop.setFeature("door_r_value_m2KperW", door_r_value)
             
             # Get material properties for the selected door
             mat_props = self.door_material_properties().get(door_option, {})
@@ -955,30 +956,32 @@ class DoorEnhancement(openstudio.measure.ModelMeasure):
                 actual_thickness = door_thickness if door_thickness > 0.0 else mat_props.get('thickness', 0.0)
                 actual_conductivity = door_thermal_conductivity if door_thermal_conductivity > 0.0 else mat_props.get('conductivity', 0.0)
                 
-                building_props.setFeature("door_enhancement_door_density_kg_per_m3", actual_density)
-                building_props.setFeature("door_enhancement_door_thickness_m", actual_thickness)
-                building_props.setFeature("door_enhancement_door_conductivity_W_per_mK", actual_conductivity)
-        
-        # Store sealing options
-        building_props.setFeature("door_enhancement_bottom_seal_option", door_bottom_seal_option)
-        building_props.setFeature("door_enhancement_top_side_seal_option", door_top_side_seal_option)
+                mtrl_prop.setFeature("door_density_kg_per_m3", actual_density)
+                mtrl_prop.setFeature("door_thickness_m", actual_thickness)
+                mtrl_prop.setFeature("door_conductivity_W_per_mK", actual_conductivity)
         
         # Store length per unit for sealing strips
         if door_bottom_seal_option != 'none':
             bottom_length = length_per_unit_dict.get(door_bottom_seal_option, 0.0)
-            building_props.setFeature("door_enhancement_bottom_seal_length_per_unit_m", bottom_length)
+            mtrl_prop.setFeature("door_bottom_seal_length_per_unit_m", bottom_length)
         
         if door_top_side_seal_option != 'none':
             top_side_length = length_per_unit_dict.get(door_top_side_seal_option, 0.0)
-            building_props.setFeature("door_enhancement_top_side_seal_length_per_unit_m", top_side_length)
+            mtrl_prop.setFeature("door_top_side_seal_length_per_unit_m", top_side_length)
         
-        # Store aggregate results
-        building_props.setFeature("door_enhancement_total_embodied_carbon_kgCO2eq", total_embodied_carbon)
-        building_props.setFeature("door_enhancement_total_door_area_m2", total_door_area_m2)
-        building_props.setFeature("door_enhancement_total_sealing_bottom_length_m", total_sealing_bottom_length_m)
-        building_props.setFeature("door_enhancement_total_sealing_side_length_m", total_sealing_side_length_m)
-        building_props.setFeature("door_enhancement_doors_processed_count", len(sub_surfaces_to_change))
-        building_props.setFeature("door_enhancement_doors_with_r_value_change_count", doors_with_r_value_change)
+        # Store standardized result fields and compatibility output fields
+        results.setFeature("door_enhancement_total_additional_embodied_carbon_kg", total_embodied_carbon)
+        results.setFeature("door_enhancement_total_additional_material_cost_$", 0.0)  # Placeholder
+        results.setFeature("door_enhancement_total_additional_overhead_profit_cost_$", 0.0)  # Placeholder
+        results.setFeature("door_enhancement_total_additional_labour_cost_$", 0.0)  # Placeholder
+        results.setFeature("door_enhancement_total_embodied_carbon_kgCO2eq", total_embodied_carbon)
+
+        # Store aggregate renovation quantities
+        reno_detail.setFeature("total_renovated_door_area_m2", total_door_area_m2)
+        reno_detail.setFeature("total_renovated_sealing_bottom_length_m", total_sealing_bottom_length_m)
+        reno_detail.setFeature("total_renovated_sealing_side_length_m", total_sealing_side_length_m)
+        # reno_detail.setFeature("total_doors_processed_count", len(sub_surfaces_to_change))
+        # reno_detail.setFeature("total_doors_with_r_value_change_count", doors_with_r_value_change)
         
         # Store GWP values per functional unit (aggregate from all processed doors)
         # Calculate average GWP values across all doors
@@ -1012,15 +1015,15 @@ class DoorEnhancement(openstudio.measure.ModelMeasure):
                 if gwp_m is not None and gwp_m > 0:
                     gwp_per_m_side_list.append(gwp_m)
         
-        # Store average GWP values
+        # Store average GWP values as factors
         if gwp_per_m2_list:
-            building_props.setFeature("door_enhancement_door_gwp_per_m2_kgCO2eq", float(np.mean(gwp_per_m2_list)))
+            factors.setFeature("door_gwp_per_m2_kgCO2eq", float(np.mean(gwp_per_m2_list)))
         if gwp_per_unit_list:
-            building_props.setFeature("door_enhancement_door_gwp_per_unit_kgCO2eq", float(np.mean(gwp_per_unit_list)))
+            factors.setFeature("door_gwp_per_unit_kgCO2eq", float(np.mean(gwp_per_unit_list)))
         if gwp_per_m_bottom_list:
-            building_props.setFeature("door_enhancement_bottom_seal_gwp_per_m_kgCO2eq", float(np.mean(gwp_per_m_bottom_list)))
+            factors.setFeature("door_bottom_seal_gwp_per_m_kgCO2eq", float(np.mean(gwp_per_m_bottom_list)))
         if gwp_per_m_side_list:
-            building_props.setFeature("door_enhancement_side_seal_gwp_per_m_kgCO2eq", float(np.mean(gwp_per_m_side_list)))
+            factors.setFeature("door_side_seal_gwp_per_m_kgCO2eq", float(np.mean(gwp_per_m_side_list)))
         
         # Store construction names and handles
         construction_names = []
@@ -1035,15 +1038,14 @@ class DoorEnhancement(openstudio.measure.ModelMeasure):
                     construction_handles.append(str(construction.handle()))
         
         if construction_names:
-            building_props.setFeature("door_enhancement_construction_names", ', '.join(construction_names))
-            building_props.setFeature("door_enhancement_construction_handles", ', '.join(construction_handles))
+            basic_input.setFeature("door_enhancement_construction_names", ', '.join(construction_names))
+            # basic_input.setFeature("door_enhancement_construction_handles", ', '.join(construction_handles))
 
-        # Separate summary AdditionalProperties on Facility for standardized cross-measure extraction
-        facility_props = model.getFacility().additionalProperties()
-        facility_props.setFeature("name", "Door_Enhancement")
-        facility_props.setFeature("total_additional_embodied_carbon_kgCO2", total_embodied_carbon)
+        # # Separate summary AdditionalProperties on Facility for standardized cross-measure extraction
+        # factors.setFeature("name", "Door_Enhancement")
+        # factors.setFeature("total_additional_embodied_carbon_kgCO2", total_embodied_carbon)
         
-        runner.registerInfo(f"\n✓ Door enhancement summary stored in building additional properties")
+        runner.registerInfo(f"\n✓ Door enhancement summary stored in organized additional properties")
         
         # Report final condition
         runner.registerInfo("\n" + "=" * 80)

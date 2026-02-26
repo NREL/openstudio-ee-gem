@@ -3,6 +3,8 @@
 # See also https://openstudio.net/license
 # *******************************************************************************
 
+import site
+
 import openstudio
 import typing
 import numpy as np
@@ -795,10 +797,10 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
             runner.registerInfo(f"  {subsurface_dict[subsurface_name]['window_renovation_embodied_carbon_kg_co2_eq']:.2f} kg CO2 eq")
             runner.registerInfo(f"{'─' * 80}")
 
-            # attach additional properties to openstudio material
-            additional_properties = subsurface_dict[subsurface_name]["subsurface_object"].additionalProperties()
-            additional_properties.setFeature("subsurface_name", subsurface_name)
-            additional_properties.setFeature("embodied_carbon_kg_co2_eq", subsurface_dict[subsurface_name]["window_renovation_embodied_carbon_kg_co2_eq"])
+            # # attach additional properties to openstudio material
+            # additional_properties = subsurface_dict[subsurface_name]["subsurface_object"].additionalProperties()
+            # additional_properties.setFeature("subsurface_name", subsurface_name)
+            # additional_properties.setFeature("embodied_carbon_kg_co2_eq", subsurface_dict[subsurface_name]["window_renovation_embodied_carbon_kg_co2_eq"])
 
         # Calculate total embodied carbon
         total_embodied_carbon = sum(
@@ -865,99 +867,113 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
                 # Weatherstrip applied to sliding edge (minimum of length and width)
                 total_weatherstrip_length_m += subsurface_dict[name]["weatherstrip"]["length_m"]
         
-        # Store summary in building's additional properties
+        # Store basic measure input in building's additional properties
         building = model.getBuilding()
-        building_props = building.additionalProperties()
+        basic_input = building.additionalProperties()
+        # Store renovation options in site's additional properties
+        site = model.getSite()
+        reno_detail = site.additionalProperties()
+        # Store emission factors and cost factors in facility's additional properties
+        facility = model.getFacility()
+        factors = facility.additionalProperties()
+        # Store carbon and cost results in simulation control's additional properties
+        simcontrol = model.getSimulationControl()
+        results = simcontrol.additionalProperties()
+        # Store construction material properties in SizingParameters's additional properties
+        sizingpara = model.getSizingParameters()
+        mtrl_prop = sizingpara.additionalProperties()
         
         # Store basic measure parameters
-        building_props.setFeature("window_enhancement_analysis_period_years", analysis_period)
-        building_props.setFeature("window_enhancement_glass_lifetime_years", glass_lifetime)
-        building_props.setFeature("window_enhancement_frame_lifetime_years", wf_lifetime)
-        building_props.setFeature("window_enhancement_caulking_lifetime_years", caulking_lifetime)
-        building_props.setFeature("window_enhancement_film_lifetime_years", film_lifetime)
-        building_props.setFeature("window_enhancement_weatherstrip_lifetime_years", weatherstrip_lifetime)
-        building_props.setFeature("window_enhancement_gwp_statistic", gwp_statistic)
+        basic_input.setFeature("analysis_period_years", analysis_period)
+        basic_input.setFeature("gwp_statistic", gwp_statistic)
+        basic_input.setFeature("measure_name", "Window Enhancement")
+
+        # Store construction material lifetimes
+        mtrl_prop.setFeature("window_glass_lifetime_years", glass_lifetime)
+        mtrl_prop.setFeature("window_frame_lifetime_years", wf_lifetime)
+        mtrl_prop.setFeature("window_caulking_lifetime_years", caulking_lifetime)
+        mtrl_prop.setFeature("window_film_lifetime_years", film_lifetime)
+        mtrl_prop.setFeature("window_weatherstrip_lifetime_years", weatherstrip_lifetime)
         
         # Store infiltration reduction
-        building_props.setFeature("window_enhancement_infiltration_reduction_percent", space_infiltration_reduction_percent)
+        reno_detail.setFeature("window_infiltration_reduction_percent", space_infiltration_reduction_percent)
         
         # Store renovation options selected
-        building_props.setFeature("window_enhancement_frame_option", wf_option)
-        building_props.setFeature("window_enhancement_caulking_option", caulking_option)
-        building_props.setFeature("window_enhancement_film_option", film_option)
-        building_props.setFeature("window_enhancement_weatherstrip_option", weatherstrip_option)
-        building_props.setFeature("window_enhancement_glass_option", glass_option)
-        building_props.setFeature("window_enhancement_secondary_glazing_option", secondary_glazing_option)
+        reno_detail.setFeature("window_frame_option", wf_option)
+        reno_detail.setFeature("window_caulking_option", caulking_option)
+        reno_detail.setFeature("window_film_option", film_option)
+        reno_detail.setFeature("window_weatherstrip_option", weatherstrip_option)
+        reno_detail.setFeature("window_glass_option", glass_option)
+        reno_detail.setFeature("window_secondary_glazing_option", secondary_glazing_option)
         
         # Store glass properties if glass replacement was selected
         if glass_option != "none" and user_num_panes > 0:
-            building_props.setFeature("window_enhancement_num_panes", user_num_panes)
-            building_props.setFeature("window_enhancement_glass_pane_thickness_m", glass_pane_thickness)
-            building_props.setFeature("window_enhancement_gap_thickness_m", gap_thickness)
+            mtrl_prop.setFeature("glass_replacement_num_panes", user_num_panes)
+            mtrl_prop.setFeature("glass_replacement_pane_thickness_m", glass_pane_thickness)
+            mtrl_prop.setFeature("glass_replacement_gap_thickness_m", gap_thickness)
             
-            # Store glass optical properties if non-default
-            if glass_solar_transmittance > 0.0:
-                building_props.setFeature("window_enhancement_glass_solar_transmittance", glass_solar_transmittance)
-            if glass_visible_transmittance > 0.0:
-                building_props.setFeature("window_enhancement_glass_visible_transmittance", glass_visible_transmittance)
-            if glass_front_emissivity > 0.0:
-                building_props.setFeature("window_enhancement_glass_front_emissivity", glass_front_emissivity)
-            if glass_back_emissivity > 0.0:
-                building_props.setFeature("window_enhancement_glass_back_emissivity", glass_back_emissivity)
-            if glass_front_solar_reflectance > 0.0:
-                building_props.setFeature("window_enhancement_glass_front_solar_reflectance", glass_front_solar_reflectance)
-            if glass_back_solar_reflectance > 0.0:
-                building_props.setFeature("window_enhancement_glass_back_solar_reflectance", glass_back_solar_reflectance)
-            if glass_front_visible_reflectance > 0.0:
-                building_props.setFeature("window_enhancement_glass_front_visible_reflectance", glass_front_visible_reflectance)
-            if glass_back_visible_reflectance > 0.0:
-                building_props.setFeature("window_enhancement_glass_back_visible_reflectance", glass_back_visible_reflectance)
+            # # Store glass optical properties if non-default
+            # if glass_solar_transmittance > 0.0:
+            #     building_props.setFeature("window_enhancement_glass_solar_transmittance", glass_solar_transmittance)
+            # if glass_visible_transmittance > 0.0:
+            #     building_props.setFeature("window_enhancement_glass_visible_transmittance", glass_visible_transmittance)
+            # if glass_front_emissivity > 0.0:
+            #     building_props.setFeature("window_enhancement_glass_front_emissivity", glass_front_emissivity)
+            # if glass_back_emissivity > 0.0:
+            #     building_props.setFeature("window_enhancement_glass_back_emissivity", glass_back_emissivity)
+            # if glass_front_solar_reflectance > 0.0:
+            #     building_props.setFeature("window_enhancement_glass_front_solar_reflectance", glass_front_solar_reflectance)
+            # if glass_back_solar_reflectance > 0.0:
+            #     building_props.setFeature("window_enhancement_glass_back_solar_reflectance", glass_back_solar_reflectance)
+            # if glass_front_visible_reflectance > 0.0:
+            #     building_props.setFeature("window_enhancement_glass_front_visible_reflectance", glass_front_visible_reflectance)
+            # if glass_back_visible_reflectance > 0.0:
+            #     building_props.setFeature("window_enhancement_glass_back_visible_reflectance", glass_back_visible_reflectance)
         
         # Store film properties if film was selected
-        if film_option != "none":
-            if film_visible_transmittance > 0.0:
-                building_props.setFeature("window_enhancement_film_visible_transmittance", film_visible_transmittance)
-            if film_solar_transmittance > 0.0:
-                building_props.setFeature("window_enhancement_film_solar_transmittance", film_solar_transmittance)
-            if film_thermal_emissivity > 0.0:
-                building_props.setFeature("window_enhancement_film_thermal_emissivity", film_thermal_emissivity)
-            if film_thermal_resistance > 0.0:
-                building_props.setFeature("window_enhancement_film_thermal_resistance_m2KperW", film_thermal_resistance)
+        # if film_option != "none":
+        #     if film_visible_transmittance > 0.0:
+        #         building_props.setFeature("window_enhancement_film_visible_transmittance", film_visible_transmittance)
+        #     if film_solar_transmittance > 0.0:
+        #         building_props.setFeature("window_enhancement_film_solar_transmittance", film_solar_transmittance)
+        #     if film_thermal_emissivity > 0.0:
+        #         building_props.setFeature("window_enhancement_film_thermal_emissivity", film_thermal_emissivity)
+        #     if film_thermal_resistance > 0.0:
+        #         building_props.setFeature("window_enhancement_film_thermal_resistance_m2KperW", film_thermal_resistance)
         
         # Store caulking properties if caulking was selected
         if caulking_option != "none":
-            building_props.setFeature("window_enhancement_caulking_thickness_m", caulking_thickness)
+            mtrl_prop.setFeature("window_caulking_thickness_m", caulking_thickness)
         
         # Store weatherstrip properties if weatherstrip was selected
         if weatherstrip_option != "none":
-            building_props.setFeature("window_enhancement_weatherstrip_length_per_unit_m", length_per_unit)
+            mtrl_prop.setFeature("window_weatherstrip_length_per_unit_m", length_per_unit)
         
-        # Store divider information
-        if num_horizontal_dividers >= 0:
-            building_props.setFeature("window_enhancement_num_horizontal_dividers", num_horizontal_dividers)
-        if num_vertical_dividers >= 0:
-            building_props.setFeature("window_enhancement_num_vertical_dividers", num_vertical_dividers)
+        # # Store divider information
+        # if num_horizontal_dividers >= 0:
+        #     building_props.setFeature("window_enhancement_num_horizontal_dividers", num_horizontal_dividers)
+        # if num_vertical_dividers >= 0:
+        #     building_props.setFeature("window_enhancement_num_vertical_dividers", num_vertical_dividers)
         
         # Store aggregate results (including standardized fields for all measures)
-        building_props.setFeature("measure_name", "Window Enhancement")
-        building_props.setFeature("window_enhancement_total_additional_embodied_carbon_kg", total_embodied_carbon)
-        building_props.setFeature("window_enhancement_total_additional_material_cost_$", 0.0)  # Placeholder
-        building_props.setFeature("window_enhancement_total_additional_overhead_profit_cost_$", 0.0)  # Placeholder
-        building_props.setFeature("window_enhancement_total_additional_labour_cost_$", 0.0)  # Placeholder
-        building_props.setFeature("window_enhancement_total_embodied_carbon_kgCO2eq", total_embodied_carbon)  # Keep for backwards compatibility
-        building_props.setFeature("window_enhancement_total_window_area_m2", total_window_area_m2)
-        building_props.setFeature("window_enhancement_total_glazing_area_m2", total_glazing_area_m2)
-        building_props.setFeature("window_enhancement_total_frame_area_m2", total_frame_area_m2)
-        building_props.setFeature("window_enhancement_total_perimeter_m", total_perimeter_m)
-        building_props.setFeature("window_enhancement_total_caulking_volume_m3", total_caulking_volume_m3)
-        building_props.setFeature("window_enhancement_total_weatherstrip_length_m", total_weatherstrip_length_m)
-        building_props.setFeature("window_enhancement_windows_processed_count", len(sub_surfaces_to_change))
-        building_props.setFeature("window_enhancement_windows_with_glass_upgrade_count", windows_with_glass_upgrade)
-        building_props.setFeature("window_enhancement_windows_with_frame_replacement_count", windows_with_frame_replacement)
-        building_props.setFeature("window_enhancement_windows_with_film_count", windows_with_film)
-        building_props.setFeature("window_enhancement_windows_with_caulking_count", windows_with_caulking)
-        building_props.setFeature("window_enhancement_windows_with_weatherstrip_count", windows_with_weatherstrip)
-        building_props.setFeature("window_enhancement_windows_with_secondary_glazing_count", windows_with_secondary_glazing)
+        results.setFeature("window_enhancement_total_additional_embodied_carbon_kg", total_embodied_carbon)
+        results.setFeature("window_enhancement_total_additional_material_cost_$", 0.0)  # Placeholder
+        results.setFeature("window_enhancement_total_additional_overhead_profit_cost_$", 0.0)  # Placeholder
+        results.setFeature("window_enhancement_total_additional_labour_cost_$", 0.0)  # Placeholder
+        results.setFeature("window_enhancement_total_embodied_carbon_kgCO2eq", total_embodied_carbon)  # Keep for backwards compatibility
+        reno_detail.setFeature("total_renovated_window_area_m2", total_window_area_m2)
+        reno_detail.setFeature("total_renovated_glazing_area_m2", total_glazing_area_m2)
+        reno_detail.setFeature("total_renovated_frame_area_m2", total_frame_area_m2)
+        reno_detail.setFeature("total_renovated_perimeter_m", total_perimeter_m)
+        reno_detail.setFeature("total_renovated_caulking_volume_m3", total_caulking_volume_m3)
+        reno_detail.setFeature("total_renovated_weatherstrip_length_m", total_weatherstrip_length_m)
+        # reno_detail.setFeature("total_renovated_windows_processed_count", len(sub_surfaces_to_change))
+        # reno_detail.setFeature("total_renovated_windows_with_glass_upgrade_count", windows_with_glass_upgrade)
+        # reno_detail.setFeature("total_renovated_windows_with_frame_replacement_count", windows_with_frame_replacement)
+        # reno_detail.setFeature("total_renovated_windows_with_film_count", windows_with_film)
+        # reno_detail.setFeature("total_renovated_windows_with_caulking_count", windows_with_caulking)
+        # reno_detail.setFeature("total_renovated_windows_with_weatherstrip_count", windows_with_weatherstrip)
+        # reno_detail.setFeature("total_renovated_windows_with_secondary_glazing_count", windows_with_secondary_glazing)
         
         # Calculate and store average GWP values per functional unit (aggregate from all processed windows)
         # Collect GWP values from all windows
@@ -1012,21 +1028,21 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
                 if gwp_m2 is not None and gwp_m2 > 0:
                     gwp_second_glazing_per_m2_list.append(gwp_m2)
         
-        # Store average GWP values
+        # Store GWP factors
         if gwp_glass_per_m2_list:
-            building_props.setFeature("window_enhancement_glass_gwp_per_m2_kgCO2eq", float(np.mean(gwp_glass_per_m2_list)))
+            factors.setFeature("window_glass_gwp_per_m2_kgCO2eq", float(np.mean(gwp_glass_per_m2_list)))
         if gwp_glass_per_m3_list:
-            building_props.setFeature("window_enhancement_glass_gwp_per_m3_kgCO2eq", float(np.mean(gwp_glass_per_m3_list)))
+            factors.setFeature("window_glass_gwp_per_m3_kgCO2eq", float(np.mean(gwp_glass_per_m3_list)))
         if gwp_frame_per_m2_list:
-            building_props.setFeature("window_enhancement_frame_gwp_per_m2_kgCO2eq", float(np.mean(gwp_frame_per_m2_list)))
+            factors.setFeature("window_frame_gwp_per_m2_kgCO2eq", float(np.mean(gwp_frame_per_m2_list)))
         if gwp_caulking_per_m3_list:
-            building_props.setFeature("window_enhancement_caulking_gwp_per_m3_kgCO2eq", float(np.mean(gwp_caulking_per_m3_list)))
+            factors.setFeature("window_caulking_gwp_per_m3_kgCO2eq", float(np.mean(gwp_caulking_per_m3_list)))
         if gwp_film_per_m2_list:
-            building_props.setFeature("window_enhancement_film_gwp_per_m2_kgCO2eq", float(np.mean(gwp_film_per_m2_list)))
+            factors.setFeature("window_film_gwp_per_m2_kgCO2eq", float(np.mean(gwp_film_per_m2_list)))
         if gwp_weatherstrip_per_m_list:
-            building_props.setFeature("window_enhancement_weatherstrip_gwp_per_m_kgCO2eq", float(np.mean(gwp_weatherstrip_per_m_list)))
+            factors.setFeature("window_weatherstrip_gwp_per_m_kgCO2eq", float(np.mean(gwp_weatherstrip_per_m_list)))
         if gwp_second_glazing_per_m2_list:
-            building_props.setFeature("window_enhancement_secondary_glazing_gwp_per_m2_kgCO2eq", float(np.mean(gwp_second_glazing_per_m2_list)))
+            factors.setFeature("window_secondary_glazing_gwp_per_m2_kgCO2eq", float(np.mean(gwp_second_glazing_per_m2_list)))
         
         # Store construction names and handles for windows with glass replacement
         construction_names = []
@@ -1039,13 +1055,13 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
                     construction_handles.append(str(construction.handle()))
         
         if construction_names:
-            building_props.setFeature("window_enhancement_construction_names", ', '.join(construction_names))
-            building_props.setFeature("window_enhancement_construction_handles", ', '.join(construction_handles))
+            basic_input.setFeature("window_enhancement_construction_names", ', '.join(construction_names))
+            # basic_input.setFeature("window_enhancement_construction_handles", ', '.join(construction_handles))
 
-        # Separate summary AdditionalProperties on Facility for standardized cross-measure extraction
-        facility_props = model.getFacility().additionalProperties()
-        facility_props.setFeature("name", "Window_Enhancement")
-        facility_props.setFeature("total_additional_embodied_carbon_kgCO2", total_embodied_carbon)
+        # # Separate summary AdditionalProperties on Facility for standardized cross-measure extraction
+        # facility_props = model.getFacility().additionalProperties()
+        # facility_props.setFeature("name", "Window_Enhancement")
+        # facility_props.setFeature("total_additional_embodied_carbon_kgCO2", total_embodied_carbon)
         
         runner.registerInfo(f"\n✓ Window enhancement summary stored in building additional properties")
         

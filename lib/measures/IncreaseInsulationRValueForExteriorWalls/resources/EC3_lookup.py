@@ -192,7 +192,11 @@ def parse_product_epd(epd: Dict[str, Any]) -> Dict[str, Any]:
     gwp_per_kg = extract_numeric_value(epd.get("gwp_per_kg"))
     epd_name = epd.get('name')
     description = epd.get('description')
-    original_ec3_link = epd['manufacturer']['original_ec3_link']
+    manufacturer = epd.get("manufacturer") if isinstance(epd, dict) else None
+    if isinstance(manufacturer, dict):
+        original_ec3_link = manufacturer.get("original_ec3_link") or epd.get("original_ec3_link")
+    else:
+        original_ec3_link = epd.get("original_ec3_link")
     reference_service_life = epd.get('reference_service_life')
     # For the two parameters below, need to confirm the accuracy of data before using; for insulation material, the mass per declared unit is always 2.04 kg,
     # not sure where this 2.04 kg is from, didn't see it in EPD, better not to use

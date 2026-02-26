@@ -700,26 +700,26 @@ class IncreaseInsulationRValueForRoofs(openstudio.measure.ModelMeasure):
             lc = c.to_LayeredConstruction()
             construction_layers_count = len(lc.get().layers()) if lc.is_initialized() else 0
             
-            # Store all properties matching exterior wall measure format
-            props.setFeature("construction_handle", construction_handle)
-            props.setFeature("total_volume_m3", added_volume_m3)
-            props.setFeature("total_embodied_carbon_kgCO2eq", total_gwp)
-            props.setFeature("target_insulation_r_value_ip", target_r_value_ip)
-            props.setFeature("renovated_roof_area_m2", area_m2)
-            props.setFeature("original_insulation_r_value_ip", original_r_value_ip)
-            props.setFeature("insulation_material_type", insulation_material_type)
-            props.setFeature("insulation_material_thermal_conductivity_W_per_mK", selected_k)
-            props.setFeature("insulation_material_lifetime_years", selected_lifetime)
-            props.setFeature("insulation_material_lifetime_source", lifetime_source)
-            props.setFeature("insulation_material_lifetime_user_input", user_lifetime)
-            props.setFeature("insulation_material_gwp_per_m3", sel_gwp_per_m3)
-            props.setFeature("insulation_material_gwp_per_m2", sel_gwp_per_m2)
-            props.setFeature("insulation_material_gwp_per_kg", sel_gwp_per_kg)
-            props.setFeature("insulation_material_density_kg_per_m3", selected_rho)
-            props.setFeature("construction_layers_count", construction_layers_count)
-            props.setFeature("analysis_period_years", analysis_period)
-            props.setFeature("added_insulation_layer_thickness_m", add_t_m)
-            props.setFeature("added_insulation_layer_area_m2", area_m2)
+            # # Store all properties matching exterior wall measure format
+            # props.setFeature("construction_handle", construction_handle)
+            # props.setFeature("total_volume_m3", added_volume_m3)
+            # props.setFeature("total_embodied_carbon_kgCO2eq", total_gwp)
+            # props.setFeature("target_insulation_r_value_ip", target_r_value_ip)
+            # props.setFeature("renovated_roof_area_m2", area_m2)
+            # props.setFeature("original_insulation_r_value_ip", original_r_value_ip)
+            # props.setFeature("insulation_material_type", insulation_material_type)
+            # props.setFeature("insulation_material_thermal_conductivity_W_per_mK", selected_k)
+            # props.setFeature("insulation_material_lifetime_years", selected_lifetime)
+            # props.setFeature("insulation_material_lifetime_source", lifetime_source)
+            # props.setFeature("insulation_material_lifetime_user_input", user_lifetime)
+            # props.setFeature("insulation_material_gwp_per_m3", sel_gwp_per_m3)
+            # props.setFeature("insulation_material_gwp_per_m2", sel_gwp_per_m2)
+            # props.setFeature("insulation_material_gwp_per_kg", sel_gwp_per_kg)
+            # props.setFeature("insulation_material_density_kg_per_m3", selected_rho)
+            # props.setFeature("construction_layers_count", construction_layers_count)
+            # props.setFeature("analysis_period_years", analysis_period)
+            # props.setFeature("added_insulation_layer_thickness_m", add_t_m)
+            # props.setFeature("added_insulation_layer_area_m2", area_m2)
 
             runner.registerInfo(
                 f"Tagged '{c.nameString()}' with embodied carbon: "
@@ -730,22 +730,58 @@ class IncreaseInsulationRValueForRoofs(openstudio.measure.ModelMeasure):
         total_embodied_carbon = sum(row["total_gwp_kg_co2_eq"] for row in gwp_summary_rows)
         total_roof_area = sum(row["added_total_area_m2"] for row in gwp_summary_rows)
         
-        # Store building-level summary in building's AdditionalProperties
+        # Store building-level summary in organized AdditionalProperties buckets
         building = model.getBuilding()
-        building_props = building.additionalProperties()
-        building_props.setFeature("measure_name", "Increase Insulation R-Value for Roofs")
-        building_props.setFeature("roof_insulation_total_additional_embodied_carbon_kg", total_embodied_carbon)
-        building_props.setFeature("roof_insulation_total_additional_material_cost_$", 0.0)  # Placeholder
-        building_props.setFeature("roof_insulation_total_additional_overhead_profit_cost_$", 0.0)  # Placeholder
-        building_props.setFeature("roof_insulation_total_additional_labour_cost_$", 0.0)  # Placeholder
-        building_props.setFeature("roof_insulation_r_value_ip", r_value_ip)
-        building_props.setFeature("roof_insulation_material_type", insulation_material_type)
-        building_props.setFeature("roof_insulation_renovated_area_m2", total_roof_area)
+        basic_input = building.additionalProperties()
+        site = model.getSite()
+        reno_detail = site.additionalProperties()
+        facility = model.getFacility()
+        factors = facility.additionalProperties()
+        simcontrol = model.getSimulationControl()
+        results = simcontrol.additionalProperties()
+        sizingpara = model.getSizingParameters()
+        mtrl_prop = sizingpara.additionalProperties()
 
-        # Separate summary AdditionalProperties on Facility for standardized cross-measure extraction
-        facility_props = model.getFacility().additionalProperties()
-        facility_props.setFeature("name", "Increase_Insulation_R-Value_for_Roofs")
-        facility_props.setFeature("total_additional_embodied_carbon_kgCO2", total_embodied_carbon)
+        # Basic measure inputs
+        basic_input.setFeature("measure_name", "Increase Insulation R-Value for Roofs")
+        reno_detail.setFeature("roof_target_insulation_r_value_ip", r_value_ip)
+        reno_detail.setFeature("roof_insulation_material_type", insulation_material_type)
+        basic_input.setFeature("analysis_period_years", analysis_period)
+        basic_input.setFeature("gwp_statistic", gwp_statistic)
+
+        # Material properties and lifetime
+        mtrl_prop.setFeature("roof_insulation_material_lifetime_years", selected_lifetime)
+        # mtrl_prop.setFeature("roof_insulation_material_lifetime_source", lifetime_source)
+        mtrl_prop.setFeature("roof_insulation_material_density_kg_per_m3", selected_rho)
+        mtrl_prop.setFeature("roof_insulation_material_thermal_conductivity_W_per_mK", selected_k)
+
+        # Renovation details / quantities
+        reno_detail.setFeature("roof_insulation_renovated_area_m2", total_roof_area)
+        # reno_detail.setFeature("roof_insulation_modified_constructions_count", len(modified_constructions))
+
+        # Results (standardized fields)
+        results.setFeature("roof_insulation_total_additional_embodied_carbon_kg", total_embodied_carbon)
+        results.setFeature("roof_insulation_total_additional_material_cost_$", 0.0)  # Placeholder
+        results.setFeature("roof_insulation_total_additional_overhead_profit_cost_$", 0.0)  # Placeholder
+        results.setFeature("roof_insulation_total_additional_labour_cost_$", 0.0)  # Placeholder
+        results.setFeature("roof_insulation_total_embodied_carbon_kgCO2eq", total_embodied_carbon)
+
+        # Emission factors aggregated from selected statistic lists
+        if gwp_values["gwp_per_kg"]:
+            factors.setFeature("roof_insulation_material_gwp_per_kg", float(np.mean(gwp_values["gwp_per_kg"])))
+        if gwp_values["gwp_per_m2"]:
+            factors.setFeature("roof_insulation_material_gwp_per_m2", float(np.mean(gwp_values["gwp_per_m2"])))
+        if gwp_values["gwp_per_m3"]:
+            factors.setFeature("roof_insulation_material_gwp_per_m3", float(np.mean(gwp_values["gwp_per_m3"])))
+
+        # Construction names for traceability
+        construction_names = [item["construction"].nameString() for item in modified_constructions]
+        if construction_names:
+            basic_input.setFeature("roof_insulation_construction_names", ', '.join(construction_names))
+
+        # # Cross-measure extraction fields on Facility
+        # factors.setFeature("name", "Increase_Insulation_R-Value_for_Roofs")
+        # factors.setFeature("total_additional_embodied_carbon_kgCO2", total_embodied_carbon)
         
         runner.registerInfo(
             f"Building-level summary: Total embodied carbon = {total_embodied_carbon:.2f} kg CO2 eq "
