@@ -2,13 +2,12 @@
 """
 Modular RSMeans API helper for OpenStudio measures.
 
-This script is designed to live in a measure's resources folder and can be
-reused by other measures. It expects an OpenStudio model (.osm) with
-AdditionalProperties describing retrofit materials and quantities. It can:
+This script can be used in two ways:
+1. As a library imported by measures (via measure.py)
+2. As a standalone CLI tool to query RSMeans costs from saved OSM files
 
-  - Extract materials from AdditionalProperties
-  - Query RSMeans for unit costs
-  - Return costs without modifying the model
+When run as a script, it automatically discovers model paths from the parent
+directory's apply_measure.py and searches across multiple RSMeans catalogs.
 
 Required AdditionalProperties keys (defaults):
   - retrofit_material_name
@@ -24,6 +23,7 @@ Optional keys:
 import argparse
 import json
 import os
+import re
 from pathlib import Path
 from typing import Optional, Dict, Any, List
 
@@ -78,6 +78,106 @@ def _get_feature_as_float(props, feature_name: str) -> Optional[float]:
     return None
 
 
+def generate_search_term_alternatives(material_name: str) -> List[tuple]:
+    """
+    Generate alternative search terms and divisions for a material.
+    Returns list of (search_term, division_code) tuples in priority order.
+    
+    Args:
+        material_name: Original material name (e.g., "window glazing")
+    
+    Returns:
+        List of (search_term, division_code) tuples to try in order
+    """
+    alternatives = []
+    name_lower = material_name.lower().strip()
+    
+    # Strategy 1: Original name with detected division
+    original_division = get_division_from_material_type(material_name)
+    alternatives.append((material_name, original_division))
+    
+    # Strategy 2: Window-specific alternatives
+    if "window" in name_lower:
+        if "glaz" in name_lower:
+            # Window glazing alternatives
+            alternatives.extend([
+                ("insulated glass unit", "08"),
+                ("double glazed window", "08"),
+                ("glass window", "08"),
+                ("window glass", "08"),
+                ("glazing", "08"),
+                ("IGU", "08"),
+            ])
+        elif "frame" in name_lower:
+            # Window frame alternatives based on common materials
+            alternatives.extend([
+                ("window replacement", "08"),
+                ("window unit", "08"),
+                ("wood window frame", "08"),
+                ("vinyl window frame", "08"),
+                ("aluminum window frame", "08"),
+                ("window sash", "08"),
+                ("window", "08"),
+            ])
+        else:
+            # Generic window alternatives
+            alternatives.extend([
+                ("window replacement", "08"),
+                ("window unit", "08"),
+                ("window assembly", "08"),
+                ("window", "08"),
+            ])
+    
+    # Strategy 3: Door-specific alternatives
+    elif "door" in name_lower:
+        alternatives.extend([
+            ("door replacement", "08"),
+            ("door unit", "08"),
+            ("door assembly", "08"),
+            ("door", "08"),
+        ])
+    
+    # Strategy 4: Insulation alternatives
+    elif "insulation" in name_lower or "insul" in name_lower:
+        alternatives.extend([
+            ("wall insulation", "07"),
+            ("roof insulation", "07"),
+            ("batt insulation", "07"),
+            ("rigid insulation", "07"),
+            ("insulation", "07"),
+        ])
+    
+    # Strategy 5: HVAC alternatives
+    elif any(term in name_lower for term in ["hvac", "heat pump", "furnace", "boiler", "chiller"]):
+        alternatives.extend([
+            (material_name.replace("system", "unit"), "23"),
+            (material_name.replace("equipment", "unit"), "23"),
+            ("HVAC equipment", "23"),
+        ])
+    
+    # Strategy 6: Try simplifying compound terms (remove adjectives/modifiers)
+    words = name_lower.split()
+    if len(words) > 1:
+        # Try just the last word (often the noun)
+        last_word = words[-1]
+        last_div = get_division_from_material_type(last_word)
+        if (last_word, last_div) not in alternatives:
+            alternatives.append((last_word, last_div))
+        
+        # Try first + last word
+        if len(words) > 2:
+            simplified = f"{words[0]} {words[-1]}"
+            simp_div = get_division_from_material_type(simplified)
+            if (simplified, simp_div) not in alternatives:
+                alternatives.append((simplified, simp_div))
+    
+    # Strategy 7: Try without division constraint (let RSMeans search all divisions)
+    if (material_name, None) not in alternatives:
+        alternatives.append((material_name, None))
+    
+    return alternatives
+
+
 def get_division_from_material_type(material_type: str) -> Optional[str]:
     mapping = {
         "concrete": "03",
@@ -97,6 +197,9 @@ def get_division_from_material_type(material_type: str) -> Optional[str]:
         "door": "08",
         "window": "08",
         "glazing": "08",
+        "glass": "08",
+        "frame": "08",
+        "sash": "08",
         "drywall": "09",
         "gypsum": "09",
         "paint": "09",
@@ -109,6 +212,7 @@ def get_division_from_material_type(material_type: str) -> Optional[str]:
         "duct": "23",
         "boiler": "23",
         "chiller": "23",
+        "furnace": "23",
         "electrical": "26",
         "lighting": "26",
         "wiring": "26",
@@ -246,25 +350,52 @@ class RSMeansAPIClient:
                 results["total_cost"] += float(existing_total_cost)
                 continue
 
-            if not division_hint:
-                division_hint = get_division_from_material_type(material_name)
-                if division_hint:
-                    print(f"Auto-detected division {division_hint} for material: {material_name}")
-
-            try:
-                search_results = self.search_unit_costlines(
-                    release_id=release_id,
-                    measurement_system=measurement_system,
-                    search_term=material_name,
-                    catalog=catalog,
-                    location_id=location_id,
-                    labor_type=labor_type,
-                    division_code=division_hint,
-                )
-
-                if not search_results or "items" not in search_results or len(search_results["items"]) == 0:
-                    results["errors"].append(f"No RSMeans match found for: {material_name}")
+            # Generate alternative search terms
+            search_alternatives = generate_search_term_alternatives(material_name)
+            
+            # If we have a division hint from material properties, prioritize it
+            if division_hint:
+                # Insert original name with provided division at the front
+                search_alternatives.insert(0, (material_name, division_hint))
+            
+            search_results = None
+            tried_terms = []
+            
+            # Try each alternative search term until we find a match
+            for alt_term, alt_division in search_alternatives:
+                tried_terms.append(f"{alt_term} (div:{alt_division or 'any'})")
+                
+                try:
+                    search_results = self.search_unit_costlines(
+                        release_id=release_id,
+                        measurement_system=measurement_system,
+                        search_term=alt_term,
+                        catalog=catalog,
+                        location_id=location_id,
+                        labor_type=labor_type,
+                        division_code=alt_division,
+                    )
+                    
+                    if search_results and "items" in search_results and len(search_results["items"]) > 0:
+                        if alt_term != material_name:
+                            print(f"  -> Found match using alternative term: '{alt_term}'")
+                        break
+                except Exception as e:
                     continue
+            
+            if not search_results or "items" not in search_results or len(search_results["items"]) == 0:
+                error_msg = f"No RSMeans match found for: {material_name}"
+                if len(tried_terms) > 1:
+                    error_msg += f" (tried {len(tried_terms)} alternatives)"
+                results["errors"].append(error_msg)
+                results["search_log"].append({
+                    "material": material_name,
+                    "tried_terms": tried_terms,
+                    "result": "no_match"
+                })
+                continue
+            
+            try:
 
                 first_item = search_results["items"][0]
                 division_code = first_item.get("id")
@@ -392,21 +523,115 @@ def extract_materials_from_model(model, feature_keys: Dict[str, str]) -> List[Di
     return materials
 
 
+def extract_paths_from_apply_measure(script_dir: Path) -> tuple:
+    """
+    Parse apply_measure.py to find input and output model paths.
+    
+    Args:
+        script_dir: Directory containing apply_measure.py (parent of resources/)
+    
+    Returns:
+        tuple: (input_model_path, output_model_path)
+    """
+    apply_measure_path = script_dir / "apply_measure.py"
+    
+    if not apply_measure_path.exists():
+        raise FileNotFoundError(f"apply_measure.py not found at {apply_measure_path}")
+    
+    with open(apply_measure_path, "r", encoding="utf-8") as f:
+        content = f.read()
+    
+    # Look for: model_path = SCRIPT_DIR / "tests" / "DOE_small_office.osm"
+    input_match = re.search(r'model_path\s*=\s*SCRIPT_DIR\s*/\s*"tests"\s*/\s*"([^"]+)"', content)
+    if not input_match:
+        raise ValueError("Could not find model_path in apply_measure.py")
+    
+    input_filename = input_match.group(1)
+    input_path = script_dir / "tests" / input_filename
+    
+    # Look for: output_dir = SCRIPT_DIR / "tests" / "output"
+    output_dir_match = re.search(r'output_dir\s*=\s*SCRIPT_DIR\s*/\s*"tests"\s*/\s*"([^"]+)"', content)
+    if output_dir_match:
+        output_subdir = output_dir_match.group(1)
+        output_dir = script_dir / "tests" / output_subdir
+    else:
+        output_dir = script_dir / "tests" / "output"  # fallback
+    
+    # Look for: output_model_path = output_dir / "DOE_small_office_window_enhanced.osm"
+    output_match = re.search(r'output_model_path\s*=\s*output_dir\s*/\s*"([^"]+)"', content)
+    if not output_match:
+        raise ValueError("Could not find output_model_path in apply_measure.py")
+    
+    output_filename = output_match.group(1)
+    output_path = output_dir / output_filename
+    
+    return (input_path, output_path)
+
+
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="RSMeans API helper for OpenStudio measures")
-    parser.add_argument("--model", required=True, help="Path to OpenStudio model (.osm)")
-    parser.add_argument("--output", help="Path to save JSON results")
+    """Parse command-line arguments for standalone usage."""
+    
+    # Determine script directory (parent of resources/ if running from resources/)
+    script_file = Path(__file__).resolve()
+    if script_file.parent.name == "resources":
+        measure_dir = script_file.parent.parent
+    else:
+        measure_dir = script_file.parent
+    
+    # Try to extract default paths from apply_measure.py
+    try:
+        default_input, default_output_model = extract_paths_from_apply_measure(measure_dir)
+        default_output_json = default_output_model.parent / "rsmeans_search_results.json"
+        auto_detected = True
+    except Exception:
+        # Fallback to reasonable defaults
+        default_output_model = measure_dir / "tests" / "output" / "model_enhanced.osm"
+        default_output_json = measure_dir / "tests" / "output" / "rsmeans_search_results.json"
+        auto_detected = False
+    
+    parser = argparse.ArgumentParser(
+        description="RSMeans API lookup for materials stored in OpenStudio OSM files",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Examples:
+  # Auto-detect paths from apply_measure.py and search multiple catalogs
+  python resources/call_rsmeans_api.py
+  
+  # Search specific catalogs with 25%% overhead
+  python resources/call_rsmeans_api.py --catalogs bc-mf,gb-mf,sq-mf --overhead-profit-percent 25
+  
+  # Use custom model path
+  python resources/call_rsmeans_api.py --model path/to/model.osm
+        """
+    )
+    
+    help_text = "Path to OSM file"
+    if auto_detected:
+        help_text += " (default: auto-detected from apply_measure.py)"
+    
+    parser.add_argument("--model", default=str(default_output_model), help=help_text)
+    parser.add_argument("--output", default=str(default_output_json), help="Path to save JSON results")
     parser.add_argument("--release", default="2025-q4", help="RSMeans release ID (e.g., 2025-q4)")
-    parser.add_argument("--catalog", default="gb-mf", help="Catalog code (e.g., gb-mf, bc-mf)")
-    parser.add_argument("--location", default="us-us-national", help="Location ID (e.g., us-us-national)")
+    parser.add_argument(
+        "--catalogs",
+        default="bc-mf,gb-mf,rp-mf",
+        help="Comma-separated catalog codes (bc-mf, gb-mf, rp-mf, sq-mf, hc-mf, si-mf)"
+    )
+    parser.add_argument("--location", default="us-us-national", help="Location ID")
     parser.add_argument("--labor-type", default="std", help="Labor type (std, opn, fmr, fed, he)")
     parser.add_argument("--measurement-system", default="imp", help="Measurement system (imp, met)")
     parser.add_argument("--use-sandbox", action="store_true", help="Use RSMeans sandbox API")
-    parser.add_argument("--skip-if-cost-present", action="store_true", help="Skip API if cost exists")
+    parser.add_argument(
+        "--overhead-profit-percent",
+        type=float,
+        default=0.0,
+        help="Percent applied to material cost for overhead+profit",
+    )
     return parser.parse_args()
 
 
 def main() -> int:
+    """Main entry point when run as a standalone script."""
     args = parse_args()
     load_dotenv()
 
@@ -414,43 +639,279 @@ def main() -> int:
     client_secret = os.getenv("client_secret")
 
     if not client_id or not client_secret:
-        print("RSMeans API credentials (client_id, client_secret) not found in environment.")
+        print("ERROR: RSMeans API credentials not found.")
+        print("Set environment variables: client_id, client_secret")
+        print("Or create a .env file with these values.")
         return 1
 
     model_path = Path(args.model).resolve()
     if not model_path.exists():
-        print(f"Model file not found: {model_path}")
+        print(f"ERROR: Model file not found: {model_path}")
         return 1
 
-    model = load_openstudio_model(model_path)
-    materials = extract_materials_from_model(model, DEFAULT_FEATURE_KEYS)
+    # Try multiple methods to extract materials
+    materials = None
+    model_dir = model_path.parent
+    
+    # Method 1: Pre-saved JSON file
+    materials_file = model_dir / "window_enhancement_retrofit_materials.json"
+    if materials_file.exists():
+        try:
+            with open(materials_file, "r", encoding="utf-8") as f:
+                materials = json.load(f)
+            print(f"Extracted {len(materials)} materials from {materials_file.name}")
+        except Exception as e:
+            print(f"Warning: Could not load materials file: {e}")
+    
+    # Method 2: Extract from model's Facility AdditionalProperties
+    if not materials:
+        print(f"Loading model from {model_path.name}...")
+        model = load_openstudio_model(model_path)
+        
+        if model.facility().is_initialized():
+            facility = model.facility().get()
+            props = facility.additionalProperties()
+            
+            # Try window_enhancement specific property first
+            if props.hasFeature("window_enhancement_retrofit_materials_json"):
+                try:
+                    opt_str = props.getFeatureAsString("window_enhancement_retrofit_materials_json")
+                    if opt_str.is_initialized():
+                        json_str = opt_str.get()
+                        materials = json.loads(json_str)
+                        print(f"Extracted {len(materials)} materials from Facility.window_enhancement_retrofit_materials_json")
+                except Exception as e:
+                    print(f"Warning: Could not parse retrofit_materials_json: {e}")
+        
+        # Method 3: Fall back to individual property extraction
+        if not materials:
+            materials = extract_materials_from_model(model, DEFAULT_FEATURE_KEYS)
+            if materials:
+                print(f"Extracted {len(materials)} materials using standard property keys")
 
     if not materials:
-        print("No retrofit materials found in AdditionalProperties.")
+        print("ERROR: No retrofit materials found in model.")
+        print("The model must have materials stored in AdditionalProperties.")
         return 1
 
+    # Parse catalog list
+    catalogs = [c.strip() for c in args.catalogs.split(",")]
+    print(f"\nSearching RSMeans catalogs: {', '.join(catalogs)}")
+    
+    # Authenticate
     client = RSMeansAPIClient(client_id, client_secret, use_sandbox=args.use_sandbox)
     if not client.authenticate():
+        print("ERROR: Authentication failed.")
         return 1
 
-    results = client.search_materials_batch(
+    # Search across all catalogs
+    print(f"Searching for {len(materials)} materials...")
+    results = search_materials_across_catalogs(
         materials=materials,
+        client=client,
+        catalogs=catalogs,
         release_id=args.release,
-        catalog=args.catalog,
         location_id=args.location,
         labor_type=args.labor_type,
         measurement_system=args.measurement_system,
-        save_search_results_path=args.output,
-        skip_if_cost_present=args.skip_if_cost_present,
     )
 
-    print(f"Total cost: ${results.get('total_cost', 0.0):.2f}")
-    if results.get("errors"):
-        print("Errors encountered:")
-        for error in results["errors"]:
-            print(f"  - {error}")
+    # Calculate costs
+    total_material_cost = float(results.get("total_cost", 0.0))
+    overhead_profit_cost = total_material_cost * (args.overhead_profit_percent / 100.0)
+    total_cost = total_material_cost + overhead_profit_cost
 
+    # Prepare summary
+    summary = {
+        "total_material_cost": total_material_cost,
+        "overhead_profit_percent": args.overhead_profit_percent,
+        "total_overhead_profit_cost": overhead_profit_cost,
+        "total_cost_with_overhead_profit": total_cost,
+        "materials_count": len(results.get("materials", [])),
+        "materials_searched": len(materials),
+        "catalogs_searched": catalogs,
+    }
+
+    # Save results
+    output_path = Path(args.output).resolve()
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    with output_path.open("w", encoding="utf-8") as f:
+        json.dump({"summary": summary, "results": results}, f, indent=2)
+
+    # Print summary
+    print("\n" + "=" * 70)
+    print("COST SUMMARY")
+    print("=" * 70)
+    print(f"Materials searched:  {len(materials)}")
+    print(f"Materials matched:   {len(results.get('materials', []))}")
+    print(f"Material cost:       ${total_material_cost:,.2f}")
+    print(f"Overhead+profit:     ${overhead_profit_cost:,.2f} ({args.overhead_profit_percent}%)")
+    print(f"TOTAL COST:          ${total_cost:,.2f}")
+    print("=" * 70)
+    
+    if results.get("errors"):
+        print(f"\nWarnings ({len(results['errors'])} items):")
+        for error in results["errors"][:5]:
+            print(f"  - {error}")
+        if len(results["errors"]) > 5:
+            print(f"  ... and {len(results['errors']) - 5} more")
+    
+    print(f"\nResults saved to: {output_path}")
     return 0
+
+
+def search_materials_across_catalogs(
+    materials: List[Dict[str, Any]],
+    client: "RSMeansAPIClient",
+    catalogs: Optional[List[str]] = None,
+    release_id: str = "2025-q4",
+    location_id: str = "us-us-national",
+    labor_type: str = "std",
+    measurement_system: str = "imp",
+) -> Dict[str, Any]:
+    """
+    Search for materials across multiple RSMeans catalogs and return best matches.
+    
+    Args:
+        materials: List of material dicts with 'name', 'quantity', 'unit', etc.
+        client: Authenticated RSMeansAPIClient instance
+        catalogs: List of catalog codes to search (default: all common catalogs)
+        release_id: RSMeans release ID (e.g., "2025-q4")
+        location_id: Location for pricing
+        labor_type: Labor type code
+        measurement_system: "imp" or "met"
+    
+    Returns:
+        Dict with 'total_cost', 'materials' (with catalog info), 'errors', 'search_log'
+    """
+    if catalogs is None:
+        # Default to common building-related catalogs
+        catalogs = ["bc-mf", "gb-mf", "rp-mf"]  # Building Construction, Green Building, Repair & Remodeling
+    
+    all_results = []
+    search_log = []
+    errors = []
+    total_cost = 0.0
+    
+    for material in materials:
+        material_name = material.get("name", "unknown")
+        quantity = material.get("quantity", 1.0)
+        unit = material.get("unit", "")
+        division_code = material.get("division_code")
+        
+        best_match = None
+        best_cost = None
+        best_catalog = None
+        matched_term = None
+        
+        # Generate alternative search terms
+        search_alternatives = generate_search_term_alternatives(material_name)
+        
+        # If we have a division code from material properties, prioritize it
+        if division_code:
+            search_alternatives.insert(0, (material_name, division_code))
+        
+        # Try each catalog with intelligent search term alternatives
+        for catalog in catalogs:
+            if best_match:
+                break  # Already found a match in a previous catalog
+            
+            # Try alternative search terms within this catalog
+            for alt_term, alt_division in search_alternatives:
+                try:
+                    results = client.search_unit_costlines(
+                        search_term=alt_term,
+                        division_code=alt_division,
+                        catalog=catalog,
+                        release_id=release_id,
+                        location_id=location_id,
+                        labor_type=labor_type,
+                        measurement_system=measurement_system,
+                    )
+                    
+                    if results and "items" in results and len(results["items"]) > 0:
+                        # Take first match
+                        match = results["items"][0]
+                        division_id = match.get("id", "")
+                        
+                        # Get detailed cost data
+                        cost_line = client.get_unit_costlines(
+                            release_id=release_id,
+                            catalog=catalog,
+                            location_id=location_id,
+                            labor_type=labor_type,
+                            measurement_system=measurement_system,
+                            division_code=division_id,
+                        )
+                        
+                        if cost_line and "items" in cost_line:
+                            for item in cost_line["items"]:
+                                if item.get("id") == division_id:
+                                    unit_cost = item.get("localizedCosts", {}).get("totalOpCost", 0.0)
+                                    
+                                    if unit_cost > 0:
+                                        best_match = item
+                                        best_cost = unit_cost * quantity
+                                        best_catalog = catalog
+                                        matched_term = alt_term
+                                        
+                                        status_msg = f"match_found"
+                                        if alt_term != material_name:
+                                            status_msg += f" (using '{alt_term}')"
+                                            print(f"  -> Found match using alternative term: '{alt_term}' in catalog {catalog}")
+                                        
+                                        search_log.append({
+                                            "material": material_name,
+                                            "search_term": alt_term,
+                                            "catalog": catalog,
+                                            "division": alt_division,
+                                            "status": status_msg,
+                                            "unit_cost": unit_cost,
+                                            "quantity": quantity,
+                                            "total_cost": best_cost
+                                        })
+                                        break
+                            
+                            if best_match:
+                                break  # Exit alternative terms loop
+                    
+                except Exception as e:
+                    search_log.append({
+                        "material": material_name,
+                        "search_term": alt_term,
+                        "catalog": catalog,
+                        "status": "error",
+                        "error": str(e)
+                    })
+        
+        if best_match:
+            material_result = {
+                **material,
+                "catalog": best_catalog,
+                "search_term_used": matched_term,
+                "unit_cost": best_match.get("localizedCosts", {}).get("totalOpCost", 0.0),
+                "total_cost": best_cost,
+                "rsmeans_id": best_match.get("id", ""),
+                "rsmeans_description": best_match.get("description", "")
+            }
+            all_results.append(material_result)
+            total_cost += best_cost
+        else:
+            errors.append(f"No RSMeans match found in any catalog for: {material_name}")
+            search_log.append({
+                "material": material_name,
+                "status": "no_match",
+                "catalogs_searched": catalogs,
+                "alternatives_tried": len(search_alternatives)
+            })
+    
+    return {
+        "total_cost": total_cost,
+        "materials": all_results,
+        "errors": errors,
+        "search_log": search_log,
+        "catalogs_searched": catalogs
+    }
 
 
 if __name__ == "__main__":

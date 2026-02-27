@@ -106,13 +106,14 @@ def run_measure(model, args_overrides=None):
     set_arg("caulking_lifetime", 10)        # years
     set_arg("film_lifetime", 10)            # years
     set_arg("weatherstrip_lifetime", 10)    # years
+    set_arg("overhead_profit_percent", 0.0) # percent
 
-    # --- Enhancement options (all 'none' except caulking for a quick test) ---
-    set_arg("wf_option", "none")                        # window frame option
-    set_arg("caulking_option", "acrylic")               # apply acrylic caulking
+    # --- Enhancement options (glass + frame) ---
+    set_arg("wf_option", "wood window frame")           # window frame option
+    set_arg("caulking_option", "none")                  # no caulking
     set_arg("film_option", "none")                      # no glazing film
     set_arg("weatherstrip_option", "none")              # no weatherstrip
-    set_arg("glass_option", "none")                     # no glass replacement
+    set_arg("glass_option", "provide user_num_panes")   # glass replacement
     set_arg("secondary_glazing_option", "none")         # no secondary glazing
 
     # --- Film properties (only used when film_option != 'none') ---
@@ -125,7 +126,7 @@ def run_measure(model, args_overrides=None):
     set_arg("caulking_thickness", 0.008)                # m (8 mm bead)
 
     # --- Glass geometry (only used when glass_option != 'none') ---
-    set_arg("user_num_panes", 0)                        # 0 = do not install
+    set_arg("user_num_panes", 2)                        # 2 = double pane
     set_arg("glass_pane_thickness", 0.003)              # m (3 mm)
     set_arg("gap_thickness", 0.013)                     # m (13 mm)
 
@@ -163,15 +164,14 @@ def print_runner_output(runner):
     result = runner.result()
     print(f"\nResult: {result.value().valueName()}")
 
-    if result.info():
-        print("\nInfo:")
-        for msg in result.info():
-            print(f"  [INFO] {msg.logMessage()}")
-
-    if result.warnings():
-        print("\nWarnings:")
-        for msg in result.warnings():
-            print(f"  [WARN] {msg.logMessage()}")
+    # Skip detailed info/warning printing due to potential Unicode encoding issues
+    # Just report counts
+    info_count = len(list(result.info())) if result.info() else 0
+    warn_count = len(list(result.warnings())) if result.warnings() else 0
+    if info_count > 0:
+        print(f"\nInfo: {info_count} messages (skipping detailed output due to encoding)")
+    if warn_count > 0:
+        print(f"\nWarnings: {warn_count} messages (skipping detailed output due to encoding)")
 
     if result.errors():
         print("\nErrors:")
@@ -289,6 +289,33 @@ def main():
 
     model.save(openstudio.toPath(str(output_model_path)), True)
     print(f"  Modified model saved to: {output_model_path}")
+
+    # Extract and save retrofit materials if present in step values
+    materials_data = None
+    rsmeans_results_data = None
+    if "window_enhancement_retrofit_materials_json" in step_values:
+        try:
+            materials_json_str = step_values["window_enhancement_retrofit_materials_json"]
+            if isinstance(materials_json_str, str):
+                materials_data = json.loads(materials_json_str)
+                materials_path = output_dir / "window_enhancement_retrofit_materials.json"
+                with open(materials_path, "w") as f:
+                    json.dump(materials_data, f, indent=2)
+                print(f"  Retrofit materials saved to: {materials_path}")
+        except Exception as e:
+            print(f"  Warning: Could not extract retrofit materials: {e}")
+
+    if "window_enhancement_rsmeans_results_json" in step_values:
+        try:
+            rsmeans_json_str = step_values["window_enhancement_rsmeans_results_json"]
+            if isinstance(rsmeans_json_str, str):
+                rsmeans_results_data = json.loads(rsmeans_json_str)
+                rsmeans_path = output_dir / "window_enhancement_rsmeans_results.json"
+                with open(rsmeans_path, "w") as f:
+                    json.dump(rsmeans_results_data, f, indent=2)
+                print(f"  RSMeans results saved to: {rsmeans_path}")
+        except Exception as e:
+            print(f"  Warning: Could not extract RSMeans results: {e}")
 
     # Save JSON summary
     results = {

@@ -40,6 +40,7 @@ lib/measures/window_enhancement/tests/__pycache__
 lib/measures/window_enhancement/resources/__pycache__
 lib/measures/window_enhancement/tests/.pytest_cache
 lib/measures/window_enhancement/tests/example_model/run
+lib/measures/window_enhancement/obsolete/
 lib/measures/ReportRetrofitImpacts/tests/.pytest_cache
 lib/measures/ReportRetrofitImpacts/tests
 lib/measures/ReportRetrofitImpacts/__pycache__/
