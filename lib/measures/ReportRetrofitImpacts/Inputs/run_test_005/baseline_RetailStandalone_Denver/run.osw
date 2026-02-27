@@ -1,11 +1,11 @@
 {
-  "weather_file": "/Users/cbianchi/Documents/GitHub/openstudio-ee-gem/lib/parametric_run/weather/Denver/USA_CO_Denver.Intl.AP.725650_TMYx.epw",
+  "weather_file": "../../../../../parametric_run/weather/Denver/USA_CO_Denver.Intl.AP.725650_TMYx.epw",
   "file_paths": [
-    "/Users/cbianchi/Documents/GitHub/openstudio-ee-gem/lib/parametric_run/weather",
-    "/Users/cbianchi/Documents/GitHub/openstudio-ee-gem/lib/parametric_run/weather/Denver"
+    "../../../../../parametric_run/weather",
+    "../../../../../parametric_run/weather/Denver"
   ],
   "measure_paths": [
-    "/Users/cbianchi/Documents/GitHub/openstudio-ee-gem/lib/measures"
+    "../../../../../measures"
   ],
   "steps": [
     {
