@@ -1,8 +1,4 @@
-Program Version,EnergyPlus, Version 25.2.0-cf7368216c, YMD=2026.02.20 09:48,
-   ** Warning ** ProcessScheduleInput: Schedule:Day:Interval = ECONOMIZER MAX OA FRACTION 70 PCT DEFAULT
-   **   ~~~   ** Schedule Type Limits Name is empty.
-   **   ~~~   ** Schedule will not be validated.
-   ************* Beginning Zone Sizing Calculations
+This file is a minimal, deterministic placeholder for EnergyPlus error output used by tests; full runtime logs are generated during test execution and are not stored in the repository.
    ** Warning ** CheckUsedConstructions: There are 11 nominally unused constructions in input.
    **   ~~~   ** For explicit details on each unused construction, use Output:Diagnostics,DisplayExtraWarnings;
    ** Warning ** GetDaylightingControls: Fraction of zone or space controlled by the Daylighting reference points is < 1.0.
