@@ -16,15 +16,34 @@ import configparser
 # ---------------------------------------------------------------------------
 # OpenStudio path setup
 # ---------------------------------------------------------------------------
-OPENSTUDIO_VERSION = "3.11.0"
-openstudio_path = f"/Applications/OpenStudio-{OPENSTUDIO_VERSION}/Python"
+import platform
 
-if Path(openstudio_path).exists():
-    sys.path.insert(0, openstudio_path)
-    print(f"Using OpenStudio from: {openstudio_path}")
-else:
-    print(f"Warning: OpenStudio path not found at {openstudio_path}")
-    print("Will attempt to use system OpenStudio installation")
+# Try to use installed openstudio package first (via pip/conda)
+# Fall back to system installations if needed
+try:
+    import openstudio
+    print(f"Using OpenStudio from installed package")
+except ImportError:
+    # Fall back to system installations
+    OPENSTUDIO_VERSION = "3.8.0"
+    WINDOWS_OPENSTUDIO_PATH = r"C:\openstudio-3.8.0\Python"
+    MAC_OPENSTUDIO_VERSION = "3.11.0"
+    mac_openstudio_path = f"/Applications/OpenStudio-{MAC_OPENSTUDIO_VERSION}/Python"
+
+    openstudio_path = None
+    if platform.system() == "Windows":
+        if Path(WINDOWS_OPENSTUDIO_PATH).exists():
+            openstudio_path = WINDOWS_OPENSTUDIO_PATH
+            sys.path.insert(0, openstudio_path)
+            print(f"Using OpenStudio from: {openstudio_path}")
+    else:
+        if Path(mac_openstudio_path).exists():
+            openstudio_path = mac_openstudio_path
+            sys.path.insert(0, openstudio_path)
+            print(f"Using OpenStudio from: {openstudio_path}")
+
+    if openstudio_path is None:
+        print("Warning: OpenStudio path not found")
 
 import openstudio
 from measure import WindowEnhancement
