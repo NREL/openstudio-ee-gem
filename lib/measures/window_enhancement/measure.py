@@ -5,11 +5,15 @@
 
 import site
 
+import json
+import os
 import openstudio
 import typing
 import numpy as np
 import pprint as pp
+from dotenv import load_dotenv
 from resources.EC3_lookup import *
+from resources.call_rsmeans_api import RSMeansAPIClient
 
 
 class WindowEnhancement(openstudio.measure.ModelMeasure):
@@ -219,6 +223,14 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
             "Certified Commercial Property Inspectors Association (CCPIA).")
         weatherstrip_lifetime.setDefaultValue(10)
         args.append(weatherstrip_lifetime)
+
+        # make an argument for overhead + profit percent applied to total material cost
+        overhead_profit_percent = openstudio.measure.OSArgument.makeDoubleArgument("overhead_profit_percent", True)
+        overhead_profit_percent.setDisplayName("Overhead + Profit Percent")
+        overhead_profit_percent.setDescription(
+            "Percent applied to total material cost to estimate overhead and profit. Set to 0 to disable.")
+        overhead_profit_percent.setDefaultValue(0.0)
+        args.append(overhead_profit_percent)
 
         # make an argument for window frame options for filtering EPDs 
         wf_options_chs = openstudio.StringVector()
@@ -543,6 +555,59 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
         num_vertical_dividers.setDefaultValue(-1)
         args.append(num_vertical_dividers)
 
+        # ============================================================================
+        # COST DATA ARGUMENTS - User-provided fallback costs when RSMeans API fails
+        # ============================================================================
+        
+        # Glass/Glazing cost
+        glass_cost_per_sf = openstudio.measure.OSArgument.makeDoubleArgument("glass_cost_per_sf", True)
+        glass_cost_per_sf.setDisplayName("Glass Replacement Cost ($/SF)")
+        glass_cost_per_sf.setDescription(
+            "User-provided unit cost for glass replacement in dollars per square foot. "
+            "This is used as a fallback when RSMeans API lookup fails or returns no results. "
+            "Typical range: $15-30/SF. Set to 0 to skip cost calculation for glass.")
+        glass_cost_per_sf.setDefaultValue(0.0)
+        args.append(glass_cost_per_sf)
+
+        # Frame cost
+        frame_cost_per_sf = openstudio.measure.OSArgument.makeDoubleArgument("frame_cost_per_sf", True)
+        frame_cost_per_sf.setDisplayName("Window Frame Cost ($/SF)")
+        frame_cost_per_sf.setDescription(
+            "User-provided unit cost for window frame replacement in dollars per square foot. "
+            "This is used as a fallback when RSMeans API lookup fails. "
+            "Typical range: $20-40/SF depending on frame material (wood, aluminum, vinyl). Set to 0 to skip.")
+        frame_cost_per_sf.setDefaultValue(0.0)
+        args.append(frame_cost_per_sf)
+
+        # Caulking cost
+        caulking_cost_per_cy = openstudio.measure.OSArgument.makeDoubleArgument("caulking_cost_per_cy", True)
+        caulking_cost_per_cy.setDisplayName("Caulking Cost ($/CY)")
+        caulking_cost_per_cy.setDescription(
+            "User-provided unit cost for caulking/sealant in dollars per cubic yard. "
+            "Typical range: $100-200/CY. Set to 0 to skip cost calculation for caulking.")
+        caulking_cost_per_cy.setDefaultValue(0.0)
+        args.append(caulking_cost_per_cy)
+
+        # Labor cost
+        labor_cost_multiplier = openstudio.measure.OSArgument.makeDoubleArgument("labor_cost_multiplier", True)
+        labor_cost_multiplier.setDisplayName("Labor Cost Multiplier (% of Material Cost)")
+        labor_cost_multiplier.setDescription(
+            "Labor cost as a percentage of total material cost. Used as a fallback when RSMeans API fails. "
+            "Typical range: 50-150% (0.5-1.5). For example, 1.0 means labor cost equals material cost. "
+            "Set to 0 to include only material costs.")
+        labor_cost_multiplier.setDefaultValue(1.0)
+        args.append(labor_cost_multiplier)
+
+        # Cost calculation enable/disable
+        calculate_costs = openstudio.measure.OSArgument.makeBoolArgument("calculate_costs", True)
+        calculate_costs.setDisplayName("Calculate Capital Costs")
+        calculate_costs.setDescription(
+            "Set to true to attempt to retrieve capital costs (materials + labor + overhead + profit). "
+            "If false, the measure will only calculate embodied carbon and skip all cost lookups. "
+            "Embodied carbon calculation is always performed regardless of this setting.")
+        calculate_costs.setDefaultValue(True)
+        args.append(calculate_costs)
+
         return args
 
     def run(self, model: openstudio.model.Model, runner: openstudio.measure.OSRunner,
@@ -584,6 +649,7 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
         caulking_lifetime = runner.getIntegerArgumentValue("caulking_lifetime",user_arguments)
         film_lifetime = runner.getIntegerArgumentValue("film_lifetime",user_arguments)
         weatherstrip_lifetime = runner.getIntegerArgumentValue("weatherstrip_lifetime",user_arguments)
+        overhead_profit_percent = runner.getDoubleArgumentValue("overhead_profit_percent", user_arguments)
         api_key = runner.getStringArgumentValue("api_key", user_arguments)
         user_num_panes = runner.getIntegerArgumentValue("user_num_panes", user_arguments)
         glass_pane_thickness = runner.getDoubleArgumentValue("glass_pane_thickness", user_arguments)
@@ -605,6 +671,13 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
         length_per_unit = runner.getDoubleArgumentValue("length_per_unit", user_arguments)
         num_horizontal_dividers = runner.getIntegerArgumentValue("num_horizontal_dividers", user_arguments)
         num_vertical_dividers = runner.getIntegerArgumentValue("num_vertical_dividers", user_arguments)
+        
+        # Cost-related arguments (user-provided fallback costs)
+        calculate_costs = runner.getBoolArgumentValue("calculate_costs", user_arguments)
+        glass_cost_per_sf = runner.getDoubleArgumentValue("glass_cost_per_sf", user_arguments)
+        frame_cost_per_sf = runner.getDoubleArgumentValue("frame_cost_per_sf", user_arguments)
+        caulking_cost_per_cy = runner.getDoubleArgumentValue("caulking_cost_per_cy", user_arguments)
+        labor_cost_multiplier = runner.getDoubleArgumentValue("labor_cost_multiplier", user_arguments)
 
         # Check for conflicting renovation options
         if glass_option == "provide user_num_panes" and user_num_panes > 0 and secondary_glazing_option == "install secondary glazing":
@@ -957,9 +1030,6 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
         
         # Store aggregate results (including standardized fields for all measures)
         results.setFeature("window_enhancement_total_additional_embodied_carbon_kg", total_embodied_carbon)
-        results.setFeature("window_enhancement_total_additional_material_cost_$", 0.0)  # Placeholder
-        results.setFeature("window_enhancement_total_additional_overhead_profit_cost_$", 0.0)  # Placeholder
-        results.setFeature("window_enhancement_total_additional_labour_cost_$", 0.0)  # Placeholder
         results.setFeature("window_enhancement_total_embodied_carbon_kgCO2eq", total_embodied_carbon)  # Keep for backwards compatibility
         reno_detail.setFeature("total_renovated_window_area_m2", total_window_area_m2)
         reno_detail.setFeature("total_renovated_glazing_area_m2", total_glazing_area_m2)
@@ -975,6 +1045,152 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
         # reno_detail.setFeature("total_renovated_windows_with_weatherstrip_count", windows_with_weatherstrip)
         # reno_detail.setFeature("total_renovated_windows_with_secondary_glazing_count", windows_with_secondary_glazing)
         
+        # Build RSMeans materials list from renovation selections
+        materials = []
+
+        def _m2_to_sf(value_m2: float) -> float:
+            return value_m2 * 10.7639
+
+        def _m3_to_cy(value_m3: float) -> float:
+            return value_m3 * 1.30795
+
+        def _m_to_lf(value_m: float) -> float:
+            return value_m * 3.28084
+
+        if glass_option != "none" and user_num_panes > 0 and total_glazing_area_m2 > 0:
+            materials.append({
+                "name": "window glazing",
+                "description": f"{user_num_panes}-pane glass replacement",
+                "quantity": _m2_to_sf(total_glazing_area_m2),
+                "unit": "SF",
+                "quantity_si": total_glazing_area_m2,
+                "unit_si": "m2",
+                "division_code": "08",
+            })
+
+        if wf_option != "none" and total_frame_area_m2 > 0:
+            materials.append({
+                "name": "window frame",
+                "description": f"{wf_option} frame replacement",
+                "quantity": _m2_to_sf(total_frame_area_m2),
+                "unit": "SF",
+                "quantity_si": total_frame_area_m2,
+                "unit_si": "m2",
+                "division_code": "08",
+            })
+
+        if film_option != "none" and total_glazing_area_m2 > 0:
+            materials.append({
+                "name": "glazing film",
+                "description": film_option,
+                "quantity": _m2_to_sf(total_glazing_area_m2),
+                "unit": "SF",
+                "quantity_si": total_glazing_area_m2,
+                "unit_si": "m2",
+                "division_code": "08",
+            })
+
+        if caulking_option != "none" and total_caulking_volume_m3 > 0:
+            materials.append({
+                "name": "sealant",
+                "description": f"{caulking_option} caulking",
+                "quantity": _m3_to_cy(total_caulking_volume_m3),
+                "unit": "CY",
+                "quantity_si": total_caulking_volume_m3,
+                "unit_si": "m3",
+                "division_code": "07",
+            })
+
+        if weatherstrip_option != "none" and total_weatherstrip_length_m > 0:
+            materials.append({
+                "name": "weatherstrip",
+                "description": weatherstrip_option,
+                "quantity": _m_to_lf(total_weatherstrip_length_m),
+                "unit": "LF",
+                "quantity_si": total_weatherstrip_length_m,
+                "unit_si": "m",
+                "division_code": "08",
+            })
+
+        if secondary_glazing_option != "none" and total_glazing_area_m2 > 0:
+            materials.append({
+                "name": "secondary glazing",
+                "description": "secondary glazing installation",
+                "quantity": _m2_to_sf(total_glazing_area_m2),
+                "unit": "SF",
+                "quantity_si": total_glazing_area_m2,
+                "unit_si": "m2",
+                "division_code": "08",
+            })
+
+        if materials:
+            try:
+                results.setFeature("window_enhancement_retrofit_materials_json", json.dumps(materials))
+                # Also write to model's Facility AdditionalProperties so it persists in the saved OSM
+                if model.facility().is_initialized():
+                    facility = model.facility().get()
+                    facility.additionalProperties().setFeature("window_enhancement_retrofit_materials_json", json.dumps(materials))
+            except Exception:
+                runner.registerWarning("Could not serialize retrofit materials to JSON for AdditionalProperties.")
+
+        # Pull RSMeans cost data OR use user-provided fallback costs
+        total_material_cost = 0.0
+        total_overhead_profit_cost = 0.0
+        total_labour_cost = 0.0
+        cost_source = "none"  # Track where costs came from
+
+        if calculate_costs and materials:
+            # Step 1: Try RSMeans API first
+            runner.registerInfo("\n" + "=" * 80)
+            runner.registerInfo("ATTEMPTING RSMeans API LOOKUP FOR CAPITAL COSTS")
+            runner.registerInfo("=" * 80)
+            
+            rsmeans_results = self.pull_rsmeans_cost_from_api(runner, materials)
+            
+            if rsmeans_results and rsmeans_results.get("total_cost") is not None and float(rsmeans_results.get("total_cost", 0.0)) > 0:
+                # RSMeans lookup successful
+                total_material_cost = float(rsmeans_results.get("total_cost", 0.0))
+                total_labour_cost = 0.0
+                cost_source = "rsmeans_api"
+                runner.registerInfo(f"✓ RSMeans API successful: ${total_material_cost:,.2f}")
+                
+                try:
+                    results.setFeature("window_enhancement_rsmeans_results_json", json.dumps(rsmeans_results))
+                    if model.facility().is_initialized():
+                        facility = model.facility().get()
+                        facility.additionalProperties().setFeature("window_enhancement_rsmeans_results_json", json.dumps(rsmeans_results))
+                except Exception:
+                    runner.registerWarning("Could not serialize RSMeans results to JSON for AdditionalProperties.")
+            else:
+                # RSMeans lookup failed or returned $0 - use fallback costs
+                runner.registerInfo("✗ RSMeans API lookup failed or returned no costs.")
+                runner.registerInfo("\nFalling back to user-provided cost data...")
+                
+                # Calculate costs from user-provided unit rates
+                total_material_cost = self.calculate_costs_from_user_rates(
+                    runner, total_glazing_area_m2, total_frame_area_m2, total_caulking_volume_m3,
+                    glass_cost_per_sf, frame_cost_per_sf, caulking_cost_per_cy,
+                    glass_option, wf_option, caulking_option
+                )
+                
+                # Add labor cost
+                total_labour_cost = total_material_cost * (labor_cost_multiplier / 100.0)
+                cost_source = "user_provided" if total_material_cost > 0 else "none"
+                
+                if total_material_cost > 0:
+                    runner.registerInfo(f"✓ Using user-provided costs: ${total_material_cost:,.2f} materials + ${total_labour_cost:,.2f} labor")
+                else:
+                    runner.registerInfo("✗ No user-provided costs specified. Skipping cost calculation.")
+                    runner.registerInfo("  Tip: Provide values for 'Glass Cost ($/SF)', 'Frame Cost ($/SF)', etc.")
+
+        if calculate_costs:
+            total_overhead_profit_cost = (total_material_cost + total_labour_cost) * (overhead_profit_percent / 100.0)
+
+        results.setFeature("window_enhancement_total_additional_material_cost_$", total_material_cost)
+        results.setFeature("window_enhancement_total_additional_labour_cost_$", total_labour_cost)
+        results.setFeature("window_enhancement_total_additional_overhead_profit_cost_$", total_overhead_profit_cost)
+        results.setFeature("window_enhancement_cost_calculation_source", cost_source)
+
         # Calculate and store average GWP values per functional unit (aggregate from all processed windows)
         # Collect GWP values from all windows
         gwp_glass_per_m2_list = []
@@ -990,6 +1206,7 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
             if 'glass' in subsurface_dict[name] and 'gwp_per_m2' in subsurface_dict[name]['glass']:
                 gwp_m2 = subsurface_dict[name]['glass']['gwp_per_m2']
                 if gwp_m2 is not None and gwp_m2 > 0:
+
                     gwp_glass_per_m2_list.append(gwp_m2)
             
             # Glass GWP per m3
@@ -1110,6 +1327,97 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
 
         pp.pprint(subsurface_dict)
         return True
+
+    def calculate_costs_from_user_rates(self, runner, total_glazing_area_m2, total_frame_area_m2, 
+                                       total_caulking_volume_m3, glass_cost_per_sf, frame_cost_per_sf,
+                                       caulking_cost_per_cy, glass_option, wf_option, caulking_option):
+        """
+        Calculate material costs using user-provided unit rates.
+        Serves as fallback when RSMeans API fails or is disabled.
+        
+        Args:
+            total_glazing_area_m2: Total glass area in m²
+            total_frame_area_m2: Total frame area in m²
+            total_caulking_volume_m3: Total caulking volume in m³
+            glass_cost_per_sf: User-provided glass cost ($/SF)
+            frame_cost_per_sf: User-provided frame cost ($/SF)
+            caulking_cost_per_cy: User-provided caulking cost ($/CY)
+            glass_option: Whether glass replacement is selected
+            wf_option: Whether frame replacement is selected
+            caulking_option: Whether caulking is selected
+        
+        Returns:
+            Total material cost in dollars
+        """
+        
+        def _m2_to_sf(value_m2: float) -> float:
+            return value_m2 * 10.7639
+        
+        def _m3_to_cy(value_m3: float) -> float:
+            return value_m3 * 1.30795
+        
+        total_cost = 0.0
+        
+        # Glass cost
+        if glass_option != "none" and glass_cost_per_sf > 0 and total_glazing_area_m2 > 0:
+            glass_qty_sf = _m2_to_sf(total_glazing_area_m2)
+            glass_cost = glass_qty_sf * glass_cost_per_sf
+            total_cost += glass_cost
+            runner.registerInfo(f"  Glass: {glass_qty_sf:.2f} SF × ${glass_cost_per_sf:.2f}/SF = ${glass_cost:,.2f}")
+        
+        # Frame cost
+        if wf_option != "none" and frame_cost_per_sf > 0 and total_frame_area_m2 > 0:
+            frame_qty_sf = _m2_to_sf(total_frame_area_m2)
+            frame_cost = frame_qty_sf * frame_cost_per_sf
+            total_cost += frame_cost
+            runner.registerInfo(f"  Frame: {frame_qty_sf:.2f} SF × ${frame_cost_per_sf:.2f}/SF = ${frame_cost:,.2f}")
+        
+        # Caulking cost
+        if caulking_option != "none" and caulking_cost_per_cy > 0 and total_caulking_volume_m3 > 0:
+            caulking_qty_cy = _m3_to_cy(total_caulking_volume_m3)
+            caulking_cost = caulking_qty_cy * caulking_cost_per_cy
+            total_cost += caulking_cost
+            runner.registerInfo(f"  Caulking: {caulking_qty_cy:.2f} CY × ${caulking_cost_per_cy:.2f}/CY = ${caulking_cost:,.2f}")
+        
+        return total_cost
+
+    def pull_rsmeans_cost_from_api(self, runner, materials):
+        """
+        Pull RSMeans cost data for retrofit materials using API credentials
+        from environment variables (client_id, client_secret).
+        """
+        try:
+            load_dotenv()
+            client_id = os.getenv('client_id')
+            client_secret = os.getenv('client_secret')
+
+            if not client_id or not client_secret:
+                runner.registerWarning(
+                    "RSMeans API credentials (client_id, client_secret) not found in environment. Skipping RSMeans cost retrieval."
+                )
+                return {}
+
+            runner.registerInfo("Initializing RSMeans API client...")
+            client = RSMeansAPIClient(client_id, client_secret, use_sandbox=False)
+
+            if not client.authenticate():
+                runner.registerWarning("Failed to authenticate with RSMeans API. Skipping cost retrieval.")
+                return {}
+
+            runner.registerInfo(f"Querying RSMeans API for {len(materials)} materials...")
+
+            return client.search_materials_batch(
+                materials=materials,
+                release_id='2025-q4',
+                catalog='gb-mf',
+                location_id='us-us-national',
+                labor_type='std',
+                measurement_system='imp',
+                save_search_results_path=None,
+            )
+        except Exception as e:
+            runner.registerWarning(f"RSMeans API lookup failed: {str(e)}")
+            return {}
 
     def determine_num_panes(self, runner, user_num_panes, glass_option, layered_construction, subsurface):
         """Figure out how many glass panes (1, 2, or 3) to install in the window.
