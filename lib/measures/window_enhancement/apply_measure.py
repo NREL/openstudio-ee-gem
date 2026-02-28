@@ -12,24 +12,129 @@ from pathlib import Path
 import sys
 import json
 import configparser
+import os
+import shutil
+import subprocess
 
 # ---------------------------------------------------------------------------
 # OpenStudio path setup
 # ---------------------------------------------------------------------------
 OPENSTUDIO_VERSION = "3.11.0"
-openstudio_path = f"/Applications/OpenStudio-{OPENSTUDIO_VERSION}/Python"
 
-if Path(openstudio_path).exists():
-    sys.path.insert(0, openstudio_path)
-    print(f"Using OpenStudio from: {openstudio_path}")
+
+def detect_openstudio_python_path():
+    env_path = os.environ.get("OPENSTUDIO_PYTHON_PATH")
+    candidates = [
+        env_path,
+        f"C:/Program Files/openstudio-{OPENSTUDIO_VERSION}/Python",
+        f"C:/Program Files/OpenStudio-{OPENSTUDIO_VERSION}/Python",
+        f"/Applications/OpenStudio-{OPENSTUDIO_VERSION}/Python",
+    ]
+    for candidate in candidates:
+        if candidate and Path(candidate).exists():
+            return candidate
+    return None
+
+
+def detect_python312_command():
+    """Return a command list to launch Python 3.12, or None if not found."""
+    env_python = os.environ.get("PYTHON312_EXE")
+    if env_python and Path(env_python).exists():
+        return [env_python]
+
+    py_launcher = shutil.which("py")
+    if py_launcher:
+        return [py_launcher, "-3.12"]
+
+    py312 = shutil.which("python3.12")
+    if py312:
+        return [py312]
+
+    common_candidates = [
+        Path.home() / "AppData/Local/Programs/Python/Python312/python.exe",
+        Path("C:/Python312/python.exe"),
+    ]
+    for candidate in common_candidates:
+        if candidate.exists():
+            return [str(candidate)]
+
+    return None
+
+
+def ensure_python_compatibility(openstudio_python_path):
+    """
+    OpenStudio 3.11 Python bindings on Windows are compiled for Python 3.12.
+    If a different Python is running, attempt to relaunch this script with 3.12.
+    """
+    if not openstudio_python_path:
+        return
+
+    requires_python_312 = "openstudio-3.11" in openstudio_python_path.lower()
+    if not requires_python_312:
+        return
+
+    if sys.version_info[:2] == (3, 12):
+        return
+
+    relaunch_guard = os.environ.get("WINDOW_ENHANCEMENT_PY312_RELAUNCH") == "1"
+    version_str = f"{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}"
+
+    if relaunch_guard:
+        raise RuntimeError(
+            "OpenStudio 3.11 requires Python 3.12, but script is still running under "
+            f"Python {version_str}."
+        )
+
+    cmd_prefix = detect_python312_command()
+    if not cmd_prefix:
+        raise RuntimeError(
+            "OpenStudio 3.11 Python bindings require Python 3.12. "
+            f"Current interpreter is Python {version_str} at {sys.executable}. "
+            "Install Python 3.12 and rerun, or set PYTHON312_EXE to your Python 3.12 executable."
+        )
+
+    print(
+        "Detected incompatible Python version for OpenStudio 3.11 bindings "
+        f"(current: {version_str}). Relaunching with Python 3.12..."
+    )
+
+    env = os.environ.copy()
+    env["WINDOW_ENHANCEMENT_PY312_RELAUNCH"] = "1"
+    script_path = Path(__file__).resolve()
+    completed = subprocess.run([*cmd_prefix, str(script_path), *sys.argv[1:]], env=env)
+    sys.exit(completed.returncode)
+
+
+openstudio_path = detect_openstudio_python_path()
+ensure_python_compatibility(openstudio_path)
+if openstudio_path:
+    if openstudio_path not in sys.path:
+        sys.path.insert(0, openstudio_path)
+    print(f"Using OpenStudio Python bindings from: {openstudio_path}")
 else:
-    print(f"Warning: OpenStudio path not found at {openstudio_path}")
+    print("Warning: OpenStudio Python path not found for 3.11.0")
     print("Will attempt to use system OpenStudio installation")
 
-import openstudio
+try:
+    import openstudio
+except ImportError as exc:
+    msg = str(exc)
+    if "python312.dll" in msg:
+        raise RuntimeError(
+            "OpenStudio 3.11 Python bindings require Python 3.12 on this machine. "
+            "Please run this script with Python 3.12 and set OPENSTUDIO_PYTHON_PATH "
+            "to the OpenStudio 3.11 Python folder if needed."
+        ) from exc
+    raise
+
 from measure import WindowEnhancement
 
 print(f"OpenStudio version: {openstudio.openStudioVersion()}")
+if not openstudio.openStudioVersion().startswith("3.11"):
+    raise RuntimeError(
+        "Loaded OpenStudio version is not 3.11.x, which is required for model_to_run.osm. "
+        "Set OPENSTUDIO_PYTHON_PATH to OpenStudio 3.11 Python bindings and use Python 3.12."
+    )
 
 # ---------------------------------------------------------------------------
 # Read API token from repo-level config.ini
@@ -97,7 +202,7 @@ def run_measure(model, args_overrides=None):
     set_arg("space_type", str(building.handle()))
 
     # --- Core arguments ---
-    set_arg("space_infiltration_reduction_percent", 30.0)
+    set_arg("space_infiltration_reduction_percent", 50.0)
 
     # --- Analysis period and lifetimes ---
     set_arg("analysis_period", 30)          # years
@@ -107,12 +212,12 @@ def run_measure(model, args_overrides=None):
     set_arg("film_lifetime", 10)            # years
     set_arg("weatherstrip_lifetime", 10)    # years
 
-    # --- Enhancement options (all 'none' except caulking for a quick test) ---
+    # --- Enhancement options aligned with workflow Scenario 1 (window-only) ---
     set_arg("wf_option", "none")                        # window frame option
-    set_arg("caulking_option", "acrylic")               # apply acrylic caulking
+    set_arg("caulking_option", "none")               # apply acrylic caulking
     set_arg("film_option", "none")                      # no glazing film
     set_arg("weatherstrip_option", "none")              # no weatherstrip
-    set_arg("glass_option", "none")                     # no glass replacement
+    set_arg("glass_option", "provide user_num_panes")   # match workflow window scenario
     set_arg("secondary_glazing_option", "none")         # no secondary glazing
 
     # --- Film properties (only used when film_option != 'none') ---
@@ -122,12 +227,13 @@ def run_measure(model, args_overrides=None):
     set_arg("film_thermal_resistance", 0.0)             # 0 = use default
 
     # --- Caulking geometry ---
-    set_arg("caulking_thickness", 0.008)                # m (8 mm bead)
+    set_arg("caulking_thickness", 0.003)                # m (8 mm bead)
 
     # --- Glass geometry (only used when glass_option != 'none') ---
-    set_arg("user_num_panes", 0)                        # 0 = do not install
+    set_arg("user_num_panes", 3)                        # U=0.20 -> 3 panes in workflow
     set_arg("glass_pane_thickness", 0.003)              # m (3 mm)
     set_arg("gap_thickness", 0.013)                     # m (13 mm)
+    set_arg("length_per_unit", 5.1816)
 
     # --- Glass optical properties (0 = use defaults) ---
     set_arg("glass_solar_transmittance", 0.0)
@@ -204,9 +310,9 @@ def main():
     print("=" * 80)
 
     # Paths
-    model_path = SCRIPT_DIR / "tests" / "DOE_small_office.osm"
+    model_path = SCRIPT_DIR / "tests" / "in.osm"
     output_dir = SCRIPT_DIR / "tests" / "output"
-    output_model_path = output_dir / "DOE_small_office_window_enhanced.osm"
+    output_model_path = output_dir / "in_window_enhanced.osm"
     results_json_path = output_dir / "apply_measure_results.json"
 
     output_dir.mkdir(parents=True, exist_ok=True)

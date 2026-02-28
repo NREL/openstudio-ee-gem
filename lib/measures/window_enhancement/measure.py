@@ -675,14 +675,14 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
             # Initialize to None to handle SimpleGlazing case
             layered_construction = None
             is_simple_glazing = False
-            
+
             if subsurface.construction().is_initialized():
                 subsurface_const = subsurface.construction().get()
-                if subsurface_const.to_LayeredConstruction().is_initialized():
-                    layered_construction = subsurface_const.to_LayeredConstruction().get()
-                elif self.is_simple_glazing_system(runner, subsurface_const):
-                    is_simple_glazing = True
+                is_simple_glazing = self.is_simple_glazing_system(runner, subsurface_const)
+                if is_simple_glazing:
                     runner.registerInfo(f"  ℹ SimpleGlazing detected in {subsurface_name}")
+                elif subsurface_const.to_LayeredConstruction().is_initialized():
+                    layered_construction = subsurface_const.to_LayeredConstruction().get()
                     
             # Check if glass replacement is requested for SimpleGlazing (not supported)
             if is_simple_glazing and glass_option != "none":
@@ -692,8 +692,12 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
             else:
                 glass_option_for_this_window = glass_option
 
-            # Determine number of panes to be installed (only if not SimpleGlazing or if glass option is none)
-            if layered_construction is not None or glass_option_for_this_window == "none":
+            # Determine number of panes to be installed
+            # For SimpleGlazing windows where glass replacement is skipped, keep pane count at 0.
+            if is_simple_glazing and glass_option_for_this_window == "none":
+                num_panes = 0
+                continue_processing = True
+            elif layered_construction is not None or glass_option_for_this_window == "none":
                 num_panes, continue_processing = self.determine_num_panes(runner, user_num_panes, glass_option_for_this_window, layered_construction, subsurface)
             else:
                 # SimpleGlazing without glass replacement - set num_panes to 0

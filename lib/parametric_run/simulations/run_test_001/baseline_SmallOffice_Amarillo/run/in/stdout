@@ -1,0 +1,261 @@
+[openstudio.CLI] <-2> Setting Log Level to Debug (-2)
+[openstudio.workflow.OSWorkflow] <Debug> Removing existing run directory: C:/Users/jhu1/AppData/Local/Temp/1/osmodel-8da5-d0b0-c600-e4f7-1772256548-0/resources/run
+[openstudio.workflow.OSWorkflow] <Debug> Registering that the workflow has started with the adapter
+[openstudio.workflow.OSWorkflow] <Debug> Initialization - selected = true
+[38;2;000;128;000m
+┌────────────────────────────────────────────────────────────────────────────────┐
+│                         Starting State Initialization                          │
+└────────────────────────────────────────────────────────────────────────────────┘[0m
+[openstudio.workflow.OSWorkflow] <Debug> The root_dir for the datapoint is C:/Users/jhu1/AppData/Local/Temp/1/osmodel-8da5-d0b0-c600-e4f7-1772256548-0/resources
+[openstudio.workflow.OSWorkflow] <Debug> Removing existing generated files directory: C:/Users/jhu1/AppData/Local/Temp/1/osmodel-8da5-d0b0-c600-e4f7-1772256548-0/resources/generated_files
+[openstudio.workflow.OSWorkflow] <Debug> Creating generated files directory: C:/Users/jhu1/AppData/Local/Temp/1/osmodel-8da5-d0b0-c600-e4f7-1772256548-0/resources/generated_files
+[openstudio.workflow.OSWorkflow] <Debug> Removing existing reports directory: C:/Users/jhu1/AppData/Local/Temp/1/osmodel-8da5-d0b0-c600-e4f7-1772256548-0/resources/reports
+[openstudio.workflow.OSWorkflow] <Info> Attempting to validate the measure workflow
+[openstudio.workflow.OSWorkflow] <Info> Validated the measure workflow
+[openstudio.workflow.OSWorkflow] <Debug> Finding and loading the seed file
+[openstudio.worklow.Util] <Info> Loading OSM model
+[openstudio.worklow.Util] <Info> Reading in OSM model C:/Users/jhu1/AppData/Local/Temp/1/osmodel-8da5-d0b0-c600-e4f7-1772256548-0/in.osm
+[openstudio.osversion.VersionTranslator] <Debug> Starting translation from Version 3.11.0.
+[openstudio.osversion.VersionTranslator] <Debug> Initial model has 766 objects.
+[openstudio.osversion.VersionTranslator] <Debug> Final model has 766 objects in IDF form.
+[utilities.idf.Workspace] <Debug> Workspace::isValid called.
+[openstudio.osversion.VersionTranslator] <Debug> Final model has 766 objects in Model form.
+[openstudio.workflow.OSWorkflow] <Debug> Initialize the weather file from osw
+[openstudio.workflow.OSWorkflow] <Debug> No weather file specified in OSW, looking in model
+[openstudio.workflow.OSWorkflow] <Debug> Find model's weather file and update LastEpwFilePath
+[openstudio.workflow.OSWorkflow] <Debug> Search for weather file files/USA_TX_El.Paso.Intl.AP.722700_TMY3.epw
+[38;2;000;128;000m#######################Returned from State Initialization#######################[0m
+[openstudio.workflow.OSWorkflow] <Debug> OpenStudioMeasures - selected = true
+[38;2;000;128;000m
+┌────────────────────────────────────────────────────────────────────────────────┐
+│                       Starting State OpenStudioMeasures                        │
+└────────────────────────────────────────────────────────────────────────────────┘[0m
+[openstudio.workflow.OSWorkflow] <Info> Beginning to execute OpenStudio Measures
+[openstudio.workflow.OSWorkflow] <Debug> Finding measures of type ModelMeasure
+[openstudio.workflow.OSWorkflow] <Info> Finished applying OpenStudio Measures.
+[openstudio.workflow.OSWorkflow] <Info> Beginning to execute Reporting Measures's Model Output Requests
+[openstudio.workflow.OSWorkflow] <Debug> Finding measures of type ReportingMeasure
+[openstudio.workflow.OSWorkflow] <Info> Finished applying Reporting Measures's Model Output Requests.
+[38;2;000;128;000m#####################Returned from State OpenStudioMeasures#####################[0m
+[openstudio.workflow.OSWorkflow] <Debug> Translator - selected = true
+[38;2;000;128;000m
+┌────────────────────────────────────────────────────────────────────────────────┐
+│                           Starting State Translator                            │
+└────────────────────────────────────────────────────────────────────────────────┘[0m
+[openstudio.workflow.OSWorkflow] <Info> Beginning the translation to IDF
+[openstudio.energyplus.ForwardTranslator] <Info> Surfaces 'Perimeter_ZN_2_ceiling', and 'Attic_floor_perimeter_east' reference different constructions, choosing 'Attic_floor_perimeter_east''s construction based on search distance.
+[openstudio.energyplus.ForwardTranslator] <Info> Surfaces 'Perimeter_ZN_4_ceiling', and 'Attic_floor_perimeter_west' reference different constructions, choosing 'Attic_floor_perimeter_west''s construction based on search distance.
+[openstudio.energyplus.ForwardTranslator] <Info> Surfaces 'Core_ZN_ceiling', and 'Attic_floor_core' reference different constructions, choosing 'Attic_floor_core''s construction based on search distance.
+[openstudio.energyplus.ForwardTranslator] <Info> Surfaces 'Perimeter_ZN_3_ceiling', and 'Attic_floor_perimeter_north' reference different constructions, choosing 'Attic_floor_perimeter_north''s construction based on search distance.
+[openstudio.energyplus.ForwardTranslator] <Info> Surfaces 'Attic_floor_perimeter_south', and 'Perimeter_ZN_1_ceiling' reference different constructions, choosing 'Attic_floor_perimeter_south''s construction based on search distance.
+[openstudio.workflow.OSWorkflow] <Info> Successfully translated to IDF
+[38;2;000;128;000m#########################Returned from State Translator#########################[0m
+[openstudio.workflow.OSWorkflow] <Debug> EnergyPlusMeasures - selected = true
+[38;2;000;128;000m
+┌────────────────────────────────────────────────────────────────────────────────┐
+│                       Starting State EnergyPlusMeasures                        │
+└────────────────────────────────────────────────────────────────────────────────┘[0m
+[openstudio.workflow.OSWorkflow] <Info> Beginning to execute EnergyPlus Measures.
+[openstudio.workflow.OSWorkflow] <Debug> Finding measures of type EnergyPlusMeasure
+[openstudio.workflow.OSWorkflow] <Info> Finished applying EnergyPlus Measures.
+[38;2;000;128;000m#####################Returned from State EnergyPlusMeasures#####################[0m
+[openstudio.workflow.OSWorkflow] <Debug> ModelicaMeasures - selected = false
+[openstudio.workflow.OSWorkflow] <Info> Skipping job ModelicaMeasures
+[openstudio.workflow.OSWorkflow] <Debug> PreProcess - selected = true
+[38;2;000;128;000m
+┌────────────────────────────────────────────────────────────────────────────────┐
+│                           Starting State PreProcess                            │
+└────────────────────────────────────────────────────────────────────────────────┘[0m
+[openstudio.workflow.OSWorkflow] <Info> Beginning to collect EnergyPlus output requests from Reporting measures.
+[openstudio.workflow.OSWorkflow] <Debug> Finding measures of type ReportingMeasure
+[openstudio.workflow.OSWorkflow] <Info> Finished collecting EnergyPlus output requests from Reporting measures.
+[openstudio.workflow.OSWorkflow] <Info> Running EnergyPlus Preprocess
+[openstudio.workflow.OSWorkflow] <Info> Finished preprocess job for EnergyPlus simulation
+[openstudio.workflow.OSWorkflow] <Debug> Saved final IDF as C:/Users/jhu1/AppData/Local/Temp/1/osmodel-8da5-d0b0-c600-e4f7-1772256548-0/resources/run/in.idf
+[38;2;000;128;000m#########################Returned from State PreProcess#########################[0m
+[openstudio.workflow.OSWorkflow] <Debug> EnergyPlus - selected = true
+[38;2;000;128;000m
+┌────────────────────────────────────────────────────────────────────────────────┐
+│                           Starting State EnergyPlus                            │
+└────────────────────────────────────────────────────────────────────────────────┘[0m
+[openstudio.OSWorkflow.prepareEnergyPlusDir] <Debug> Original Directory: C:/openstudioapplication-1.11.0/bin
+[openstudio.OSWorkflow.prepareEnergyPlusDir] <Debug> Changing To run directory: C:/Users/jhu1/AppData/Local/Temp/1/osmodel-8da5-d0b0-c600-e4f7-1772256548-0/resources/run
+[ApplicationPathHelpers] <Debug> getOpenStudioModule, szPath = 'C:\openstudioapplication-1.11.0\bin\openstudiolib.dll'
+[PathHelpers] <Debug> completeAndNormalize: result = C:/openstudioapplication-1.11.0/bin/openstudiolib.dll
+[ApplicationPathHelpers] <Debug> getOpenStudioModule, found 'C:/openstudioapplication-1.11.0/bin/openstudiolib.dll'
+[ApplicationPathHelpers] <Debug> Searching for EnergyPlus in 'C:/openstudioapplication-1.11.0/EnergyPlus/energyplus.exe'
+[PathHelpers] <Debug> completeAndNormalize: result = C:/openstudioapplication-1.11.0/EnergyPlus/energyplus.exe
+[ApplicationPathHelpers] <Debug> Found EnergyPlus at 'C:/openstudioapplication-1.11.0/EnergyPlus/energyplus.exe'
+[PathHelpers] <Debug> completeAndNormalize: result = C:/openstudioapplication-1.11.0/EnergyPlus/energyplus.exe
+[openstudio.OSWorkflow.prepareEnergyPlusDir] <Info> EnergyPlus executable path is C:/openstudioapplication-1.11.0/EnergyPlus/energyplus.exe
+[openstudio.OSWorkflow.prepareEnergyPlusDir] <Info> ExpandObjects executable path is C:/openstudioapplication-1.11.0/EnergyPlus/ExpandObjects.exe
+[openstudio.workflow.OSWorkflow] <Info> Starting simulation in run directory: C:/Users/jhu1/AppData/Local/Temp/1/osmodel-8da5-d0b0-c600-e4f7-1772256548-0/resources/run
+[openstudio.workflow.OSWorkflow] <Info> Running command '"C:/openstudioapplication-1.11.0\EnergyPlus\ExpandObjects.exe"'
+ExpandObjects Started.
+No expanded file generated.
+ExpandObjects Finished. Time:     0.078
+[openstudio.workflow.OSWorkflow] <Info> Running command '"C:/openstudioapplication-1.11.0\EnergyPlus\energyplus.exe" in.idf'
+EnergyPlus Starting
+EnergyPlus, Version 25.2.0-cf7368216c, YMD=2026.02.27 22:29
+Initializing Response Factors
+Calculating CTFs for "INTERIORFURNISHINGS"
+Calculating CTFs for "TYPICAL ATTIC SOFFIT"
+Calculating CTFs for "TYPICAL INSULATED METAL DOOR R-1.43"
+Calculating CTFs for "TYPICAL INSULATED WOOD FRAMED EXTERIOR WALL R-11.24"
+Calculating CTFs for "TYPICAL INTERIOR WALL"
+Calculating CTFs for "TYPICAL UNINSULATED WOOD JOIST ATTIC ROOF"
+Calculating CTFs for "TYPICAL WOOD JOIST ATTIC FLOOR R-37.04 1"
+Calculating CTFs for "FOUNDATION F 1.26W/M*K PERIM 0.0M AREA 149.66M2"
+Calculating CTFs for "FOUNDATION F 1.26W/M*K PERIM 18.46M AREA 67.3M2"
+Calculating CTFs for "FOUNDATION F 1.26W/M*K PERIM 27.69M AREA 113.45M2"
+Initializing Window Optical Properties
+Initializing Solar Calculations
+Allocate Solar Module Arrays
+Initializing Zone and Enclosure Report Variables
+Initializing Surface (Shading) Report Variables
+Determining Shadowing Combinations
+Computing Window Shade Absorption Factors
+Proceeding with Initializing Solar Calculations
+Initializing Surfaces
+Initializing Outdoor environment for Surfaces
+Setting up Surface Reporting Variables
+Initializing Temperature and Flux Histories
+Initializing Window Shading
+Computing Interior Absorption Factors
+Computing Interior Diffuse Solar Absorption Factors
+Initializing Solar Heat Gains
+Initializing Internal Heat Gains
+Initializing Interior Solar Distribution
+Initializing Interior Convection Coefficients
+Gathering Information for Predefined Reporting
+Completed Initializing Surface Heat Balance
+Calculate Outside Surface Heat Balance
+Calculate Inside Surface Heat Balance
+Calculate Air Heat Balance
+Initializing HVAC
+Warming up
+Calculating Detailed Daylighting Factors, Start Date=07/21
+Warming up
+Warming up
+Warming up
+Warming up
+Warming up
+Performing Zone Sizing Simulation
+...for Sizing Period: #1 EL PASO INTERNATIONAL AP  UT ANN CLG .4% CONDNS DB=>MWB
+Warming up
+Calculating Detailed Daylighting Factors, Start Date=07/21
+Warming up
+Warming up
+Warming up
+Warming up
+Warming up
+Performing Zone Sizing Simulation
+...for Sizing Period: #2 EL PASO INTERNATIONAL AP  UT ANN CLG .4% CONDNS WB=>MDB
+Warming up
+Calculating Detailed Daylighting Factors, Start Date=12/21
+Warming up
+Warming up
+Warming up
+Warming up
+Warming up
+Performing Zone Sizing Simulation
+...for Sizing Period: #3 EL PASO INTERNATIONAL AP  UT ANN HTG 99.6% CONDNS DB
+Calculating System sizing
+...for Sizing Period: #1 EL PASO INTERNATIONAL AP  UT ANN CLG .4% CONDNS DB=>MWB
+Calculating System sizing
+...for Sizing Period: #2 EL PASO INTERNATIONAL AP  UT ANN CLG .4% CONDNS WB=>MDB
+Calculating System sizing
+...for Sizing Period: #3 EL PASO INTERNATIONAL AP  UT ANN HTG 99.6% CONDNS DB
+Adjusting Air System Sizing
+Adjusting Standard 62.1 Ventilation Sizing
+Initializing Simulation
+Reporting Surfaces
+Beginning Primary Simulation
+Initializing New Environment Parameters
+Warming up {1}
+Calculating Detailed Daylighting Factors, Start Date=01/01
+Warming up {2}
+Warming up {3}
+Warming up {4}
+Warming up {5}
+Warming up {6}
+Warming up {7}
+Warming up {8}
+Starting Simulation at 01/01/2006 for RUN PERIOD 1
+Updating Shadowing Calculations, Start Date=01/31/2006
+Updating Detailed Daylighting Factors, Start Date=01/31
+Continuing Simulation at 01/31/2006 for RUN PERIOD 1
+Updating Shadowing Calculations, Start Date=03/02/2006
+Updating Detailed Daylighting Factors, Start Date=03/02
+Continuing Simulation at 03/02/2006 for RUN PERIOD 1
+Updating Shadowing Calculations, Start Date=04/01/2006
+Updating Detailed Daylighting Factors, Start Date=04/01
+Continuing Simulation at 04/01/2006 for RUN PERIOD 1
+Updating Shadowing Calculations, Start Date=05/01/2006
+Updating Detailed Daylighting Factors, Start Date=05/01
+Continuing Simulation at 05/01/2006 for RUN PERIOD 1
+Updating Shadowing Calculations, Start Date=05/31/2006
+Updating Detailed Daylighting Factors, Start Date=05/31
+Continuing Simulation at 05/31/2006 for RUN PERIOD 1
+Updating Shadowing Calculations, Start Date=06/30/2006
+Updating Detailed Daylighting Factors, Start Date=06/30
+Continuing Simulation at 06/30/2006 for RUN PERIOD 1
+Updating Shadowing Calculations, Start Date=07/30/2006
+Updating Detailed Daylighting Factors, Start Date=07/30
+Continuing Simulation at 07/30/2006 for RUN PERIOD 1
+Updating Shadowing Calculations, Start Date=08/29/2006
+Updating Detailed Daylighting Factors, Start Date=08/29
+Continuing Simulation at 08/29/2006 for RUN PERIOD 1
+Updating Shadowing Calculations, Start Date=09/28/2006
+Updating Detailed Daylighting Factors, Start Date=09/28
+Continuing Simulation at 09/28/2006 for RUN PERIOD 1
+Updating Shadowing Calculations, Start Date=10/28/2006
+Updating Detailed Daylighting Factors, Start Date=10/28
+Continuing Simulation at 10/28/2006 for RUN PERIOD 1
+Updating Shadowing Calculations, Start Date=11/27/2006
+Updating Detailed Daylighting Factors, Start Date=11/27
+Continuing Simulation at 11/27/2006 for RUN PERIOD 1
+Updating Shadowing Calculations, Start Date=12/27/2006
+Updating Detailed Daylighting Factors, Start Date=12/27
+Continuing Simulation at 12/27/2006 for RUN PERIOD 1
+Writing tabular output file results using HTML format.
+Computing Life Cycle Costs and Reporting
+Writing final SQL reports
+EnergyPlus Run Time=00hr 00min 13.88sec
+EnergyPlus Completed Successfully.
+[openstudio.workflow.OSWorkflow] <Info> EnergyPlus returned '0'
+RunEnergyPlus: Completed Successfully with [38;2;255;000;000m0 Fatal Errors, [0m[38;2;255;165;000m0 Severe Errors, [0m[38;2;255;255;000m66 Warnings.[0m
+[openstudio.workflow.OSWorkflow] <Info> EnergyPlus finished with 544864 warnings and 0 severe errors
+[openstudio.OSWorkflow.prepareEnergyPlusDir] <Info> Removing any copied EnergyPlus files
+[openstudio.OSWorkflow.prepareEnergyPlusDir] <Debug> Changing Current Directory back to: C:/openstudioapplication-1.11.0/bin
+[38;2;000;128;000m#########################Returned from State EnergyPlus#########################[0m
+[openstudio.workflow.OSWorkflow] <Debug> Modelica - selected = false
+[openstudio.workflow.OSWorkflow] <Info> Skipping job Modelica
+[openstudio.workflow.OSWorkflow] <Debug> ReportingMeasures - selected = true
+[38;2;000;128;000m
+┌────────────────────────────────────────────────────────────────────────────────┐
+│                        Starting State ReportingMeasures                        │
+└────────────────────────────────────────────────────────────────────────────────┘[0m
+[openstudio.workflow.OSWorkflow] <Info> Beginning to execute Reporting Measures.
+[openstudio.workflow.OSWorkflow] <Debug> Finding measures of type ReportingMeasure
+[openstudio.workflow.OSWorkflow] <Info> Finished applying Reporting Measures.
+[38;2;000;128;000m#####################Returned from State ReportingMeasures######################[0m
+[openstudio.workflow.OSWorkflow] <Debug> PostProcess - selected = true
+[38;2;000;128;000m
+┌────────────────────────────────────────────────────────────────────────────────┐
+│                           Starting State PostProcess                           │
+└────────────────────────────────────────────────────────────────────────────────┘[0m
+[openstudio.workflow.OSWorkflow] <Info> Gathering reports
+[openstudio.workflow.Util] <Info> Run directory: C:/Users/jhu1/AppData/Local/Temp/1/osmodel-8da5-d0b0-c600-e4f7-1772256548-0/resources/run
+[openstudio.workflow.Util] <Info> Reports directoryC:/Users/jhu1/AppData/Local/Temp/1/osmodel-8da5-d0b0-c600-e4f7-1772256548-0/resources
+[openstudio.workflow.Util] <Info> Saving EnergyPlus HTML report to C:/Users/jhu1/AppData/Local/Temp/1/osmodel-8da5-d0b0-c600-e4f7-1772256548-0/resources/reports/eplustbl.html
+[openstudio.workflow.OSWorkflow] <Info> Finished gathering reports
+[38;2;000;128;000m########################Returned from State PostProcess#########################[0m
+[openstudio.workflow.OSWorkflow] <Debug> Cleanup - selected = true
+[38;2;000;128;000m
+┌────────────────────────────────────────────────────────────────────────────────┐
+│                             Starting State Cleanup                             │
+└────────────────────────────────────────────────────────────────────────────────┘[0m
+[openstudio.workflow.OSWorkflow] <Info> Beginning cleanup of the run directory
+[openstudio.workflow.OSWorkflow] <Info> Finished cleanup of the run directory
+[38;2;000;128;000m##########################Returned from State Cleanup###########################[0m

@@ -1,4 +1,4 @@
-! Program Version,EnergyPlus, Version 25.2.0-cf7368216c, YMD=2026.02.26 16:38,
+! Program Version,EnergyPlus, Version 25.2.0-cf7368216c, YMD=2026.02.27 22:51,
 ! Output:Variable Objects (applicable to this run)
 Output:Variable,*,Site Outdoor Air Drybulb Temperature,hourly; !- Zone Average [C]
 Output:Variable,*,Site Outdoor Air Dewpoint Temperature,hourly; !- Zone Average [C]
@@ -241,7 +241,6 @@ Output:Variable,*,Surface Window Glazing Beam to Beam Solar Transmittance,hourly
 Output:Variable,*,Surface Window Glazing Beam to Diffuse Solar Transmittance,hourly; !- Zone Average []
 Output:Variable,*,Surface Window Glazing Diffuse to Diffuse Solar Transmittance,hourly; !- Zone Average []
 Output:Variable,*,Surface Window Model Solver Iteration Count,hourly; !- Zone Average []
-Output:Variable,*,Surface Window Back Face Temperature Layer 5,hourly; !- Zone Average [C]
 Output:Variable,*,Surface Inside Face Exterior Windows Incident Beam Solar Radiation Rate per Area,hourly; !- Zone Average [W/m2]
 Output:Variable,*,Surface Inside Face Exterior Windows Incident Beam Solar Radiation Rate,hourly; !- Zone Average [W]
 Output:Variable,*,Surface Inside Face Interior Windows Incident Beam Solar Radiation Rate per Area,hourly; !- Zone Average [W/m2]

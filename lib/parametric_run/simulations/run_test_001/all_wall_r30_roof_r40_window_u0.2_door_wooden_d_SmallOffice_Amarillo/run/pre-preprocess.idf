@@ -201,7 +201,7 @@ LifeCycleCost:UsePriceEscalation,
   1.0950;                                 !- Year Escalation 30
 
 Building,
-  -SmallOffice-ASHRAE 169-2013-3B created: 2026-02-26 16:38:45 -0700, !- Name
+  -SmallOffice-ASHRAE 169-2013-3B created: 2026-02-27 22:51:46 -0700, !- Name
   0,                                      !- North Axis {deg}
   City,                                   !- Terrain
   0.04,                                   !- Loads Convergence Tolerance Value {W}
@@ -1491,7 +1491,7 @@ FenestrationSurface:Detailed,
 FenestrationSurface:Detailed,
   Perimeter_ZN_1_wall_south_Window_1,     !- Name
   Window,                                 !- Surface Type
-  Perimeter_ZN_1_wall_south_Window_1_New_3Pane_Construction, !- Construction Name
+  U 0.65 SHGC 0.25 Simple Glazing,        !- Construction Name
   Perimeter_ZN_1_wall_south,              !- Building Surface Name
   ,                                       !- Outside Boundary Condition Object
   ,                                       !- View Factor to Ground
@@ -1506,7 +1506,7 @@ FenestrationSurface:Detailed,
 FenestrationSurface:Detailed,
   Perimeter_ZN_1_wall_south_Window_2,     !- Name
   Window,                                 !- Surface Type
-  Perimeter_ZN_1_wall_south_Window_2_New_3Pane_Construction, !- Construction Name
+  U 0.65 SHGC 0.25 Simple Glazing,        !- Construction Name
   Perimeter_ZN_1_wall_south,              !- Building Surface Name
   ,                                       !- Outside Boundary Condition Object
   ,                                       !- View Factor to Ground
@@ -1521,7 +1521,7 @@ FenestrationSurface:Detailed,
 FenestrationSurface:Detailed,
   Perimeter_ZN_1_wall_south_Window_3,     !- Name
   Window,                                 !- Surface Type
-  Perimeter_ZN_1_wall_south_Window_3_New_3Pane_Construction, !- Construction Name
+  U 0.65 SHGC 0.25 Simple Glazing,        !- Construction Name
   Perimeter_ZN_1_wall_south,              !- Building Surface Name
   ,                                       !- Outside Boundary Condition Object
   ,                                       !- View Factor to Ground
@@ -1536,7 +1536,7 @@ FenestrationSurface:Detailed,
 FenestrationSurface:Detailed,
   Perimeter_ZN_1_wall_south_Window_4,     !- Name
   Window,                                 !- Surface Type
-  Perimeter_ZN_1_wall_south_Window_4_New_3Pane_Construction, !- Construction Name
+  U 0.65 SHGC 0.25 Simple Glazing,        !- Construction Name
   Perimeter_ZN_1_wall_south,              !- Building Surface Name
   ,                                       !- Outside Boundary Condition Object
   ,                                       !- View Factor to Ground
@@ -1551,7 +1551,7 @@ FenestrationSurface:Detailed,
 FenestrationSurface:Detailed,
   Perimeter_ZN_1_wall_south_Window_5,     !- Name
   Window,                                 !- Surface Type
-  Perimeter_ZN_1_wall_south_Window_5_New_3Pane_Construction, !- Construction Name
+  U 0.65 SHGC 0.25 Simple Glazing,        !- Construction Name
   Perimeter_ZN_1_wall_south,              !- Building Surface Name
   ,                                       !- Outside Boundary Condition Object
   ,                                       !- View Factor to Ground
@@ -1566,7 +1566,7 @@ FenestrationSurface:Detailed,
 FenestrationSurface:Detailed,
   Perimeter_ZN_1_wall_south_Window_6,     !- Name
   Window,                                 !- Surface Type
-  Perimeter_ZN_1_wall_south_Window_6_New_3Pane_Construction, !- Construction Name
+  U 0.65 SHGC 0.25 Simple Glazing,        !- Construction Name
   Perimeter_ZN_1_wall_south,              !- Building Surface Name
   ,                                       !- Outside Boundary Condition Object
   ,                                       !- View Factor to Ground
@@ -1872,7 +1872,7 @@ BuildingSurface:Detailed,
 FenestrationSurface:Detailed,
   Perimeter_ZN_2_wall_east_Window_1,      !- Name
   Window,                                 !- Surface Type
-  Perimeter_ZN_2_wall_east_Window_1_New_3Pane_Construction, !- Construction Name
+  U 0.65 SHGC 0.25 Simple Glazing,        !- Construction Name
   Perimeter_ZN_2_wall_east,               !- Building Surface Name
   ,                                       !- Outside Boundary Condition Object
   ,                                       !- View Factor to Ground
@@ -1887,7 +1887,7 @@ FenestrationSurface:Detailed,
 FenestrationSurface:Detailed,
   Perimeter_ZN_2_wall_east_Window_2,      !- Name
   Window,                                 !- Surface Type
-  Perimeter_ZN_2_wall_east_Window_2_New_3Pane_Construction, !- Construction Name
+  U 0.65 SHGC 0.25 Simple Glazing,        !- Construction Name
   Perimeter_ZN_2_wall_east,               !- Building Surface Name
   ,                                       !- Outside Boundary Condition Object
   ,                                       !- View Factor to Ground
@@ -1902,7 +1902,7 @@ FenestrationSurface:Detailed,
 FenestrationSurface:Detailed,
   Perimeter_ZN_2_wall_east_Window_3,      !- Name
   Window,                                 !- Surface Type
-  Perimeter_ZN_2_wall_east_Window_3_New_3Pane_Construction, !- Construction Name
+  U 0.65 SHGC 0.25 Simple Glazing,        !- Construction Name
   Perimeter_ZN_2_wall_east,               !- Building Surface Name
   ,                                       !- Outside Boundary Condition Object
   ,                                       !- View Factor to Ground
@@ -1917,7 +1917,7 @@ FenestrationSurface:Detailed,
 FenestrationSurface:Detailed,
   Perimeter_ZN_2_wall_east_Window_4,      !- Name
   Window,                                 !- Surface Type
-  Perimeter_ZN_2_wall_east_Window_4_New_3Pane_Construction, !- Construction Name
+  U 0.65 SHGC 0.25 Simple Glazing,        !- Construction Name
   Perimeter_ZN_2_wall_east,               !- Building Surface Name
   ,                                       !- Outside Boundary Condition Object
   ,                                       !- View Factor to Ground
@@ -2289,7 +2289,7 @@ FenestrationSurface:Detailed,
 FenestrationSurface:Detailed,
   Perimeter_ZN_3_wall_north_Window_1,     !- Name
   Window,                                 !- Surface Type
-  Perimeter_ZN_3_wall_north_Window_1_New_3Pane_Construction, !- Construction Name
+  U 0.65 SHGC 0.25 Simple Glazing,        !- Construction Name
   Perimeter_ZN_3_wall_north,              !- Building Surface Name
   ,                                       !- Outside Boundary Condition Object
   ,                                       !- View Factor to Ground
@@ -2304,7 +2304,7 @@ FenestrationSurface:Detailed,
 FenestrationSurface:Detailed,
   Perimeter_ZN_3_wall_north_Window_2,     !- Name
   Window,                                 !- Surface Type
-  Perimeter_ZN_3_wall_north_Window_2_New_3Pane_Construction, !- Construction Name
+  U 0.65 SHGC 0.25 Simple Glazing,        !- Construction Name
   Perimeter_ZN_3_wall_north,              !- Building Surface Name
   ,                                       !- Outside Boundary Condition Object
   ,                                       !- View Factor to Ground
@@ -2319,7 +2319,7 @@ FenestrationSurface:Detailed,
 FenestrationSurface:Detailed,
   Perimeter_ZN_3_wall_north_Window_3,     !- Name
   Window,                                 !- Surface Type
-  Perimeter_ZN_3_wall_north_Window_3_New_3Pane_Construction, !- Construction Name
+  U 0.65 SHGC 0.25 Simple Glazing,        !- Construction Name
   Perimeter_ZN_3_wall_north,              !- Building Surface Name
   ,                                       !- Outside Boundary Condition Object
   ,                                       !- View Factor to Ground
@@ -2334,7 +2334,7 @@ FenestrationSurface:Detailed,
 FenestrationSurface:Detailed,
   Perimeter_ZN_3_wall_north_Window_4,     !- Name
   Window,                                 !- Surface Type
-  Perimeter_ZN_3_wall_north_Window_4_New_3Pane_Construction, !- Construction Name
+  U 0.65 SHGC 0.25 Simple Glazing,        !- Construction Name
   Perimeter_ZN_3_wall_north,              !- Building Surface Name
   ,                                       !- Outside Boundary Condition Object
   ,                                       !- View Factor to Ground
@@ -2349,7 +2349,7 @@ FenestrationSurface:Detailed,
 FenestrationSurface:Detailed,
   Perimeter_ZN_3_wall_north_Window_5,     !- Name
   Window,                                 !- Surface Type
-  Perimeter_ZN_3_wall_north_Window_5_New_3Pane_Construction, !- Construction Name
+  U 0.65 SHGC 0.25 Simple Glazing,        !- Construction Name
   Perimeter_ZN_3_wall_north,              !- Building Surface Name
   ,                                       !- Outside Boundary Condition Object
   ,                                       !- View Factor to Ground
@@ -2364,7 +2364,7 @@ FenestrationSurface:Detailed,
 FenestrationSurface:Detailed,
   Perimeter_ZN_3_wall_north_Window_6,     !- Name
   Window,                                 !- Surface Type
-  Perimeter_ZN_3_wall_north_Window_6_New_3Pane_Construction, !- Construction Name
+  U 0.65 SHGC 0.25 Simple Glazing,        !- Construction Name
   Perimeter_ZN_3_wall_north,              !- Building Surface Name
   ,                                       !- Outside Boundary Condition Object
   ,                                       !- View Factor to Ground
@@ -2723,7 +2723,7 @@ BuildingSurface:Detailed,
 FenestrationSurface:Detailed,
   Perimeter_ZN_4_wall_west_Window_1,      !- Name
   Window,                                 !- Surface Type
-  Perimeter_ZN_4_wall_west_Window_1_New_3Pane_Construction, !- Construction Name
+  U 0.65 SHGC 0.25 Simple Glazing,        !- Construction Name
   Perimeter_ZN_4_wall_west,               !- Building Surface Name
   ,                                       !- Outside Boundary Condition Object
   ,                                       !- View Factor to Ground
@@ -2738,7 +2738,7 @@ FenestrationSurface:Detailed,
 FenestrationSurface:Detailed,
   Perimeter_ZN_4_wall_west_Window_2,      !- Name
   Window,                                 !- Surface Type
-  Perimeter_ZN_4_wall_west_Window_2_New_3Pane_Construction, !- Construction Name
+  U 0.65 SHGC 0.25 Simple Glazing,        !- Construction Name
   Perimeter_ZN_4_wall_west,               !- Building Surface Name
   ,                                       !- Outside Boundary Condition Object
   ,                                       !- View Factor to Ground
@@ -2753,7 +2753,7 @@ FenestrationSurface:Detailed,
 FenestrationSurface:Detailed,
   Perimeter_ZN_4_wall_west_Window_3,      !- Name
   Window,                                 !- Surface Type
-  Perimeter_ZN_4_wall_west_Window_3_New_3Pane_Construction, !- Construction Name
+  U 0.65 SHGC 0.25 Simple Glazing,        !- Construction Name
   Perimeter_ZN_4_wall_west,               !- Building Surface Name
   ,                                       !- Outside Boundary Condition Object
   ,                                       !- View Factor to Ground
@@ -2768,7 +2768,7 @@ FenestrationSurface:Detailed,
 FenestrationSurface:Detailed,
   Perimeter_ZN_4_wall_west_Window_4,      !- Name
   Window,                                 !- Surface Type
-  Perimeter_ZN_4_wall_west_Window_4_New_3Pane_Construction, !- Construction Name
+  U 0.65 SHGC 0.25 Simple Glazing,        !- Construction Name
   Perimeter_ZN_4_wall_west,               !- Building Surface Name
   ,                                       !- Outside Boundary Condition Object
   ,                                       !- View Factor to Ground
@@ -3305,206 +3305,6 @@ Material:NoMass,
   0.7,                                    !- Solar Absorptance
   0.7;                                    !- Visible Absorptance
 
-WindowMaterial:Gas,
-  Perimeter_ZN_1_wall_south_Window_1_Air_Gap_1, !- Name
-  Air,                                    !- Gas Type
-  0.013;                                  !- Thickness {m}
-
-WindowMaterial:Gas,
-  Perimeter_ZN_1_wall_south_Window_1_Air_Gap_2, !- Name
-  Air,                                    !- Gas Type
-  0.013;                                  !- Thickness {m}
-
-WindowMaterial:Gas,
-  Perimeter_ZN_1_wall_south_Window_2_Air_Gap_1, !- Name
-  Air,                                    !- Gas Type
-  0.013;                                  !- Thickness {m}
-
-WindowMaterial:Gas,
-  Perimeter_ZN_1_wall_south_Window_2_Air_Gap_2, !- Name
-  Air,                                    !- Gas Type
-  0.013;                                  !- Thickness {m}
-
-WindowMaterial:Gas,
-  Perimeter_ZN_1_wall_south_Window_3_Air_Gap_1, !- Name
-  Air,                                    !- Gas Type
-  0.013;                                  !- Thickness {m}
-
-WindowMaterial:Gas,
-  Perimeter_ZN_1_wall_south_Window_3_Air_Gap_2, !- Name
-  Air,                                    !- Gas Type
-  0.013;                                  !- Thickness {m}
-
-WindowMaterial:Gas,
-  Perimeter_ZN_1_wall_south_Window_4_Air_Gap_1, !- Name
-  Air,                                    !- Gas Type
-  0.013;                                  !- Thickness {m}
-
-WindowMaterial:Gas,
-  Perimeter_ZN_1_wall_south_Window_4_Air_Gap_2, !- Name
-  Air,                                    !- Gas Type
-  0.013;                                  !- Thickness {m}
-
-WindowMaterial:Gas,
-  Perimeter_ZN_1_wall_south_Window_5_Air_Gap_1, !- Name
-  Air,                                    !- Gas Type
-  0.013;                                  !- Thickness {m}
-
-WindowMaterial:Gas,
-  Perimeter_ZN_1_wall_south_Window_5_Air_Gap_2, !- Name
-  Air,                                    !- Gas Type
-  0.013;                                  !- Thickness {m}
-
-WindowMaterial:Gas,
-  Perimeter_ZN_1_wall_south_Window_6_Air_Gap_1, !- Name
-  Air,                                    !- Gas Type
-  0.013;                                  !- Thickness {m}
-
-WindowMaterial:Gas,
-  Perimeter_ZN_1_wall_south_Window_6_Air_Gap_2, !- Name
-  Air,                                    !- Gas Type
-  0.013;                                  !- Thickness {m}
-
-WindowMaterial:Gas,
-  Perimeter_ZN_2_wall_east_Window_1_Air_Gap_1, !- Name
-  Air,                                    !- Gas Type
-  0.013;                                  !- Thickness {m}
-
-WindowMaterial:Gas,
-  Perimeter_ZN_2_wall_east_Window_1_Air_Gap_2, !- Name
-  Air,                                    !- Gas Type
-  0.013;                                  !- Thickness {m}
-
-WindowMaterial:Gas,
-  Perimeter_ZN_2_wall_east_Window_2_Air_Gap_1, !- Name
-  Air,                                    !- Gas Type
-  0.013;                                  !- Thickness {m}
-
-WindowMaterial:Gas,
-  Perimeter_ZN_2_wall_east_Window_2_Air_Gap_2, !- Name
-  Air,                                    !- Gas Type
-  0.013;                                  !- Thickness {m}
-
-WindowMaterial:Gas,
-  Perimeter_ZN_2_wall_east_Window_3_Air_Gap_1, !- Name
-  Air,                                    !- Gas Type
-  0.013;                                  !- Thickness {m}
-
-WindowMaterial:Gas,
-  Perimeter_ZN_2_wall_east_Window_3_Air_Gap_2, !- Name
-  Air,                                    !- Gas Type
-  0.013;                                  !- Thickness {m}
-
-WindowMaterial:Gas,
-  Perimeter_ZN_2_wall_east_Window_4_Air_Gap_1, !- Name
-  Air,                                    !- Gas Type
-  0.013;                                  !- Thickness {m}
-
-WindowMaterial:Gas,
-  Perimeter_ZN_2_wall_east_Window_4_Air_Gap_2, !- Name
-  Air,                                    !- Gas Type
-  0.013;                                  !- Thickness {m}
-
-WindowMaterial:Gas,
-  Perimeter_ZN_3_wall_north_Window_1_Air_Gap_1, !- Name
-  Air,                                    !- Gas Type
-  0.013;                                  !- Thickness {m}
-
-WindowMaterial:Gas,
-  Perimeter_ZN_3_wall_north_Window_1_Air_Gap_2, !- Name
-  Air,                                    !- Gas Type
-  0.013;                                  !- Thickness {m}
-
-WindowMaterial:Gas,
-  Perimeter_ZN_3_wall_north_Window_2_Air_Gap_1, !- Name
-  Air,                                    !- Gas Type
-  0.013;                                  !- Thickness {m}
-
-WindowMaterial:Gas,
-  Perimeter_ZN_3_wall_north_Window_2_Air_Gap_2, !- Name
-  Air,                                    !- Gas Type
-  0.013;                                  !- Thickness {m}
-
-WindowMaterial:Gas,
-  Perimeter_ZN_3_wall_north_Window_3_Air_Gap_1, !- Name
-  Air,                                    !- Gas Type
-  0.013;                                  !- Thickness {m}
-
-WindowMaterial:Gas,
-  Perimeter_ZN_3_wall_north_Window_3_Air_Gap_2, !- Name
-  Air,                                    !- Gas Type
-  0.013;                                  !- Thickness {m}
-
-WindowMaterial:Gas,
-  Perimeter_ZN_3_wall_north_Window_4_Air_Gap_1, !- Name
-  Air,                                    !- Gas Type
-  0.013;                                  !- Thickness {m}
-
-WindowMaterial:Gas,
-  Perimeter_ZN_3_wall_north_Window_4_Air_Gap_2, !- Name
-  Air,                                    !- Gas Type
-  0.013;                                  !- Thickness {m}
-
-WindowMaterial:Gas,
-  Perimeter_ZN_3_wall_north_Window_5_Air_Gap_1, !- Name
-  Air,                                    !- Gas Type
-  0.013;                                  !- Thickness {m}
-
-WindowMaterial:Gas,
-  Perimeter_ZN_3_wall_north_Window_5_Air_Gap_2, !- Name
-  Air,                                    !- Gas Type
-  0.013;                                  !- Thickness {m}
-
-WindowMaterial:Gas,
-  Perimeter_ZN_3_wall_north_Window_6_Air_Gap_1, !- Name
-  Air,                                    !- Gas Type
-  0.013;                                  !- Thickness {m}
-
-WindowMaterial:Gas,
-  Perimeter_ZN_3_wall_north_Window_6_Air_Gap_2, !- Name
-  Air,                                    !- Gas Type
-  0.013;                                  !- Thickness {m}
-
-WindowMaterial:Gas,
-  Perimeter_ZN_4_wall_west_Window_1_Air_Gap_1, !- Name
-  Air,                                    !- Gas Type
-  0.013;                                  !- Thickness {m}
-
-WindowMaterial:Gas,
-  Perimeter_ZN_4_wall_west_Window_1_Air_Gap_2, !- Name
-  Air,                                    !- Gas Type
-  0.013;                                  !- Thickness {m}
-
-WindowMaterial:Gas,
-  Perimeter_ZN_4_wall_west_Window_2_Air_Gap_1, !- Name
-  Air,                                    !- Gas Type
-  0.013;                                  !- Thickness {m}
-
-WindowMaterial:Gas,
-  Perimeter_ZN_4_wall_west_Window_2_Air_Gap_2, !- Name
-  Air,                                    !- Gas Type
-  0.013;                                  !- Thickness {m}
-
-WindowMaterial:Gas,
-  Perimeter_ZN_4_wall_west_Window_3_Air_Gap_1, !- Name
-  Air,                                    !- Gas Type
-  0.013;                                  !- Thickness {m}
-
-WindowMaterial:Gas,
-  Perimeter_ZN_4_wall_west_Window_3_Air_Gap_2, !- Name
-  Air,                                    !- Gas Type
-  0.013;                                  !- Thickness {m}
-
-WindowMaterial:Gas,
-  Perimeter_ZN_4_wall_west_Window_4_Air_Gap_1, !- Name
-  Air,                                    !- Gas Type
-  0.013;                                  !- Thickness {m}
-
-WindowMaterial:Gas,
-  Perimeter_ZN_4_wall_west_Window_4_Air_Gap_2, !- Name
-  Air,                                    !- Gas Type
-  0.013;                                  !- Thickness {m}
-
 WindowMaterial:Glazing,
   Clear 3mm,                              !- Name
   SpectralAverage,                        !- Optical Data Type
@@ -3522,966 +3322,6 @@ WindowMaterial:Glazing,
   0.9,                                    !- Conductivity {W/m-K}
   1,                                      !- Dirt Correction Factor for Solar and Visible Transmittance
   No;                                     !- Solar Diffusing
-
-WindowMaterial:Glazing,
-  Perimeter_ZN_1_wall_south_Window_1_Glass_Pane_1, !- Name
-  SpectralAverage,                        !- Optical Data Type
-  ,                                       !- Window Glass Spectral Data Set Name
-  0.003,                                  !- Thickness {m}
-  0.7,                                    !- Solar Transmittance at Normal Incidence
-  0.15,                                   !- Front Side Solar Reflectance at Normal Incidence
-  0.15,                                   !- Back Side Solar Reflectance at Normal Incidence
-  0.8,                                    !- Visible Transmittance at Normal Incidence
-  0.1,                                    !- Front Side Visible Reflectance at Normal Incidence
-  0.1,                                    !- Back Side Visible Reflectance at Normal Incidence
-  0,                                      !- Infrared Transmittance at Normal Incidence
-  0.84,                                   !- Front Side Infrared Hemispherical Emissivity
-  0.84,                                   !- Back Side Infrared Hemispherical Emissivity
-  0.9;                                    !- Conductivity {W/m-K}
-
-WindowMaterial:Glazing,
-  Perimeter_ZN_1_wall_south_Window_1_Glass_Pane_2, !- Name
-  SpectralAverage,                        !- Optical Data Type
-  ,                                       !- Window Glass Spectral Data Set Name
-  0.003,                                  !- Thickness {m}
-  0.7,                                    !- Solar Transmittance at Normal Incidence
-  0.15,                                   !- Front Side Solar Reflectance at Normal Incidence
-  0.15,                                   !- Back Side Solar Reflectance at Normal Incidence
-  0.8,                                    !- Visible Transmittance at Normal Incidence
-  0.1,                                    !- Front Side Visible Reflectance at Normal Incidence
-  0.1,                                    !- Back Side Visible Reflectance at Normal Incidence
-  0,                                      !- Infrared Transmittance at Normal Incidence
-  0.84,                                   !- Front Side Infrared Hemispherical Emissivity
-  0.84,                                   !- Back Side Infrared Hemispherical Emissivity
-  0.9;                                    !- Conductivity {W/m-K}
-
-WindowMaterial:Glazing,
-  Perimeter_ZN_1_wall_south_Window_1_Glass_Pane_3, !- Name
-  SpectralAverage,                        !- Optical Data Type
-  ,                                       !- Window Glass Spectral Data Set Name
-  0.003,                                  !- Thickness {m}
-  0.7,                                    !- Solar Transmittance at Normal Incidence
-  0.15,                                   !- Front Side Solar Reflectance at Normal Incidence
-  0.15,                                   !- Back Side Solar Reflectance at Normal Incidence
-  0.8,                                    !- Visible Transmittance at Normal Incidence
-  0.1,                                    !- Front Side Visible Reflectance at Normal Incidence
-  0.1,                                    !- Back Side Visible Reflectance at Normal Incidence
-  0,                                      !- Infrared Transmittance at Normal Incidence
-  0.84,                                   !- Front Side Infrared Hemispherical Emissivity
-  0.84,                                   !- Back Side Infrared Hemispherical Emissivity
-  0.9;                                    !- Conductivity {W/m-K}
-
-WindowMaterial:Glazing,
-  Perimeter_ZN_1_wall_south_Window_2_Glass_Pane_1, !- Name
-  SpectralAverage,                        !- Optical Data Type
-  ,                                       !- Window Glass Spectral Data Set Name
-  0.003,                                  !- Thickness {m}
-  0.7,                                    !- Solar Transmittance at Normal Incidence
-  0.15,                                   !- Front Side Solar Reflectance at Normal Incidence
-  0.15,                                   !- Back Side Solar Reflectance at Normal Incidence
-  0.8,                                    !- Visible Transmittance at Normal Incidence
-  0.1,                                    !- Front Side Visible Reflectance at Normal Incidence
-  0.1,                                    !- Back Side Visible Reflectance at Normal Incidence
-  0,                                      !- Infrared Transmittance at Normal Incidence
-  0.84,                                   !- Front Side Infrared Hemispherical Emissivity
-  0.84,                                   !- Back Side Infrared Hemispherical Emissivity
-  0.9;                                    !- Conductivity {W/m-K}
-
-WindowMaterial:Glazing,
-  Perimeter_ZN_1_wall_south_Window_2_Glass_Pane_2, !- Name
-  SpectralAverage,                        !- Optical Data Type
-  ,                                       !- Window Glass Spectral Data Set Name
-  0.003,                                  !- Thickness {m}
-  0.7,                                    !- Solar Transmittance at Normal Incidence
-  0.15,                                   !- Front Side Solar Reflectance at Normal Incidence
-  0.15,                                   !- Back Side Solar Reflectance at Normal Incidence
-  0.8,                                    !- Visible Transmittance at Normal Incidence
-  0.1,                                    !- Front Side Visible Reflectance at Normal Incidence
-  0.1,                                    !- Back Side Visible Reflectance at Normal Incidence
-  0,                                      !- Infrared Transmittance at Normal Incidence
-  0.84,                                   !- Front Side Infrared Hemispherical Emissivity
-  0.84,                                   !- Back Side Infrared Hemispherical Emissivity
-  0.9;                                    !- Conductivity {W/m-K}
-
-WindowMaterial:Glazing,
-  Perimeter_ZN_1_wall_south_Window_2_Glass_Pane_3, !- Name
-  SpectralAverage,                        !- Optical Data Type
-  ,                                       !- Window Glass Spectral Data Set Name
-  0.003,                                  !- Thickness {m}
-  0.7,                                    !- Solar Transmittance at Normal Incidence
-  0.15,                                   !- Front Side Solar Reflectance at Normal Incidence
-  0.15,                                   !- Back Side Solar Reflectance at Normal Incidence
-  0.8,                                    !- Visible Transmittance at Normal Incidence
-  0.1,                                    !- Front Side Visible Reflectance at Normal Incidence
-  0.1,                                    !- Back Side Visible Reflectance at Normal Incidence
-  0,                                      !- Infrared Transmittance at Normal Incidence
-  0.84,                                   !- Front Side Infrared Hemispherical Emissivity
-  0.84,                                   !- Back Side Infrared Hemispherical Emissivity
-  0.9;                                    !- Conductivity {W/m-K}
-
-WindowMaterial:Glazing,
-  Perimeter_ZN_1_wall_south_Window_3_Glass_Pane_1, !- Name
-  SpectralAverage,                        !- Optical Data Type
-  ,                                       !- Window Glass Spectral Data Set Name
-  0.003,                                  !- Thickness {m}
-  0.7,                                    !- Solar Transmittance at Normal Incidence
-  0.15,                                   !- Front Side Solar Reflectance at Normal Incidence
-  0.15,                                   !- Back Side Solar Reflectance at Normal Incidence
-  0.8,                                    !- Visible Transmittance at Normal Incidence
-  0.1,                                    !- Front Side Visible Reflectance at Normal Incidence
-  0.1,                                    !- Back Side Visible Reflectance at Normal Incidence
-  0,                                      !- Infrared Transmittance at Normal Incidence
-  0.84,                                   !- Front Side Infrared Hemispherical Emissivity
-  0.84,                                   !- Back Side Infrared Hemispherical Emissivity
-  0.9;                                    !- Conductivity {W/m-K}
-
-WindowMaterial:Glazing,
-  Perimeter_ZN_1_wall_south_Window_3_Glass_Pane_2, !- Name
-  SpectralAverage,                        !- Optical Data Type
-  ,                                       !- Window Glass Spectral Data Set Name
-  0.003,                                  !- Thickness {m}
-  0.7,                                    !- Solar Transmittance at Normal Incidence
-  0.15,                                   !- Front Side Solar Reflectance at Normal Incidence
-  0.15,                                   !- Back Side Solar Reflectance at Normal Incidence
-  0.8,                                    !- Visible Transmittance at Normal Incidence
-  0.1,                                    !- Front Side Visible Reflectance at Normal Incidence
-  0.1,                                    !- Back Side Visible Reflectance at Normal Incidence
-  0,                                      !- Infrared Transmittance at Normal Incidence
-  0.84,                                   !- Front Side Infrared Hemispherical Emissivity
-  0.84,                                   !- Back Side Infrared Hemispherical Emissivity
-  0.9;                                    !- Conductivity {W/m-K}
-
-WindowMaterial:Glazing,
-  Perimeter_ZN_1_wall_south_Window_3_Glass_Pane_3, !- Name
-  SpectralAverage,                        !- Optical Data Type
-  ,                                       !- Window Glass Spectral Data Set Name
-  0.003,                                  !- Thickness {m}
-  0.7,                                    !- Solar Transmittance at Normal Incidence
-  0.15,                                   !- Front Side Solar Reflectance at Normal Incidence
-  0.15,                                   !- Back Side Solar Reflectance at Normal Incidence
-  0.8,                                    !- Visible Transmittance at Normal Incidence
-  0.1,                                    !- Front Side Visible Reflectance at Normal Incidence
-  0.1,                                    !- Back Side Visible Reflectance at Normal Incidence
-  0,                                      !- Infrared Transmittance at Normal Incidence
-  0.84,                                   !- Front Side Infrared Hemispherical Emissivity
-  0.84,                                   !- Back Side Infrared Hemispherical Emissivity
-  0.9;                                    !- Conductivity {W/m-K}
-
-WindowMaterial:Glazing,
-  Perimeter_ZN_1_wall_south_Window_4_Glass_Pane_1, !- Name
-  SpectralAverage,                        !- Optical Data Type
-  ,                                       !- Window Glass Spectral Data Set Name
-  0.003,                                  !- Thickness {m}
-  0.7,                                    !- Solar Transmittance at Normal Incidence
-  0.15,                                   !- Front Side Solar Reflectance at Normal Incidence
-  0.15,                                   !- Back Side Solar Reflectance at Normal Incidence
-  0.8,                                    !- Visible Transmittance at Normal Incidence
-  0.1,                                    !- Front Side Visible Reflectance at Normal Incidence
-  0.1,                                    !- Back Side Visible Reflectance at Normal Incidence
-  0,                                      !- Infrared Transmittance at Normal Incidence
-  0.84,                                   !- Front Side Infrared Hemispherical Emissivity
-  0.84,                                   !- Back Side Infrared Hemispherical Emissivity
-  0.9;                                    !- Conductivity {W/m-K}
-
-WindowMaterial:Glazing,
-  Perimeter_ZN_1_wall_south_Window_4_Glass_Pane_2, !- Name
-  SpectralAverage,                        !- Optical Data Type
-  ,                                       !- Window Glass Spectral Data Set Name
-  0.003,                                  !- Thickness {m}
-  0.7,                                    !- Solar Transmittance at Normal Incidence
-  0.15,                                   !- Front Side Solar Reflectance at Normal Incidence
-  0.15,                                   !- Back Side Solar Reflectance at Normal Incidence
-  0.8,                                    !- Visible Transmittance at Normal Incidence
-  0.1,                                    !- Front Side Visible Reflectance at Normal Incidence
-  0.1,                                    !- Back Side Visible Reflectance at Normal Incidence
-  0,                                      !- Infrared Transmittance at Normal Incidence
-  0.84,                                   !- Front Side Infrared Hemispherical Emissivity
-  0.84,                                   !- Back Side Infrared Hemispherical Emissivity
-  0.9;                                    !- Conductivity {W/m-K}
-
-WindowMaterial:Glazing,
-  Perimeter_ZN_1_wall_south_Window_4_Glass_Pane_3, !- Name
-  SpectralAverage,                        !- Optical Data Type
-  ,                                       !- Window Glass Spectral Data Set Name
-  0.003,                                  !- Thickness {m}
-  0.7,                                    !- Solar Transmittance at Normal Incidence
-  0.15,                                   !- Front Side Solar Reflectance at Normal Incidence
-  0.15,                                   !- Back Side Solar Reflectance at Normal Incidence
-  0.8,                                    !- Visible Transmittance at Normal Incidence
-  0.1,                                    !- Front Side Visible Reflectance at Normal Incidence
-  0.1,                                    !- Back Side Visible Reflectance at Normal Incidence
-  0,                                      !- Infrared Transmittance at Normal Incidence
-  0.84,                                   !- Front Side Infrared Hemispherical Emissivity
-  0.84,                                   !- Back Side Infrared Hemispherical Emissivity
-  0.9;                                    !- Conductivity {W/m-K}
-
-WindowMaterial:Glazing,
-  Perimeter_ZN_1_wall_south_Window_5_Glass_Pane_1, !- Name
-  SpectralAverage,                        !- Optical Data Type
-  ,                                       !- Window Glass Spectral Data Set Name
-  0.003,                                  !- Thickness {m}
-  0.7,                                    !- Solar Transmittance at Normal Incidence
-  0.15,                                   !- Front Side Solar Reflectance at Normal Incidence
-  0.15,                                   !- Back Side Solar Reflectance at Normal Incidence
-  0.8,                                    !- Visible Transmittance at Normal Incidence
-  0.1,                                    !- Front Side Visible Reflectance at Normal Incidence
-  0.1,                                    !- Back Side Visible Reflectance at Normal Incidence
-  0,                                      !- Infrared Transmittance at Normal Incidence
-  0.84,                                   !- Front Side Infrared Hemispherical Emissivity
-  0.84,                                   !- Back Side Infrared Hemispherical Emissivity
-  0.9;                                    !- Conductivity {W/m-K}
-
-WindowMaterial:Glazing,
-  Perimeter_ZN_1_wall_south_Window_5_Glass_Pane_2, !- Name
-  SpectralAverage,                        !- Optical Data Type
-  ,                                       !- Window Glass Spectral Data Set Name
-  0.003,                                  !- Thickness {m}
-  0.7,                                    !- Solar Transmittance at Normal Incidence
-  0.15,                                   !- Front Side Solar Reflectance at Normal Incidence
-  0.15,                                   !- Back Side Solar Reflectance at Normal Incidence
-  0.8,                                    !- Visible Transmittance at Normal Incidence
-  0.1,                                    !- Front Side Visible Reflectance at Normal Incidence
-  0.1,                                    !- Back Side Visible Reflectance at Normal Incidence
-  0,                                      !- Infrared Transmittance at Normal Incidence
-  0.84,                                   !- Front Side Infrared Hemispherical Emissivity
-  0.84,                                   !- Back Side Infrared Hemispherical Emissivity
-  0.9;                                    !- Conductivity {W/m-K}
-
-WindowMaterial:Glazing,
-  Perimeter_ZN_1_wall_south_Window_5_Glass_Pane_3, !- Name
-  SpectralAverage,                        !- Optical Data Type
-  ,                                       !- Window Glass Spectral Data Set Name
-  0.003,                                  !- Thickness {m}
-  0.7,                                    !- Solar Transmittance at Normal Incidence
-  0.15,                                   !- Front Side Solar Reflectance at Normal Incidence
-  0.15,                                   !- Back Side Solar Reflectance at Normal Incidence
-  0.8,                                    !- Visible Transmittance at Normal Incidence
-  0.1,                                    !- Front Side Visible Reflectance at Normal Incidence
-  0.1,                                    !- Back Side Visible Reflectance at Normal Incidence
-  0,                                      !- Infrared Transmittance at Normal Incidence
-  0.84,                                   !- Front Side Infrared Hemispherical Emissivity
-  0.84,                                   !- Back Side Infrared Hemispherical Emissivity
-  0.9;                                    !- Conductivity {W/m-K}
-
-WindowMaterial:Glazing,
-  Perimeter_ZN_1_wall_south_Window_6_Glass_Pane_1, !- Name
-  SpectralAverage,                        !- Optical Data Type
-  ,                                       !- Window Glass Spectral Data Set Name
-  0.003,                                  !- Thickness {m}
-  0.7,                                    !- Solar Transmittance at Normal Incidence
-  0.15,                                   !- Front Side Solar Reflectance at Normal Incidence
-  0.15,                                   !- Back Side Solar Reflectance at Normal Incidence
-  0.8,                                    !- Visible Transmittance at Normal Incidence
-  0.1,                                    !- Front Side Visible Reflectance at Normal Incidence
-  0.1,                                    !- Back Side Visible Reflectance at Normal Incidence
-  0,                                      !- Infrared Transmittance at Normal Incidence
-  0.84,                                   !- Front Side Infrared Hemispherical Emissivity
-  0.84,                                   !- Back Side Infrared Hemispherical Emissivity
-  0.9;                                    !- Conductivity {W/m-K}
-
-WindowMaterial:Glazing,
-  Perimeter_ZN_1_wall_south_Window_6_Glass_Pane_2, !- Name
-  SpectralAverage,                        !- Optical Data Type
-  ,                                       !- Window Glass Spectral Data Set Name
-  0.003,                                  !- Thickness {m}
-  0.7,                                    !- Solar Transmittance at Normal Incidence
-  0.15,                                   !- Front Side Solar Reflectance at Normal Incidence
-  0.15,                                   !- Back Side Solar Reflectance at Normal Incidence
-  0.8,                                    !- Visible Transmittance at Normal Incidence
-  0.1,                                    !- Front Side Visible Reflectance at Normal Incidence
-  0.1,                                    !- Back Side Visible Reflectance at Normal Incidence
-  0,                                      !- Infrared Transmittance at Normal Incidence
-  0.84,                                   !- Front Side Infrared Hemispherical Emissivity
-  0.84,                                   !- Back Side Infrared Hemispherical Emissivity
-  0.9;                                    !- Conductivity {W/m-K}
-
-WindowMaterial:Glazing,
-  Perimeter_ZN_1_wall_south_Window_6_Glass_Pane_3, !- Name
-  SpectralAverage,                        !- Optical Data Type
-  ,                                       !- Window Glass Spectral Data Set Name
-  0.003,                                  !- Thickness {m}
-  0.7,                                    !- Solar Transmittance at Normal Incidence
-  0.15,                                   !- Front Side Solar Reflectance at Normal Incidence
-  0.15,                                   !- Back Side Solar Reflectance at Normal Incidence
-  0.8,                                    !- Visible Transmittance at Normal Incidence
-  0.1,                                    !- Front Side Visible Reflectance at Normal Incidence
-  0.1,                                    !- Back Side Visible Reflectance at Normal Incidence
-  0,                                      !- Infrared Transmittance at Normal Incidence
-  0.84,                                   !- Front Side Infrared Hemispherical Emissivity
-  0.84,                                   !- Back Side Infrared Hemispherical Emissivity
-  0.9;                                    !- Conductivity {W/m-K}
-
-WindowMaterial:Glazing,
-  Perimeter_ZN_2_wall_east_Window_1_Glass_Pane_1, !- Name
-  SpectralAverage,                        !- Optical Data Type
-  ,                                       !- Window Glass Spectral Data Set Name
-  0.003,                                  !- Thickness {m}
-  0.7,                                    !- Solar Transmittance at Normal Incidence
-  0.15,                                   !- Front Side Solar Reflectance at Normal Incidence
-  0.15,                                   !- Back Side Solar Reflectance at Normal Incidence
-  0.8,                                    !- Visible Transmittance at Normal Incidence
-  0.1,                                    !- Front Side Visible Reflectance at Normal Incidence
-  0.1,                                    !- Back Side Visible Reflectance at Normal Incidence
-  0,                                      !- Infrared Transmittance at Normal Incidence
-  0.84,                                   !- Front Side Infrared Hemispherical Emissivity
-  0.84,                                   !- Back Side Infrared Hemispherical Emissivity
-  0.9;                                    !- Conductivity {W/m-K}
-
-WindowMaterial:Glazing,
-  Perimeter_ZN_2_wall_east_Window_1_Glass_Pane_2, !- Name
-  SpectralAverage,                        !- Optical Data Type
-  ,                                       !- Window Glass Spectral Data Set Name
-  0.003,                                  !- Thickness {m}
-  0.7,                                    !- Solar Transmittance at Normal Incidence
-  0.15,                                   !- Front Side Solar Reflectance at Normal Incidence
-  0.15,                                   !- Back Side Solar Reflectance at Normal Incidence
-  0.8,                                    !- Visible Transmittance at Normal Incidence
-  0.1,                                    !- Front Side Visible Reflectance at Normal Incidence
-  0.1,                                    !- Back Side Visible Reflectance at Normal Incidence
-  0,                                      !- Infrared Transmittance at Normal Incidence
-  0.84,                                   !- Front Side Infrared Hemispherical Emissivity
-  0.84,                                   !- Back Side Infrared Hemispherical Emissivity
-  0.9;                                    !- Conductivity {W/m-K}
-
-WindowMaterial:Glazing,
-  Perimeter_ZN_2_wall_east_Window_1_Glass_Pane_3, !- Name
-  SpectralAverage,                        !- Optical Data Type
-  ,                                       !- Window Glass Spectral Data Set Name
-  0.003,                                  !- Thickness {m}
-  0.7,                                    !- Solar Transmittance at Normal Incidence
-  0.15,                                   !- Front Side Solar Reflectance at Normal Incidence
-  0.15,                                   !- Back Side Solar Reflectance at Normal Incidence
-  0.8,                                    !- Visible Transmittance at Normal Incidence
-  0.1,                                    !- Front Side Visible Reflectance at Normal Incidence
-  0.1,                                    !- Back Side Visible Reflectance at Normal Incidence
-  0,                                      !- Infrared Transmittance at Normal Incidence
-  0.84,                                   !- Front Side Infrared Hemispherical Emissivity
-  0.84,                                   !- Back Side Infrared Hemispherical Emissivity
-  0.9;                                    !- Conductivity {W/m-K}
-
-WindowMaterial:Glazing,
-  Perimeter_ZN_2_wall_east_Window_2_Glass_Pane_1, !- Name
-  SpectralAverage,                        !- Optical Data Type
-  ,                                       !- Window Glass Spectral Data Set Name
-  0.003,                                  !- Thickness {m}
-  0.7,                                    !- Solar Transmittance at Normal Incidence
-  0.15,                                   !- Front Side Solar Reflectance at Normal Incidence
-  0.15,                                   !- Back Side Solar Reflectance at Normal Incidence
-  0.8,                                    !- Visible Transmittance at Normal Incidence
-  0.1,                                    !- Front Side Visible Reflectance at Normal Incidence
-  0.1,                                    !- Back Side Visible Reflectance at Normal Incidence
-  0,                                      !- Infrared Transmittance at Normal Incidence
-  0.84,                                   !- Front Side Infrared Hemispherical Emissivity
-  0.84,                                   !- Back Side Infrared Hemispherical Emissivity
-  0.9;                                    !- Conductivity {W/m-K}
-
-WindowMaterial:Glazing,
-  Perimeter_ZN_2_wall_east_Window_2_Glass_Pane_2, !- Name
-  SpectralAverage,                        !- Optical Data Type
-  ,                                       !- Window Glass Spectral Data Set Name
-  0.003,                                  !- Thickness {m}
-  0.7,                                    !- Solar Transmittance at Normal Incidence
-  0.15,                                   !- Front Side Solar Reflectance at Normal Incidence
-  0.15,                                   !- Back Side Solar Reflectance at Normal Incidence
-  0.8,                                    !- Visible Transmittance at Normal Incidence
-  0.1,                                    !- Front Side Visible Reflectance at Normal Incidence
-  0.1,                                    !- Back Side Visible Reflectance at Normal Incidence
-  0,                                      !- Infrared Transmittance at Normal Incidence
-  0.84,                                   !- Front Side Infrared Hemispherical Emissivity
-  0.84,                                   !- Back Side Infrared Hemispherical Emissivity
-  0.9;                                    !- Conductivity {W/m-K}
-
-WindowMaterial:Glazing,
-  Perimeter_ZN_2_wall_east_Window_2_Glass_Pane_3, !- Name
-  SpectralAverage,                        !- Optical Data Type
-  ,                                       !- Window Glass Spectral Data Set Name
-  0.003,                                  !- Thickness {m}
-  0.7,                                    !- Solar Transmittance at Normal Incidence
-  0.15,                                   !- Front Side Solar Reflectance at Normal Incidence
-  0.15,                                   !- Back Side Solar Reflectance at Normal Incidence
-  0.8,                                    !- Visible Transmittance at Normal Incidence
-  0.1,                                    !- Front Side Visible Reflectance at Normal Incidence
-  0.1,                                    !- Back Side Visible Reflectance at Normal Incidence
-  0,                                      !- Infrared Transmittance at Normal Incidence
-  0.84,                                   !- Front Side Infrared Hemispherical Emissivity
-  0.84,                                   !- Back Side Infrared Hemispherical Emissivity
-  0.9;                                    !- Conductivity {W/m-K}
-
-WindowMaterial:Glazing,
-  Perimeter_ZN_2_wall_east_Window_3_Glass_Pane_1, !- Name
-  SpectralAverage,                        !- Optical Data Type
-  ,                                       !- Window Glass Spectral Data Set Name
-  0.003,                                  !- Thickness {m}
-  0.7,                                    !- Solar Transmittance at Normal Incidence
-  0.15,                                   !- Front Side Solar Reflectance at Normal Incidence
-  0.15,                                   !- Back Side Solar Reflectance at Normal Incidence
-  0.8,                                    !- Visible Transmittance at Normal Incidence
-  0.1,                                    !- Front Side Visible Reflectance at Normal Incidence
-  0.1,                                    !- Back Side Visible Reflectance at Normal Incidence
-  0,                                      !- Infrared Transmittance at Normal Incidence
-  0.84,                                   !- Front Side Infrared Hemispherical Emissivity
-  0.84,                                   !- Back Side Infrared Hemispherical Emissivity
-  0.9;                                    !- Conductivity {W/m-K}
-
-WindowMaterial:Glazing,
-  Perimeter_ZN_2_wall_east_Window_3_Glass_Pane_2, !- Name
-  SpectralAverage,                        !- Optical Data Type
-  ,                                       !- Window Glass Spectral Data Set Name
-  0.003,                                  !- Thickness {m}
-  0.7,                                    !- Solar Transmittance at Normal Incidence
-  0.15,                                   !- Front Side Solar Reflectance at Normal Incidence
-  0.15,                                   !- Back Side Solar Reflectance at Normal Incidence
-  0.8,                                    !- Visible Transmittance at Normal Incidence
-  0.1,                                    !- Front Side Visible Reflectance at Normal Incidence
-  0.1,                                    !- Back Side Visible Reflectance at Normal Incidence
-  0,                                      !- Infrared Transmittance at Normal Incidence
-  0.84,                                   !- Front Side Infrared Hemispherical Emissivity
-  0.84,                                   !- Back Side Infrared Hemispherical Emissivity
-  0.9;                                    !- Conductivity {W/m-K}
-
-WindowMaterial:Glazing,
-  Perimeter_ZN_2_wall_east_Window_3_Glass_Pane_3, !- Name
-  SpectralAverage,                        !- Optical Data Type
-  ,                                       !- Window Glass Spectral Data Set Name
-  0.003,                                  !- Thickness {m}
-  0.7,                                    !- Solar Transmittance at Normal Incidence
-  0.15,                                   !- Front Side Solar Reflectance at Normal Incidence
-  0.15,                                   !- Back Side Solar Reflectance at Normal Incidence
-  0.8,                                    !- Visible Transmittance at Normal Incidence
-  0.1,                                    !- Front Side Visible Reflectance at Normal Incidence
-  0.1,                                    !- Back Side Visible Reflectance at Normal Incidence
-  0,                                      !- Infrared Transmittance at Normal Incidence
-  0.84,                                   !- Front Side Infrared Hemispherical Emissivity
-  0.84,                                   !- Back Side Infrared Hemispherical Emissivity
-  0.9;                                    !- Conductivity {W/m-K}
-
-WindowMaterial:Glazing,
-  Perimeter_ZN_2_wall_east_Window_4_Glass_Pane_1, !- Name
-  SpectralAverage,                        !- Optical Data Type
-  ,                                       !- Window Glass Spectral Data Set Name
-  0.003,                                  !- Thickness {m}
-  0.7,                                    !- Solar Transmittance at Normal Incidence
-  0.15,                                   !- Front Side Solar Reflectance at Normal Incidence
-  0.15,                                   !- Back Side Solar Reflectance at Normal Incidence
-  0.8,                                    !- Visible Transmittance at Normal Incidence
-  0.1,                                    !- Front Side Visible Reflectance at Normal Incidence
-  0.1,                                    !- Back Side Visible Reflectance at Normal Incidence
-  0,                                      !- Infrared Transmittance at Normal Incidence
-  0.84,                                   !- Front Side Infrared Hemispherical Emissivity
-  0.84,                                   !- Back Side Infrared Hemispherical Emissivity
-  0.9;                                    !- Conductivity {W/m-K}
-
-WindowMaterial:Glazing,
-  Perimeter_ZN_2_wall_east_Window_4_Glass_Pane_2, !- Name
-  SpectralAverage,                        !- Optical Data Type
-  ,                                       !- Window Glass Spectral Data Set Name
-  0.003,                                  !- Thickness {m}
-  0.7,                                    !- Solar Transmittance at Normal Incidence
-  0.15,                                   !- Front Side Solar Reflectance at Normal Incidence
-  0.15,                                   !- Back Side Solar Reflectance at Normal Incidence
-  0.8,                                    !- Visible Transmittance at Normal Incidence
-  0.1,                                    !- Front Side Visible Reflectance at Normal Incidence
-  0.1,                                    !- Back Side Visible Reflectance at Normal Incidence
-  0,                                      !- Infrared Transmittance at Normal Incidence
-  0.84,                                   !- Front Side Infrared Hemispherical Emissivity
-  0.84,                                   !- Back Side Infrared Hemispherical Emissivity
-  0.9;                                    !- Conductivity {W/m-K}
-
-WindowMaterial:Glazing,
-  Perimeter_ZN_2_wall_east_Window_4_Glass_Pane_3, !- Name
-  SpectralAverage,                        !- Optical Data Type
-  ,                                       !- Window Glass Spectral Data Set Name
-  0.003,                                  !- Thickness {m}
-  0.7,                                    !- Solar Transmittance at Normal Incidence
-  0.15,                                   !- Front Side Solar Reflectance at Normal Incidence
-  0.15,                                   !- Back Side Solar Reflectance at Normal Incidence
-  0.8,                                    !- Visible Transmittance at Normal Incidence
-  0.1,                                    !- Front Side Visible Reflectance at Normal Incidence
-  0.1,                                    !- Back Side Visible Reflectance at Normal Incidence
-  0,                                      !- Infrared Transmittance at Normal Incidence
-  0.84,                                   !- Front Side Infrared Hemispherical Emissivity
-  0.84,                                   !- Back Side Infrared Hemispherical Emissivity
-  0.9;                                    !- Conductivity {W/m-K}
-
-WindowMaterial:Glazing,
-  Perimeter_ZN_3_wall_north_Window_1_Glass_Pane_1, !- Name
-  SpectralAverage,                        !- Optical Data Type
-  ,                                       !- Window Glass Spectral Data Set Name
-  0.003,                                  !- Thickness {m}
-  0.7,                                    !- Solar Transmittance at Normal Incidence
-  0.15,                                   !- Front Side Solar Reflectance at Normal Incidence
-  0.15,                                   !- Back Side Solar Reflectance at Normal Incidence
-  0.8,                                    !- Visible Transmittance at Normal Incidence
-  0.1,                                    !- Front Side Visible Reflectance at Normal Incidence
-  0.1,                                    !- Back Side Visible Reflectance at Normal Incidence
-  0,                                      !- Infrared Transmittance at Normal Incidence
-  0.84,                                   !- Front Side Infrared Hemispherical Emissivity
-  0.84,                                   !- Back Side Infrared Hemispherical Emissivity
-  0.9;                                    !- Conductivity {W/m-K}
-
-WindowMaterial:Glazing,
-  Perimeter_ZN_3_wall_north_Window_1_Glass_Pane_2, !- Name
-  SpectralAverage,                        !- Optical Data Type
-  ,                                       !- Window Glass Spectral Data Set Name
-  0.003,                                  !- Thickness {m}
-  0.7,                                    !- Solar Transmittance at Normal Incidence
-  0.15,                                   !- Front Side Solar Reflectance at Normal Incidence
-  0.15,                                   !- Back Side Solar Reflectance at Normal Incidence
-  0.8,                                    !- Visible Transmittance at Normal Incidence
-  0.1,                                    !- Front Side Visible Reflectance at Normal Incidence
-  0.1,                                    !- Back Side Visible Reflectance at Normal Incidence
-  0,                                      !- Infrared Transmittance at Normal Incidence
-  0.84,                                   !- Front Side Infrared Hemispherical Emissivity
-  0.84,                                   !- Back Side Infrared Hemispherical Emissivity
-  0.9;                                    !- Conductivity {W/m-K}
-
-WindowMaterial:Glazing,
-  Perimeter_ZN_3_wall_north_Window_1_Glass_Pane_3, !- Name
-  SpectralAverage,                        !- Optical Data Type
-  ,                                       !- Window Glass Spectral Data Set Name
-  0.003,                                  !- Thickness {m}
-  0.7,                                    !- Solar Transmittance at Normal Incidence
-  0.15,                                   !- Front Side Solar Reflectance at Normal Incidence
-  0.15,                                   !- Back Side Solar Reflectance at Normal Incidence
-  0.8,                                    !- Visible Transmittance at Normal Incidence
-  0.1,                                    !- Front Side Visible Reflectance at Normal Incidence
-  0.1,                                    !- Back Side Visible Reflectance at Normal Incidence
-  0,                                      !- Infrared Transmittance at Normal Incidence
-  0.84,                                   !- Front Side Infrared Hemispherical Emissivity
-  0.84,                                   !- Back Side Infrared Hemispherical Emissivity
-  0.9;                                    !- Conductivity {W/m-K}
-
-WindowMaterial:Glazing,
-  Perimeter_ZN_3_wall_north_Window_2_Glass_Pane_1, !- Name
-  SpectralAverage,                        !- Optical Data Type
-  ,                                       !- Window Glass Spectral Data Set Name
-  0.003,                                  !- Thickness {m}
-  0.7,                                    !- Solar Transmittance at Normal Incidence
-  0.15,                                   !- Front Side Solar Reflectance at Normal Incidence
-  0.15,                                   !- Back Side Solar Reflectance at Normal Incidence
-  0.8,                                    !- Visible Transmittance at Normal Incidence
-  0.1,                                    !- Front Side Visible Reflectance at Normal Incidence
-  0.1,                                    !- Back Side Visible Reflectance at Normal Incidence
-  0,                                      !- Infrared Transmittance at Normal Incidence
-  0.84,                                   !- Front Side Infrared Hemispherical Emissivity
-  0.84,                                   !- Back Side Infrared Hemispherical Emissivity
-  0.9;                                    !- Conductivity {W/m-K}
-
-WindowMaterial:Glazing,
-  Perimeter_ZN_3_wall_north_Window_2_Glass_Pane_2, !- Name
-  SpectralAverage,                        !- Optical Data Type
-  ,                                       !- Window Glass Spectral Data Set Name
-  0.003,                                  !- Thickness {m}
-  0.7,                                    !- Solar Transmittance at Normal Incidence
-  0.15,                                   !- Front Side Solar Reflectance at Normal Incidence
-  0.15,                                   !- Back Side Solar Reflectance at Normal Incidence
-  0.8,                                    !- Visible Transmittance at Normal Incidence
-  0.1,                                    !- Front Side Visible Reflectance at Normal Incidence
-  0.1,                                    !- Back Side Visible Reflectance at Normal Incidence
-  0,                                      !- Infrared Transmittance at Normal Incidence
-  0.84,                                   !- Front Side Infrared Hemispherical Emissivity
-  0.84,                                   !- Back Side Infrared Hemispherical Emissivity
-  0.9;                                    !- Conductivity {W/m-K}
-
-WindowMaterial:Glazing,
-  Perimeter_ZN_3_wall_north_Window_2_Glass_Pane_3, !- Name
-  SpectralAverage,                        !- Optical Data Type
-  ,                                       !- Window Glass Spectral Data Set Name
-  0.003,                                  !- Thickness {m}
-  0.7,                                    !- Solar Transmittance at Normal Incidence
-  0.15,                                   !- Front Side Solar Reflectance at Normal Incidence
-  0.15,                                   !- Back Side Solar Reflectance at Normal Incidence
-  0.8,                                    !- Visible Transmittance at Normal Incidence
-  0.1,                                    !- Front Side Visible Reflectance at Normal Incidence
-  0.1,                                    !- Back Side Visible Reflectance at Normal Incidence
-  0,                                      !- Infrared Transmittance at Normal Incidence
-  0.84,                                   !- Front Side Infrared Hemispherical Emissivity
-  0.84,                                   !- Back Side Infrared Hemispherical Emissivity
-  0.9;                                    !- Conductivity {W/m-K}
-
-WindowMaterial:Glazing,
-  Perimeter_ZN_3_wall_north_Window_3_Glass_Pane_1, !- Name
-  SpectralAverage,                        !- Optical Data Type
-  ,                                       !- Window Glass Spectral Data Set Name
-  0.003,                                  !- Thickness {m}
-  0.7,                                    !- Solar Transmittance at Normal Incidence
-  0.15,                                   !- Front Side Solar Reflectance at Normal Incidence
-  0.15,                                   !- Back Side Solar Reflectance at Normal Incidence
-  0.8,                                    !- Visible Transmittance at Normal Incidence
-  0.1,                                    !- Front Side Visible Reflectance at Normal Incidence
-  0.1,                                    !- Back Side Visible Reflectance at Normal Incidence
-  0,                                      !- Infrared Transmittance at Normal Incidence
-  0.84,                                   !- Front Side Infrared Hemispherical Emissivity
-  0.84,                                   !- Back Side Infrared Hemispherical Emissivity
-  0.9;                                    !- Conductivity {W/m-K}
-
-WindowMaterial:Glazing,
-  Perimeter_ZN_3_wall_north_Window_3_Glass_Pane_2, !- Name
-  SpectralAverage,                        !- Optical Data Type
-  ,                                       !- Window Glass Spectral Data Set Name
-  0.003,                                  !- Thickness {m}
-  0.7,                                    !- Solar Transmittance at Normal Incidence
-  0.15,                                   !- Front Side Solar Reflectance at Normal Incidence
-  0.15,                                   !- Back Side Solar Reflectance at Normal Incidence
-  0.8,                                    !- Visible Transmittance at Normal Incidence
-  0.1,                                    !- Front Side Visible Reflectance at Normal Incidence
-  0.1,                                    !- Back Side Visible Reflectance at Normal Incidence
-  0,                                      !- Infrared Transmittance at Normal Incidence
-  0.84,                                   !- Front Side Infrared Hemispherical Emissivity
-  0.84,                                   !- Back Side Infrared Hemispherical Emissivity
-  0.9;                                    !- Conductivity {W/m-K}
-
-WindowMaterial:Glazing,
-  Perimeter_ZN_3_wall_north_Window_3_Glass_Pane_3, !- Name
-  SpectralAverage,                        !- Optical Data Type
-  ,                                       !- Window Glass Spectral Data Set Name
-  0.003,                                  !- Thickness {m}
-  0.7,                                    !- Solar Transmittance at Normal Incidence
-  0.15,                                   !- Front Side Solar Reflectance at Normal Incidence
-  0.15,                                   !- Back Side Solar Reflectance at Normal Incidence
-  0.8,                                    !- Visible Transmittance at Normal Incidence
-  0.1,                                    !- Front Side Visible Reflectance at Normal Incidence
-  0.1,                                    !- Back Side Visible Reflectance at Normal Incidence
-  0,                                      !- Infrared Transmittance at Normal Incidence
-  0.84,                                   !- Front Side Infrared Hemispherical Emissivity
-  0.84,                                   !- Back Side Infrared Hemispherical Emissivity
-  0.9;                                    !- Conductivity {W/m-K}
-
-WindowMaterial:Glazing,
-  Perimeter_ZN_3_wall_north_Window_4_Glass_Pane_1, !- Name
-  SpectralAverage,                        !- Optical Data Type
-  ,                                       !- Window Glass Spectral Data Set Name
-  0.003,                                  !- Thickness {m}
-  0.7,                                    !- Solar Transmittance at Normal Incidence
-  0.15,                                   !- Front Side Solar Reflectance at Normal Incidence
-  0.15,                                   !- Back Side Solar Reflectance at Normal Incidence
-  0.8,                                    !- Visible Transmittance at Normal Incidence
-  0.1,                                    !- Front Side Visible Reflectance at Normal Incidence
-  0.1,                                    !- Back Side Visible Reflectance at Normal Incidence
-  0,                                      !- Infrared Transmittance at Normal Incidence
-  0.84,                                   !- Front Side Infrared Hemispherical Emissivity
-  0.84,                                   !- Back Side Infrared Hemispherical Emissivity
-  0.9;                                    !- Conductivity {W/m-K}
-
-WindowMaterial:Glazing,
-  Perimeter_ZN_3_wall_north_Window_4_Glass_Pane_2, !- Name
-  SpectralAverage,                        !- Optical Data Type
-  ,                                       !- Window Glass Spectral Data Set Name
-  0.003,                                  !- Thickness {m}
-  0.7,                                    !- Solar Transmittance at Normal Incidence
-  0.15,                                   !- Front Side Solar Reflectance at Normal Incidence
-  0.15,                                   !- Back Side Solar Reflectance at Normal Incidence
-  0.8,                                    !- Visible Transmittance at Normal Incidence
-  0.1,                                    !- Front Side Visible Reflectance at Normal Incidence
-  0.1,                                    !- Back Side Visible Reflectance at Normal Incidence
-  0,                                      !- Infrared Transmittance at Normal Incidence
-  0.84,                                   !- Front Side Infrared Hemispherical Emissivity
-  0.84,                                   !- Back Side Infrared Hemispherical Emissivity
-  0.9;                                    !- Conductivity {W/m-K}
-
-WindowMaterial:Glazing,
-  Perimeter_ZN_3_wall_north_Window_4_Glass_Pane_3, !- Name
-  SpectralAverage,                        !- Optical Data Type
-  ,                                       !- Window Glass Spectral Data Set Name
-  0.003,                                  !- Thickness {m}
-  0.7,                                    !- Solar Transmittance at Normal Incidence
-  0.15,                                   !- Front Side Solar Reflectance at Normal Incidence
-  0.15,                                   !- Back Side Solar Reflectance at Normal Incidence
-  0.8,                                    !- Visible Transmittance at Normal Incidence
-  0.1,                                    !- Front Side Visible Reflectance at Normal Incidence
-  0.1,                                    !- Back Side Visible Reflectance at Normal Incidence
-  0,                                      !- Infrared Transmittance at Normal Incidence
-  0.84,                                   !- Front Side Infrared Hemispherical Emissivity
-  0.84,                                   !- Back Side Infrared Hemispherical Emissivity
-  0.9;                                    !- Conductivity {W/m-K}
-
-WindowMaterial:Glazing,
-  Perimeter_ZN_3_wall_north_Window_5_Glass_Pane_1, !- Name
-  SpectralAverage,                        !- Optical Data Type
-  ,                                       !- Window Glass Spectral Data Set Name
-  0.003,                                  !- Thickness {m}
-  0.7,                                    !- Solar Transmittance at Normal Incidence
-  0.15,                                   !- Front Side Solar Reflectance at Normal Incidence
-  0.15,                                   !- Back Side Solar Reflectance at Normal Incidence
-  0.8,                                    !- Visible Transmittance at Normal Incidence
-  0.1,                                    !- Front Side Visible Reflectance at Normal Incidence
-  0.1,                                    !- Back Side Visible Reflectance at Normal Incidence
-  0,                                      !- Infrared Transmittance at Normal Incidence
-  0.84,                                   !- Front Side Infrared Hemispherical Emissivity
-  0.84,                                   !- Back Side Infrared Hemispherical Emissivity
-  0.9;                                    !- Conductivity {W/m-K}
-
-WindowMaterial:Glazing,
-  Perimeter_ZN_3_wall_north_Window_5_Glass_Pane_2, !- Name
-  SpectralAverage,                        !- Optical Data Type
-  ,                                       !- Window Glass Spectral Data Set Name
-  0.003,                                  !- Thickness {m}
-  0.7,                                    !- Solar Transmittance at Normal Incidence
-  0.15,                                   !- Front Side Solar Reflectance at Normal Incidence
-  0.15,                                   !- Back Side Solar Reflectance at Normal Incidence
-  0.8,                                    !- Visible Transmittance at Normal Incidence
-  0.1,                                    !- Front Side Visible Reflectance at Normal Incidence
-  0.1,                                    !- Back Side Visible Reflectance at Normal Incidence
-  0,                                      !- Infrared Transmittance at Normal Incidence
-  0.84,                                   !- Front Side Infrared Hemispherical Emissivity
-  0.84,                                   !- Back Side Infrared Hemispherical Emissivity
-  0.9;                                    !- Conductivity {W/m-K}
-
-WindowMaterial:Glazing,
-  Perimeter_ZN_3_wall_north_Window_5_Glass_Pane_3, !- Name
-  SpectralAverage,                        !- Optical Data Type
-  ,                                       !- Window Glass Spectral Data Set Name
-  0.003,                                  !- Thickness {m}
-  0.7,                                    !- Solar Transmittance at Normal Incidence
-  0.15,                                   !- Front Side Solar Reflectance at Normal Incidence
-  0.15,                                   !- Back Side Solar Reflectance at Normal Incidence
-  0.8,                                    !- Visible Transmittance at Normal Incidence
-  0.1,                                    !- Front Side Visible Reflectance at Normal Incidence
-  0.1,                                    !- Back Side Visible Reflectance at Normal Incidence
-  0,                                      !- Infrared Transmittance at Normal Incidence
-  0.84,                                   !- Front Side Infrared Hemispherical Emissivity
-  0.84,                                   !- Back Side Infrared Hemispherical Emissivity
-  0.9;                                    !- Conductivity {W/m-K}
-
-WindowMaterial:Glazing,
-  Perimeter_ZN_3_wall_north_Window_6_Glass_Pane_1, !- Name
-  SpectralAverage,                        !- Optical Data Type
-  ,                                       !- Window Glass Spectral Data Set Name
-  0.003,                                  !- Thickness {m}
-  0.7,                                    !- Solar Transmittance at Normal Incidence
-  0.15,                                   !- Front Side Solar Reflectance at Normal Incidence
-  0.15,                                   !- Back Side Solar Reflectance at Normal Incidence
-  0.8,                                    !- Visible Transmittance at Normal Incidence
-  0.1,                                    !- Front Side Visible Reflectance at Normal Incidence
-  0.1,                                    !- Back Side Visible Reflectance at Normal Incidence
-  0,                                      !- Infrared Transmittance at Normal Incidence
-  0.84,                                   !- Front Side Infrared Hemispherical Emissivity
-  0.84,                                   !- Back Side Infrared Hemispherical Emissivity
-  0.9;                                    !- Conductivity {W/m-K}
-
-WindowMaterial:Glazing,
-  Perimeter_ZN_3_wall_north_Window_6_Glass_Pane_2, !- Name
-  SpectralAverage,                        !- Optical Data Type
-  ,                                       !- Window Glass Spectral Data Set Name
-  0.003,                                  !- Thickness {m}
-  0.7,                                    !- Solar Transmittance at Normal Incidence
-  0.15,                                   !- Front Side Solar Reflectance at Normal Incidence
-  0.15,                                   !- Back Side Solar Reflectance at Normal Incidence
-  0.8,                                    !- Visible Transmittance at Normal Incidence
-  0.1,                                    !- Front Side Visible Reflectance at Normal Incidence
-  0.1,                                    !- Back Side Visible Reflectance at Normal Incidence
-  0,                                      !- Infrared Transmittance at Normal Incidence
-  0.84,                                   !- Front Side Infrared Hemispherical Emissivity
-  0.84,                                   !- Back Side Infrared Hemispherical Emissivity
-  0.9;                                    !- Conductivity {W/m-K}
-
-WindowMaterial:Glazing,
-  Perimeter_ZN_3_wall_north_Window_6_Glass_Pane_3, !- Name
-  SpectralAverage,                        !- Optical Data Type
-  ,                                       !- Window Glass Spectral Data Set Name
-  0.003,                                  !- Thickness {m}
-  0.7,                                    !- Solar Transmittance at Normal Incidence
-  0.15,                                   !- Front Side Solar Reflectance at Normal Incidence
-  0.15,                                   !- Back Side Solar Reflectance at Normal Incidence
-  0.8,                                    !- Visible Transmittance at Normal Incidence
-  0.1,                                    !- Front Side Visible Reflectance at Normal Incidence
-  0.1,                                    !- Back Side Visible Reflectance at Normal Incidence
-  0,                                      !- Infrared Transmittance at Normal Incidence
-  0.84,                                   !- Front Side Infrared Hemispherical Emissivity
-  0.84,                                   !- Back Side Infrared Hemispherical Emissivity
-  0.9;                                    !- Conductivity {W/m-K}
-
-WindowMaterial:Glazing,
-  Perimeter_ZN_4_wall_west_Window_1_Glass_Pane_1, !- Name
-  SpectralAverage,                        !- Optical Data Type
-  ,                                       !- Window Glass Spectral Data Set Name
-  0.003,                                  !- Thickness {m}
-  0.7,                                    !- Solar Transmittance at Normal Incidence
-  0.15,                                   !- Front Side Solar Reflectance at Normal Incidence
-  0.15,                                   !- Back Side Solar Reflectance at Normal Incidence
-  0.8,                                    !- Visible Transmittance at Normal Incidence
-  0.1,                                    !- Front Side Visible Reflectance at Normal Incidence
-  0.1,                                    !- Back Side Visible Reflectance at Normal Incidence
-  0,                                      !- Infrared Transmittance at Normal Incidence
-  0.84,                                   !- Front Side Infrared Hemispherical Emissivity
-  0.84,                                   !- Back Side Infrared Hemispherical Emissivity
-  0.9;                                    !- Conductivity {W/m-K}
-
-WindowMaterial:Glazing,
-  Perimeter_ZN_4_wall_west_Window_1_Glass_Pane_2, !- Name
-  SpectralAverage,                        !- Optical Data Type
-  ,                                       !- Window Glass Spectral Data Set Name
-  0.003,                                  !- Thickness {m}
-  0.7,                                    !- Solar Transmittance at Normal Incidence
-  0.15,                                   !- Front Side Solar Reflectance at Normal Incidence
-  0.15,                                   !- Back Side Solar Reflectance at Normal Incidence
-  0.8,                                    !- Visible Transmittance at Normal Incidence
-  0.1,                                    !- Front Side Visible Reflectance at Normal Incidence
-  0.1,                                    !- Back Side Visible Reflectance at Normal Incidence
-  0,                                      !- Infrared Transmittance at Normal Incidence
-  0.84,                                   !- Front Side Infrared Hemispherical Emissivity
-  0.84,                                   !- Back Side Infrared Hemispherical Emissivity
-  0.9;                                    !- Conductivity {W/m-K}
-
-WindowMaterial:Glazing,
-  Perimeter_ZN_4_wall_west_Window_1_Glass_Pane_3, !- Name
-  SpectralAverage,                        !- Optical Data Type
-  ,                                       !- Window Glass Spectral Data Set Name
-  0.003,                                  !- Thickness {m}
-  0.7,                                    !- Solar Transmittance at Normal Incidence
-  0.15,                                   !- Front Side Solar Reflectance at Normal Incidence
-  0.15,                                   !- Back Side Solar Reflectance at Normal Incidence
-  0.8,                                    !- Visible Transmittance at Normal Incidence
-  0.1,                                    !- Front Side Visible Reflectance at Normal Incidence
-  0.1,                                    !- Back Side Visible Reflectance at Normal Incidence
-  0,                                      !- Infrared Transmittance at Normal Incidence
-  0.84,                                   !- Front Side Infrared Hemispherical Emissivity
-  0.84,                                   !- Back Side Infrared Hemispherical Emissivity
-  0.9;                                    !- Conductivity {W/m-K}
-
-WindowMaterial:Glazing,
-  Perimeter_ZN_4_wall_west_Window_2_Glass_Pane_1, !- Name
-  SpectralAverage,                        !- Optical Data Type
-  ,                                       !- Window Glass Spectral Data Set Name
-  0.003,                                  !- Thickness {m}
-  0.7,                                    !- Solar Transmittance at Normal Incidence
-  0.15,                                   !- Front Side Solar Reflectance at Normal Incidence
-  0.15,                                   !- Back Side Solar Reflectance at Normal Incidence
-  0.8,                                    !- Visible Transmittance at Normal Incidence
-  0.1,                                    !- Front Side Visible Reflectance at Normal Incidence
-  0.1,                                    !- Back Side Visible Reflectance at Normal Incidence
-  0,                                      !- Infrared Transmittance at Normal Incidence
-  0.84,                                   !- Front Side Infrared Hemispherical Emissivity
-  0.84,                                   !- Back Side Infrared Hemispherical Emissivity
-  0.9;                                    !- Conductivity {W/m-K}
-
-WindowMaterial:Glazing,
-  Perimeter_ZN_4_wall_west_Window_2_Glass_Pane_2, !- Name
-  SpectralAverage,                        !- Optical Data Type
-  ,                                       !- Window Glass Spectral Data Set Name
-  0.003,                                  !- Thickness {m}
-  0.7,                                    !- Solar Transmittance at Normal Incidence
-  0.15,                                   !- Front Side Solar Reflectance at Normal Incidence
-  0.15,                                   !- Back Side Solar Reflectance at Normal Incidence
-  0.8,                                    !- Visible Transmittance at Normal Incidence
-  0.1,                                    !- Front Side Visible Reflectance at Normal Incidence
-  0.1,                                    !- Back Side Visible Reflectance at Normal Incidence
-  0,                                      !- Infrared Transmittance at Normal Incidence
-  0.84,                                   !- Front Side Infrared Hemispherical Emissivity
-  0.84,                                   !- Back Side Infrared Hemispherical Emissivity
-  0.9;                                    !- Conductivity {W/m-K}
-
-WindowMaterial:Glazing,
-  Perimeter_ZN_4_wall_west_Window_2_Glass_Pane_3, !- Name
-  SpectralAverage,                        !- Optical Data Type
-  ,                                       !- Window Glass Spectral Data Set Name
-  0.003,                                  !- Thickness {m}
-  0.7,                                    !- Solar Transmittance at Normal Incidence
-  0.15,                                   !- Front Side Solar Reflectance at Normal Incidence
-  0.15,                                   !- Back Side Solar Reflectance at Normal Incidence
-  0.8,                                    !- Visible Transmittance at Normal Incidence
-  0.1,                                    !- Front Side Visible Reflectance at Normal Incidence
-  0.1,                                    !- Back Side Visible Reflectance at Normal Incidence
-  0,                                      !- Infrared Transmittance at Normal Incidence
-  0.84,                                   !- Front Side Infrared Hemispherical Emissivity
-  0.84,                                   !- Back Side Infrared Hemispherical Emissivity
-  0.9;                                    !- Conductivity {W/m-K}
-
-WindowMaterial:Glazing,
-  Perimeter_ZN_4_wall_west_Window_3_Glass_Pane_1, !- Name
-  SpectralAverage,                        !- Optical Data Type
-  ,                                       !- Window Glass Spectral Data Set Name
-  0.003,                                  !- Thickness {m}
-  0.7,                                    !- Solar Transmittance at Normal Incidence
-  0.15,                                   !- Front Side Solar Reflectance at Normal Incidence
-  0.15,                                   !- Back Side Solar Reflectance at Normal Incidence
-  0.8,                                    !- Visible Transmittance at Normal Incidence
-  0.1,                                    !- Front Side Visible Reflectance at Normal Incidence
-  0.1,                                    !- Back Side Visible Reflectance at Normal Incidence
-  0,                                      !- Infrared Transmittance at Normal Incidence
-  0.84,                                   !- Front Side Infrared Hemispherical Emissivity
-  0.84,                                   !- Back Side Infrared Hemispherical Emissivity
-  0.9;                                    !- Conductivity {W/m-K}
-
-WindowMaterial:Glazing,
-  Perimeter_ZN_4_wall_west_Window_3_Glass_Pane_2, !- Name
-  SpectralAverage,                        !- Optical Data Type
-  ,                                       !- Window Glass Spectral Data Set Name
-  0.003,                                  !- Thickness {m}
-  0.7,                                    !- Solar Transmittance at Normal Incidence
-  0.15,                                   !- Front Side Solar Reflectance at Normal Incidence
-  0.15,                                   !- Back Side Solar Reflectance at Normal Incidence
-  0.8,                                    !- Visible Transmittance at Normal Incidence
-  0.1,                                    !- Front Side Visible Reflectance at Normal Incidence
-  0.1,                                    !- Back Side Visible Reflectance at Normal Incidence
-  0,                                      !- Infrared Transmittance at Normal Incidence
-  0.84,                                   !- Front Side Infrared Hemispherical Emissivity
-  0.84,                                   !- Back Side Infrared Hemispherical Emissivity
-  0.9;                                    !- Conductivity {W/m-K}
-
-WindowMaterial:Glazing,
-  Perimeter_ZN_4_wall_west_Window_3_Glass_Pane_3, !- Name
-  SpectralAverage,                        !- Optical Data Type
-  ,                                       !- Window Glass Spectral Data Set Name
-  0.003,                                  !- Thickness {m}
-  0.7,                                    !- Solar Transmittance at Normal Incidence
-  0.15,                                   !- Front Side Solar Reflectance at Normal Incidence
-  0.15,                                   !- Back Side Solar Reflectance at Normal Incidence
-  0.8,                                    !- Visible Transmittance at Normal Incidence
-  0.1,                                    !- Front Side Visible Reflectance at Normal Incidence
-  0.1,                                    !- Back Side Visible Reflectance at Normal Incidence
-  0,                                      !- Infrared Transmittance at Normal Incidence
-  0.84,                                   !- Front Side Infrared Hemispherical Emissivity
-  0.84,                                   !- Back Side Infrared Hemispherical Emissivity
-  0.9;                                    !- Conductivity {W/m-K}
-
-WindowMaterial:Glazing,
-  Perimeter_ZN_4_wall_west_Window_4_Glass_Pane_1, !- Name
-  SpectralAverage,                        !- Optical Data Type
-  ,                                       !- Window Glass Spectral Data Set Name
-  0.003,                                  !- Thickness {m}
-  0.7,                                    !- Solar Transmittance at Normal Incidence
-  0.15,                                   !- Front Side Solar Reflectance at Normal Incidence
-  0.15,                                   !- Back Side Solar Reflectance at Normal Incidence
-  0.8,                                    !- Visible Transmittance at Normal Incidence
-  0.1,                                    !- Front Side Visible Reflectance at Normal Incidence
-  0.1,                                    !- Back Side Visible Reflectance at Normal Incidence
-  0,                                      !- Infrared Transmittance at Normal Incidence
-  0.84,                                   !- Front Side Infrared Hemispherical Emissivity
-  0.84,                                   !- Back Side Infrared Hemispherical Emissivity
-  0.9;                                    !- Conductivity {W/m-K}
-
-WindowMaterial:Glazing,
-  Perimeter_ZN_4_wall_west_Window_4_Glass_Pane_2, !- Name
-  SpectralAverage,                        !- Optical Data Type
-  ,                                       !- Window Glass Spectral Data Set Name
-  0.003,                                  !- Thickness {m}
-  0.7,                                    !- Solar Transmittance at Normal Incidence
-  0.15,                                   !- Front Side Solar Reflectance at Normal Incidence
-  0.15,                                   !- Back Side Solar Reflectance at Normal Incidence
-  0.8,                                    !- Visible Transmittance at Normal Incidence
-  0.1,                                    !- Front Side Visible Reflectance at Normal Incidence
-  0.1,                                    !- Back Side Visible Reflectance at Normal Incidence
-  0,                                      !- Infrared Transmittance at Normal Incidence
-  0.84,                                   !- Front Side Infrared Hemispherical Emissivity
-  0.84,                                   !- Back Side Infrared Hemispherical Emissivity
-  0.9;                                    !- Conductivity {W/m-K}
-
-WindowMaterial:Glazing,
-  Perimeter_ZN_4_wall_west_Window_4_Glass_Pane_3, !- Name
-  SpectralAverage,                        !- Optical Data Type
-  ,                                       !- Window Glass Spectral Data Set Name
-  0.003,                                  !- Thickness {m}
-  0.7,                                    !- Solar Transmittance at Normal Incidence
-  0.15,                                   !- Front Side Solar Reflectance at Normal Incidence
-  0.15,                                   !- Back Side Solar Reflectance at Normal Incidence
-  0.8,                                    !- Visible Transmittance at Normal Incidence
-  0.1,                                    !- Front Side Visible Reflectance at Normal Incidence
-  0.1,                                    !- Back Side Visible Reflectance at Normal Incidence
-  0,                                      !- Infrared Transmittance at Normal Incidence
-  0.84,                                   !- Front Side Infrared Hemispherical Emissivity
-  0.84,                                   !- Back Side Infrared Hemispherical Emissivity
-  0.9;                                    !- Conductivity {W/m-K}
 
 WindowMaterial:SimpleGlazingSystem,
   U 0.65 SHGC 0.25 Simple Glazing,        !- Name
@@ -4504,166 +3344,6 @@ WindowMaterial:SimpleGlazingSystem,
 Construction,
   InteriorFurnishings,                    !- Name
   Std Wood 6inch;                         !- Layer 1
-
-Construction,
-  Perimeter_ZN_1_wall_south_Window_1_New_3Pane_Construction, !- Name
-  Perimeter_ZN_1_wall_south_Window_1_Glass_Pane_1, !- Layer 1
-  Perimeter_ZN_1_wall_south_Window_1_Air_Gap_1, !- Layer 2
-  Perimeter_ZN_1_wall_south_Window_1_Glass_Pane_2, !- Layer 3
-  Perimeter_ZN_1_wall_south_Window_1_Air_Gap_2, !- Layer 4
-  Perimeter_ZN_1_wall_south_Window_1_Glass_Pane_3; !- Layer 5
-
-Construction,
-  Perimeter_ZN_1_wall_south_Window_2_New_3Pane_Construction, !- Name
-  Perimeter_ZN_1_wall_south_Window_2_Glass_Pane_1, !- Layer 1
-  Perimeter_ZN_1_wall_south_Window_2_Air_Gap_1, !- Layer 2
-  Perimeter_ZN_1_wall_south_Window_2_Glass_Pane_2, !- Layer 3
-  Perimeter_ZN_1_wall_south_Window_2_Air_Gap_2, !- Layer 4
-  Perimeter_ZN_1_wall_south_Window_2_Glass_Pane_3; !- Layer 5
-
-Construction,
-  Perimeter_ZN_1_wall_south_Window_3_New_3Pane_Construction, !- Name
-  Perimeter_ZN_1_wall_south_Window_3_Glass_Pane_1, !- Layer 1
-  Perimeter_ZN_1_wall_south_Window_3_Air_Gap_1, !- Layer 2
-  Perimeter_ZN_1_wall_south_Window_3_Glass_Pane_2, !- Layer 3
-  Perimeter_ZN_1_wall_south_Window_3_Air_Gap_2, !- Layer 4
-  Perimeter_ZN_1_wall_south_Window_3_Glass_Pane_3; !- Layer 5
-
-Construction,
-  Perimeter_ZN_1_wall_south_Window_4_New_3Pane_Construction, !- Name
-  Perimeter_ZN_1_wall_south_Window_4_Glass_Pane_1, !- Layer 1
-  Perimeter_ZN_1_wall_south_Window_4_Air_Gap_1, !- Layer 2
-  Perimeter_ZN_1_wall_south_Window_4_Glass_Pane_2, !- Layer 3
-  Perimeter_ZN_1_wall_south_Window_4_Air_Gap_2, !- Layer 4
-  Perimeter_ZN_1_wall_south_Window_4_Glass_Pane_3; !- Layer 5
-
-Construction,
-  Perimeter_ZN_1_wall_south_Window_5_New_3Pane_Construction, !- Name
-  Perimeter_ZN_1_wall_south_Window_5_Glass_Pane_1, !- Layer 1
-  Perimeter_ZN_1_wall_south_Window_5_Air_Gap_1, !- Layer 2
-  Perimeter_ZN_1_wall_south_Window_5_Glass_Pane_2, !- Layer 3
-  Perimeter_ZN_1_wall_south_Window_5_Air_Gap_2, !- Layer 4
-  Perimeter_ZN_1_wall_south_Window_5_Glass_Pane_3; !- Layer 5
-
-Construction,
-  Perimeter_ZN_1_wall_south_Window_6_New_3Pane_Construction, !- Name
-  Perimeter_ZN_1_wall_south_Window_6_Glass_Pane_1, !- Layer 1
-  Perimeter_ZN_1_wall_south_Window_6_Air_Gap_1, !- Layer 2
-  Perimeter_ZN_1_wall_south_Window_6_Glass_Pane_2, !- Layer 3
-  Perimeter_ZN_1_wall_south_Window_6_Air_Gap_2, !- Layer 4
-  Perimeter_ZN_1_wall_south_Window_6_Glass_Pane_3; !- Layer 5
-
-Construction,
-  Perimeter_ZN_2_wall_east_Window_1_New_3Pane_Construction, !- Name
-  Perimeter_ZN_2_wall_east_Window_1_Glass_Pane_1, !- Layer 1
-  Perimeter_ZN_2_wall_east_Window_1_Air_Gap_1, !- Layer 2
-  Perimeter_ZN_2_wall_east_Window_1_Glass_Pane_2, !- Layer 3
-  Perimeter_ZN_2_wall_east_Window_1_Air_Gap_2, !- Layer 4
-  Perimeter_ZN_2_wall_east_Window_1_Glass_Pane_3; !- Layer 5
-
-Construction,
-  Perimeter_ZN_2_wall_east_Window_2_New_3Pane_Construction, !- Name
-  Perimeter_ZN_2_wall_east_Window_2_Glass_Pane_1, !- Layer 1
-  Perimeter_ZN_2_wall_east_Window_2_Air_Gap_1, !- Layer 2
-  Perimeter_ZN_2_wall_east_Window_2_Glass_Pane_2, !- Layer 3
-  Perimeter_ZN_2_wall_east_Window_2_Air_Gap_2, !- Layer 4
-  Perimeter_ZN_2_wall_east_Window_2_Glass_Pane_3; !- Layer 5
-
-Construction,
-  Perimeter_ZN_2_wall_east_Window_3_New_3Pane_Construction, !- Name
-  Perimeter_ZN_2_wall_east_Window_3_Glass_Pane_1, !- Layer 1
-  Perimeter_ZN_2_wall_east_Window_3_Air_Gap_1, !- Layer 2
-  Perimeter_ZN_2_wall_east_Window_3_Glass_Pane_2, !- Layer 3
-  Perimeter_ZN_2_wall_east_Window_3_Air_Gap_2, !- Layer 4
-  Perimeter_ZN_2_wall_east_Window_3_Glass_Pane_3; !- Layer 5
-
-Construction,
-  Perimeter_ZN_2_wall_east_Window_4_New_3Pane_Construction, !- Name
-  Perimeter_ZN_2_wall_east_Window_4_Glass_Pane_1, !- Layer 1
-  Perimeter_ZN_2_wall_east_Window_4_Air_Gap_1, !- Layer 2
-  Perimeter_ZN_2_wall_east_Window_4_Glass_Pane_2, !- Layer 3
-  Perimeter_ZN_2_wall_east_Window_4_Air_Gap_2, !- Layer 4
-  Perimeter_ZN_2_wall_east_Window_4_Glass_Pane_3; !- Layer 5
-
-Construction,
-  Perimeter_ZN_3_wall_north_Window_1_New_3Pane_Construction, !- Name
-  Perimeter_ZN_3_wall_north_Window_1_Glass_Pane_1, !- Layer 1
-  Perimeter_ZN_3_wall_north_Window_1_Air_Gap_1, !- Layer 2
-  Perimeter_ZN_3_wall_north_Window_1_Glass_Pane_2, !- Layer 3
-  Perimeter_ZN_3_wall_north_Window_1_Air_Gap_2, !- Layer 4
-  Perimeter_ZN_3_wall_north_Window_1_Glass_Pane_3; !- Layer 5
-
-Construction,
-  Perimeter_ZN_3_wall_north_Window_2_New_3Pane_Construction, !- Name
-  Perimeter_ZN_3_wall_north_Window_2_Glass_Pane_1, !- Layer 1
-  Perimeter_ZN_3_wall_north_Window_2_Air_Gap_1, !- Layer 2
-  Perimeter_ZN_3_wall_north_Window_2_Glass_Pane_2, !- Layer 3
-  Perimeter_ZN_3_wall_north_Window_2_Air_Gap_2, !- Layer 4
-  Perimeter_ZN_3_wall_north_Window_2_Glass_Pane_3; !- Layer 5
-
-Construction,
-  Perimeter_ZN_3_wall_north_Window_3_New_3Pane_Construction, !- Name
-  Perimeter_ZN_3_wall_north_Window_3_Glass_Pane_1, !- Layer 1
-  Perimeter_ZN_3_wall_north_Window_3_Air_Gap_1, !- Layer 2
-  Perimeter_ZN_3_wall_north_Window_3_Glass_Pane_2, !- Layer 3
-  Perimeter_ZN_3_wall_north_Window_3_Air_Gap_2, !- Layer 4
-  Perimeter_ZN_3_wall_north_Window_3_Glass_Pane_3; !- Layer 5
-
-Construction,
-  Perimeter_ZN_3_wall_north_Window_4_New_3Pane_Construction, !- Name
-  Perimeter_ZN_3_wall_north_Window_4_Glass_Pane_1, !- Layer 1
-  Perimeter_ZN_3_wall_north_Window_4_Air_Gap_1, !- Layer 2
-  Perimeter_ZN_3_wall_north_Window_4_Glass_Pane_2, !- Layer 3
-  Perimeter_ZN_3_wall_north_Window_4_Air_Gap_2, !- Layer 4
-  Perimeter_ZN_3_wall_north_Window_4_Glass_Pane_3; !- Layer 5
-
-Construction,
-  Perimeter_ZN_3_wall_north_Window_5_New_3Pane_Construction, !- Name
-  Perimeter_ZN_3_wall_north_Window_5_Glass_Pane_1, !- Layer 1
-  Perimeter_ZN_3_wall_north_Window_5_Air_Gap_1, !- Layer 2
-  Perimeter_ZN_3_wall_north_Window_5_Glass_Pane_2, !- Layer 3
-  Perimeter_ZN_3_wall_north_Window_5_Air_Gap_2, !- Layer 4
-  Perimeter_ZN_3_wall_north_Window_5_Glass_Pane_3; !- Layer 5
-
-Construction,
-  Perimeter_ZN_3_wall_north_Window_6_New_3Pane_Construction, !- Name
-  Perimeter_ZN_3_wall_north_Window_6_Glass_Pane_1, !- Layer 1
-  Perimeter_ZN_3_wall_north_Window_6_Air_Gap_1, !- Layer 2
-  Perimeter_ZN_3_wall_north_Window_6_Glass_Pane_2, !- Layer 3
-  Perimeter_ZN_3_wall_north_Window_6_Air_Gap_2, !- Layer 4
-  Perimeter_ZN_3_wall_north_Window_6_Glass_Pane_3; !- Layer 5
-
-Construction,
-  Perimeter_ZN_4_wall_west_Window_1_New_3Pane_Construction, !- Name
-  Perimeter_ZN_4_wall_west_Window_1_Glass_Pane_1, !- Layer 1
-  Perimeter_ZN_4_wall_west_Window_1_Air_Gap_1, !- Layer 2
-  Perimeter_ZN_4_wall_west_Window_1_Glass_Pane_2, !- Layer 3
-  Perimeter_ZN_4_wall_west_Window_1_Air_Gap_2, !- Layer 4
-  Perimeter_ZN_4_wall_west_Window_1_Glass_Pane_3; !- Layer 5
-
-Construction,
-  Perimeter_ZN_4_wall_west_Window_2_New_3Pane_Construction, !- Name
-  Perimeter_ZN_4_wall_west_Window_2_Glass_Pane_1, !- Layer 1
-  Perimeter_ZN_4_wall_west_Window_2_Air_Gap_1, !- Layer 2
-  Perimeter_ZN_4_wall_west_Window_2_Glass_Pane_2, !- Layer 3
-  Perimeter_ZN_4_wall_west_Window_2_Air_Gap_2, !- Layer 4
-  Perimeter_ZN_4_wall_west_Window_2_Glass_Pane_3; !- Layer 5
-
-Construction,
-  Perimeter_ZN_4_wall_west_Window_3_New_3Pane_Construction, !- Name
-  Perimeter_ZN_4_wall_west_Window_3_Glass_Pane_1, !- Layer 1
-  Perimeter_ZN_4_wall_west_Window_3_Air_Gap_1, !- Layer 2
-  Perimeter_ZN_4_wall_west_Window_3_Glass_Pane_2, !- Layer 3
-  Perimeter_ZN_4_wall_west_Window_3_Air_Gap_2, !- Layer 4
-  Perimeter_ZN_4_wall_west_Window_3_Glass_Pane_3; !- Layer 5
-
-Construction,
-  Perimeter_ZN_4_wall_west_Window_4_New_3Pane_Construction, !- Name
-  Perimeter_ZN_4_wall_west_Window_4_Glass_Pane_1, !- Layer 1
-  Perimeter_ZN_4_wall_west_Window_4_Air_Gap_1, !- Layer 2
-  Perimeter_ZN_4_wall_west_Window_4_Glass_Pane_2, !- Layer 3
-  Perimeter_ZN_4_wall_west_Window_4_Air_Gap_2, !- Layer 4
-  Perimeter_ZN_4_wall_west_Window_4_Glass_Pane_3; !- Layer 5
 
 Construction,
   Smallhotel 2010 Slab Floor,             !- Name

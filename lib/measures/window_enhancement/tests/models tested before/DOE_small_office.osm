@@ -1,7 +1,7 @@
 
 OS:Version,
-  {d2d8ee6a-17e5-4faa-9154-4e560ce91f88}, !- Handle
-  3.9.0;                                  !- Version Identifier
+  {577554b3-1a13-42c1-8c25-4e8ad631caf2}, !- Handle
+  3.11.0;                                 !- Version Identifier
 
 OS:Site,
   {272d9a4d-ec25-4bbb-b083-822aef42268c}, !- Handle
@@ -10,7 +10,8 @@ OS:Site,
   -104.75,                                !- Longitude {deg}
   -7,                                     !- Time Zone {hr}
   1726,                                   !- Elevation {m}
-  City;                                   !- Terrain
+  ,                                       !- Terrain
+  No;                                     !- Keep Site Location Information
 
 OS:YearDescription,
   {946a3f36-6a26-4d77-9dd6-2ba19ae10e9d}, !- Handle
@@ -261,22 +262,6 @@ OS:Output:Table:SummaryReports,
 OS:Output:Diagnostics,
   {352a68fc-2fac-4182-8e24-ba5fb4135505}; !- Handle
 
-OS:WeatherFile,
-  {708b5976-aa45-460a-bbe4-15fd61a403d4}, !- Handle
-  Denver-Aurora-Buckley AFB,              !- City
-  CO,                                     !- State Province Region
-  USA,                                    !- Country
-  TMY3,                                   !- Data Source
-  724695,                                 !- WMO Number
-  39.72,                                  !- Latitude {deg}
-  -104.75,                                !- Longitude {deg}
-  -7,                                     !- Time Zone {hr}
-  1726,                                   !- Elevation {m}
-  C:/Users/jhu1/AppData/Local/Temp/1/osmodel-1431-e238-3606-4156-1764789450-0/resources/files/USA_CO_Denver-Aurora-Buckley.AFB_.724695_TMY3.epw, !- Url
-  A0C64037,                               !- Checksum
-  ,                                       !- Start Date Actual Year
-  Sunday;                                 !- Start Day of Week
-
 OS:SpaceType,
   {2d524ba6-938a-4aa5-a16a-60a01316a593}, !- Handle
   Office WholeBuilding - Sm Office - 90.1-2004, !- Name
@@ -509,7 +494,9 @@ OS:Sizing:Zone,
   ,                                       !- Design Zone Air Distribution Effectiveness in Heating Mode
   ,                                       !- Design Zone Secondary Recirculation Fraction {dimensionless}
   ,                                       !- Design Minimum Zone Ventilation Efficiency {dimensionless}
-  Coincident;                             !- Sizing Option
+  Coincident,                             !- Sizing Option
+  None,                                   !- Heating Coil Sizing Method
+  1;                                      !- Maximum Heating Capacity To Cooling Load Sizing Ratio {W/W}
 
 OS:ZoneHVAC:EquipmentList,
   {568afaef-b516-4f12-aad4-00d0df8121a9}, !- Handle
@@ -727,7 +714,9 @@ OS:Sizing:Zone,
   ,                                       !- Design Zone Air Distribution Effectiveness in Heating Mode
   ,                                       !- Design Zone Secondary Recirculation Fraction {dimensionless}
   ,                                       !- Design Minimum Zone Ventilation Efficiency {dimensionless}
-  Coincident;                             !- Sizing Option
+  Coincident,                             !- Sizing Option
+  None,                                   !- Heating Coil Sizing Method
+  1;                                      !- Maximum Heating Capacity To Cooling Load Sizing Ratio {W/W}
 
 OS:ZoneHVAC:EquipmentList,
   {3c0e67bc-3bd9-45fe-83ad-7721dc767ad6}, !- Handle
@@ -945,7 +934,9 @@ OS:Sizing:Zone,
   ,                                       !- Design Zone Air Distribution Effectiveness in Heating Mode
   ,                                       !- Design Zone Secondary Recirculation Fraction {dimensionless}
   ,                                       !- Design Minimum Zone Ventilation Efficiency {dimensionless}
-  Coincident;                             !- Sizing Option
+  Coincident,                             !- Sizing Option
+  None,                                   !- Heating Coil Sizing Method
+  1;                                      !- Maximum Heating Capacity To Cooling Load Sizing Ratio {W/W}
 
 OS:ZoneHVAC:EquipmentList,
   {d85f434a-82e9-4875-90f5-cc6a721c854a}, !- Handle
@@ -1163,7 +1154,9 @@ OS:Sizing:Zone,
   ,                                       !- Design Zone Air Distribution Effectiveness in Heating Mode
   ,                                       !- Design Zone Secondary Recirculation Fraction {dimensionless}
   ,                                       !- Design Minimum Zone Ventilation Efficiency {dimensionless}
-  Coincident;                             !- Sizing Option
+  Coincident,                             !- Sizing Option
+  None,                                   !- Heating Coil Sizing Method
+  1;                                      !- Maximum Heating Capacity To Cooling Load Sizing Ratio {W/W}
 
 OS:ZoneHVAC:EquipmentList,
   {b99c81c2-afd5-490f-8ef3-1d6f8755e2d2}, !- Handle
@@ -1381,7 +1374,9 @@ OS:Sizing:Zone,
   ,                                       !- Design Zone Air Distribution Effectiveness in Heating Mode
   ,                                       !- Design Zone Secondary Recirculation Fraction {dimensionless}
   ,                                       !- Design Minimum Zone Ventilation Efficiency {dimensionless}
-  Coincident;                             !- Sizing Option
+  Coincident,                             !- Sizing Option
+  None,                                   !- Heating Coil Sizing Method
+  1;                                      !- Maximum Heating Capacity To Cooling Load Sizing Ratio {W/W}
 
 OS:ZoneHVAC:EquipmentList,
   {660a7d2c-2749-43e0-a6a7-2fbba294b0d2}, !- Handle
@@ -1481,6 +1476,8 @@ OS:People,
   ,                                       !- Activity Level Schedule Name
   ,                                       !- Surface Name/Angle Factor List Name
   {0d8591cc-8d2c-42aa-9fa3-7f7c4b5a37ee}, !- Work Efficiency Schedule Name
+  ClothingInsulationSchedule,             !- Clothing Insulation Calculation Method
+  ,                                       !- Clothing Insulation Calculation Method Schedule Name
   {3ec81975-b0aa-4b11-b049-17e1fcfd2635}, !- Clothing Insulation Schedule Name
   {92ed4178-172e-41f3-9d6d-57670ec8cb2b}, !- Air Velocity Schedule Name
   1;                                      !- Multiplier
@@ -2731,7 +2728,8 @@ OS:SpaceInfiltration:DesignFlowRate,
   0,                                      !- Constant Term Coefficient
   0,                                      !- Temperature Term Coefficient
   0.224,                                  !- Velocity Term Coefficient
-  0;                                      !- Velocity Squared Term Coefficient
+  0,                                      !- Velocity Squared Term Coefficient
+  Outdoor;                                !- Density Basis
 
 OS:SpaceInfiltration:DesignFlowRate,
   {375dc417-41b9-40e9-87fa-375a2b11e991}, !- Handle
@@ -2746,7 +2744,8 @@ OS:SpaceInfiltration:DesignFlowRate,
   0,                                      !- Constant Term Coefficient
   0,                                      !- Temperature Term Coefficient
   0.224,                                  !- Velocity Term Coefficient
-  0;                                      !- Velocity Squared Term Coefficient
+  0,                                      !- Velocity Squared Term Coefficient
+  Outdoor;                                !- Density Basis
 
 OS:SpaceInfiltration:DesignFlowRate,
   {1bbf02db-37f4-4228-a74e-dc6446e350ec}, !- Handle
@@ -2761,7 +2760,8 @@ OS:SpaceInfiltration:DesignFlowRate,
   0,                                      !- Constant Term Coefficient
   0,                                      !- Temperature Term Coefficient
   0.224,                                  !- Velocity Term Coefficient
-  0;                                      !- Velocity Squared Term Coefficient
+  0,                                      !- Velocity Squared Term Coefficient
+  Outdoor;                                !- Density Basis
 
 OS:SpaceInfiltration:DesignFlowRate,
   {12736a6a-f699-42fa-b401-aef48b95131e}, !- Handle
@@ -2776,7 +2776,8 @@ OS:SpaceInfiltration:DesignFlowRate,
   0,                                      !- Constant Term Coefficient
   0,                                      !- Temperature Term Coefficient
   0.224,                                  !- Velocity Term Coefficient
-  0;                                      !- Velocity Squared Term Coefficient
+  0,                                      !- Velocity Squared Term Coefficient
+  Outdoor;                                !- Density Basis
 
 OS:Site:GroundTemperature:BuildingSurface,
   {4f22dbd4-1455-49e2-bc2e-7519c691ffb3}, !- Handle
@@ -4043,7 +4044,9 @@ OS:Sizing:System,
   157,                                    !- Heating Design Capacity Per Floor Area {W/m2}
   1,                                      !- Fraction of Autosized Heating Design Capacity
   OnOff,                                  !- Central Cooling Capacity Control Method
-  autosize;                               !- Occupant Diversity
+  autosize,                               !- Occupant Diversity
+  None,                                   !- Heating Coil Sizing Method
+  1;                                      !- Maximum Heating Capacity To Cooling Capacity Sizing Ratio {W/W}
 
 OS:AvailabilityManagerAssignmentList,
   {e0bc06b1-3220-4dfc-a9dd-18e60b8bdbbb}, !- Handle
@@ -4555,7 +4558,9 @@ OS:Sizing:System,
   157,                                    !- Heating Design Capacity Per Floor Area {W/m2}
   1,                                      !- Fraction of Autosized Heating Design Capacity
   OnOff,                                  !- Central Cooling Capacity Control Method
-  autosize;                               !- Occupant Diversity
+  autosize,                               !- Occupant Diversity
+  None,                                   !- Heating Coil Sizing Method
+  1;                                      !- Maximum Heating Capacity To Cooling Capacity Sizing Ratio {W/W}
 
 OS:AvailabilityManagerAssignmentList,
   {2f0cf975-de1a-45df-9fbf-720307c19ae3}, !- Handle
@@ -5053,7 +5058,9 @@ OS:Sizing:System,
   157,                                    !- Heating Design Capacity Per Floor Area {W/m2}
   1,                                      !- Fraction of Autosized Heating Design Capacity
   OnOff,                                  !- Central Cooling Capacity Control Method
-  autosize;                               !- Occupant Diversity
+  autosize,                               !- Occupant Diversity
+  None,                                   !- Heating Coil Sizing Method
+  1;                                      !- Maximum Heating Capacity To Cooling Capacity Sizing Ratio {W/W}
 
 OS:AvailabilityManagerAssignmentList,
   {8dfc6249-0890-4c6a-958a-b161873b2020}, !- Handle
@@ -5551,7 +5558,9 @@ OS:Sizing:System,
   157,                                    !- Heating Design Capacity Per Floor Area {W/m2}
   1,                                      !- Fraction of Autosized Heating Design Capacity
   OnOff,                                  !- Central Cooling Capacity Control Method
-  autosize;                               !- Occupant Diversity
+  autosize,                               !- Occupant Diversity
+  None,                                   !- Heating Coil Sizing Method
+  1;                                      !- Maximum Heating Capacity To Cooling Capacity Sizing Ratio {W/W}
 
 OS:AvailabilityManagerAssignmentList,
   {4cb45233-d540-4e9c-992d-e7f26452f02e}, !- Handle
@@ -6049,7 +6058,9 @@ OS:Sizing:System,
   157,                                    !- Heating Design Capacity Per Floor Area {W/m2}
   1,                                      !- Fraction of Autosized Heating Design Capacity
   OnOff,                                  !- Central Cooling Capacity Control Method
-  autosize;                               !- Occupant Diversity
+  autosize,                               !- Occupant Diversity
+  None,                                   !- Heating Coil Sizing Method
+  1;                                      !- Maximum Heating Capacity To Cooling Capacity Sizing Ratio {W/W}
 
 OS:AvailabilityManagerAssignmentList,
   {4f7b4698-d735-409f-8381-988d3a46e4ce}, !- Handle
@@ -7116,4 +7127,144 @@ OS:Curve:Cubic,
   4.4744,                                 !- Coefficient4 x**3
   0.7,                                    !- Minimum Value of x
   1;                                      !- Maximum Value of x
+
+OS:StandardsInformation:Construction,
+  {41c49e15-f2f4-43b1-a7a6-db3f78dc4c4f}, !- Handle
+  {ef95a29b-5658-4d45-bf9e-b8bd43a75011}; !- Construction Name
+
+OS:StandardsInformation:Construction,
+  {5485da64-ea1f-4c57-9cf8-c973b6492642}, !- Handle
+  {62d8ba66-b619-4e18-b044-15a4692ffeab}; !- Construction Name
+
+OS:StandardsInformation:Construction,
+  {43dae210-c4d0-49c8-9d7d-54986befdae7}, !- Handle
+  {821355a3-3be5-4c0d-bd2a-701c5802f12a}; !- Construction Name
+
+OS:StandardsInformation:Material,
+  {d95ef889-ba8d-4f28-b1ac-8ab6571f06d2}, !- Handle
+  {7fdf1418-da70-4f17-80d7-dae036b345a9}; !- Material Name
+
+OS:StandardsInformation:Material,
+  {5848e941-3541-47d8-a27d-1f0a73ddbd04}, !- Handle
+  {e9cd93cd-3735-4388-a49b-aded5ff9c7b4}; !- Material Name
+
+OS:StandardsInformation:Material,
+  {1677c984-0158-433a-ac2f-2503de3b3c0c}, !- Handle
+  {834e83b3-fa94-4aca-b3ba-452d3727c24b}; !- Material Name
+
+OS:StandardsInformation:Material,
+  {4f3c196c-dd3e-43f5-bafd-623d914aefa0}, !- Handle
+  {873875b6-4903-4fc2-af93-ad8d747cc28d}; !- Material Name
+
+OS:StandardsInformation:Material,
+  {4e1cabab-14df-4281-bd6d-0779c22d6807}, !- Handle
+  {0df260ed-f9ae-42ec-a707-aa5b3e6b24a2}; !- Material Name
+
+OS:StandardsInformation:Material,
+  {31083bcb-9b21-423a-8f4d-46b33351d0c9}, !- Handle
+  {b7e70aec-48d8-40e8-9042-cde8c45eec78}; !- Material Name
+
+OS:StandardsInformation:Material,
+  {35bfcbb1-26b9-44c9-98ee-65fc3c22ff21}, !- Handle
+  {0b854bf9-23fe-4fb5-852a-dbb94ecc6978}; !- Material Name
+
+OS:StandardsInformation:Material,
+  {be534e2a-3618-4801-bc20-7fd159e9e62c}, !- Handle
+  {72454668-6251-46de-93d0-6b6855fe3e3f}; !- Material Name
+
+OS:StandardsInformation:Material,
+  {13a095e9-3db7-4c5d-bc44-d7d4eafb9b47}, !- Handle
+  {e619f9c1-0ee7-4aae-94ae-8b0d51f3ec62}; !- Material Name
+
+OS:StandardsInformation:Material,
+  {391d1d51-90eb-4e20-971e-c78d1e932391}, !- Handle
+  {8287a39d-10ab-4ef2-a655-e7c5e4656897}; !- Material Name
+
+OS:StandardsInformation:Material,
+  {5f5fa8d4-2049-483f-b742-13797fc17159}, !- Handle
+  {bcb971f9-2731-4e6b-b275-830e4c6caa30}; !- Material Name
+
+OS:StandardsInformation:Material,
+  {856d0bd9-888f-429e-94e8-36c0f80df2fe}, !- Handle
+  {d14b12f0-2ed3-47ac-8c0d-65d3e7df8d34}; !- Material Name
+
+OS:StandardsInformation:Material,
+  {843a1fe0-1cc6-45c2-908b-b42569054192}, !- Handle
+  {3732bf2e-f237-4dd4-baa3-0c5c6afaf122}; !- Material Name
+
+OS:StandardsInformation:Material,
+  {1dcdd13e-76f6-4e56-9930-d71d79e8241a}, !- Handle
+  {12f95f94-fa46-4f1f-a4da-8c27d695ed6a}; !- Material Name
+
+OS:StandardsInformation:Material,
+  {7d354c42-88db-4c5a-aec2-dd6ae217100a}, !- Handle
+  {4adaeba1-50e3-4c48-bd6a-b9dda655aa2c}; !- Material Name
+
+OS:StandardsInformation:Material,
+  {57c302df-c103-4039-8a45-5d78f4a18566}, !- Handle
+  {9475b6cb-c819-4c4b-a9f9-8183c96d129f}; !- Material Name
+
+OS:StandardsInformation:Material,
+  {3da6b339-459e-49ce-baf9-e73bdd21bbc0}, !- Handle
+  {67d7ba8f-3d89-4498-bd98-936142cabf95}; !- Material Name
+
+OS:StandardsInformation:Material,
+  {1c306738-46a4-4569-8263-1147b0dcd676}, !- Handle
+  {7f0891c8-112c-4767-ab55-1d87649d5f23}; !- Material Name
+
+OS:StandardsInformation:Material,
+  {d9cbf95a-bb1e-445e-88bd-55f63feb10e0}, !- Handle
+  {2d5c7b17-acaa-48b5-be37-70655ab34a47}; !- Material Name
+
+OS:StandardsInformation:Material,
+  {33b3c908-2fd4-4642-a379-c769a7ef2486}, !- Handle
+  {af16923f-d051-418f-92b0-c9b416572c94}; !- Material Name
+
+OS:StandardsInformation:Material,
+  {51397e52-e23e-40d7-ba16-964e1a4a1e54}, !- Handle
+  {15e9044a-bbe6-4b92-893d-da9a3c7866c6}; !- Material Name
+
+OS:StandardsInformation:Material,
+  {c31a0787-2c02-4b27-9074-431f2a2950ec}, !- Handle
+  {44de7485-248e-4050-89c0-deef1bde542f}; !- Material Name
+
+OS:StandardsInformation:Material,
+  {747eea81-63f3-4369-8bd3-1251f17eb628}, !- Handle
+  {da15f817-1dd7-4616-a0fe-8210773c1d2f}; !- Material Name
+
+OS:StandardsInformation:Material,
+  {6e4f51db-029f-4602-ae36-08ef841778d2}, !- Handle
+  {23534e8c-f649-43ff-8a2b-780f31868169}; !- Material Name
+
+OS:StandardsInformation:Construction,
+  {02692ff4-546f-4e09-9103-80519476fbc4}, !- Handle
+  {a5c3b9a4-9880-404d-9a27-fa10fb558a4c}; !- Construction Name
+
+OS:StandardsInformation:Material,
+  {54630cc0-e27a-4650-9c76-1c3d1dff8a8a}, !- Handle
+  {03981049-983e-4fe5-a0c4-2c6134f8a138}; !- Material Name
+
+OS:StandardsInformation:Material,
+  {3ca46dfe-cca7-470a-8297-891973e9b074}, !- Handle
+  {0cf3de34-5104-4954-9e10-4236f1cfd6b5}; !- Material Name
+
+OS:StandardsInformation:Construction,
+  {d5500937-8c88-465f-8416-ede2f5b82396}, !- Handle
+  {2dc48553-2cc9-4d42-8392-6684462920ec}; !- Construction Name
+
+OS:WeatherFile,
+  {13103613-5f5f-49c0-9fe3-30f92a8f616f}, !- Handle
+  Denver-Aurora-Buckley AFB,              !- City
+  CO,                                     !- State Province Region
+  USA,                                    !- Country
+  TMY3,                                   !- Data Source
+  724695,                                 !- WMO Number
+  39.72,                                  !- Latitude {deg}
+  -104.75,                                !- Longitude {deg}
+  -7,                                     !- Time Zone {hr}
+  1726,                                   !- Elevation {m}
+  USA_CO_Denver-Aurora-Buckley.AFB_.724695_TMY3.epw, !- Url
+  A0C64037,                               !- Checksum
+  ,                                       !- Start Date Actual Year
+  Sunday;                                 !- Start Day of Week
 

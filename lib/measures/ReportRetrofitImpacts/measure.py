@@ -285,256 +285,256 @@ class CReport(openstudio.measure.ReportingMeasure):
         m3 = re.search(r'Building:\s*(.+)', text, flags=re.IGNORECASE)
         return m3.group(1).strip() if m3 else ""
 
-    def parse_eplustbl_html(self, html_path, runner):
-        """Parse EnergyPlus eplustbl.html report and extract key metrics."""
-        if not html_path.exists():
-            runner.registerWarning(f"EnergyPlus HTML report not found: {html_path}")
-            return {}
+    # def parse_eplustbl_html(self, html_path, runner):
+    #     """Parse EnergyPlus eplustbl.html report and extract key metrics."""
+    #     if not html_path.exists():
+    #         runner.registerWarning(f"EnergyPlus HTML report not found: {html_path}")
+    #         return {}
         
-        html_text = html_path.read_text(encoding="utf-8", errors="ignore")
+    #     html_text = html_path.read_text(encoding="utf-8", errors="ignore")
         
-        data = {}
+    #     data = {}
         
-        # Building name
-        data["building_name"] = self.extract_building_string(html_text)
+    #     # Building name
+    #     data["building_name"] = self.extract_building_string(html_text)
         
-        # Environment: text inside <b> tag after 'Environment:'
-        data["environment"] = self.extract_field(r'Environment:\s*<b>([^<]+)</b>', html_text)
+    #     # Environment: text inside <b> tag after 'Environment:'
+    #     data["environment"] = self.extract_field(r'Environment:\s*<b>([^<]+)</b>', html_text)
         
-        # Simulation hours: extract number from "Values gathered over X hours"
-        hours_match = self.extract_field(r'Values gathered over\s+([0-9.]+)\s+hours', html_text)
-        data["simulation_hours"] = hours_match if hours_match else ""
+    #     # Simulation hours: extract number from "Values gathered over X hours"
+    #     hours_match = self.extract_field(r'Values gathered over\s+([0-9.]+)\s+hours', html_text)
+    #     data["simulation_hours"] = hours_match if hours_match else ""
         
-        # Site and Source Energy from the table
-        data["total_site_energy_GJ"] = self.extract_field(
-            r'Total Site Energy</td>\s*<td[^>]*>\s*([0-9.]+)', html_text)
+    #     # Site and Source Energy from the table
+    #     data["total_site_energy_GJ"] = self.extract_field(
+    #         r'Total Site Energy</td>\s*<td[^>]*>\s*([0-9.]+)', html_text)
         
-        data["net_site_energy_GJ"] = self.extract_field(
-            r'Net Site Energy</td>\s*<td[^>]*>\s*([0-9.]+)', html_text)
+    #     data["net_site_energy_GJ"] = self.extract_field(
+    #         r'Net Site Energy</td>\s*<td[^>]*>\s*([0-9.]+)', html_text)
         
-        data["total_source_energy_GJ"] = self.extract_field(
-            r'Total Source Energy</td>\s*<td[^>]*>\s*([0-9.]+)', html_text)
+    #     data["total_source_energy_GJ"] = self.extract_field(
+    #         r'Total Source Energy</td>\s*<td[^>]*>\s*([0-9.]+)', html_text)
         
-        data["net_source_energy_GJ"] = self.extract_field(
-            r'Net Source Energy</td>\s*<td[^>]*>\s*([0-9.]+)', html_text)
+    #     data["net_source_energy_GJ"] = self.extract_field(
+    #         r'Net Source Energy</td>\s*<td[^>]*>\s*([0-9.]+)', html_text)
 
-        # Total Energy Cost (if present in Economics Summary)
-        data["total_energy_cost_usd"] = self.extract_field(
-            r'Total Energy Cost</td>\s*<td[^>]*>\s*\$?([0-9,\.]+)', html_text)
+    #     # Total Energy Cost (if present in Economics Summary)
+    #     data["total_energy_cost_usd"] = self.extract_field(
+    #         r'Total Energy Cost</td>\s*<td[^>]*>\s*\$?([0-9,\.]+)', html_text)
         
-        # Building Areas
-        data["total_building_area_m2"] = self.extract_field(
-            r'Total Building Area</td>\s*<td[^>]*>\s*([0-9.]+)', html_text)
+    #     # Building Areas
+    #     data["total_building_area_m2"] = self.extract_field(
+    #         r'Total Building Area</td>\s*<td[^>]*>\s*([0-9.]+)', html_text)
         
-        data["net_conditioned_building_area_m2"] = self.extract_field(
-            r'Net Conditioned Building Area</td>\s*<td[^>]*>\s*([0-9.]+)', html_text)
+    #     data["net_conditioned_building_area_m2"] = self.extract_field(
+    #         r'Net Conditioned Building Area</td>\s*<td[^>]*>\s*([0-9.]+)', html_text)
         
-        runner.registerInfo(f"Parsed EnergyPlus report: {data.get('building_name', 'N/A')}")
-        return data
+    #     runner.registerInfo(f"Parsed EnergyPlus report: {data.get('building_name', 'N/A')}")
+    #     return data
 
-    def resolve_energy_cost_per_gj(self, runner, baseline_data):
-        """Determine energy cost per GJ from report data or configuration."""
-        # 1) Try to derive from baseline report (total cost / total site energy)
-        baseline_energy = self.parse_float(baseline_data.get('total_site_energy_GJ'))
-        baseline_cost = self.parse_float(baseline_data.get('total_energy_cost_usd'))
+    # def resolve_energy_cost_per_gj(self, runner, baseline_data):
+    #     """Determine energy cost per GJ from report data or configuration."""
+    #     # 1) Try to derive from baseline report (total cost / total site energy)
+    #     baseline_energy = self.parse_float(baseline_data.get('total_site_energy_GJ'))
+    #     baseline_cost = self.parse_float(baseline_data.get('total_energy_cost_usd'))
 
-        if baseline_energy > 0 and baseline_cost > 0:
-            derived = baseline_cost / baseline_energy
-            runner.registerInfo(f"Derived energy cost from baseline report: ${derived:.2f}/GJ")
-            return derived
+    #     if baseline_energy > 0 and baseline_cost > 0:
+    #         derived = baseline_cost / baseline_energy
+    #         runner.registerInfo(f"Derived energy cost from baseline report: ${derived:.2f}/GJ")
+    #         return derived
 
-        # 2) Check .env override
-        load_dotenv()
-        env_cost = os.getenv('ENERGY_COST_PER_GJ')
-        if env_cost:
-            try:
-                env_value = float(env_cost)
-                runner.registerInfo(f"Using ENERGY_COST_PER_GJ from .env: ${env_value:.2f}/GJ")
-                return env_value
-            except ValueError:
-                runner.registerWarning(f"Invalid ENERGY_COST_PER_GJ in .env: {env_cost}")
+    #     # 2) Check .env override
+    #     load_dotenv()
+    #     env_cost = os.getenv('ENERGY_COST_PER_GJ')
+    #     if env_cost:
+    #         try:
+    #             env_value = float(env_cost)
+    #             runner.registerInfo(f"Using ENERGY_COST_PER_GJ from .env: ${env_value:.2f}/GJ")
+    #             return env_value
+    #         except ValueError:
+    #             runner.registerWarning(f"Invalid ENERGY_COST_PER_GJ in .env: {env_cost}")
 
-        # 3) Check config.ini (if available)
-        try:
-            config_path = None
-            for parent in CURRENT_DIR_PATH.parents:
-                candidate = parent / 'config.ini'
-                if candidate.exists():
-                    config_path = candidate
-                    break
+    #     # 3) Check config.ini (if available)
+    #     try:
+    #         config_path = None
+    #         for parent in CURRENT_DIR_PATH.parents:
+    #             candidate = parent / 'config.ini'
+    #             if candidate.exists():
+    #                 config_path = candidate
+    #                 break
 
-            if config_path:
-                config = configparser.ConfigParser()
-                config.read(config_path)
-                if config.has_section('ENERGY_COST') and config.has_option('ENERGY_COST', 'ENERGY_COST_PER_GJ'):
-                    cfg_value = float(config.get('ENERGY_COST', 'ENERGY_COST_PER_GJ'))
-                    runner.registerInfo(f"Using ENERGY_COST_PER_GJ from config.ini: ${cfg_value:.2f}/GJ")
-                    return cfg_value
-        except Exception as e:
-            runner.registerWarning(f"Could not read ENERGY_COST from config.ini: {str(e)}")
+    #         if config_path:
+    #             config = configparser.ConfigParser()
+    #             config.read(config_path)
+    #             if config.has_section('ENERGY_COST') and config.has_option('ENERGY_COST', 'ENERGY_COST_PER_GJ'):
+    #                 cfg_value = float(config.get('ENERGY_COST', 'ENERGY_COST_PER_GJ'))
+    #                 runner.registerInfo(f"Using ENERGY_COST_PER_GJ from config.ini: ${cfg_value:.2f}/GJ")
+    #                 return cfg_value
+    #     except Exception as e:
+    #         runner.registerWarning(f"Could not read ENERGY_COST from config.ini: {str(e)}")
 
-        # 4) Fallback
-        runner.registerWarning(f"Falling back to default energy cost: ${DEFAULT_ENERGY_COST_PER_GJ:.2f}/GJ")
-        return DEFAULT_ENERGY_COST_PER_GJ
+    #     # 4) Fallback
+    #     runner.registerWarning(f"Falling back to default energy cost: ${DEFAULT_ENERGY_COST_PER_GJ:.2f}/GJ")
+    #     return DEFAULT_ENERGY_COST_PER_GJ
     
 
-    def pull_rsmeans_cost_from_api(self, runner, materials=None):
-        """
-        Pull RSMeans cost data for retrofit materials from the API and write to Excel.
-        Uses credentials from environment variables (client_id, client_secret).
+    # def pull_rsmeans_cost_from_api(self, runner, materials=None):
+    #     """
+    #     Pull RSMeans cost data for retrofit materials from the API and write to Excel.
+    #     Uses credentials from environment variables (client_id, client_secret).
         
-        Args:
-            runner: OpenStudio runner for logging
-            materials: Optional list of materials [{name, quantity, unit}, ...]
-                      If None, uses hardcoded example.
-        """
-        try:
-            # Load environment variables
-            load_dotenv()
-            client_id = os.getenv('client_id')
-            client_secret = os.getenv('client_secret')
+    #     Args:
+    #         runner: OpenStudio runner for logging
+    #         materials: Optional list of materials [{name, quantity, unit}, ...]
+    #                   If None, uses hardcoded example.
+    #     """
+    #     try:
+    #         # Load environment variables
+    #         load_dotenv()
+    #         client_id = os.getenv('client_id')
+    #         client_secret = os.getenv('client_secret')
             
-            if not client_id or not client_secret:
-                runner.registerWarning("RSMeans API credentials (client_id, client_secret) not found in environment. Skipping RSMeans cost retrieval.")
-                return {}
+    #         if not client_id or not client_secret:
+    #             runner.registerWarning("RSMeans API credentials (client_id, client_secret) not found in environment. Skipping RSMeans cost retrieval.")
+    #             return {}
             
-            runner.registerInfo("Initializing RSMeans API client...")
+    #         runner.registerInfo("Initializing RSMeans API client...")
             
-            # Check if materials already have cost data from AdditionalProperties
-            materials_with_costs = [m for m in materials if 'total_cost' in m and m['total_cost'] is not None]
+    #         # Check if materials already have cost data from AdditionalProperties
+    #         materials_with_costs = [m for m in materials if 'total_cost' in m and m['total_cost'] is not None]
             
-            if len(materials_with_costs) == len(materials):
-                # All materials have costs, skip API call
-                runner.registerInfo(f"All {len(materials)} materials already have cost data from AdditionalProperties. Skipping RSMeans API query.")
-                total_cost = sum(m['total_cost'] for m in materials)
-                return {
-                    'total_cost': total_cost,
-                    'materials': materials,
-                    'errors': [],
-                    'search_log': []
-                }
+    #         if len(materials_with_costs) == len(materials):
+    #             # All materials have costs, skip API call
+    #             runner.registerInfo(f"All {len(materials)} materials already have cost data from AdditionalProperties. Skipping RSMeans API query.")
+    #             total_cost = sum(m['total_cost'] for m in materials)
+    #             return {
+    #                 'total_cost': total_cost,
+    #                 'materials': materials,
+    #                 'errors': [],
+    #                 'search_log': []
+    #             }
             
-            # Initialize the API client (production environment)
-            client = RSMeansAPIClient(client_id, client_secret, use_sandbox=False)
+    #         # Initialize the API client (production environment)
+    #         client = RSMeansAPIClient(client_id, client_secret, use_sandbox=False)
             
-            # Authenticate with the API
-            if not client.authenticate():
-                runner.registerWarning("Failed to authenticate with RSMeans API. Skipping cost retrieval.")
-                return {}
+    #         # Authenticate with the API
+    #         if not client.authenticate():
+    #             runner.registerWarning("Failed to authenticate with RSMeans API. Skipping cost retrieval.")
+    #             return {}
             
-            runner.registerInfo("Successfully authenticated with RSMeans API.")
+    #         runner.registerInfo("Successfully authenticated with RSMeans API.")
             
             # Use provided materials or default example
-            if not materials:
-                materials = [
-                    {'name': 'continuous strip footing', 'quantity': 1.0, 'unit': 'unit'}
-                ]
-                runner.registerInfo("Using default hardcoded material for backwards compatibility")
+    #         if not materials:
+    #             materials = [
+    #                 {'name': 'continuous strip footing', 'quantity': 1.0, 'unit': 'unit'}
+    #             ]
+    #             runner.registerInfo("Using default hardcoded material for backwards compatibility")
             
-            runner.registerInfo(f"Querying RSMeans API for {len(materials)} materials...")
+    #         runner.registerInfo(f"Querying RSMeans API for {len(materials)} materials...")
             
-            # Path to save search results
-            search_results_path = CURRENT_DIR_PATH.parent / 'Outputs' / 'search_results.json'
+    #         # Path to save search results
+    #         search_results_path = CURRENT_DIR_PATH.parent / 'Outputs' / 'search_results.json'
             
-            # Search for materials in batch (using latest 2025 Q4 release, Green Building catalog)
-            batch_results = client.search_materials_batch(
-                materials=materials,
-                release_id='2025-q4',
-                catalog='gb-mf',
-                location_id='us-us-national',
-                labor_type='std',
-                measurement_system='imp',
-                save_search_results_path=str(search_results_path)
-            )
+    #         # Search for materials in batch (using latest 2025 Q4 release, Green Building catalog)
+    #         batch_results = client.search_materials_batch(
+    #             materials=materials,
+    #             release_id='2025-q4',
+    #             catalog='gb-mf',
+    #             location_id='us-us-national',
+    #             labor_type='std',
+    #             measurement_system='imp',
+    #             save_search_results_path=str(search_results_path)
+    #         )
             
-            # Log results
-            runner.registerInfo(f"RSMeans query complete. Total cost: ${batch_results['total_cost']:.2f}")
-            runner.registerInfo(f"Search results saved to: {search_results_path}")
+    #         # Log results
+    #         runner.registerInfo(f"RSMeans query complete. Total cost: ${batch_results['total_cost']:.2f}")
+    #         runner.registerInfo(f"Search results saved to: {search_results_path}")
             
-            if batch_results['materials']:
-                for mat in batch_results['materials']:
-                    runner.registerInfo(f"  - {mat['name']}: ${mat['total_cost']:.2f} ({mat['quantity']} {mat.get('unit', 'units')})")
+    #         if batch_results['materials']:
+    #             for mat in batch_results['materials']:
+    #                 runner.registerInfo(f"  - {mat['name']}: ${mat['total_cost']:.2f} ({mat['quantity']} {mat.get('unit', 'units')})")
             
-            if batch_results['errors']:
-                for error in batch_results['errors']:
-                    runner.registerWarning(f"  RSMeans lookup issue: {error}")
+    #         if batch_results['errors']:
+    #             for error in batch_results['errors']:
+    #                 runner.registerWarning(f"  RSMeans lookup issue: {error}")
             
-            # Write aggregated cost to Excel
-            if batch_results['total_cost'] > 0 and new_optimization_excel_output_path.exists():
-                try:
-                    wb = load_workbook(new_optimization_excel_output_path)
-                    try:
-                        ws = wb.active
-                        ws["B4"] = batch_results['total_cost']
-                        wb.save(new_optimization_excel_output_path)
-                        runner.registerInfo(f"Retrofit materials cost written to Excel: ${batch_results['total_cost']:.2f}")
-                    finally:
-                        wb.close()
-                except Exception as e:
-                    runner.registerWarning(f"Could not write cost data to Excel: {str(e)}")
+    #         # Write aggregated cost to Excel
+    #         if batch_results['total_cost'] > 0 and new_optimization_excel_output_path.exists():
+    #             try:
+    #                 wb = load_workbook(new_optimization_excel_output_path)
+    #                 try:
+    #                     ws = wb.active
+    #                     ws["B4"] = batch_results['total_cost']
+    #                     wb.save(new_optimization_excel_output_path)
+    #                     runner.registerInfo(f"Retrofit materials cost written to Excel: ${batch_results['total_cost']:.2f}")
+    #                 finally:
+    #                     wb.close()
+    #             except Exception as e:
+    #                 runner.registerWarning(f"Could not write cost data to Excel: {str(e)}")
             
-            return batch_results
+    #         return batch_results
         
-        except Exception as e:
-            runner.registerWarning(f"Error retrieving RSMeans cost data: {str(e)}")
-            return {}
+    #     except Exception as e:
+    #         runner.registerWarning(f"Error retrieving RSMeans cost data: {str(e)}")
+    #         return {}
 
-    def compare_energy_results(self, runner):
-        """
-        Compare energy results between baseline and measure-applied scenarios.
-        Returns dictionary with energy deltas and costs.
-        """
-        baseline_data = {}
-        measure_data = {}
+    # def compare_energy_results(self, runner):
+    #     """
+    #     Compare energy results between baseline and measure-applied scenarios.
+    #     Returns dictionary with energy deltas and costs.
+    #     """
+    #     baseline_data = {}
+    #     measure_data = {}
         
-        try:
-            # Parse baseline energy results
-            if baseline_eplustbl_path.exists():
-                baseline_data = self.parse_eplustbl_html(baseline_eplustbl_path, runner)
-                runner.registerInfo(f"Baseline energy data loaded: {baseline_data.get('total_site_energy_GJ', 'N/A')} GJ")
-            else:
-                runner.registerWarning(f"Baseline eplustbl.html not found at {baseline_eplustbl_path}")
+    #     try:
+    #         # Parse baseline energy results
+    #         if baseline_eplustbl_path.exists():
+    #             baseline_data = self.parse_eplustbl_html(baseline_eplustbl_path, runner)
+    #             runner.registerInfo(f"Baseline energy data loaded: {baseline_data.get('total_site_energy_GJ', 'N/A')} GJ")
+    #         else:
+    #             runner.registerWarning(f"Baseline eplustbl.html not found at {baseline_eplustbl_path}")
             
-            # Parse measure-applied energy results
-            if measure_applied_eplustbl_path.exists():
-                measure_data = self.parse_eplustbl_html(measure_applied_eplustbl_path, runner)
-                runner.registerInfo(f"Measure-applied energy data loaded: {measure_data.get('total_site_energy_GJ', 'N/A')} GJ")
-            else:
-                runner.registerWarning(f"Measure-applied eplustbl.html not found at {measure_applied_eplustbl_path}")
+    #         # Parse measure-applied energy results
+    #         if measure_applied_eplustbl_path.exists():
+    #             measure_data = self.parse_eplustbl_html(measure_applied_eplustbl_path, runner)
+    #             runner.registerInfo(f"Measure-applied energy data loaded: {measure_data.get('total_site_energy_GJ', 'N/A')} GJ")
+    #         else:
+    #             runner.registerWarning(f"Measure-applied eplustbl.html not found at {measure_applied_eplustbl_path}")
             
-            # Calculate energy deltas
-            deltas = {}
-            if baseline_data and measure_data:
-                try:
-                    baseline_energy = float(baseline_data.get('total_site_energy_GJ', 0))
-                    measure_energy = float(measure_data.get('total_site_energy_GJ', 0))
+    #         # Calculate energy deltas
+    #         deltas = {}
+    #         if baseline_data and measure_data:
+    #             try:
+    #                 baseline_energy = float(baseline_data.get('total_site_energy_GJ', 0))
+    #                 measure_energy = float(measure_data.get('total_site_energy_GJ', 0))
                     
-                    energy_delta = baseline_energy - measure_energy
-                    energy_delta_pct = (energy_delta / baseline_energy * 100) if baseline_energy > 0 else 0
-                    energy_cost_per_gj = self.resolve_energy_cost_per_gj(runner, baseline_data)
-                    cost_delta = energy_delta * energy_cost_per_gj
+    #                 energy_delta = baseline_energy - measure_energy
+    #                 energy_delta_pct = (energy_delta / baseline_energy * 100) if baseline_energy > 0 else 0
+    #                 energy_cost_per_gj = self.resolve_energy_cost_per_gj(runner, baseline_data)
+    #                 cost_delta = energy_delta * energy_cost_per_gj
                     
-                    deltas = {
-                        'baseline_energy_GJ': baseline_energy,
-                        'measure_energy_GJ': measure_energy,
-                        'energy_delta_GJ': energy_delta,
-                        'energy_delta_pct': energy_delta_pct,
-                        'cost_delta_usd': cost_delta,
-                        'energy_cost_per_gj': energy_cost_per_gj,
-                        'baseline_building': baseline_data.get('building_name', 'Baseline'),
-                        'measure_building': measure_data.get('building_name', 'Measure Applied')
-                    }
+    #                 deltas = {
+    #                     'baseline_energy_GJ': baseline_energy,
+    #                     'measure_energy_GJ': measure_energy,
+    #                     'energy_delta_GJ': energy_delta,
+    #                     'energy_delta_pct': energy_delta_pct,
+    #                     'cost_delta_usd': cost_delta,
+    #                     'energy_cost_per_gj': energy_cost_per_gj,
+    #                     'baseline_building': baseline_data.get('building_name', 'Baseline'),
+    #                     'measure_building': measure_data.get('building_name', 'Measure Applied')
+    #                 }
                     
-                    runner.registerInfo(f"Energy Delta: {energy_delta:.2f} GJ ({energy_delta_pct:.1f}%)")
-                    runner.registerInfo(f"Cost Delta: ${cost_delta:.2f}/year")
-                except ValueError as e:
-                    runner.registerWarning(f"Could not convert energy values to float: {str(e)}")
+    #                 runner.registerInfo(f"Energy Delta: {energy_delta:.2f} GJ ({energy_delta_pct:.1f}%)")
+    #                 runner.registerInfo(f"Cost Delta: ${cost_delta:.2f}/year")
+    #             except ValueError as e:
+    #                 runner.registerWarning(f"Could not convert energy values to float: {str(e)}")
             
-            return deltas
+    #         return deltas
         
-        except Exception as e:
-            runner.registerWarning(f"Error comparing energy results: {str(e)}")
-            return {}
+    #     except Exception as e:
+    #         runner.registerWarning(f"Error comparing energy results: {str(e)}")
+    #         return {}
 
     def generate_html_report(self, runner, energy_deltas):
         """Generate a self-contained HTML report with real baseline/measure values and retrofit material costs."""

@@ -1,0 +1,175 @@
+Program Version,EnergyPlus, Version 25.2.0-cf7368216c, YMD=2026.02.27 12:55,
+   ** Warning ** ProcessScheduleInput: Schedule:Day:Interval = SCHEDULE DAY 1
+   **   ~~~   ** Schedule Type Limits Name is empty.
+   **   ~~~   ** Schedule will not be validated.
+   ** Warning ** ProcessScheduleInput: Schedule:Day:Interval = SCHEDULE DAY 10
+   **   ~~~   ** Schedule Type Limits Name is empty.
+   **   ~~~   ** Schedule will not be validated.
+   ** Warning ** ProcessScheduleInput: Schedule:Day:Interval = SCHEDULE DAY 11
+   **   ~~~   ** Schedule Type Limits Name is empty.
+   **   ~~~   ** Schedule will not be validated.
+   ** Warning ** ProcessScheduleInput: Schedule:Day:Interval = SCHEDULE DAY 12
+   **   ~~~   ** Schedule Type Limits Name is empty.
+   **   ~~~   ** Schedule will not be validated.
+   ** Warning ** ProcessScheduleInput: Schedule:Day:Interval = SCHEDULE DAY 13
+   **   ~~~   ** Schedule Type Limits Name is empty.
+   **   ~~~   ** Schedule will not be validated.
+   ** Warning ** ProcessScheduleInput: Schedule:Day:Interval = SCHEDULE DAY 14
+   **   ~~~   ** Schedule Type Limits Name is empty.
+   **   ~~~   ** Schedule will not be validated.
+   ** Warning ** ProcessScheduleInput: Schedule:Day:Interval = SCHEDULE DAY 15
+   **   ~~~   ** Schedule Type Limits Name is empty.
+   **   ~~~   ** Schedule will not be validated.
+   ** Warning ** ProcessScheduleInput: Schedule:Day:Interval = SCHEDULE DAY 16
+   **   ~~~   ** Schedule Type Limits Name is empty.
+   **   ~~~   ** Schedule will not be validated.
+   ** Warning ** ProcessScheduleInput: Schedule:Day:Interval = SCHEDULE DAY 17
+   **   ~~~   ** Schedule Type Limits Name is empty.
+   **   ~~~   ** Schedule will not be validated.
+   ** Warning ** ProcessScheduleInput: Schedule:Day:Interval = SCHEDULE DAY 18
+   **   ~~~   ** Schedule Type Limits Name is empty.
+   **   ~~~   ** Schedule will not be validated.
+   ** Warning ** ProcessScheduleInput: Schedule:Day:Interval = SCHEDULE DAY 2
+   **   ~~~   ** Schedule Type Limits Name is empty.
+   **   ~~~   ** Schedule will not be validated.
+   ** Warning ** ProcessScheduleInput: Schedule:Day:Interval = SCHEDULE DAY 21
+   **   ~~~   ** Schedule Type Limits Name is empty.
+   **   ~~~   ** Schedule will not be validated.
+   ** Warning ** ProcessScheduleInput: Schedule:Day:Interval = SCHEDULE DAY 22
+   **   ~~~   ** Schedule Type Limits Name is empty.
+   **   ~~~   ** Schedule will not be validated.
+   ** Warning ** ProcessScheduleInput: Schedule:Day:Interval = SCHEDULE DAY 23
+   **   ~~~   ** Schedule Type Limits Name is empty.
+   **   ~~~   ** Schedule will not be validated.
+   ** Warning ** ProcessScheduleInput: Schedule:Day:Interval = SCHEDULE DAY 24
+   **   ~~~   ** Schedule Type Limits Name is empty.
+   **   ~~~   ** Schedule will not be validated.
+   ** Warning ** ProcessScheduleInput: Schedule:Day:Interval = SCHEDULE DAY 25
+   **   ~~~   ** Schedule Type Limits Name is empty.
+   **   ~~~   ** Schedule will not be validated.
+   ** Warning ** ProcessScheduleInput: Schedule:Day:Interval = SCHEDULE DAY 26
+   **   ~~~   ** Schedule Type Limits Name is empty.
+   **   ~~~   ** Schedule will not be validated.
+   ** Warning ** ProcessScheduleInput: Schedule:Day:Interval = SCHEDULE DAY 3
+   **   ~~~   ** Schedule Type Limits Name is empty.
+   **   ~~~   ** Schedule will not be validated.
+   ** Warning ** ProcessScheduleInput: Schedule:Day:Interval = SCHEDULE DAY 4
+   **   ~~~   ** Schedule Type Limits Name is empty.
+   **   ~~~   ** Schedule will not be validated.
+   ** Warning ** ProcessScheduleInput: Schedule:Day:Interval = SCHEDULE DAY 5
+   **   ~~~   ** Schedule Type Limits Name is empty.
+   **   ~~~   ** Schedule will not be validated.
+   ** Warning ** ProcessScheduleInput: Schedule:Day:Interval = SCHEDULE DAY 6
+   **   ~~~   ** Schedule Type Limits Name is empty.
+   **   ~~~   ** Schedule will not be validated.
+   ** Warning ** ProcessScheduleInput: Schedule:Day:Interval = SCHEDULE DAY 7
+   **   ~~~   ** Schedule Type Limits Name is empty.
+   **   ~~~   ** Schedule will not be validated.
+   ** Warning ** ProcessScheduleInput: Schedule:Day:Interval = SCHEDULE DAY 8
+   **   ~~~   ** Schedule Type Limits Name is empty.
+   **   ~~~   ** Schedule will not be validated.
+   ** Warning ** ProcessScheduleInput: Schedule:Day:Interval = SCHEDULE DAY 9
+   **   ~~~   ** Schedule Type Limits Name is empty.
+   **   ~~~   ** Schedule will not be validated.
+   ************* Beginning Zone Sizing Calculations
+   ** Warning ** CheckUsedConstructions: There are 15 nominally unused constructions in input.
+   **   ~~~   ** For explicit details on each unused construction, use Output:Diagnostics,DisplayExtraWarnings;
+   ************* Beginning System Sizing Calculations
+   ** Warning ** GetDXCoils: Coil:Heating:DX:SingleSpeed="CORE_ZN ZN HP HTG COIL" curve values
+   **   ~~~   ** ... Defrost Energy Input Ratio Function of Temperature Curve Name = CORE_ZN ZN HP HTG COIL DEFROST EIR FUNC OF TEMP CURVE 1 output is not equal to 1.0 (+ or - 10%) at rated conditions.
+   **   ~~~   ** ... Curve output at rated conditions = 0.788
+   ** Warning ** GetDXCoils: Coil:Heating:DX:SingleSpeed="PERIMETER_ZN_1 ZN HP HTG COIL" curve values
+   **   ~~~   ** ... Defrost Energy Input Ratio Function of Temperature Curve Name = PERIMETER_ZN_1 ZN HP HTG COIL DEFROST EIR FUNC OF TEMP CURVE 1 output is not equal to 1.0 (+ or - 10%) at rated conditions.
+   **   ~~~   ** ... Curve output at rated conditions = 0.788
+   ** Warning ** GetDXCoils: Coil:Heating:DX:SingleSpeed="PERIMETER_ZN_2 ZN HP HTG COIL" curve values
+   **   ~~~   ** ... Defrost Energy Input Ratio Function of Temperature Curve Name = PERIMETER_ZN_2 ZN HP HTG COIL DEFROST EIR FUNC OF TEMP CURVE 1 output is not equal to 1.0 (+ or - 10%) at rated conditions.
+   **   ~~~   ** ... Curve output at rated conditions = 0.788
+   ** Warning ** GetDXCoils: Coil:Heating:DX:SingleSpeed="PERIMETER_ZN_3 ZN HP HTG COIL" curve values
+   **   ~~~   ** ... Defrost Energy Input Ratio Function of Temperature Curve Name = PERIMETER_ZN_3 ZN HP HTG COIL DEFROST EIR FUNC OF TEMP CURVE 1 output is not equal to 1.0 (+ or - 10%) at rated conditions.
+   **   ~~~   ** ... Curve output at rated conditions = 0.788
+   ** Warning ** GetDXCoils: Coil:Heating:DX:SingleSpeed="PERIMETER_ZN_4 ZN HP HTG COIL" curve values
+   **   ~~~   ** ... Defrost Energy Input Ratio Function of Temperature Curve Name = PERIMETER_ZN_4 ZN HP HTG COIL DEFROST EIR FUNC OF TEMP CURVE 1 output is not equal to 1.0 (+ or - 10%) at rated conditions.
+   **   ~~~   ** ... Curve output at rated conditions = 0.788
+   ************* Beginning Plant Sizing Calculations
+   ** Warning ** GetOAControllerInputs: Controller:MechanicalVentilation="CONTROLLER MECHANICAL VENTILATION 5"
+   **   ~~~   ** Cannot locate a matching DesignSpecification:ZoneAirDistribution object for Zone="CORE_ZN ZN".
+   **   ~~~   ** Using default zone air distribution effectiveness of 1.0 for heating and cooling.
+   ** Warning ** GetOAControllerInputs: Controller:MechanicalVentilation="CONTROLLER MECHANICAL VENTILATION 1"
+   **   ~~~   ** Cannot locate a matching DesignSpecification:ZoneAirDistribution object for Zone="PERIMETER_ZN_1 ZN".
+   **   ~~~   ** Using default zone air distribution effectiveness of 1.0 for heating and cooling.
+   ** Warning ** GetOAControllerInputs: Controller:MechanicalVentilation="CONTROLLER MECHANICAL VENTILATION 2"
+   **   ~~~   ** Cannot locate a matching DesignSpecification:ZoneAirDistribution object for Zone="PERIMETER_ZN_2 ZN".
+   **   ~~~   ** Using default zone air distribution effectiveness of 1.0 for heating and cooling.
+   ** Warning ** GetOAControllerInputs: Controller:MechanicalVentilation="CONTROLLER MECHANICAL VENTILATION 3"
+   **   ~~~   ** Cannot locate a matching DesignSpecification:ZoneAirDistribution object for Zone="PERIMETER_ZN_3 ZN".
+   **   ~~~   ** Using default zone air distribution effectiveness of 1.0 for heating and cooling.
+   ** Warning ** GetOAControllerInputs: Controller:MechanicalVentilation="CONTROLLER MECHANICAL VENTILATION 4"
+   **   ~~~   ** Cannot locate a matching DesignSpecification:ZoneAirDistribution object for Zone="PERIMETER_ZN_4 ZN".
+   **   ~~~   ** Using default zone air distribution effectiveness of 1.0 for heating and cooling.
+   ** Warning ** The Standard Ratings is calculated for Coil:Cooling:DX:SingleSpeed = CORE_ZN ZN PSZ-AC-1 1SPD DX HP CLG COIL but not at the AHRI test condition due to curve out of bound.
+   **   ~~~   **  Review the Standard Ratings calculations in the Engineering Reference for this coil type. Also, use Output:Diagnostics, DisplayExtraWarnings for further guidance.
+   ** Warning ** The Standard Ratings is calculated for Coil:Cooling:DX:SingleSpeed = PERIMETER_ZN_1 ZN PSZ-AC-2 1SPD DX HP CLG COIL but not at the AHRI test condition due to curve out of bound.
+   **   ~~~   **  Review the Standard Ratings calculations in the Engineering Reference for this coil type. Also, use Output:Diagnostics, DisplayExtraWarnings for further guidance.
+   ** Warning ** The Standard Ratings is calculated for Coil:Cooling:DX:SingleSpeed = PERIMETER_ZN_2 ZN PSZ-AC-3 1SPD DX HP CLG COIL but not at the AHRI test condition due to curve out of bound.
+   **   ~~~   **  Review the Standard Ratings calculations in the Engineering Reference for this coil type. Also, use Output:Diagnostics, DisplayExtraWarnings for further guidance.
+   ** Warning ** The Standard Ratings is calculated for Coil:Cooling:DX:SingleSpeed = PERIMETER_ZN_3 ZN PSZ-AC-4 1SPD DX HP CLG COIL but not at the AHRI test condition due to curve out of bound.
+   **   ~~~   **  Review the Standard Ratings calculations in the Engineering Reference for this coil type. Also, use Output:Diagnostics, DisplayExtraWarnings for further guidance.
+   ** Warning ** The Standard Ratings is calculated for Coil:Cooling:DX:SingleSpeed = PERIMETER_ZN_4 ZN PSZ-AC-5 1SPD DX HP CLG COIL but not at the AHRI test condition due to curve out of bound.
+   **   ~~~   **  Review the Standard Ratings calculations in the Engineering Reference for this coil type. Also, use Output:Diagnostics, DisplayExtraWarnings for further guidance.
+   ** Warning ** Check input. Pump nominal power or motor efficiency is set to 0, for pump=MAIN SERVICE WATER LOOP WATER MAINS PRESSURE DRIVEN
+   ** Warning ** Output:Meter: invalid Key Name="DISTRICTHEATINGWATER:FACILITY" - not found.
+   ** Warning ** Output:Meter: invalid Key Name="DISTRICTCOOLING:FACILITY" - not found.
+   ** Warning ** Output:Meter:MeterFileOnly requested for "Electricity:Facility" (TimeStep), already on "Output:Meter". Will report to both eplusout.eso and eplusout.mtr
+   ************* Testing Individual Branch Integrity
+   ************* All Branches passed integrity testing
+   ************* Testing Individual Supply Air Path Integrity
+   ************* All Supply Air Paths passed integrity testing
+   ************* Testing Individual Return Air Path Integrity
+   ************* All Return Air Paths passed integrity testing
+   ************* No node connection errors were found.
+   ** Warning ** GetNextEnvironment: Adaptive Comfort being reported during design day.
+   ** Warning ** GetNextEnvironment: Adaptive Comfort being reported during design day.
+   ** Warning ** GetNextEnvironment: Adaptive Comfort being reported during design day.
+   ** Warning ** Output:Table:Monthly requested with SimulationControl Run Simulation for Weather File Run Periods set to No so Output:Table:Monthly will not be generated
+   ** Warning ** CalcEquipmentFlowRates: "MAIN SERVICE WATER USE 0.064GPM 140F" - Target water temperature is greater than the hot water temperature by (1.30E-002 C)
+   **   ~~~   **  Environment=EL PASO INTERNATIONAL AP  UT ANN CLG .4% CONDNS DB=>MWB HVAC Sizing Pass 1, at Simulation time=07/21 11:00 - 11:10
+   **   ~~~   ** ...target water temperature     = 60.00 C
+   **   ~~~   ** ...hot water temperature        = 59.99 C
+   **   ~~~   ** ...Target water temperature should be less than or equal to the hot water temperature. Verify temperature setpoints and schedules.
+   ************* Beginning Simulation
+   ** Warning ** GetNextEnvironment: Adaptive Comfort being reported during design day.
+   ** Warning ** GetNextEnvironment: Adaptive Comfort being reported during design day.
+   ** Warning ** GetNextEnvironment: Adaptive Comfort being reported during design day.
+   ************* Simulation Error Summary *************
+   ************* There are 8 unused objects in input.
+   ************* Use Output:Diagnostics,DisplayUnusedObjects; to see them.
+   ************* There are 4 unused schedules in input.
+   ************* There are 25 unused day schedules in input.
+   ************* Use Output:Diagnostics,DisplayUnusedSchedules; to see them.
+   *************
+   ************* ===== Recurring Error Summary =====
+   ************* The following recurring error messages occurred.
+   *************
+   *************  ** Warning ** Plant loop falling below lower temperature limit, PlantLoop="MAIN SERVICE WATER LOOP"
+   *************  **   ~~~   **   This error occurred 14538 total times;
+   *************  **   ~~~   **   during Warmup 12986 times;
+   *************  **   ~~~   **   during Sizing 0 times.
+   *************  **   ~~~   **   Min=16.349635
+   *************
+   *************  ** Warning ** "MAIN SERVICE WATER USE 0.064GPM 140F" - Target water temperature should be less than or equal to the hot water temperature error continues...
+   *************  **   ~~~   **   This error occurred 3215 total times;
+   *************  **   ~~~   **   during Warmup 0 times;
+   *************  **   ~~~   **   during Sizing 0 times.
+   *************  **   ~~~   **   Max=1.882577  Min=0.000000
+   *************
+   *************
+   ************* ===== Final Error Summary =====
+   ************* The following error categories occurred.  Consider correcting or noting.
+   ************* Nominally Unused Constructions
+   ************* ..The nominally unused constructions warning is provided to alert you to potential conditions that can cause
+   ************* ..extra time during simulation. Each construction is calculated by the algorithm indicated in the HeatBalanceAlgorithm
+   ************* ..object. You may remove the constructions indicated (when you use the DisplayExtraWarnings option).
+   *************
+   ************* EnergyPlus Warmup Error Summary. During Warmup: 4 Warning; 0 Severe Errors.
+   ************* EnergyPlus Sizing Error Summary. During Sizing: 6 Warning; 0 Severe Errors.
+   ************* EnergyPlus Completed Successfully-- 17805 Warning; 0 Severe Errors; Elapsed Time=00hr 00min  1.88sec
