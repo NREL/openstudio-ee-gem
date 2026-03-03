@@ -22,6 +22,17 @@ The measure adjusts space infiltration rates and generates a life-cycle embodied
 - **RSMeans API credentials** (optional; for construction cost lookups)
 - **Configuration file** at repo root: `config.ini` with EC3 API token
 
+#### Python Environment Setup (Optional)
+
+You can create a Python environment with the required dependencies using the repo’s environment.yml:
+
+```bash
+conda env create -f environment.yml
+conda activate openstudio-3.11
+```
+
+**Important**: This installs Python packages only. You still need to install the OpenStudio SDK separately and ensure its Python bindings are discoverable (e.g., update your `OPENSTUDIO_VERSION` path in apply_measure.py).
+
 ### Configuration
 
 #### EC3 API Setup

@@ -1,4 +1,4 @@
-name: openstudio-3.8
+name: openstudio-3.11
 channels:
   - defaults
 dependencies:
@@ -24,4 +24,3 @@ dependencies:
       - python-dotenv==1.0.1
       - requests==2.32.3
       - urllib3==2.2.3
-prefix: C:\Users\pshrest2\Anaconda3\envs\openstudio-3.8
