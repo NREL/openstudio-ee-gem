@@ -302,6 +302,37 @@ class DoorEnhancement(openstudio.measure.ModelMeasure):
         door_thickness.setDefaultValue(0.0)
         args.append(door_thickness)
 
+        # make an argument for use custom costs instead of RSMeans API
+        use_custom_costs = openstudio.measure.OSArgument.makeBoolArgument("use_custom_costs", False)
+        use_custom_costs.setDisplayName("Use Custom Cost Inputs?")
+        use_custom_costs.setDescription("If true, use custom material and labor costs instead of querying the RSMeans API.")
+        use_custom_costs.setDefaultValue(False)
+        args.append(use_custom_costs)
+
+        # make an argument for custom door cost ($/unit area)
+        custom_door_cost_per_unit = openstudio.measure.OSArgument.makeDoubleArgument("custom_door_cost_per_unit", False)
+        custom_door_cost_per_unit.setDisplayName("Custom Door Cost ($/m²)")
+        custom_door_cost_per_unit.setDescription("Custom material and labor cost for door replacement per unit area. Only used if 'Use Custom Cost Inputs?' is true.")
+        custom_door_cost_per_unit.setUnits("$/m²")
+        custom_door_cost_per_unit.setDefaultValue(0.0)
+        args.append(custom_door_cost_per_unit)
+
+        # make an argument for custom bottom seal cost ($/length)
+        custom_bottom_seal_cost = openstudio.measure.OSArgument.makeDoubleArgument("custom_bottom_seal_cost", False)
+        custom_bottom_seal_cost.setDisplayName("Custom Bottom Seal Cost ($/m)")
+        custom_bottom_seal_cost.setDescription("Custom material and labor cost for bottom seal per unit length. Only used if 'Use Custom Cost Inputs?' is true.")
+        custom_bottom_seal_cost.setUnits("$/m")
+        custom_bottom_seal_cost.setDefaultValue(0.0)
+        args.append(custom_bottom_seal_cost)
+
+        # make an argument for custom top/side seal cost ($/length)
+        custom_top_side_seal_cost = openstudio.measure.OSArgument.makeDoubleArgument("custom_top_side_seal_cost", False)
+        custom_top_side_seal_cost.setDisplayName("Custom Top/Side Seal Cost ($/m)")
+        custom_top_side_seal_cost.setDescription("Custom material and labor cost for top and side seal per unit length. Only used if 'Use Custom Cost Inputs?' is true.")
+        custom_top_side_seal_cost.setUnits("$/m")
+        custom_top_side_seal_cost.setDefaultValue(0.0)
+        args.append(custom_top_side_seal_cost)
+
         return args
 
     def run(self, model: openstudio.model.Model, runner: openstudio.measure.OSRunner, user_arguments: openstudio.measure.OSArgumentMap):
@@ -343,7 +374,17 @@ class DoorEnhancement(openstudio.measure.ModelMeasure):
         door_density = runner.getDoubleArgumentValue("door_density", user_arguments)
         door_thickness = runner.getDoubleArgumentValue("door_thickness", user_arguments)
 
-        # Create a dictionary mapping seal options to their default lengths
+        # Retrieve custom cost arguments
+        use_custom_costs = runner.getBoolArgumentValue("use_custom_costs", user_arguments)
+        custom_door_cost_per_unit = runner.getDoubleArgumentValue("custom_door_cost_per_unit", user_arguments)
+        custom_bottom_seal_cost = runner.getDoubleArgumentValue("custom_bottom_seal_cost", user_arguments)
+        custom_top_side_seal_cost = runner.getDoubleArgumentValue("custom_top_side_seal_cost", user_arguments)
+
+        if use_custom_costs:
+            runner.registerInfo("Custom cost mode enabled. Using user-provided cost values instead of RSMeans API.")
+            runner.registerInfo(f"  Door cost: ${custom_door_cost_per_unit}/m²")
+            runner.registerInfo(f"  Bottom seal cost: ${custom_bottom_seal_cost}/m")
+            runner.registerInfo(f"  Top/side seal cost: ${custom_top_side_seal_cost}/m")
         length_per_unit_dict = {
             "brush weatherstrip": 0.9144,  # 36" = 0.9144 m, source: https://www.pemko.com/en/view-pdf?id=AADSS1046707&page=1
             "silicone adhesive smoke gasket": 5.1816,  # 17' = 5.1816 m, source: https://buildingtransparency.org/ec3/epds/ec327rq0
@@ -1040,36 +1081,59 @@ class DoorEnhancement(openstudio.measure.ModelMeasure):
             ]
 
             try:
-                rsmeans_module_path = Path(__file__).parent / "resources" / "call_rsmeans_api.py"
-                if rsmeans_module_path.exists():
-                    runner.registerInfo("Starting RSMeans lookup...")
-                    runner.registerInfo(f"RSMeans search term: {rsmeans_search_term}")
-                    spec = importlib.util.spec_from_file_location("call_rsmeans_api", rsmeans_module_path)
-                    rsmeans_module = importlib.util.module_from_spec(spec)
-                    spec.loader.exec_module(rsmeans_module)
-                    rsmeans_lookup = rsmeans_module.run_rsmeans_cost_lookup(
-                        materials=rsmeans_materials,
-                        release_id="2024-an",
-                        catalogs=["bc-mf", "gb-mf", "rp-mf"],
-                        location_id="us-us-national",
-                        labor_type="std",
-                        measurement_system="imp",
-                        use_sandbox=False,
-                        overhead_profit_percent=10.0,
+                if use_custom_costs:
+                    runner.registerInfo("Using custom cost inputs (RSMeans API lookup skipped).")
+                    # Create a mock RSMeans lookup result using custom costs
+                    rsmeans_lookup = {
+                        "status": "ok",
+                        "cost_source": "custom_input",
+                        "summary": {
+                            "materials_count": 1,
+                            "total_cost_materials": custom_door_cost_per_unit * float(len(sub_surfaces_to_change)),
+                            "total_cost_overhead_profit": 0.0,  # Custom costs assumed to already include labor/profit
+                            "total_cost_with_overhead_profit": custom_door_cost_per_unit * float(len(sub_surfaces_to_change)),
+                        }
+                    }
+                    rsmeans_summary_line = (
+                        "Custom cost summary (cost_source=custom_input): "
+                        f"door_cost=${custom_door_cost_per_unit * float(len(sub_surfaces_to_change)):,.2f} "
+                        f"({len(sub_surfaces_to_change)} doors @ ${custom_door_cost_per_unit}/m²)"
                     )
-                    runner.registerInfo(f"RSMeans lookup status: {rsmeans_lookup.get('status', 'unknown')}")
-                    if rsmeans_lookup.get("status") == "ok":
-                        summary = rsmeans_lookup.get("summary", {})
-                        rsmeans_summary_line = (
-                            "RSMeans cost summary: "
-                            f"materials={summary.get('materials_count', 0)}, "
-                            f"total_cost=${summary.get('total_cost_with_overhead_profit', 0.0):,.2f}"
-                        )
-                        runner.registerInfo(rsmeans_summary_line)
+                    runner.registerInfo(rsmeans_summary_line)
                 else:
-                    runner.registerWarning("RSMeans lookup skipped: call_rsmeans_api.py not found")
+                    rsmeans_module_path = Path(__file__).parent / "resources" / "call_rsmeans_api.py"
+                    if rsmeans_module_path.exists():
+                        runner.registerInfo("Starting RSMeans lookup...")
+                        runner.registerInfo(f"RSMeans search term: {rsmeans_search_term}")
+                        spec = importlib.util.spec_from_file_location("call_rsmeans_api", rsmeans_module_path)
+                        rsmeans_module = importlib.util.module_from_spec(spec)
+                        spec.loader.exec_module(rsmeans_module)
+                        rsmeans_lookup = rsmeans_module.run_rsmeans_cost_lookup(
+                            materials=rsmeans_materials,
+                            release_id="2024-an",
+                            catalogs=["bc-mf", "gb-mf", "rp-mf"],
+                            location_id="us-us-national",
+                            labor_type="std",
+                            measurement_system="imp",
+                            use_sandbox=False,
+                            overhead_profit_percent=10.0,
+                        )
+                        # Add cost_source identifier to RSMeans API results
+                        if rsmeans_lookup:
+                            rsmeans_lookup["cost_source"] = "rsmeans_api"
+                        runner.registerInfo(f"RSMeans lookup status: {rsmeans_lookup.get('status', 'unknown')}")
+                        if rsmeans_lookup.get("status") == "ok":
+                            summary = rsmeans_lookup.get("summary", {})
+                            rsmeans_summary_line = (
+                                "RSMeans cost summary (cost_source=rsmeans_api): "
+                                f"materials={summary.get('materials_count', 0)}, "
+                                f"total_cost=${summary.get('total_cost_with_overhead_profit', 0.0):,.2f}"
+                            )
+                            runner.registerInfo(rsmeans_summary_line)
+                    else:
+                        runner.registerWarning("RSMeans lookup skipped: call_rsmeans_api.py not found")
             except Exception as e:
-                runner.registerWarning(f"RSMeans lookup failed: {e}")
+                runner.registerWarning(f"Cost lookup failed: {e}")
         
         # Store summary in organized additional properties buckets (same pattern as window enhancement)
         building = model.getBuilding()
@@ -1140,6 +1204,7 @@ class DoorEnhancement(openstudio.measure.ModelMeasure):
                 rsmeans_summary = openstudio.model.SpaceType(model)
                 rsmeans_summary.setName("RSMeans Summary")
                 rsmeans_summary_props = rsmeans_summary.additionalProperties()
+                rsmeans_summary_props.setFeature("cost_source", rsmeans_lookup.get("cost_source", "unknown"))
                 rsmeans_summary_props.setFeature("rsmeans_total_material_cost_$", rsmeans_material_cost)
                 rsmeans_summary_props.setFeature("rsmeans_total_overhead_profit_cost_$", rsmeans_overhead_cost)
                 rsmeans_summary_props.setFeature("rsmeans_total_cost_with_overhead_profit_$", rsmeans_total_cost)
