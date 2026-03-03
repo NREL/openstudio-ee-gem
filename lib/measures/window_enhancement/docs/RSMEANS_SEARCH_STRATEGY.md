@@ -1,7 +1,9 @@
 # RSMeans Intelligent Search Strategy
 
 ## Overview
-The `call_rsmeans_api.py` tool now includes intelligent search term generation that automatically tries multiple alternatives when the initial search term doesn't find matches in the RSMeans database.
+The `call_rsmeans_api.py` tool supports two lookup modes:
+1) **Exact line item ID lookup** (if user supplies RSMeans IDs), and
+2) **Closest-match search** (default), which tries multiple search terms and catalogs.
 
 ## Search Strategy
 
@@ -17,7 +19,10 @@ For each material, the system tries search terms in this order:
 - Stops at first successful match to avoid redundant queries
 - Returns best match with catalog name, unit cost, and total cost
 
-### 3. **Material-Specific Alternatives**
+### 3. **Exact Line Item ID Lookup (Optional)**
+If `rsmeans_id` is provided for a material, the lookup attempts the exact line item ID in each catalog first. If found, the match is tagged as `match_type: exact_id_match`. If not found, the system falls back to closest-match search.
+
+### 4. **Material-Specific Alternatives**
 
 #### Windows
 For "window glazing":
@@ -56,7 +61,7 @@ For "window frame":
 - Converts "equipment" → "unit"
 - Falls back to "HVAC equipment"
 
-### 4. **Simplification Strategy**
+### 5. **Simplification Strategy**
 For compound terms (e.g., "high efficiency window glazing"):
 - Try last word only: "glazing"
 - Try first + last: "high glazing"
@@ -80,19 +85,10 @@ python resources/call_rsmeans_api.py --catalogs bc-mf,gb-mf,sq-mf
 python resources/call_rsmeans_api.py --overhead-profit-percent 25
 ```
 
-## Current Status
-
-### Working
-- ✅ EC3 API for embodied carbon (12,588 kg CO2 eq)
-- ✅ Intelligent search term generation
-- ✅ Multi-catalog search across bc-mf, gb-mf, rp-mf, sq-mf, hc-mf, si-mf
-- ✅ Auto-path detection from apply_measure.py
-- ✅ Material extraction from OSM files
-
-### Known Limitations
-- ⚠️ Window-related terms ("glazing", "frame", etc.) return no matches in tested catalogs
-- ⚠️ May indicate RSMeans database doesn't include these specific items
-- ⚠️ Alternative: Consider using parametric/square-foot costs or custom cost database
+## Match Types
+Each matched material includes a `match_type` field:
+- `exact_id_match`: Found via user-provided RSMeans line item ID
+- `closest_match`: Found via alternative-term search
 
 ## Alternative Solutions
 
@@ -121,11 +117,11 @@ If RSMeans continues to return no matches:
 All search attempts are logged to `tests/output/rsmeans_search_results.json`:
 ```json
 {
-  "summary": {
-    "materials_searched": 2,
-    "materials_matched": 0,
-    "catalogs_searched": ["bc-mf", "gb-mf"]
-  },
+   "summary": {
+      "materials_searched": 2,
+      "materials_matched": 2,
+      "catalogs_searched": ["bc-mf", "gb-mf", "rp-mf"]
+   },
   "results": {
     "errors": ["No RSMeans match found in any catalog for: window glazing"],
     "search_log": [...]

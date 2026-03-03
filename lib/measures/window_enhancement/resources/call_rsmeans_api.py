@@ -78,6 +78,25 @@ def _get_feature_as_float(props, feature_name: str) -> Optional[float]:
     return None
 
 
+def _extract_search_items(search_results: Dict[str, Any]) -> List[Dict[str, Any]]:
+    if not search_results:
+        return []
+    items = search_results.get("items")
+    if isinstance(items, list):
+        return items
+    return search_results.get("unitLines", {}).get("items", [])
+
+
+def _filter_demo_items(items: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    filtered = []
+    for item in items:
+        description = str(item.get("description", "")).lower()
+        if "demolition" in description or "demo" in description:
+            continue
+        filtered.append(item)
+    return filtered or items
+
+
 def generate_search_term_alternatives(material_name: str) -> List[tuple]:
     """
     Generate alternative search terms and divisions for a material.
@@ -91,10 +110,16 @@ def generate_search_term_alternatives(material_name: str) -> List[tuple]:
     """
     alternatives = []
     name_lower = material_name.lower().strip()
+    # Remove size tokens like "5 ft 3 in x 7 ft 7 in" to improve match rate
+    cleaned_name = re.sub(r"\b\d+(?:\.\d+)?\b", "", name_lower)
+    cleaned_name = cleaned_name.replace("ft", " ").replace("in", " ").replace("x", " ")
+    cleaned_name = re.sub(r"\s+", " ", cleaned_name).strip()
     
     # Strategy 1: Original name with detected division
     original_division = get_division_from_material_type(material_name)
     alternatives.append((material_name, original_division))
+    if cleaned_name and cleaned_name != name_lower:
+        alternatives.append((cleaned_name, get_division_from_material_type(cleaned_name)))
     
     # Strategy 2: Window-specific alternatives
     if "window" in name_lower:
@@ -130,6 +155,8 @@ def generate_search_term_alternatives(material_name: str) -> List[tuple]:
     
     # Strategy 3: Door-specific alternatives
     elif "door" in name_lower:
+        if "metal" in name_lower or "steel" in name_lower:
+            alternatives.append(("metal door", "08"))
         alternatives.extend([
             ("door replacement", "08"),
             ("door unit", "08"),
@@ -156,7 +183,7 @@ def generate_search_term_alternatives(material_name: str) -> List[tuple]:
         ])
     
     # Strategy 6: Try simplifying compound terms (remove adjectives/modifiers)
-    words = name_lower.split()
+    words = cleaned_name.split() if cleaned_name else name_lower.split()
     if len(words) > 1:
         # Try just the last word (often the noun)
         last_word = words[-1]
@@ -282,9 +309,10 @@ class RSMeansAPIClient:
         try:
             response = requests.get(endpoint, headers=self._get_headers(), params=params, verify=False)
             response.raise_for_status()
-            print(
-                f"Search: catalog={catalog_id}, division={division_code}, term={search_term}"
-            )
+            print("    Search:")
+            print(f"      Catalog : {catalog_id}")
+            print(f"      Division: {division_code or 'any'}")
+            print(f"      Term    : {search_term or ''}")
             return response.json()
         except requests.exceptions.RequestException as e:
             print(f"Error retrieving unit cost line: {e}")
@@ -376,14 +404,16 @@ class RSMeansAPIClient:
                         division_code=alt_division,
                     )
                     
-                    if search_results and "items" in search_results and len(search_results["items"]) > 0:
+                    items = _filter_demo_items(_extract_search_items(search_results))
+                    if items:
                         if alt_term != material_name:
                             print(f"  -> Found match using alternative term: '{alt_term}'")
                         break
                 except Exception as e:
                     continue
             
-            if not search_results or "items" not in search_results or len(search_results["items"]) == 0:
+            items = _filter_demo_items(_extract_search_items(search_results))
+            if not items:
                 error_msg = f"No RSMeans match found for: {material_name}"
                 if len(tried_terms) > 1:
                     error_msg += f" (tried {len(tried_terms)} alternatives)"
@@ -397,7 +427,7 @@ class RSMeansAPIClient:
             
             try:
 
-                first_item = search_results["items"][0]
+                first_item = items[0]
                 division_code = first_item.get("id")
                 item_description = first_item.get("description", material_name)
 
@@ -417,7 +447,7 @@ class RSMeansAPIClient:
                 results["search_log"].append({
                     "material_name": material_name,
                     "division_hint": division_hint,
-                    "search_results_count": len(search_results.get("items", [])),
+                    "search_results_count": len(items),
                     "division_code": division_code,
                     "first_match": first_item.get("description", ""),
                     "has_cost_data": cost_line is not None and "items" in cost_line,
@@ -471,6 +501,149 @@ def load_openstudio_model(model_path: Path):
     if not model_opt.is_initialized():
         raise RuntimeError(f"Failed to load model: {model_path}")
     return model_opt.get()
+
+
+def _format_feet_inches(value_m: float) -> str:
+    inches_total = value_m * 39.37007874
+    feet = int(inches_total // 12)
+    inches = int(round(inches_total - feet * 12))
+    if inches == 12:
+        feet += 1
+        inches = 0
+    return f"{feet} ft {inches} in"
+
+
+def _estimate_door_dimensions_m(subsurface) -> Optional[Dict[str, float]]:
+    try:
+        vertices = subsurface.vertices()
+    except Exception:
+        return None
+    if not vertices or len(vertices) < 3:
+        return None
+
+    xs = [v.x() for v in vertices]
+    ys = [v.y() for v in vertices]
+    zs = [v.z() for v in vertices]
+
+    dx = max(xs) - min(xs)
+    dy = max(ys) - min(ys)
+    dz = max(zs) - min(zs)
+
+    width_m = max(dx, dy)
+    height_m = dz if dz > 0 else min(dx, dy)
+    if width_m <= 0 or height_m <= 0:
+        return None
+    return {"width_m": width_m, "height_m": height_m}
+
+
+def _get_default_exterior_door_construction(model):
+    try:
+        building = model.getBuilding()
+        dcs_opt = building.defaultConstructionSet()
+        if not dcs_opt.is_initialized():
+            return None
+        dcs = dcs_opt.get()
+        ext_subs_opt = dcs.defaultExteriorSubSurfaceConstructions()
+        if not ext_subs_opt.is_initialized():
+            return None
+        ext_subs = ext_subs_opt.get()
+        door_opt = ext_subs.doorConstruction()
+        if door_opt.is_initialized():
+            return door_opt.get()
+    except Exception:
+        return None
+    return None
+
+
+def _collect_material_keywords_from_construction(construction) -> List[str]:
+    keywords = set()
+    try:
+        if construction.to_LayeredConstruction().is_initialized():
+            lc = construction.to_LayeredConstruction().get()
+            layers = lc.layers()
+        else:
+            layers = []
+    except Exception:
+        layers = []
+
+    for layer in layers:
+        try:
+            name = layer.nameString().lower()
+        except Exception:
+            name = ""
+        if "metal" in name or "steel" in name:
+            keywords.add("metal")
+        if "aluminum" in name or "aluminium" in name:
+            keywords.add("aluminum")
+        if "insulation" in name or "insul" in name:
+            keywords.add("insulated")
+        if "wood" in name:
+            keywords.add("wood")
+        if "glass" in name or "glaz" in name:
+            keywords.add("glass")
+    return sorted(keywords)
+
+
+def _material_phrase_from_keywords(keywords: List[str]) -> str:
+    kws = set(keywords)
+    if "glass" in kws and "metal" in kws:
+        return "metal framed glass"
+    if "glass" in kws:
+        return "glass"
+    if "metal" in kws and "insulated" in kws:
+        return "insulated metal"
+    if "metal" in kws:
+        return "metal"
+    if "wood" in kws:
+        return "wood"
+    if "insulated" in kws:
+        return "insulated"
+    return ""
+
+
+def build_door_search_material_from_model(model) -> Optional[Dict[str, Any]]:
+    doors = [ss for ss in model.getSubSurfaces()
+             if ss.subSurfaceType() in ("Door", "GlassDoor", "OverheadDoor")]
+    if not doors:
+        return None
+
+    default_door_construction = _get_default_exterior_door_construction(model)
+    all_keywords = set()
+
+    for door in doors:
+        construction = None
+        if door.construction().is_initialized():
+            construction = door.construction().get()
+        elif default_door_construction is not None:
+            construction = default_door_construction
+
+        if construction is not None:
+            for kw in _collect_material_keywords_from_construction(construction):
+                all_keywords.add(kw)
+
+    dims = _estimate_door_dimensions_m(doors[0])
+    if dims:
+        width_ft_in = _format_feet_inches(dims["width_m"])
+        height_ft_in = _format_feet_inches(dims["height_m"])
+        size_str = f"{width_ft_in} x {height_ft_in}"
+    else:
+        size_str = "approx size unknown"
+
+    material_phrase = _material_phrase_from_keywords(sorted(all_keywords))
+    if material_phrase:
+        search_term = f"{material_phrase} door {size_str}"
+    else:
+        search_term = f"door {size_str}"
+
+    description = f"{len(doors)} door(s); materials: {', '.join(sorted(all_keywords)) or 'unspecified'}; size: {size_str}"
+
+    return {
+        "name": search_term.strip(),
+        "description": description,
+        "quantity": float(len(doors)),
+        "unit": "ea",
+        "division_code": "08",
+    }
 
 
 def extract_materials_from_model(model, feature_keys: Dict[str, str]) -> List[Dict[str, Any]]:
@@ -611,7 +784,7 @@ Examples:
     
     parser.add_argument("--model", default=str(default_output_model), help=help_text)
     parser.add_argument("--output", default=str(default_output_json), help="Path to save JSON results")
-    parser.add_argument("--release", default="2025-q4", help="RSMeans release ID (e.g., 2025-q4)")
+    parser.add_argument("--release", default="2024-an", help="RSMeans release ID (e.g., 2024-an)")
     parser.add_argument(
         "--catalogs",
         default="bc-mf,gb-mf,rp-mf",
@@ -689,6 +862,15 @@ def main() -> int:
             if materials:
                 print(f"Extracted {len(materials)} materials using standard property keys")
 
+        # Method 4: Derive a door-based search term from the model
+        if not materials:
+            derived = build_door_search_material_from_model(model)
+            if derived:
+                materials = [derived]
+                print("Derived door-based RSMeans search term from model:")
+                print(f"  Search term: {derived['name']}")
+                print(f"  Details: {derived['description']}")
+
     if not materials:
         print("ERROR: No retrofit materials found in model.")
         print("The model must have materials stored in AdditionalProperties.")
@@ -764,7 +946,7 @@ def search_materials_across_catalogs(
     materials: List[Dict[str, Any]],
     client: "RSMeansAPIClient",
     catalogs: Optional[List[str]] = None,
-    release_id: str = "2025-q4",
+    release_id: str = "2024-an",
     location_id: str = "us-us-national",
     labor_type: str = "std",
     measurement_system: str = "imp",
@@ -776,7 +958,7 @@ def search_materials_across_catalogs(
         materials: List of material dicts with 'name', 'quantity', 'unit', etc.
         client: Authenticated RSMeansAPIClient instance
         catalogs: List of catalog codes to search (default: all common catalogs)
-        release_id: RSMeans release ID (e.g., "2025-q4")
+        release_id: RSMeans release ID (e.g., "2024-an")
         location_id: Location for pricing
         labor_type: Labor type code
         measurement_system: "imp" or "met"
@@ -798,12 +980,63 @@ def search_materials_across_catalogs(
         quantity = material.get("quantity", 1.0)
         unit = material.get("unit", "")
         division_code = material.get("division_code")
+        specified_id = material.get("rsmeans_id")
+
+        print("\n" + "-" * 70)
+        print(f"RSMeans lookup for material: {material_name}")
+        print(f"  Quantity : {quantity} {unit}")
+        print(f"  Division : {division_code or 'auto'}")
         
         best_match = None
         best_cost = None
         best_catalog = None
         matched_term = None
         
+        # If a specific RSMeans line item ID is provided, attempt exact match first
+        if specified_id:
+            for catalog in catalogs:
+                try:
+                    print(f"  Exact ID : {specified_id}")
+                    print(f"  Catalog  : {catalog}")
+                    cost_line = client.get_unit_costlines(
+                        release_id=release_id,
+                        catalog=catalog,
+                        location_id=location_id,
+                        labor_type=labor_type,
+                        measurement_system=measurement_system,
+                        division_code=specified_id,
+                    )
+                    if cost_line and "items" in cost_line:
+                        for item in cost_line["items"]:
+                            if item.get("id") == specified_id:
+                                unit_cost = item.get("localizedCosts", {}).get("totalOpCost", 0.0)
+                                if unit_cost > 0:
+                                    best_match = item
+                                    best_cost = unit_cost * quantity
+                                    best_catalog = catalog
+                                    matched_term = f"rsmeans_id:{specified_id}"
+                                    search_log.append({
+                                        "material": material_name,
+                                        "search_term": specified_id,
+                                        "catalog": catalog,
+                                        "division": division_code,
+                                        "status": "exact_id_match",
+                                        "unit_cost": unit_cost,
+                                        "quantity": quantity,
+                                        "total_cost": best_cost
+                                    })
+                                    break
+                        if best_match:
+                            break
+                except Exception as e:
+                    search_log.append({
+                        "material": material_name,
+                        "search_term": specified_id,
+                        "catalog": catalog,
+                        "status": "error",
+                        "error": str(e)
+                    })
+
         # Generate alternative search terms
         search_alternatives = generate_search_term_alternatives(material_name)
         
@@ -819,6 +1052,10 @@ def search_materials_across_catalogs(
             # Try alternative search terms within this catalog
             for alt_term, alt_division in search_alternatives:
                 try:
+                    print("  Search:")
+                    print(f"    Term    : {alt_term}")
+                    print(f"    Division: {alt_division or 'any'}")
+                    print(f"    Catalog : {catalog}")
                     results = client.search_unit_costlines(
                         search_term=alt_term,
                         division_code=alt_division,
@@ -829,10 +1066,14 @@ def search_materials_across_catalogs(
                         measurement_system=measurement_system,
                     )
                     
-                    if results and "items" in results and len(results["items"]) > 0:
+                    items = _filter_demo_items(_extract_search_items(results))
+                    if items:
                         # Take first match
-                        match = results["items"][0]
+                        match = items[0]
                         division_id = match.get("id", "")
+                        print("  Match:")
+                        print(f"    ID          : {division_id}")
+                        print(f"    Description : {match.get('description', '')}")
                         
                         # Get detailed cost data
                         cost_line = client.get_unit_costlines(
@@ -858,7 +1099,7 @@ def search_materials_across_catalogs(
                                         status_msg = f"match_found"
                                         if alt_term != material_name:
                                             status_msg += f" (using '{alt_term}')"
-                                            print(f"  -> Found match using alternative term: '{alt_term}' in catalog {catalog}")
+                                            print(f"  Note: matched on alternative term '{alt_term}' in {catalog}")
                                         
                                         search_log.append({
                                             "material": material_name,
@@ -885,6 +1126,9 @@ def search_materials_across_catalogs(
                     })
         
         if best_match:
+            match_type = "closest_match"
+            if matched_term and str(matched_term).startswith("rsmeans_id:"):
+                match_type = "exact_id_match"
             material_result = {
                 **material,
                 "catalog": best_catalog,
@@ -892,7 +1136,8 @@ def search_materials_across_catalogs(
                 "unit_cost": best_match.get("localizedCosts", {}).get("totalOpCost", 0.0),
                 "total_cost": best_cost,
                 "rsmeans_id": best_match.get("id", ""),
-                "rsmeans_description": best_match.get("description", "")
+                "rsmeans_description": best_match.get("description", ""),
+                "match_type": match_type
             }
             all_results.append(material_result)
             total_cost += best_cost
@@ -911,6 +1156,70 @@ def search_materials_across_catalogs(
         "errors": errors,
         "search_log": search_log,
         "catalogs_searched": catalogs
+    }
+
+
+def run_rsmeans_cost_lookup(
+    materials: List[Dict[str, Any]],
+    release_id: str = "2024-an",
+    catalogs: Optional[List[str]] = None,
+    location_id: str = "us-us-national",
+    labor_type: str = "std",
+    measurement_system: str = "imp",
+    use_sandbox: bool = False,
+    overhead_profit_percent: float = 0.0,
+) -> Dict[str, Any]:
+    """Run RSMeans lookup for provided materials and return summary/results."""
+    load_dotenv()
+    client_id = os.getenv("client_id")
+    client_secret = os.getenv("client_secret")
+
+    if not client_id or not client_secret:
+        return {
+            "status": "auth_error",
+            "message": "RSMeans API credentials not found in environment",
+        }
+
+    client = RSMeansAPIClient(client_id, client_secret, use_sandbox=use_sandbox)
+    if not client.authenticate():
+        return {
+            "status": "auth_error",
+            "message": "RSMeans authentication failed",
+        }
+
+    results = search_materials_across_catalogs(
+        materials=materials,
+        client=client,
+        catalogs=catalogs,
+        release_id=release_id,
+        location_id=location_id,
+        labor_type=labor_type,
+        measurement_system=measurement_system,
+    )
+
+    total_material_cost = float(results.get("total_cost", 0.0))
+    overhead_profit_cost = total_material_cost * (overhead_profit_percent / 100.0)
+    total_cost = total_material_cost + overhead_profit_cost
+
+    summary = {
+        "total_material_cost": total_material_cost,
+        "overhead_profit_percent": overhead_profit_percent,
+        "total_overhead_profit_cost": overhead_profit_cost,
+        "total_cost_with_overhead_profit": total_cost,
+        "materials_count": len(results.get("materials", [])),
+        "materials_searched": len(materials),
+        "catalogs_searched": results.get("catalogs_searched", catalogs or []),
+        "release_id": release_id,
+        "location_id": location_id,
+        "labor_type": labor_type,
+        "measurement_system": measurement_system,
+        "use_sandbox": use_sandbox,
+    }
+
+    return {
+        "status": "ok",
+        "summary": summary,
+        "results": results,
     }
 
 

@@ -104,6 +104,24 @@ Material quantities are calculated based on window dimensions:
 | `infiltration_reduction_percent` | Double | % | 50 | Infiltration rate reduction from air sealing |
 | `space_type_name` | String | - | (entire building) | Space type for infiltration reduction (or apply to all spaces) |
 
+### Cost and RSMeans Arguments
+
+| Argument | Type | Default | Description |
+|----------|------|---------|-------------|
+| `calculate_costs` | Boolean | true | Enable capital cost calculation and RSMeans lookup |
+| `use_custom_costs` | Boolean | false | If true, skip RSMeans and use user-provided unit costs |
+| `glass_cost_per_sf` | Double | 0.0 | Custom glass unit cost ($/SF) used when custom costs enabled or RSMeans fails |
+| `frame_cost_per_sf` | Double | 0.0 | Custom frame unit cost ($/SF) used when custom costs enabled or RSMeans fails |
+| `caulking_cost_per_cy` | Double | 0.0 | Custom caulking unit cost ($/CY) used when custom costs enabled or RSMeans fails |
+| `labor_cost_multiplier` | Double | 1.0 | Labor multiplier applied to material cost when using custom costs |
+| `use_specific_rsmeans_line_item_ids` | Boolean | false | If true, use exact RSMeans line item IDs below |
+| `rsmeans_id_glazing` | String | "" | Optional RSMeans line item ID for glazing |
+| `rsmeans_id_frame` | String | "" | Optional RSMeans line item ID for frame |
+| `rsmeans_id_caulking` | String | "" | Optional RSMeans line item ID for caulking |
+| `rsmeans_id_film` | String | "" | Optional RSMeans line item ID for film |
+| `rsmeans_id_weatherstrip` | String | "" | Optional RSMeans line item ID for weatherstrip |
+| `rsmeans_id_secondary_glazing` | String | "" | Optional RSMeans line item ID for secondary glazing |
+
 ### Glass Enhancement Arguments
 
 | Argument | Type | Default | Description |
@@ -182,6 +200,11 @@ Results stored as additional properties include:
 - Windows processed by type
 - Renovations applied
 - Total embodied carbon for all enhancements
+
+**RSMeans Outputs (Facility AdditionalProperties):**
+- `window_enhancement_retrofit_materials_json`
+- `window_enhancement_rsmeans_results_json`
+   - Includes matched line items, costs, and `match_type` (`exact_id_match` or `closest_match`)
 
 ## Important Notes
 
