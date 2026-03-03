@@ -15,8 +15,13 @@ dependencies:
   - vs2015_runtime=14.44.35208=ha6b5a95_10
   - wheel=0.44.0=py38haa95532_0
   - pip:
+      - certifi==2025.1.31
+      - charset-normalizer==3.2.0
+      - configparser==7.1.0
       - idna==3.11
+      - numpy==1.24.4
       - openstudio==3.11.0
       - python-dotenv==1.0.1
+      - requests==2.32.3
       - urllib3==2.2.3
 prefix: C:\Users\pshrest2\Anaconda3\envs\openstudio-3.8

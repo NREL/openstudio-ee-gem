@@ -14,6 +14,8 @@
 /test_with_cli_bundler/
 /lib/measures/test_results
 /lib/measures/*/tests/output
+/lib/measures/*/tests/obsolete
+/lib/measures/*/obsolete
 /vendor/bundle/
 
 .rubocop*s3*
