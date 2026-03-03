@@ -5,6 +5,9 @@
 
 import openstudio
 import typing
+import json
+import importlib.util
+from pathlib import Path
 import numpy as np
 import pprint as pp
 from resources.EC3_lookup import *
@@ -358,7 +361,10 @@ class DoorEnhancement(openstudio.measure.ModelMeasure):
             try:
                 # Ensure that arg_value is valid and that the valueAsString() method can be called
                 value_str = arg_value.valueAsString() if arg_value is not None else "None"
-                runner.registerInfo(f"user_argument: {arg_name} = {value_str}")
+                if arg_name.lower() == "api_key":
+                    runner.registerInfo(f"user_argument: {arg_name} = <redacted>")
+                else:
+                    runner.registerInfo(f"user_argument: {arg_name} = {value_str}")
             except Exception as e:
                 runner.registerInfo(f"Error processing argument: {arg_name} - {str(e)}")
         
@@ -769,7 +775,7 @@ class DoorEnhancement(openstudio.measure.ModelMeasure):
                 sealing_bottom_length = subsurface_dict[subsurface_name]['dimension']['width_m']
                 sealing_side_length = (subsurface_dict[subsurface_name]['dimension']['perimeter_m'] - subsurface_dict[subsurface_name]['dimension']['width_m'])
                 door_area = subsurface_dict[subsurface_name]['dimension']['area_m2']
-                if material_name in "door_bottom_sealing" and gwp_per_m != 0.0:
+                if material_name == "door_bottom_sealing" and gwp_per_m != 0.0:
                     embodied_carbon = float(subsurface_dict[subsurface_name][material_name]["gwp_per_m"] *
                             sealing_bottom_length *
                             multiplier)
@@ -915,6 +921,155 @@ class DoorEnhancement(openstudio.measure.ModelMeasure):
                     sealing_side_length = (subsurface_dict[name]['dimension']['perimeter_m'] - 
                                           subsurface_dict[name]['dimension']['width_m'])
                     total_sealing_side_length_m += sealing_side_length
+
+        # -------------------------------------------------------------------
+        # RSMeans lookup: derive search term from door count, materials, size
+        # -------------------------------------------------------------------
+        def _format_ft_in(value_m: float) -> str:
+            inches_total = value_m * 39.37007874
+            feet = int(inches_total // 12)
+            inches = int(round(inches_total - feet * 12))
+            if inches == 12:
+                feet += 1
+                inches = 0
+            return f"{feet} ft {inches} in"
+
+        def _get_default_exterior_door_construction(model):
+            try:
+                building = model.getBuilding()
+                dcs_opt = building.defaultConstructionSet()
+                if not dcs_opt.is_initialized():
+                    return None
+                dcs = dcs_opt.get()
+                ext_subs_opt = dcs.defaultExteriorSubSurfaceConstructions()
+                if not ext_subs_opt.is_initialized():
+                    return None
+                ext_subs = ext_subs_opt.get()
+                door_opt = ext_subs.doorConstruction()
+                if door_opt.is_initialized():
+                    return door_opt.get()
+            except Exception:
+                return None
+            return None
+
+        def _collect_material_keywords_from_construction(construction):
+            keywords = set()
+            try:
+                if construction.to_LayeredConstruction().is_initialized():
+                    lc = construction.to_LayeredConstruction().get()
+                    layers = lc.layers()
+                else:
+                    layers = []
+            except Exception:
+                layers = []
+
+            for layer in layers:
+                try:
+                    name = layer.nameString().lower()
+                except Exception:
+                    name = ""
+                if "metal" in name or "steel" in name:
+                    keywords.add("metal")
+                if "aluminum" in name or "aluminium" in name:
+                    keywords.add("aluminum")
+                if "insulation" in name or "insul" in name:
+                    keywords.add("insulated")
+                if "wood" in name:
+                    keywords.add("wood")
+                if "glass" in name or "glaz" in name:
+                    keywords.add("glass")
+            return keywords
+
+        def _material_phrase_from_keywords(keywords):
+            kws = set(keywords)
+            if "glass" in kws and "metal" in kws:
+                return "metal framed glass"
+            if "glass" in kws:
+                return "glass"
+            if "metal" in kws and "insulated" in kws:
+                return "insulated metal"
+            if "metal" in kws:
+                return "metal"
+            if "wood" in kws:
+                return "wood"
+            if "insulated" in kws:
+                return "insulated"
+            return ""
+
+        rsmeans_lookup = None
+        rsmeans_summary_line = None
+        rsmeans_search_term = None
+        rsmeans_material_keywords = set()
+        rsmeans_size_str = ""
+
+        if len(sub_surfaces_to_change) > 0:
+            default_door_construction = _get_default_exterior_door_construction(model)
+            for name in subsurface_dict.keys():
+                subsurface_obj = subsurface_dict[name]["subsurface object"]
+                construction = None
+                if subsurface_obj.construction().is_initialized():
+                    construction = subsurface_obj.construction().get()
+                elif default_door_construction is not None:
+                    construction = default_door_construction
+                if construction is not None:
+                    rsmeans_material_keywords.update(_collect_material_keywords_from_construction(construction))
+
+            first_name = next(iter(subsurface_dict.keys()))
+            dims = subsurface_dict[first_name].get("dimension", {})
+            width_m = dims.get("width_m", 0.0)
+            height_m = dims.get("length_m", 0.0)
+            if width_m > 0.0 and height_m > 0.0:
+                rsmeans_size_str = f"{_format_ft_in(width_m)} x {_format_ft_in(height_m)}"
+            else:
+                rsmeans_size_str = "approx size unknown"
+
+            material_phrase = _material_phrase_from_keywords(rsmeans_material_keywords)
+            if material_phrase:
+                rsmeans_search_term = f"{material_phrase} door {rsmeans_size_str}"
+            else:
+                rsmeans_search_term = f"door {rsmeans_size_str}"
+
+            rsmeans_materials = [
+                {
+                    "name": rsmeans_search_term.strip(),
+                    "description": f"{len(sub_surfaces_to_change)} door(s); materials: {', '.join(sorted(rsmeans_material_keywords)) or 'unspecified'}; size: {rsmeans_size_str}",
+                    "quantity": float(len(sub_surfaces_to_change)),
+                    "unit": "ea",
+                    "division_code": "08",
+                }
+            ]
+
+            try:
+                rsmeans_module_path = Path(__file__).parent / "resources" / "call_rsmeans_api.py"
+                if rsmeans_module_path.exists():
+                    runner.registerInfo("Starting RSMeans lookup...")
+                    runner.registerInfo(f"RSMeans search term: {rsmeans_search_term}")
+                    spec = importlib.util.spec_from_file_location("call_rsmeans_api", rsmeans_module_path)
+                    rsmeans_module = importlib.util.module_from_spec(spec)
+                    spec.loader.exec_module(rsmeans_module)
+                    rsmeans_lookup = rsmeans_module.run_rsmeans_cost_lookup(
+                        materials=rsmeans_materials,
+                        release_id="2024-an",
+                        catalogs=["bc-mf", "gb-mf", "rp-mf"],
+                        location_id="us-us-national",
+                        labor_type="std",
+                        measurement_system="imp",
+                        use_sandbox=False,
+                        overhead_profit_percent=10.0,
+                    )
+                    runner.registerInfo(f"RSMeans lookup status: {rsmeans_lookup.get('status', 'unknown')}")
+                    if rsmeans_lookup.get("status") == "ok":
+                        summary = rsmeans_lookup.get("summary", {})
+                        rsmeans_summary_line = (
+                            "RSMeans cost summary: "
+                            f"materials={summary.get('materials_count', 0)}, "
+                            f"total_cost=${summary.get('total_cost_with_overhead_profit', 0.0):,.2f}"
+                        )
+                        runner.registerInfo(rsmeans_summary_line)
+                else:
+                    runner.registerWarning("RSMeans lookup skipped: call_rsmeans_api.py not found")
+            except Exception as e:
+                runner.registerWarning(f"RSMeans lookup failed: {e}")
         
         # Store summary in organized additional properties buckets (same pattern as window enhancement)
         building = model.getBuilding()
@@ -971,17 +1126,78 @@ class DoorEnhancement(openstudio.measure.ModelMeasure):
         
         # Store standardized result fields and compatibility output fields
         results.setFeature("door_enhancement_total_additional_embodied_carbon_kg", total_embodied_carbon)
-        results.setFeature("door_enhancement_total_additional_material_cost_$", 0.0)  # Placeholder
-        results.setFeature("door_enhancement_total_additional_overhead_profit_cost_$", 0.0)  # Placeholder
-        results.setFeature("door_enhancement_total_additional_labour_cost_$", 0.0)  # Placeholder
         results.setFeature("door_enhancement_total_embodied_carbon_kgCO2eq", total_embodied_carbon)
+
+        if rsmeans_lookup is not None:
+            if rsmeans_lookup.get("status") == "ok":
+                summary = rsmeans_lookup.get("summary", {})
+                rsmeans_material_cost = float(summary.get("total_material_cost", 0.0))
+                rsmeans_overhead_percent = float(summary.get("overhead_profit_percent", 0.0))
+                rsmeans_overhead_cost = float(summary.get("total_overhead_profit_cost", 0.0))
+                rsmeans_total_cost = float(summary.get("total_cost_with_overhead_profit", 0.0))
+
+                # Store RSMeans aggregate costs in a dedicated AdditionalProperties object
+                rsmeans_summary = openstudio.model.SpaceType(model)
+                rsmeans_summary.setName("RSMeans Summary")
+                rsmeans_summary_props = rsmeans_summary.additionalProperties()
+                rsmeans_summary_props.setFeature("rsmeans_total_material_cost_$", rsmeans_material_cost)
+                rsmeans_summary_props.setFeature("rsmeans_total_overhead_profit_cost_$", rsmeans_overhead_cost)
+                rsmeans_summary_props.setFeature("rsmeans_total_cost_with_overhead_profit_$", rsmeans_total_cost)
+                # Report unit cost line ID used (first hit)
+                first_hit_id = ""
+                materials = rsmeans_lookup.get("results", {}).get("materials", [])
+                if materials:
+                    first_hit_id = materials[0].get("rsmeans_id", "")
+                rsmeans_summary_props.setFeature("rsmeans_unit_cost_line_id", first_hit_id)
+                rsmeans_summary_props.setFeature("rsmeans_overhead_profit_percent", rsmeans_overhead_percent)
+                rsmeans_summary_props.setFeature("rsmeans_release_id", summary.get("release_id", ""))
+                rsmeans_summary_props.setFeature("rsmeans_location_id", summary.get("location_id", ""))
+                rsmeans_summary_props.setFeature("rsmeans_labor_type", summary.get("labor_type", ""))
+                rsmeans_summary_props.setFeature("rsmeans_measurement_system", summary.get("measurement_system", ""))
+                catalogs_used = summary.get("catalogs_searched", []) or []
+                rsmeans_summary_props.setFeature("rsmeans_catalogs", ", ".join(catalogs_used))
+
+                # Create dedicated AdditionalProperties objects per RSMeans hit
+                materials = rsmeans_lookup.get("results", {}).get("materials", [])
+                for idx, hit in enumerate(materials, start=1):
+                    hit_obj = openstudio.model.SpaceType(model)
+                    hit_obj.setName(f"RSMeans Hit {idx} - {hit.get('rsmeans_id', 'unknown')}")
+                    hit_props = hit_obj.additionalProperties()
+
+                    hit_props.setFeature("rsmeans_lookup_status", rsmeans_lookup.get("status", "unknown"))
+                    hit_props.setFeature("rsmeans_release_id", summary.get("release_id", ""))
+                    hit_props.setFeature("rsmeans_location_id", summary.get("location_id", ""))
+                    hit_props.setFeature("rsmeans_labor_type", summary.get("labor_type", ""))
+                    hit_props.setFeature("rsmeans_measurement_system", summary.get("measurement_system", ""))
+                    catalogs_used = summary.get("catalogs_searched", []) or []
+                    hit_props.setFeature("rsmeans_catalogs", ", ".join(catalogs_used))
+                    hit_props.setFeature("rsmeans_overhead_profit_percent", rsmeans_overhead_percent)
+
+                    hit_props.setFeature("rsmeans_material_name", hit.get("name", ""))
+                    hit_props.setFeature("rsmeans_material_description", hit.get("description", ""))
+                    hit_props.setFeature("rsmeans_quantity", float(hit.get("quantity", 0.0)))
+                    hit_props.setFeature("rsmeans_unit", hit.get("unit", ""))
+                    hit_props.setFeature("rsmeans_division_code", hit.get("division_code", ""))
+                    hit_props.setFeature("rsmeans_catalog", hit.get("catalog", ""))
+                    hit_props.setFeature("rsmeans_search_term_requested", rsmeans_search_term or "")
+                    hit_props.setFeature("rsmeans_search_term_used", hit.get("search_term_used", ""))
+                    hit_props.setFeature("rsmeans_id", hit.get("rsmeans_id", ""))
+                    hit_props.setFeature("rsmeans_description", hit.get("rsmeans_description", ""))
+                    hit_props.setFeature("rsmeans_unit_cost_$", float(hit.get("unit_cost", 0.0)))
+                    hit_props.setFeature("rsmeans_total_cost_$", float(hit.get("total_cost", 0.0)))
+                    if rsmeans_size_str:
+                        hit_props.setFeature("rsmeans_door_size", rsmeans_size_str)
+                    hit_props.setFeature(
+                        "rsmeans_door_materials",
+                        ", ".join(sorted(rsmeans_material_keywords)) if rsmeans_material_keywords else "unspecified",
+                    )
 
         # Store aggregate renovation quantities
         reno_detail.setFeature("total_renovated_door_area_m2", total_door_area_m2)
         reno_detail.setFeature("total_renovated_sealing_bottom_length_m", total_sealing_bottom_length_m)
         reno_detail.setFeature("total_renovated_sealing_side_length_m", total_sealing_side_length_m)
-        # reno_detail.setFeature("total_doors_processed_count", len(sub_surfaces_to_change))
-        # reno_detail.setFeature("total_doors_with_r_value_change_count", doors_with_r_value_change)
+        reno_detail.setFeature("total_doors_processed_count", len(sub_surfaces_to_change))
+        reno_detail.setFeature("total_doors_with_r_value_change_count", doors_with_r_value_change)
         
         # Store GWP values per functional unit (aggregate from all processed doors)
         # Calculate average GWP values across all doors
@@ -1058,6 +1274,8 @@ class DoorEnhancement(openstudio.measure.ModelMeasure):
         else:
             runner.registerInfo(f"R-value updates: None (sealing only or 'none' option)")
         runner.registerInfo(f"Total embodied carbon: {total_embodied_carbon:.2f} kg CO2 eq")
+        if rsmeans_summary_line:
+            runner.registerInfo(rsmeans_summary_line)
         runner.registerInfo("=" * 80)
         
         if doors_with_r_value_change > 0:

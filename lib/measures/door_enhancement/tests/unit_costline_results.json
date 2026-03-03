@@ -1,0 +1,104 @@
+{
+  "offset": 0,
+  "limit": 25,
+  "recordCount": 1,
+  "items": [
+    {
+      "id": "081116100020",
+      "lineNumber": "081116100020",
+      "release": {
+        "id": "2024-an",
+        "href": "http://dataapi.gordian.com/v1/costdata/Releases/2024-an"
+      },
+      "catalog": {
+        "id": "bc-mf-imp-std-2024-an-us-us-national",
+        "href": "http://dataapi.gordian.com/v1/costdata/unit/Catalogs/bc-mf-imp-std-2024-an-us-us-national"
+      },
+      "costDataFormat": "mf",
+      "measurementSystem": "imp",
+      "laborType": "std",
+      "hierarchies": [
+        {
+          "id": "08",
+          "level": 1,
+          "divisionCode": "08",
+          "description": "Openings                                                    "
+        },
+        {
+          "id": "0811",
+          "level": 2,
+          "divisionCode": "0811",
+          "description": "Metal Doors And Frames                                      "
+        },
+        {
+          "id": "081116",
+          "level": 3,
+          "divisionCode": "081116",
+          "description": "Aluminum Doors And Frames                                   "
+        },
+        {
+          "id": "08111610",
+          "level": 4,
+          "divisionCode": "08111610",
+          "description": "Entrance Doors                                              "
+        }
+      ],
+      "shortDescription": "3'-0\" x 7'-0\" opening",
+      "description": "Doors & frames, aluminum, entrance, narrow stile, clear finish, 3'-0\" x 7'-0\" opening, incl. standard hardware, excl. glass",
+      "unitOfMeasure": "Ea.",
+      "crew": {
+        "crewId": 1019,
+        "crewCode": "SSWK",
+        "crewDescription": "2 Sswk",
+        "crewQuantity": 2.0,
+        "crewDailyOutput": 2.0,
+        "crewLaborHours": 8.0
+      },
+      "isDemo": false,
+      "costLineType": "install",
+      "baseCosts": {
+        "exceptionalCost": 0.0,
+        "exceptionalOpCost": 0.0,
+        "materialCost": 2200.0,
+        "materialOpCost": 2425.0,
+        "laborCost": 535.0,
+        "laborOpCost": 820.0,
+        "equipmentCost": 0.0,
+        "equipmentOpCost": 0.0,
+        "totalCost": 2735.0,
+        "totalOpCost": 3245.0
+      },
+      "location": {
+        "id": "us-us-national",
+        "href": "http://dataapi.gordian.com/v1/costdata/Locations/us-us-national"
+      },
+      "costFactors": {
+        "costFactorKey": "081",
+        "materialCostFactor": 1.0,
+        "equipmentCostFactor": 1.0,
+        "installationCostFactor": 1.0,
+        "totalCostFactor": 1.0
+      },
+      "localizedCosts": {
+        "exceptionalCost": 0.0,
+        "exceptionalOpCost": 0.0,
+        "materialCost": 2200.0,
+        "materialOpCost": 2425.0,
+        "laborCost": 535.0,
+        "laborOpCost": 820.0,
+        "equipmentCost": 0.0,
+        "equipmentOpCost": 0.0,
+        "totalCost": 2735.0,
+        "totalOpCost": 3245.0
+      },
+      "modifiers": {
+        "recordCount": 0
+      },
+      "breakpoints": {
+        "recordCount": 0
+      },
+      "href": "http://dataapi.gordian.com/v1/costdata/unit/catalogs/bc-mf-imp-std-2024-an-us-us-national/CostLines/081116100020"
+    }
+  ],
+  "pageNavigation": {}
+}

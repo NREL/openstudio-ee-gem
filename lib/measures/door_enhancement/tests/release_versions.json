@@ -1,0 +1,421 @@
+{
+  "recordCount": 52,
+  "items": [
+    {
+      "id": "2016-an",
+      "year": "2016",
+      "period": "an",
+      "description": "Year 2016",
+      "effectiveDate": "2015-11-01T20:12:59.547",
+      "href": "http://dataapi.gordian.com/v1/costdata/Releases/2016-an"
+    },
+    {
+      "id": "2016-q1",
+      "year": "2016",
+      "period": "q1",
+      "description": "Year 2016 Quarter 1",
+      "effectiveDate": "2016-02-01T09:07:54.28",
+      "href": "http://dataapi.gordian.com/v1/costdata/Releases/2016-q1"
+    },
+    {
+      "id": "2016-q2",
+      "year": "2016",
+      "period": "q2",
+      "description": "Year 2016 Quarter 2",
+      "effectiveDate": "2016-04-29T07:32:26.067",
+      "href": "http://dataapi.gordian.com/v1/costdata/Releases/2016-q2"
+    },
+    {
+      "id": "2016-q3",
+      "year": "2016",
+      "period": "q3",
+      "description": "Year 2016 Quarter 3",
+      "effectiveDate": "2016-08-01T17:10:08.81",
+      "href": "http://dataapi.gordian.com/v1/costdata/Releases/2016-q3"
+    },
+    {
+      "id": "2016-q4",
+      "year": "2016",
+      "period": "q4",
+      "description": "Year 2016 Quarter 4",
+      "effectiveDate": "2016-10-31T10:01:59.157",
+      "href": "http://dataapi.gordian.com/v1/costdata/Releases/2016-q4"
+    },
+    {
+      "id": "2017-an",
+      "year": "2017",
+      "period": "an",
+      "description": "Year 2017",
+      "effectiveDate": "2016-12-01T10:46:32.357",
+      "href": "http://dataapi.gordian.com/v1/costdata/Releases/2017-an"
+    },
+    {
+      "id": "2017-q1",
+      "year": "2017",
+      "period": "q1",
+      "description": "Year 2017 Quarter 1",
+      "effectiveDate": "2017-02-08T21:33:27.737",
+      "href": "http://dataapi.gordian.com/v1/costdata/Releases/2017-q1"
+    },
+    {
+      "id": "2017-q2",
+      "year": "2017",
+      "period": "q2",
+      "description": "Year 2017 Quarter 2",
+      "effectiveDate": "2017-05-16T07:11:56.88",
+      "href": "http://dataapi.gordian.com/v1/costdata/Releases/2017-q2"
+    },
+    {
+      "id": "2017-q3",
+      "year": "2017",
+      "period": "q3",
+      "description": "Year 2017 Quarter 3",
+      "effectiveDate": "2017-09-21T09:07:24.31",
+      "href": "http://dataapi.gordian.com/v1/costdata/Releases/2017-q3"
+    },
+    {
+      "id": "2017-q4",
+      "year": "2017",
+      "period": "q4",
+      "description": "Year 2017 Quarter 4",
+      "effectiveDate": "2017-10-25T08:40:55.613",
+      "href": "http://dataapi.gordian.com/v1/costdata/Releases/2017-q4"
+    },
+    {
+      "id": "2018-an",
+      "year": "2018",
+      "period": "an",
+      "description": "Year 2018",
+      "effectiveDate": "2017-11-03T07:24:08.63",
+      "href": "http://dataapi.gordian.com/v1/costdata/Releases/2018-an"
+    },
+    {
+      "id": "2018-q1",
+      "year": "2018",
+      "period": "q1",
+      "description": "Year 2018 Quarter 1",
+      "effectiveDate": "2018-03-22T07:12:23.29",
+      "href": "http://dataapi.gordian.com/v1/costdata/Releases/2018-q1"
+    },
+    {
+      "id": "2018-q2",
+      "year": "2018",
+      "period": "q2",
+      "description": "Year 2018 Quarter 2",
+      "effectiveDate": "2018-06-05T07:28:28.603",
+      "href": "http://dataapi.gordian.com/v1/costdata/Releases/2018-q2"
+    },
+    {
+      "id": "2018-q3",
+      "year": "2018",
+      "period": "q3",
+      "description": "Year 2018 Quarter 3",
+      "effectiveDate": "2018-09-18T07:11:35.81",
+      "href": "http://dataapi.gordian.com/v1/costdata/Releases/2018-q3"
+    },
+    {
+      "id": "2018-q4",
+      "year": "2018",
+      "period": "q4",
+      "description": "Year 2018 Quarter 4",
+      "effectiveDate": "2018-10-25T07:15:15.567",
+      "href": "http://dataapi.gordian.com/v1/costdata/Releases/2018-q4"
+    },
+    {
+      "id": "2019-an",
+      "year": "2019",
+      "period": "an",
+      "description": "Year 2019",
+      "effectiveDate": "2018-11-12T22:25:07.777",
+      "href": "http://dataapi.gordian.com/v1/costdata/Releases/2019-an"
+    },
+    {
+      "id": "2019-q1",
+      "year": "2019",
+      "period": "q1",
+      "description": "Year 2019 Quarter 1",
+      "effectiveDate": "2019-02-14T21:18:45.723",
+      "href": "http://dataapi.gordian.com/v1/costdata/Releases/2019-q1"
+    },
+    {
+      "id": "2019-q2",
+      "year": "2019",
+      "period": "q2",
+      "description": "Year 2019 Quarter 2",
+      "effectiveDate": "2019-05-16T21:12:23.11",
+      "href": "http://dataapi.gordian.com/v1/costdata/Releases/2019-q2"
+    },
+    {
+      "id": "2019-q3",
+      "year": "2019",
+      "period": "q3",
+      "description": "Year 2019 Quarter 3",
+      "effectiveDate": "2019-08-01T21:13:01.753",
+      "href": "http://dataapi.gordian.com/v1/costdata/Releases/2019-q3"
+    },
+    {
+      "id": "2019-q4",
+      "year": "2019",
+      "period": "q4",
+      "description": "Year 2019 Quarter 4",
+      "effectiveDate": "2019-10-17T21:12:05.22",
+      "href": "http://dataapi.gordian.com/v1/costdata/Releases/2019-q4"
+    },
+    {
+      "id": "2020-an",
+      "year": "2020",
+      "period": "an",
+      "description": "Year 2020",
+      "effectiveDate": "2019-10-30T21:17:08.927",
+      "href": "http://dataapi.gordian.com/v1/costdata/Releases/2020-an"
+    },
+    {
+      "id": "2020-q1",
+      "year": "2020",
+      "period": "q1",
+      "description": "Year 2020 Quarter 1",
+      "effectiveDate": "2020-01-16T21:18:58.54",
+      "href": "http://dataapi.gordian.com/v1/costdata/Releases/2020-q1"
+    },
+    {
+      "id": "2020-q2",
+      "year": "2020",
+      "period": "q2",
+      "description": "Year 2020 Quarter 2",
+      "effectiveDate": "2020-04-23T21:58:10.57",
+      "href": "http://dataapi.gordian.com/v1/costdata/Releases/2020-q2"
+    },
+    {
+      "id": "2020-q3",
+      "year": "2020",
+      "period": "q3",
+      "description": "Year 2020 Quarter 3",
+      "effectiveDate": "2020-07-23T21:10:37.473",
+      "href": "http://dataapi.gordian.com/v1/costdata/Releases/2020-q3"
+    },
+    {
+      "id": "2020-q4",
+      "year": "2020",
+      "period": "q4",
+      "description": "Year 2020 Quarter 4",
+      "effectiveDate": "2020-10-15T21:10:32.107",
+      "href": "http://dataapi.gordian.com/v1/costdata/Releases/2020-q4"
+    },
+    {
+      "id": "2021-an",
+      "year": "2021",
+      "period": "an",
+      "description": "Year 2021",
+      "effectiveDate": "2020-10-29T21:12:31.51",
+      "href": "http://dataapi.gordian.com/v1/costdata/Releases/2021-an"
+    },
+    {
+      "id": "2021-q1",
+      "year": "2021",
+      "period": "q1",
+      "description": "Year 2021 Quarter 1",
+      "effectiveDate": "2021-01-21T21:10:37.773",
+      "href": "http://dataapi.gordian.com/v1/costdata/Releases/2021-q1"
+    },
+    {
+      "id": "2021-q2",
+      "year": "2021",
+      "period": "q2",
+      "description": "Year 2021 Quarter 2",
+      "effectiveDate": "2021-04-22T21:37:03.47",
+      "href": "http://dataapi.gordian.com/v1/costdata/Releases/2021-q2"
+    },
+    {
+      "id": "2021-q3",
+      "year": "2021",
+      "period": "q3",
+      "description": "Year 2021 Quarter 3",
+      "effectiveDate": "2021-08-23T21:09:20.71",
+      "href": "http://dataapi.gordian.com/v1/costdata/Releases/2021-q3"
+    },
+    {
+      "id": "2021-q4",
+      "year": "2021",
+      "period": "q4",
+      "description": "Year 2021 Quarter 4",
+      "effectiveDate": "2021-10-14T21:18:23.657",
+      "href": "http://dataapi.gordian.com/v1/costdata/Releases/2021-q4"
+    },
+    {
+      "id": "2022-an",
+      "year": "2022",
+      "period": "an",
+      "description": "Year 2022",
+      "effectiveDate": "2021-10-28T21:20:30.837",
+      "href": "http://dataapi.gordian.com/v1/costdata/Releases/2022-an"
+    },
+    {
+      "id": "2022-q1",
+      "year": "2022",
+      "period": "q1",
+      "description": "Year 2022 Quarter 1",
+      "effectiveDate": "2022-02-17T21:06:18.82",
+      "href": "http://dataapi.gordian.com/v1/costdata/Releases/2022-q1"
+    },
+    {
+      "id": "2022-q2",
+      "year": "2022",
+      "period": "q2",
+      "description": "Year 2022 Quarter 2",
+      "effectiveDate": "2022-04-21T21:12:00.163",
+      "href": "http://dataapi.gordian.com/v1/costdata/Releases/2022-q2"
+    },
+    {
+      "id": "2022-q3",
+      "year": "2022",
+      "period": "q3",
+      "description": "Year 2022 Quarter 3",
+      "effectiveDate": "2022-07-28T21:10:11.317",
+      "href": "http://dataapi.gordian.com/v1/costdata/Releases/2022-q3"
+    },
+    {
+      "id": "2022-q4",
+      "year": "2022",
+      "period": "q4",
+      "description": "Year 2022 Quarter 4",
+      "effectiveDate": "2022-10-27T21:07:03.94",
+      "href": "http://dataapi.gordian.com/v1/costdata/Releases/2022-q4"
+    },
+    {
+      "id": "2023-an",
+      "year": "2023",
+      "period": "an",
+      "description": "Year 2023",
+      "effectiveDate": "2022-10-27T21:21:11.483",
+      "href": "http://dataapi.gordian.com/v1/costdata/Releases/2023-an"
+    },
+    {
+      "id": "2023-q1",
+      "year": "2023",
+      "period": "q1",
+      "description": "Year 2023 Quarter 1",
+      "effectiveDate": "2023-01-19T21:04:38.93",
+      "href": "http://dataapi.gordian.com/v1/costdata/Releases/2023-q1"
+    },
+    {
+      "id": "2023-q2",
+      "year": "2023",
+      "period": "q2",
+      "description": "Year 2023 Quarter 2",
+      "effectiveDate": "2023-05-18T21:12:32.087",
+      "href": "http://dataapi.gordian.com/v1/costdata/Releases/2023-q2"
+    },
+    {
+      "id": "2023-q3",
+      "year": "2023",
+      "period": "q3",
+      "description": "Year 2023 Quarter 3",
+      "effectiveDate": "2023-07-20T21:15:27.207",
+      "href": "http://dataapi.gordian.com/v1/costdata/Releases/2023-q3"
+    },
+    {
+      "id": "2023-q4",
+      "year": "2023",
+      "period": "q4",
+      "description": "Year 2023 Quarter 4",
+      "effectiveDate": "2023-10-05T21:09:19.117",
+      "href": "http://dataapi.gordian.com/v1/costdata/Releases/2023-q4"
+    },
+    {
+      "id": "2024-an",
+      "year": "2024",
+      "period": "an",
+      "description": "Year 2024",
+      "effectiveDate": "2023-10-26T22:58:29.31",
+      "href": "http://dataapi.gordian.com/v1/costdata/Releases/2024-an"
+    },
+    {
+      "id": "2024-q1",
+      "year": "2024",
+      "period": "q1",
+      "description": "Year 2024 Quarter 1",
+      "effectiveDate": "2024-01-25T21:10:16.157",
+      "href": "http://dataapi.gordian.com/v1/costdata/Releases/2024-q1"
+    },
+    {
+      "id": "2024-q2",
+      "year": "2024",
+      "period": "q2",
+      "description": "Year 2024 Quarter 2",
+      "effectiveDate": "2024-04-25T21:02:36.827",
+      "href": "http://dataapi.gordian.com/v1/costdata/Releases/2024-q2"
+    },
+    {
+      "id": "2024-q3",
+      "year": "2024",
+      "period": "q3",
+      "description": "Year 2024 Quarter 3",
+      "effectiveDate": "2024-08-01T21:10:18.747",
+      "href": "http://dataapi.gordian.com/v1/costdata/Releases/2024-q3"
+    },
+    {
+      "id": "2024-q4",
+      "year": "2024",
+      "period": "q4",
+      "description": "Year 2024 Quarter 4",
+      "effectiveDate": "2024-10-24T21:14:37.987",
+      "href": "http://dataapi.gordian.com/v1/costdata/Releases/2024-q4"
+    },
+    {
+      "id": "2025-an",
+      "year": "2025",
+      "period": "an",
+      "description": "Year 2025",
+      "effectiveDate": "2025-01-01T00:00:00",
+      "href": "http://dataapi.gordian.com/v1/costdata/Releases/2025-an"
+    },
+    {
+      "id": "2025-q1",
+      "year": "2025",
+      "period": "q1",
+      "description": "Year 2025 Quarter 1",
+      "effectiveDate": "2025-02-13T22:16:29.51",
+      "href": "http://dataapi.gordian.com/v1/costdata/Releases/2025-q1"
+    },
+    {
+      "id": "2025-q2",
+      "year": "2025",
+      "period": "q2",
+      "description": "Year 2025 Quarter 2",
+      "effectiveDate": "2025-05-01T21:09:59.09",
+      "href": "http://dataapi.gordian.com/v1/costdata/Releases/2025-q2"
+    },
+    {
+      "id": "2025-q3",
+      "year": "2025",
+      "period": "q3",
+      "description": "Year 2025 Quarter 3",
+      "effectiveDate": "2025-08-21T21:02:16.027",
+      "href": "http://dataapi.gordian.com/v1/costdata/Releases/2025-q3"
+    },
+    {
+      "id": "2025-q4",
+      "year": "2025",
+      "period": "q4",
+      "description": "Year 2025 Quarter 4",
+      "effectiveDate": "2025-11-06T21:03:49.56",
+      "href": "http://dataapi.gordian.com/v1/costdata/Releases/2025-q4"
+    },
+    {
+      "id": "2026-an",
+      "year": "2026",
+      "period": "an",
+      "description": "2026 Annual",
+      "effectiveDate": "2025-08-21T21:02:16.027",
+      "href": "http://dataapi.gordian.com/v1/costdata/Releases/2026-an"
+    },
+    {
+      "id": "2026-q1",
+      "year": "2026",
+      "period": "q1",
+      "description": "Year 2026 Quarter 1",
+      "effectiveDate": "2026-02-02T04:03:59.94",
+      "href": "http://dataapi.gordian.com/v1/costdata/Releases/2026-q1"
+    }
+  ]
+}

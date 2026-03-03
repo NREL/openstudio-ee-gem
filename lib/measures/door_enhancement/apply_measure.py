@@ -108,7 +108,7 @@ def run_measure(model, args_overrides=None):
     set_arg("strip_lifetime", 15)               # years
 
     # --- Door replacement option ---
-    set_arg("door_option", "none")              # 'none' = no door replacement
+    set_arg("door_option", "polystyrene core steel door")  # replace door with a realistic option
     set_arg("door_lifetime", 30)                # years (default for steel doors)
     set_arg("door_thermal_conductivity", 0.0)   # 0 = use typical
     set_arg("door_density", 0.0)                # 0 = use typical
@@ -156,20 +156,30 @@ def print_runner_output(runner):
 
 def verify_additional_properties(model):
     """
-    Check the new separate Facility AdditionalProperties (summary block).
+    Check Facility AdditionalProperties and RSMeans-specific objects.
     Returns a list of (object_name, prop_name, value) tuples.
     """
     found = []
+
+    def _collect_props(label, ap):
+        for feature_name in ap.featureNames():
+            val_opt = ap.getFeatureAsDouble(feature_name)
+            if val_opt.is_initialized():
+                found.append((label, feature_name, val_opt.get()))
+            else:
+                val_str = ap.getFeatureAsString(feature_name)
+                if val_str.is_initialized():
+                    found.append((label, feature_name, val_str.get()))
+
     facility = model.getFacility()
-    ap = facility.additionalProperties()
-    for feature_name in ap.featureNames():
-        val_opt = ap.getFeatureAsDouble(feature_name)
-        if val_opt.is_initialized():
-            found.append(("Facility", feature_name, val_opt.get()))
-        else:
-            val_str = ap.getFeatureAsString(feature_name)
-            if val_str.is_initialized():
-                found.append(("Facility", feature_name, val_str.get()))
+    _collect_props("Facility", facility.additionalProperties())
+
+    # Include RSMeans Summary object (stored as a SpaceType)
+    for st in model.getSpaceTypes():
+        name = st.nameString()
+        if name == "RSMeans Summary":
+            _collect_props(name, st.additionalProperties())
+
     return found
 
 
@@ -179,9 +189,9 @@ def main():
     print("=" * 80)
 
     # Paths
-    model_path = SCRIPT_DIR / "tests" / "DOE_small_office.osm"
+    model_path = SCRIPT_DIR / "tests" / "EnvelopeAndLoadTestModel_01.osm"
     output_dir = SCRIPT_DIR / "tests" / "output"
-    output_model_path = output_dir / "DOE_small_office_door_enhanced.osm"
+    output_model_path = output_dir / "EnvelopeAndLoadTestModel_01_door_enhanced.osm"
     results_json_path = output_dir / "apply_measure_results.json"
 
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -235,7 +245,11 @@ def main():
     step_values = {}
     for sv in runner.result().stepValues():
         try:
-            step_values[sv.name()] = _sv_value(sv)
+            name = sv.name()
+            if name.lower() == "api_key":
+                step_values[name] = "<redacted>"
+            else:
+                step_values[name] = _sv_value(sv)
         except Exception as exc:
             step_values[sv.name()] = f"<error: {exc}>"
 
@@ -246,7 +260,7 @@ def main():
 
     # Verify AdditionalProperties on Building
     print("\n" + "=" * 80)
-    print("VERIFYING SEPARATE FACILITY ADDITIONAL PROPERTIES")
+    print("VERIFYING FACILITY + RSMEANS ADDITIONAL PROPERTIES")
     print("=" * 80)
 
     ap_data = verify_additional_properties(model)
