@@ -17,6 +17,8 @@
 /lib/measures/*/tests/outputs
 /lib/measures/*/tests/run
 /lib/measures/*/tests/obsolete
+/lib/measures/IncreaseInsulationRValueForRoofs/tests/DOE_small_office/
+/lib/measures/IncreaseInsulationRValueForRoofs/tests/example_model/
 **/obsolete/
 /vendor/bundle/
 
