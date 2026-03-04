@@ -1084,14 +1084,21 @@ class DoorEnhancement(openstudio.measure.ModelMeasure):
                 if use_custom_costs:
                     runner.registerInfo("Using custom cost inputs (RSMeans API lookup skipped).")
                     # Create a mock RSMeans lookup result using custom costs
+                    total_custom_cost = custom_door_cost_per_unit * float(len(sub_surfaces_to_change))
                     rsmeans_lookup = {
                         "status": "ok",
                         "cost_source": "custom_input",
                         "summary": {
                             "materials_count": 1,
-                            "total_cost_materials": custom_door_cost_per_unit * float(len(sub_surfaces_to_change)),
-                            "total_cost_overhead_profit": 0.0,  # Custom costs assumed to already include labor/profit
-                            "total_cost_with_overhead_profit": custom_door_cost_per_unit * float(len(sub_surfaces_to_change)),
+                            "total_material_cost": total_custom_cost,  # Fixed field name
+                            "overhead_profit_percent": 0.0,  # Fixed field name
+                            "total_overhead_profit_cost": 0.0,  # Fixed field name - Custom costs assumed to already include labor/profit
+                            "total_cost_with_overhead_profit": total_custom_cost,
+                            "release_id": "custom",
+                            "location_id": "custom",
+                            "labor_type": "custom",
+                            "measurement_system": "custom",
+                            "catalogs_searched": []
                         }
                     }
                     rsmeans_summary_line = (
