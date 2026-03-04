@@ -101,7 +101,6 @@ def run_measure(model, args_overrides=None):
     set_arg("calculate_costs", True)
     set_arg("use_custom_costs", False)
     set_arg("custom_cost_per_sf", 0.0)
-    set_arg("labor_cost_multiplier", 1.0)
     set_arg("overhead_profit_percent", 10.0)
 
     # Apply any caller-supplied overrides
@@ -123,12 +122,19 @@ def print_runner_output(runner):
     if result.info():
         print("\nInfo:")
         for msg in result.info():
-            print(f"  [INFO] {msg.logMessage()}")
+            try:
+                print(f"  [INFO] {msg.logMessage()}")
+            except UnicodeEncodeError:
+                # Handle Unicode characters that can't be encoded in Windows console
+                print(f"  [INFO] {msg.logMessage().encode('ascii', 'replace').decode('ascii')}")
 
     if result.warnings():
         print("\nWarnings:")
         for msg in result.warnings():
-            print(f"  [WARN] {msg.logMessage()}")
+            try:
+                print(f"  [WARN] {msg.logMessage()}")
+            except UnicodeEncodeError:
+                print(f"  [WARN] {msg.logMessage().encode('ascii', 'replace').decode('ascii')}")
 
     if result.errors():
         print("\nErrors:")

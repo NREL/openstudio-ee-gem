@@ -1,0 +1,71 @@
+[openstudio.osversion.VersionTranslator] <0> Version extracted from file '3.10.0' is one increment ahead of OpenStudio Version 3.9.0. Proceeding as if these versions are the same. Use with caution.
+[utilities.idf.IdfObject] <1> IdfObject of type 'OS:SpaceInfiltration:DesignFlowRate' cannot have field index of 13. Cutting off IdfObject field parsing here, with the following text remaining: 
+Outdoor
+[utilities.idf.IdfObject] <1> IdfObject of type 'OS:SpaceInfiltration:DesignFlowRate' cannot have field index of 13. Cutting off IdfObject field parsing here, with the following text remaining: 
+Outdoor
+[utilities.idf.IdfObject] <1> IdfObject of type 'OS:SpaceInfiltration:DesignFlowRate' cannot have field index of 13. Cutting off IdfObject field parsing here, with the following text remaining: 
+Outdoor
+[utilities.idf.IdfObject] <1> IdfObject of type 'OS:SpaceInfiltration:DesignFlowRate' cannot have field index of 13. Cutting off IdfObject field parsing here, with the following text remaining: 
+Outdoor
+[openstudio.measure.OSRunner] <1> Cannot find current Workflow Step
+C:\Users\pshrest2\Anaconda3\lib\site-packages\urllib3\connectionpool.py:1061: InsecureRequestWarning: Unverified HTTPS request is being made to host 'api.buildingtransparency.org'. Adding certificate verification is strongly advised. See: https://urllib3.readthedocs.io/en/1.26.x/advanced-usage.html#ssl-warnings
+  warnings.warn(
+[openstudio.WorkflowStepResult] <0> WorkflowStepResult value called with undefined stepResult, returning 'Success'
+[openstudio.WorkflowStepResult] <0> WorkflowStepResult value called with undefined stepResult, returning 'Success'
+Warning: OpenStudio path not found at /Applications/OpenStudio-3.11.0/Python
+Will attempt to use system OpenStudio installation
+[EC3_lookup] API token loaded from C:\All_repos\openstudio-ee-gem\config.ini
+OpenStudio version: 3.9.0
+API token loaded from: C:\All_repos\openstudio-ee-gem\config.ini
+================================================================================
+IncreaseInsulationRValueForRoofs – apply_measure.py
+================================================================================
+
+Input model : C:\All_repos\openstudio-ee-gem\lib\measures\IncreaseInsulationRValueForRoofs\tests\DOE_small_office.osm
+Output model: C:\All_repos\openstudio-ee-gem\lib\measures\IncreaseInsulationRValueForRoofs\tests\output\DOE_small_office_roof_insulation_upgraded.osm
+
+Loading model...
+  Model loaded successfully.
+
+================================================================================
+RUNNING MEASURE
+================================================================================
+
+Running measure...
+Authentication successful!
+
+----------------------------------------------------------------------
+RSMeans lookup for material: Fiberglass Batts roof insulation
+  Quantity : 4999.999999999986 SF
+  Division : 07
+  Search:
+    Term    : Fiberglass Batts roof insulation
+    Division: 07
+    Catalog : bc-mf
+    Search:
+      Catalog : bc-mf-imp-std-2024-an-us-us-national
+      Division: 07
+      Term    : Fiberglass Batts roof insulation
+  Match:
+    ID          : 072216100016
+    Description : Roof deck insulation, asphaltic cover board, fiberglass lined, 1/8" thick, fastening excluded
+Cost lines: catalog=bc-mf-imp-std-2024-an-us-us-national, division=072216100016
+
+Result: Success
+
+Info:
+  [INFO] EPD 1: No lifetime data found
+  [INFO] EPD 2: No lifetime data found
+  [INFO] EPD 3: No lifetime data found
+  [INFO] EPD 4: No lifetime data found
+  [INFO] EPD 5: No lifetime data found
+Traceback (most recent call last):
+  File "C:\All_repos\openstudio-ee-gem\lib\measures\IncreaseInsulationRValueForRoofs\apply_measure.py", line 283, in <module>
+    sys.exit(main())
+  File "C:\All_repos\openstudio-ee-gem\lib\measures\IncreaseInsulationRValueForRoofs\apply_measure.py", line 199, in main
+    print_runner_output(runner)
+  File "C:\All_repos\openstudio-ee-gem\lib\measures\IncreaseInsulationRValueForRoofs\apply_measure.py", line 125, in print_runner_output
+    print(f"  [INFO] {msg.logMessage()}")
+  File "C:\Users\pshrest2\Anaconda3\lib\encodings\cp1252.py", line 19, in encode
+    return codecs.charmap_encode(input,self.errors,encoding_table)[0]
+UnicodeEncodeError: 'charmap' codec can't encode character '\u2082' in position 98: character maps to <undefined>
