@@ -94,10 +94,15 @@ def run_measure(model, args_overrides=None):
     set_arg("analysis_period", 30)                    # years
     set_arg("gwp_statistic", "median")
     set_arg("api_key", API_TOKEN)
-    set_arg("insulation_material_type", "Polyiso Insulation Foam Board")
+    set_arg("insulation_material_type", "Fiberglass Batts")
     set_arg("insulation_material_lifetime", 30)
     set_arg("insulation_thermal_conductivity", 0.0)   # 0 = use typical
     set_arg("insulation_material_density", 0.0)       # 0 = use typical
+    set_arg("calculate_costs", True)
+    set_arg("use_custom_costs", False)
+    set_arg("custom_cost_per_sf", 0.0)
+    set_arg("labor_cost_multiplier", 1.0)
+    set_arg("overhead_profit_percent", 10.0)
 
     # Apply any caller-supplied overrides
     if args_overrides:
@@ -133,7 +138,7 @@ def print_runner_output(runner):
 
 def verify_additional_properties(model):
     """
-    Check the new separate Facility AdditionalProperties (summary block).
+    Check Facility and SimulationControl AdditionalProperties (summary blocks).
     Returns a list of (object_name, prop_name, value) tuples.
     """
     found = []
@@ -147,6 +152,17 @@ def verify_additional_properties(model):
             val_str = ap.getFeatureAsString(feature_name)
             if val_str.is_initialized():
                 found.append(("Facility", feature_name, val_str.get()))
+
+    simcontrol = model.getSimulationControl()
+    sim_ap = simcontrol.additionalProperties()
+    for feature_name in sim_ap.featureNames():
+        val_opt = sim_ap.getFeatureAsDouble(feature_name)
+        if val_opt.is_initialized():
+            found.append(("SimulationControl", feature_name, val_opt.get()))
+        else:
+            val_str = sim_ap.getFeatureAsString(feature_name)
+            if val_str.is_initialized():
+                found.append(("SimulationControl", feature_name, val_str.get()))
     return found
 
 
@@ -209,6 +225,10 @@ def main():
         except Exception as exc:
             step_values[sv.name()] = f"<error: {exc}>"
 
+    # Redact sensitive API key from output
+    if "api_key" in step_values:
+        step_values["api_key"] = "<redacted>"
+
     if step_values:
         print("\nStep Values reported by measure:")
         for k, v in step_values.items():
@@ -216,16 +236,16 @@ def main():
 
     # Verify AdditionalProperties
     print("\n" + "=" * 80)
-    print("VERIFYING SEPARATE FACILITY ADDITIONAL PROPERTIES")
+    print("VERIFYING SEPARATE ADDITIONAL PROPERTIES")
     print("=" * 80)
 
     ap_data = verify_additional_properties(model)
     if ap_data:
-        print(f"Found {len(ap_data)} properties in separate Facility AdditionalProperties:")
+        print(f"Found {len(ap_data)} properties in separate AdditionalProperties:")
         for obj_name, prop_name, value in ap_data:
             print(f"  [{obj_name}] {prop_name}: {value}")
     else:
-        print("  No properties found on Facility.")
+        print("  No properties found on Facility or SimulationControl.")
 
     # Save modified model
     print("\n" + "=" * 80)

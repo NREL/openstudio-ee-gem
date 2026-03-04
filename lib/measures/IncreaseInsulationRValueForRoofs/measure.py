@@ -3,6 +3,10 @@
 # See also https://openstudio.net/license
 # *******************************************************************************
 
+import importlib.util
+import json
+from pathlib import Path
+
 import openstudio
 import numpy as np
 import pandas as pd
@@ -145,7 +149,7 @@ class IncreaseInsulationRValueForRoofs(openstudio.measure.ModelMeasure):
             mat_types.append(opt)
         insulation_material_type = openstudio.measure.OSArgument.makeChoiceArgument("insulation_material_type", mat_types, True)
         insulation_material_type.setDisplayName("Chosen Retrofit Material for Roof Insulation")
-        insulation_material_type.setDefaultValue("Polyiso (ISO)")
+        insulation_material_type.setDefaultValue("Fiberglass Batts")
         args.append(insulation_material_type)
 
         insulation_material_lifetime = openstudio.measure.OSArgument.makeIntegerArgument("insulation_material_lifetime", True)
@@ -163,6 +167,32 @@ class IncreaseInsulationRValueForRoofs(openstudio.measure.ModelMeasure):
         insulation_material_density.setDefaultValue(0.0)
         args.append(insulation_material_density)
 
+        # Cost / RSMeans args
+        calculate_costs = openstudio.measure.OSArgument.makeBoolArgument("calculate_costs", True)
+        calculate_costs.setDisplayName("Calculate Costs (RSMeans or Custom)")
+        calculate_costs.setDefaultValue(True)
+        args.append(calculate_costs)
+
+        use_custom_costs = openstudio.measure.OSArgument.makeBoolArgument("use_custom_costs", True)
+        use_custom_costs.setDisplayName("Use Custom Cost Inputs (skip RSMeans)")
+        use_custom_costs.setDefaultValue(False)
+        args.append(use_custom_costs)
+
+        custom_cost_per_sf = openstudio.measure.OSArgument.makeDoubleArgument("custom_cost_per_sf", True)
+        custom_cost_per_sf.setDisplayName("Custom Insulation Cost ($/SF)")
+        custom_cost_per_sf.setDefaultValue(0.0)
+        args.append(custom_cost_per_sf)
+
+        labor_cost_multiplier = openstudio.measure.OSArgument.makeDoubleArgument("labor_cost_multiplier", True)
+        labor_cost_multiplier.setDisplayName("Labor Cost Multiplier (applies to custom material cost)")
+        labor_cost_multiplier.setDefaultValue(1.0)
+        args.append(labor_cost_multiplier)
+
+        overhead_profit_percent = openstudio.measure.OSArgument.makeDoubleArgument("overhead_profit_percent", True)
+        overhead_profit_percent.setDisplayName("Overhead + Profit Percent (RSMeans only)")
+        overhead_profit_percent.setDefaultValue(10.0)
+        args.append(overhead_profit_percent)
+
         return args
 
     def run(self, model, runner, user_arguments):
@@ -179,6 +209,11 @@ class IncreaseInsulationRValueForRoofs(openstudio.measure.ModelMeasure):
         insulation_material_lifetime = runner.getIntegerArgumentValue("insulation_material_lifetime", user_arguments)
         insulation_thermal_conductivity = runner.getDoubleArgumentValue("insulation_thermal_conductivity", user_arguments)
         insulation_material_density = runner.getDoubleArgumentValue("insulation_material_density", user_arguments)
+        calculate_costs = runner.getBoolArgumentValue("calculate_costs", user_arguments)
+        use_custom_costs = runner.getBoolArgumentValue("use_custom_costs", user_arguments)
+        custom_cost_per_sf = runner.getDoubleArgumentValue("custom_cost_per_sf", user_arguments)
+        labor_cost_multiplier = runner.getDoubleArgumentValue("labor_cost_multiplier", user_arguments)
+        overhead_profit_percent = runner.getDoubleArgumentValue("overhead_profit_percent", user_arguments)
         
         # Track if user provided explicit density value (non-zero means user-specified)
         user_specified_density = insulation_material_density > 0.0
@@ -729,6 +764,8 @@ class IncreaseInsulationRValueForRoofs(openstudio.measure.ModelMeasure):
         # Calculate building-level totals for summarization
         total_embodied_carbon = sum(row["total_gwp_kg_co2_eq"] for row in gwp_summary_rows)
         total_roof_area = sum(row["added_total_area_m2"] for row in gwp_summary_rows)
+        total_added_volume_m3 = sum(row["added_total_volume_m3"] for row in gwp_summary_rows)
+        avg_added_thickness_m = (total_added_volume_m3 / total_roof_area) if total_roof_area > 0 else 0.0
         
         # Store building-level summary in organized AdditionalProperties buckets
         building = model.getBuilding()
@@ -759,12 +796,113 @@ class IncreaseInsulationRValueForRoofs(openstudio.measure.ModelMeasure):
         reno_detail.setFeature("roof_insulation_renovated_area_m2", total_roof_area)
         # reno_detail.setFeature("roof_insulation_modified_constructions_count", len(modified_constructions))
 
+        # ===================== RSMeans cost lookup =====================
+        total_material_cost = 0.0
+        total_overhead_profit_cost = 0.0
+        total_labour_cost = 0.0
+        cost_source = "none"
+
+        rsmeans_materials = []
+        if total_roof_area > 0.0:
+            total_roof_area_ft2 = self._unit_convert(total_roof_area, "m^2", "ft^2")
+            avg_added_thickness_in = self._unit_convert(avg_added_thickness_m, "m", "in") if avg_added_thickness_m > 0 else 0.0
+            rsmeans_materials.append({
+                "name": f"{insulation_material_type} roof insulation",
+                "description": f"Added insulation to reach R-{r_value_ip}; avg added thickness {avg_added_thickness_in:.2f} in",
+                "quantity": float(total_roof_area_ft2),
+                "unit": "SF",
+                "quantity_si": float(total_roof_area),
+                "unit_si": "m2",
+                "division_code": "07",
+            })
+
+        if rsmeans_materials:
+            try:
+                materials_json = json.dumps(rsmeans_materials)
+                results.setFeature("roof_insulation_retrofit_materials_json", materials_json)
+                facility.additionalProperties().setFeature("roof_insulation_retrofit_materials_json", materials_json)
+            except Exception:
+                runner.registerWarning("Could not serialize RSMeans retrofit materials to JSON.")
+
+        if calculate_costs and rsmeans_materials:
+            if use_custom_costs:
+                if custom_cost_per_sf <= 0.0:
+                    runner.registerWarning("Custom cost mode enabled, but custom_cost_per_sf is 0. Skipping cost calculation.")
+                else:
+                    total_material_cost = custom_cost_per_sf * float(rsmeans_materials[0]["quantity"])
+                    if labor_cost_multiplier and labor_cost_multiplier > 1.0:
+                        total_labour_cost = total_material_cost * (labor_cost_multiplier - 1.0)
+                    cost_source = "custom_input"
+                    runner.registerInfo(
+                        "Custom cost summary (cost_source=custom_input): "
+                        f"material_cost=${total_material_cost:,.2f} "
+                        f"(rate ${custom_cost_per_sf}/SF)"
+                    )
+            else:
+                rsmeans_module_path = Path(__file__).parent / "resources" / "call_rsmeans_api.py"
+                if rsmeans_module_path.exists():
+                    try:
+                        runner.registerInfo("Starting RSMeans lookup for roof insulation...")
+                        spec = importlib.util.spec_from_file_location("call_rsmeans_api", rsmeans_module_path)
+                        rsmeans_module = importlib.util.module_from_spec(spec)
+                        spec.loader.exec_module(rsmeans_module)
+                        rsmeans_lookup = rsmeans_module.run_rsmeans_cost_lookup(
+                            materials=rsmeans_materials,
+                            release_id="2024-an",
+                            catalogs=["bc-mf", "gb-mf", "rp-mf"],
+                            location_id="us-us-national",
+                            labor_type="std",
+                            measurement_system="imp",
+                            use_sandbox=False,
+                            overhead_profit_percent=overhead_profit_percent,
+                        )
+                        if rsmeans_lookup and rsmeans_lookup.get("status") == "ok":
+                            summary = rsmeans_lookup.get("summary", {})
+                            total_material_cost = float(summary.get("total_material_cost", 0.0))
+                            total_overhead_profit_cost = float(summary.get("total_overhead_profit_cost", 0.0))
+                            cost_source = "rsmeans_api"
+                            materials_results = rsmeans_lookup.get("results", {}).get("materials", [])
+                            if materials_results:
+                                runner.registerInfo("RSMeans materials detail:")
+                                for mat in materials_results:
+                                    mat_name = mat.get("name", "(unknown)")
+                                    mat_desc = mat.get("description", "")
+                                    mat_qty = mat.get("quantity", 0.0)
+                                    mat_unit = mat.get("unit", "")
+                                    mat_div = mat.get("division_code", "")
+                                    mat_unit_cost = mat.get("unit_cost", 0.0)
+                                    mat_total_cost = mat.get("total_cost", 0.0)
+                                    runner.registerInfo(
+                                        f"  - {mat_name} | {mat_desc} | {mat_qty} {mat_unit} | "
+                                        f"division {mat_div} | unit=${mat_unit_cost:,.2f} | total=${mat_total_cost:,.2f}"
+                                    )
+                            runner.registerInfo(
+                                "RSMeans cost summary: "
+                                f"materials={summary.get('materials_count', 0)}, "
+                                f"total_cost=${summary.get('total_cost_with_overhead_profit', 0.0):,.2f}"
+                            )
+                        else:
+                            runner.registerWarning(
+                                f"RSMeans lookup failed: {rsmeans_lookup.get('message', 'unknown error')}"
+                            )
+                    except Exception as e:
+                        runner.registerWarning(f"RSMeans lookup failed: {e}")
+                else:
+                    runner.registerWarning("RSMeans lookup skipped: call_rsmeans_api.py not found")
+
         # Results (standardized fields)
         results.setFeature("roof_insulation_total_additional_embodied_carbon_kg", total_embodied_carbon)
-        results.setFeature("roof_insulation_total_additional_material_cost_$", 0.0)  # Placeholder
-        results.setFeature("roof_insulation_total_additional_overhead_profit_cost_$", 0.0)  # Placeholder
-        results.setFeature("roof_insulation_total_additional_labour_cost_$", 0.0)  # Placeholder
+        results.setFeature("roof_insulation_total_additional_material_cost_$", total_material_cost)
+        results.setFeature("roof_insulation_total_additional_overhead_profit_cost_$", total_overhead_profit_cost)
+        results.setFeature("roof_insulation_total_additional_labour_cost_$", total_labour_cost)
+        results.setFeature("roof_insulation_cost_source", cost_source)
         results.setFeature("roof_insulation_total_embodied_carbon_kgCO2eq", total_embodied_carbon)
+
+        # Mirror key cost outputs on Facility AdditionalProperties for persistence/visibility
+        facility.additionalProperties().setFeature("roof_insulation_total_additional_material_cost_$", total_material_cost)
+        facility.additionalProperties().setFeature("roof_insulation_total_additional_overhead_profit_cost_$", total_overhead_profit_cost)
+        facility.additionalProperties().setFeature("roof_insulation_total_additional_labour_cost_$", total_labour_cost)
+        facility.additionalProperties().setFeature("roof_insulation_cost_source", cost_source)
 
         # Emission factors aggregated from selected statistic lists
         if gwp_values["gwp_per_kg"]:
