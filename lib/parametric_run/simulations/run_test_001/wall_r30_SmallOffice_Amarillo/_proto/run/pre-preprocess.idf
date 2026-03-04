@@ -201,7 +201,7 @@ LifeCycleCost:UsePriceEscalation,
   1.0950;                                 !- Year Escalation 30
 
 Building,
-  -SmallOffice-ASHRAE 169-2013-3B created: 2026-02-27 12:54:27 -0700, !- Name
+  -SmallOffice-ASHRAE 169-2013-3B created: 2026-03-03 21:05:58 -0700, !- Name
   0,                                      !- North Axis {deg}
   City,                                   !- Terrain
   0.04,                                   !- Loads Convergence Tolerance Value {W}
