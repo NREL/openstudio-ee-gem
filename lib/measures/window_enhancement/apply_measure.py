@@ -129,11 +129,23 @@ def run_measure(model, args_overrides=None):
 
     # --- Enhancement options (glass + frame) ---
     set_arg("wf_option", "wood window frame")           # window frame option
+    # set_arg("wf_option", "none")
+    # set_arg("wf_option", "wood-aluminium window frame")
     set_arg("caulking_option", "none")                  # no caulking
+    # set_arg("caulking_option", "acrylic")
+    # set_arg("caulking_option", "polyurethane")
     set_arg("film_option", "none")                      # no glazing film
+    # set_arg("film_option", "safety film")
+    # set_arg("film_option", "solar control film")
+    # set_arg("film_option", "anti-graffiti film")
+    # set_arg("film_option", "decorative film")
+    # set_arg("film_option", "low-e film")
     set_arg("weatherstrip_option", "none")              # no weatherstrip
+    # set_arg("weatherstrip_option", "silicone adhesive smoke gasket")
     set_arg("glass_option", "provide user_num_panes")   # glass replacement
+    # set_arg("glass_option", "none")
     set_arg("secondary_glazing_option", "none")         # no secondary glazing
+    # set_arg("secondary_glazing_option", "install secondary glazing")
 
     # --- Film properties (only used when film_option != 'none') ---
     set_arg("film_visible_transmittance", 0.0)          # 0 = use default
