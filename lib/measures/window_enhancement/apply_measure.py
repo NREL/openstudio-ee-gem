@@ -125,27 +125,48 @@ def run_measure(model, args_overrides=None):
     set_arg("caulking_lifetime", 10)        # years
     set_arg("film_lifetime", 10)            # years
     set_arg("weatherstrip_lifetime", 10)    # years
-    set_arg("overhead_profit_percent", 0.0) # percent
+    set_arg("overhead_profit_percent", 0.1) # percent
 
     # --- Enhancement options (glass + frame) ---
-    set_arg("wf_option", "wood window frame")           # window frame option
+    
+    # Window frame options:
+    set_arg("wf_option", "wood window frame")           
     # set_arg("wf_option", "none")
     # set_arg("wf_option", "wood-aluminium window frame")
-    set_arg("caulking_option", "none")                  # no caulking
-    # set_arg("caulking_option", "acrylic")
-    # set_arg("caulking_option", "polyurethane")
-    set_arg("film_option", "none")                      # no glazing film
+    
+    # Weatherstrip options:
+    # set_arg("weatherstrip_option", "none")              # no weatherstrip
+    set_arg("weatherstrip_option", "silicone adhesive smoke gasket")
+    
+    # --- Glass geometry (only used when glass_option != 'none') ---
+    # set_arg("user_num_panes", 1)                    # 1 = single pane (monolithic)
+    # set_arg("user_num_panes", 2)                        # 2 = double pane
+    set_arg("user_num_panes", 3)                        # 3 = triple pane
+    set_arg("glass_pane_thickness", 0.003)              # m (3 mm)
+    set_arg("gap_thickness", 0.013)                     # m (13 mm)
+
+   
+    # Film options:
+    # set_arg("film_option", "none")                      # no glazing film
     # set_arg("film_option", "safety film")
     # set_arg("film_option", "solar control film")
     # set_arg("film_option", "anti-graffiti film")
     # set_arg("film_option", "decorative film")
-    # set_arg("film_option", "low-e film")
-    set_arg("weatherstrip_option", "none")              # no weatherstrip
-    # set_arg("weatherstrip_option", "silicone adhesive smoke gasket")
+    set_arg("film_option", "low-e film")
+
+
+    # Caulking options (only used when glass_option != 'none' or secondary_glazing_option != 'none')
+    # set_arg("caulking_option", "none")                  # no caulking
+    # set_arg("caulking_option", "acrylic")
+    set_arg("caulking_option", "polyurethane")
+    
+    
+    
+    # Installation type options:
     set_arg("glass_option", "provide user_num_panes")   # glass replacement
     # set_arg("glass_option", "none")
-    set_arg("secondary_glazing_option", "none")         # no secondary glazing
-    # set_arg("secondary_glazing_option", "install secondary glazing")
+    # set_arg("secondary_glazing_option", "none")         # no secondary glazing
+    set_arg("secondary_glazing_option", "install secondary glazing")
 
     # --- Film properties (only used when film_option != 'none') ---
     set_arg("film_visible_transmittance", 0.0)          # 0 = use default
@@ -156,10 +177,7 @@ def run_measure(model, args_overrides=None):
     # --- Caulking geometry ---
     set_arg("caulking_thickness", 0.008)                # m (8 mm bead)
 
-    # --- Glass geometry (only used when glass_option != 'none') ---
-    set_arg("user_num_panes", 2)                        # 2 = double pane
-    set_arg("glass_pane_thickness", 0.003)              # m (3 mm)
-    set_arg("gap_thickness", 0.013)                     # m (13 mm)
+
 
     # --- Glass optical properties (0 = use defaults) ---
     set_arg("glass_solar_transmittance", 0.0)
@@ -186,7 +204,7 @@ def run_measure(model, args_overrides=None):
     set_arg("use_custom_costs", False)
 
     # --- RSMeans exact line item ID mode ---
-    set_arg("use_specific_rsmeans_line_item_ids", True)
+    set_arg("use_specific_rsmeans_line_item_ids", False)
     set_arg("rsmeans_id_glazing", "084126100020")
     set_arg("rsmeans_id_frame", "084113200050")
     
