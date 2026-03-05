@@ -104,11 +104,23 @@ def run_measure(model, args_overrides=None):
 
     # --- Sealing options ---
     set_arg("door_bottom_seal_option", "automatic door bottom")
+    # set_arg("door_bottom_seal_option", "none")
+    # set_arg("door_bottom_seal_option", "brush weatherstrip")
+    # set_arg("door_bottom_seal_option", "silicone adhesive smoke gasket")
     set_arg("door_top_side_seal_option", "jamb weatherstrip")
+    # set_arg("door_top_side_seal_option", "none")
+    # set_arg("door_top_side_seal_option", "silicone adhesive smoke gasket")
     set_arg("strip_lifetime", 15)               # years
 
     # --- Door replacement option ---
     set_arg("door_option", "polystyrene core steel door")  # replace door with a realistic option
+    # set_arg("door_option", "none")
+    # set_arg("door_option", "wooden door")
+    # set_arg("door_option", "garage door")
+    # set_arg("door_option", "glass door")
+    # set_arg("door_option", "polyurethane core steel door")
+    # set_arg("door_option", "honeycomb core steel door")
+    # set_arg("door_option", "stiffened core steel door")
     set_arg("door_lifetime", 30)                # years (default for steel doors)
     set_arg("door_thermal_conductivity", 0.0)   # 0 = use typical
     set_arg("door_density", 0.0)                # 0 = use typical
