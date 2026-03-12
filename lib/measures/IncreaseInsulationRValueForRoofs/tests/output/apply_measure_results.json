@@ -1,0 +1,71 @@
+{
+  "measure": "IncreaseInsulationRValueForRoofs",
+  "success": true,
+  "step_values": {
+    "r_value": 30.0,
+    "analysis_period": 30,
+    "gwp_statistic": "median",
+    "api_key": "<redacted>",
+    "insulation_material_type": "Pure Wool Batts",
+    "insulation_material_lifetime": 30,
+    "insulation_thermal_conductivity": 0.0,
+    "insulation_material_density": 0.0,
+    "calculate_costs": true,
+    "use_custom_costs": false,
+    "custom_cost_per_sf": 0.0,
+    "overhead_profit_percent": 10.0
+  },
+  "additional_properties_count": 16,
+  "additional_properties_sample": [
+    {
+      "construction": "Facility",
+      "property": "roof_insulation_cost_source",
+      "value": "rsmeans_api"
+    },
+    {
+      "construction": "Facility",
+      "property": "roof_insulation_material_gwp_per_kg",
+      "value": 2.637913741
+    },
+    {
+      "construction": "Facility",
+      "property": "roof_insulation_material_gwp_per_m2",
+      "value": 2.63
+    },
+    {
+      "construction": "Facility",
+      "property": "roof_insulation_retrofit_materials_json",
+      "value": "[{\"name\": \"Pure Wool Batts roof insulation\", \"description\": \"Added insulation to reach R-30.0; avg added thickness 4.23 in\", \"quantity\": 4999.999999999986, \"unit\": \"SF\", \"quantity_si\": 464.51519999999874, \"unit_si\": \"m2\", \"division_code\": \"07\"}]"
+    },
+    {
+      "construction": "Facility",
+      "property": "roof_insulation_rsmeans_matches_json",
+      "value": "{\"materials\": [{\"name\": \"Pure Wool Batts roof insulation\", \"description\": \"Added insulation to reach R-30.0; avg added thickness 4.23 in\", \"quantity\": 4999.999999999986, \"unit\": \"SF\", \"quantity_si\": 464.51519999999874, \"unit_si\": \"m2\", \"division_code\": \"07\", \"catalog\": \"bc-mf\", \"search_term_used\": \"Pure Wool Batts roof insulation\", \"unit_cost\": 2.23, \"total_cost\": 11149.999999999969, \"rsmeans_id\": \"072116201320\", \"rsmeans_description\": \"Blanket insulation, for walls or ceilings, mineral wool batts, 3-1/2\\\" thick, R15\", \"match_type\": \"closest_match\"}], \"search_log\": [{\"material\": \"Pure Wool Batts roof insulation\", \"search_term\": \"Pure Wool Batts roof insulation\", \"catalog\": \"bc-mf\", \"division\": \"07\", \"status\": \"match_found\", \"candidates_considered\": 3, \"rsmeans_id\": \"072116201320\", \"rsmeans_description\": \"Blanket insulation, for walls or ceilings, mineral wool batts, 3-1/2\\\" thick, R15\", \"unit_cost\": 2.23, \"quantity\": 4999.999999999986, \"total_cost\": 11149.999999999969}], \"summary\": {\"release_id\": \"2024-an\", \"location_id\": \"us-us-national\", \"labor_type\": \"std\", \"measurement_system\": \"imp\", \"catalogs_searched\": [\"bc-mf\", \"gb-mf\", \"rp-mf\"]}}"
+    },
+    {
+      "construction": "Facility",
+      "property": "roof_insulation_total_additional_material_cost_$",
+      "value": 11149.999999999969
+    },
+    {
+      "construction": "Facility",
+      "property": "roof_insulation_total_additional_overhead_profit_cost_$",
+      "value": 1114.999999999997
+    },
+    {
+      "construction": "Facility",
+      "property": "roof_insulation_total_cost_with_overhead_and_profit_$",
+      "value": 12264.999999999965
+    },
+    {
+      "construction": "SimulationControl",
+      "property": "roof_insulation_cost_source",
+      "value": "rsmeans_api"
+    },
+    {
+      "construction": "SimulationControl",
+      "property": "roof_insulation_retrofit_materials_json",
+      "value": "[{\"name\": \"Pure Wool Batts roof insulation\", \"description\": \"Added insulation to reach R-30.0; avg added thickness 4.23 in\", \"quantity\": 4999.999999999986, \"unit\": \"SF\", \"quantity_si\": 464.51519999999874, \"unit_si\": \"m2\", \"division_code\": \"07\"}]"
+    }
+  ]
+}

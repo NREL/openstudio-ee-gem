@@ -758,8 +758,6 @@ class IncreaseInsulationRValueForRoofs(openstudio.measure.ModelMeasure):
         # Calculate building-level totals for summarization
         total_embodied_carbon = sum(row["total_gwp_kg_co2_eq"] for row in gwp_summary_rows)
         total_roof_area = sum(row["added_total_area_m2"] for row in gwp_summary_rows)
-        total_added_volume_m3 = sum(row["added_total_volume_m3"] for row in gwp_summary_rows)
-        avg_added_thickness_m = (total_added_volume_m3 / total_roof_area) if total_roof_area > 0 else 0.0
         
         # Store building-level summary in organized AdditionalProperties buckets
         building = model.getBuilding()
@@ -795,16 +793,22 @@ class IncreaseInsulationRValueForRoofs(openstudio.measure.ModelMeasure):
         total_overhead_profit_cost = 0.0
         cost_source = "none"
 
+        # Create per-construction RSMeans material entries with actual thicknesses
         rsmeans_materials = []
-        if total_roof_area > 0.0:
-            total_roof_area_ft2 = self._unit_convert(total_roof_area, "m^2", "ft^2")
-            avg_added_thickness_in = self._unit_convert(avg_added_thickness_m, "m", "in") if avg_added_thickness_m > 0 else 0.0
+        for row in gwp_summary_rows:
+            const_name = row.get("orig_construction", "unknown")
+            area_m2 = row.get("added_total_area_m2", 0.0)
+            thickness_m = row.get("added_thickness_m", 0.0)
+            
+            area_ft2 = self._unit_convert(area_m2, "m^2", "ft^2")
+            thickness_in = self._unit_convert(thickness_m, "m", "in")
+            
             rsmeans_materials.append({
-                "name": f"{insulation_material_type} roof insulation",
-                "description": f"Added insulation to reach R-{r_value_ip}; avg added thickness {avg_added_thickness_in:.2f} in",
-                "quantity": float(total_roof_area_ft2),
+                "name": f"{insulation_material_type} roof insulation ({const_name})",
+                "description": f"Added insulation to reach R-{r_value_ip}; actual added thickness {thickness_in:.2f} in",
+                "quantity": float(area_ft2),
                 "unit": "SF",
-                "quantity_si": float(total_roof_area),
+                "quantity_si": float(area_m2),
                 "unit_si": "m2",
                 "division_code": "07",
             })
@@ -822,7 +826,9 @@ class IncreaseInsulationRValueForRoofs(openstudio.measure.ModelMeasure):
                 if custom_cost_per_sf <= 0.0:
                     runner.registerWarning("Custom cost mode enabled, but custom_cost_per_sf is 0. Skipping cost calculation.")
                 else:
-                    total_material_cost = custom_cost_per_sf * float(rsmeans_materials[0]["quantity"])
+                    total_material_cost = custom_cost_per_sf * sum(
+                        float(m["quantity"]) for m in rsmeans_materials
+                    )
                     cost_source = "custom_input"
                     runner.registerInfo(
                         "Custom cost summary (cost_source=custom_input): "
@@ -854,7 +860,50 @@ class IncreaseInsulationRValueForRoofs(openstudio.measure.ModelMeasure):
                             total_material_cost = float(summary.get("total_material_cost", 0.0))
                             total_overhead_profit_cost = float(summary.get("total_overhead_profit_cost", 0.0))
                             cost_source = "rsmeans_api"
-                            materials_results = rsmeans_lookup.get("results", {}).get("materials", [])
+                            materials_results = rsmeans_lookup.get(
+                                "results", {}
+                            ).get("materials", [])
+                            search_log = rsmeans_lookup.get(
+                                "results", {}
+                            ).get("search_log", [])
+                            rsmeans_diagnostics = {
+                                "materials": materials_results,
+                                "search_log": search_log,
+                                "summary": {
+                                    "release_id": summary.get("release_id"),
+                                    "location_id": summary.get("location_id"),
+                                    "labor_type": summary.get("labor_type"),
+                                    "measurement_system": summary.get(
+                                        "measurement_system"
+                                    ),
+                                    "catalogs_searched": summary.get(
+                                        "catalogs_searched", []
+                                    ),
+                                },
+                            }
+                            try:
+                                diagnostics_json = json.dumps(
+                                    rsmeans_diagnostics
+                                )
+                                feature_name = (
+                                    "roof_insulation_rsmeans_matches_json"
+                                )
+                                results.setFeature(
+                                    feature_name, diagnostics_json
+                                )
+                                facility.additionalProperties().setFeature(
+                                    feature_name, diagnostics_json
+                                )
+                                sim_ap = model.getSimulationControl(
+                                ).additionalProperties()
+                                sim_ap.setFeature(
+                                    feature_name, diagnostics_json
+                                )
+                            except Exception:
+                                runner.registerWarning(
+                                    "Could not serialize RSMeans "
+                                    "diagnostics to JSON."
+                                )
                             if materials_results:
                                 runner.registerInfo("RSMeans materials detail:")
                                 for mat in materials_results:
@@ -863,11 +912,14 @@ class IncreaseInsulationRValueForRoofs(openstudio.measure.ModelMeasure):
                                     mat_qty = mat.get("quantity", 0.0)
                                     mat_unit = mat.get("unit", "")
                                     mat_div = mat.get("division_code", "")
+                                    mat_rsmeans_id = mat.get("rsmeans_id", "N/A")
                                     mat_unit_cost = mat.get("unit_cost", 0.0)
                                     mat_total_cost = mat.get("total_cost", 0.0)
                                     runner.registerInfo(
                                         f"  - {mat_name} | {mat_desc} | {mat_qty} {mat_unit} | "
-                                        f"division {mat_div} | unit=${mat_unit_cost:,.2f} | total=${mat_total_cost:,.2f}"
+                                        f"division {mat_div} | "
+                                        f"costline_id={mat_rsmeans_id} | "
+                                        f"unit=${mat_unit_cost:,.2f} | total=${mat_total_cost:,.2f}"
                                     )
                             runner.registerInfo(
                                 "RSMeans cost summary: "
@@ -914,6 +966,16 @@ class IncreaseInsulationRValueForRoofs(openstudio.measure.ModelMeasure):
         # # Cross-measure extraction fields on Facility
         # factors.setFeature("name", "Increase_Insulation_R-Value_for_Roofs")
         # factors.setFeature("total_additional_embodied_carbon_kgCO2", total_embodied_carbon)
+        
+        # Report per-construction areas
+        runner.registerInfo("Roof area by construction:")
+        for row in gwp_summary_rows:
+            const_name = row.get("orig_construction", "unknown")
+            area_m2 = row.get("added_total_area_m2", 0.0)
+            area_ft2 = self._unit_convert(area_m2, "m^2", "ft^2")
+            runner.registerInfo(
+                f"  - {const_name}: {area_m2:.2f} m² ({area_ft2:.2f} ft²)"
+            )
         
         runner.registerInfo(
             f"Building-level summary: Total embodied carbon = {total_embodied_carbon:.2f} kg CO2 eq "
