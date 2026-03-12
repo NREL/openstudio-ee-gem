@@ -49,7 +49,7 @@ Two API credentials are required for this measure to function fully:
 Located at repository root. Contains EC3 API token:
 ```ini
 [api_keys]
-ec3_api_token = cibHn9cLcZAD7MyzBTLamVfSNyQHKD
+ec3_api_token = YOUR_EC3_API_TOKEN_HERE
 ```
 
 #### .env
