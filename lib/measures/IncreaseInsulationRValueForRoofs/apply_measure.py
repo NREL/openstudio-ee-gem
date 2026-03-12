@@ -13,19 +13,35 @@ import sys
 import json
 import os
 import configparser
+import platform
 
 # ---------------------------------------------------------------------------
 # OpenStudio path setup
 # ---------------------------------------------------------------------------
-OPENSTUDIO_VERSION = "3.11.0"
-openstudio_path = f"/Applications/OpenStudio-{OPENSTUDIO_VERSION}/Python"
+# Try to use installed openstudio package first (via pip/conda)
+# Fall back to system installations if needed
+try:
+    import openstudio
+    print("Using OpenStudio from installed package")
+except ImportError:
+    OPENSTUDIO_VERSION = "3.11.0"
+    WINDOWS_OPENSTUDIO_PATH = rf"C:\openstudio-{OPENSTUDIO_VERSION}\Python"
+    mac_openstudio_path = f"/Applications/OpenStudio-{OPENSTUDIO_VERSION}/Python"
 
-if Path(openstudio_path).exists():
-    sys.path.insert(0, openstudio_path)
-    print(f"Using OpenStudio from: {openstudio_path}")
-else:
-    print(f"Warning: OpenStudio path not found at {openstudio_path}")
-    print("Will attempt to use system OpenStudio installation")
+    openstudio_path = None
+    if platform.system() == "Windows":
+        if Path(WINDOWS_OPENSTUDIO_PATH).exists():
+            openstudio_path = WINDOWS_OPENSTUDIO_PATH
+            sys.path.insert(0, openstudio_path)
+            print(f"Using OpenStudio from: {openstudio_path}")
+    else:
+        if Path(mac_openstudio_path).exists():
+            openstudio_path = mac_openstudio_path
+            sys.path.insert(0, openstudio_path)
+            print(f"Using OpenStudio from: {openstudio_path}")
+
+    if openstudio_path is None:
+        print("Warning: OpenStudio path not found")
 
 import openstudio
 from measure import IncreaseInsulationRValueForRoofs

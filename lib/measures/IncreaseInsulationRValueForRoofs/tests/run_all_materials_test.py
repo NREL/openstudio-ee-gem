@@ -110,7 +110,7 @@ def run_material_test(model_path, material_name, output_base_dir):
             json_str = sim_ap.getFeatureAsString(prop_name).get()
             rsmeans_data = json.loads(json_str)
             results["rsmeans_data"] = rsmeans_data
-            
+
             # Print summary
             if "materials" in rsmeans_data:
                 for mat in rsmeans_data["materials"]:
@@ -120,9 +120,19 @@ def run_material_test(model_path, material_name, output_base_dir):
                     print(f"    Total Cost: ${mat.get('total_cost', 0):.2f}")
         except (json.JSONDecodeError, Exception) as e:
             print(f"  Could not parse RSMeans JSON: {e}")
+
+    # Extract cost totals from AdditionalProperties
+    mat_cost_prop = "roof_insulation_total_additional_material_cost_$"
+    total_cost_prop = "roof_insulation_total_cost_with_overhead_and_profit_$"
+    if sim_ap.hasFeature(mat_cost_prop):
+        val = sim_ap.getFeatureAsDouble(mat_cost_prop)
+        results["material_cost"] = val.get() if val.is_initialized() else 0.0
+    if sim_ap.hasFeature(total_cost_prop):
+        val = sim_ap.getFeatureAsDouble(total_cost_prop)
+        results["total_cost"] = val.get() if val.is_initialized() else 0.0
     
     # Save modified model
-    clean_name = material_name.replace(" ", "_")
+    clean_name = material_name.lower().replace(" ", "_")
     clean_name = clean_name.replace("(", "").replace(")", "")
     material_folder = output_base_dir / clean_name
     material_folder.mkdir(parents=True, exist_ok=True)
@@ -229,7 +239,7 @@ def main():
         "failed": failed,
         "materials_tested": all_results
     }
-    
+
     summary_file = output_dir / "validation_summary_per_construction.json"
     try:
         with open(summary_file, "w") as f:
@@ -237,6 +247,30 @@ def main():
         print(f"\nSummary saved: {summary_file}")
     except Exception as e:
         print(f"ERROR saving summary: {e}")
+
+    # Save compact material comparison summary (no output_dir)
+    comparison_rows = []
+    for result in all_results:
+        rsmeans_data = result.get("rsmeans_data") or {}
+        materials_list = rsmeans_data.get("materials", [])
+        first_mat = materials_list[0] if materials_list else {}
+        comparison_rows.append({
+            "material": result["material"],
+            "success": result["success"],
+            "material_cost": result.get(
+                "material_cost", first_mat.get("total_cost", 0)
+            ),
+            "total_cost": result.get("total_cost", 0),
+            "rsmeans_id": first_mat.get("rsmeans_id", "N/A"),
+        })
+
+    comparison_file = output_dir / "rsmeans_material_comparison_summary.json"
+    try:
+        with open(comparison_file, "w") as f:
+            json.dump(comparison_rows, f, indent=2)
+        print(f"Comparison summary saved: {comparison_file}")
+    except Exception as e:
+        print(f"ERROR saving comparison summary: {e}")
     
     return 0 if failed == 0 else 1
 

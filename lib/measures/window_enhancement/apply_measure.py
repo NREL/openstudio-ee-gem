@@ -22,13 +22,12 @@ import platform
 # Fall back to system installations if needed
 try:
     import openstudio
-    print(f"Using OpenStudio from installed package")
+    print("Using OpenStudio from installed package")
 except ImportError:
     # Fall back to system installations
-    OPENSTUDIO_VERSION = "3.8.0"
-    WINDOWS_OPENSTUDIO_PATH = r"C:\openstudio-3.8.0\Python"
-    MAC_OPENSTUDIO_VERSION = "3.11.0"
-    mac_openstudio_path = f"/Applications/OpenStudio-{MAC_OPENSTUDIO_VERSION}/Python"
+    OPENSTUDIO_VERSION = "3.11.0"
+    WINDOWS_OPENSTUDIO_PATH = rf"C:\openstudio-{OPENSTUDIO_VERSION}\Python"
+    mac_openstudio_path = f"/Applications/OpenStudio-{OPENSTUDIO_VERSION}/Python"
 
     openstudio_path = None
     if platform.system() == "Windows":
@@ -43,7 +42,7 @@ except ImportError:
             print(f"Using OpenStudio from: {openstudio_path}")
 
     if openstudio_path is None:
-        print("Warning: OpenStudio path not found")
+        print(f"Warning: OpenStudio {OPENSTUDIO_VERSION} path not found")
 
 import openstudio
 from measure import WindowEnhancement

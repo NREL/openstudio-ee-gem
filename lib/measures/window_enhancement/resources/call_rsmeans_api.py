@@ -251,51 +251,113 @@ def generate_search_term_alternatives(material_name: str) -> List[tuple]:
     elif "insulation" in name_lower or "insul" in name_lower:
         # Material-specific insulation search terms
         if "fiberglass" in name_lower or "fiber glass" in name_lower:
-            alternatives.extend([
-                ("fiberglass batts", "07"),
-                ("fiberglass blanket", "07"),
-                ("blown fiberglass", "07"),
-                ("roof fiberglass", "07"),
-            ])
+            if "blown" in name_lower or "loose" in name_lower:
+                alternatives.extend([
+                    ("blown fiberglass", "07"),
+                    ("loose fill fiberglass", "07"),
+                    ("fiberglass loose fill", "07"),
+                    ("fiberglass batts", "07"),
+                ])
+            else:
+                alternatives.extend([
+                    ("fiberglass batts", "07"),
+                    ("fiberglass blanket", "07"),
+                    ("blown fiberglass", "07"),
+                    ("roof fiberglass", "07"),
+                ])
         if "cellulose" in name_lower:
             alternatives.extend([
                 ("blown cellulose", "07"),
                 ("cellulose insulation", "07"),
             ])
         if "mineral wool" in name_lower or "mineral" in name_lower:
-            alternatives.extend([
-                ("mineral wool batts", "07"),
-                ("mineral wool blanket", "07"),
-                ("mineral wool insulation", "07"),
-            ])
+            if "blown" in name_lower or "loose" in name_lower:
+                alternatives.extend([
+                    ("blown mineral wool", "07"),
+                    ("mineral wool loose fill", "07"),
+                    ("loose fill mineral wool", "07"),
+                    ("mineral wool batts", "07"),
+                ])
+            elif "heavy" in name_lower:
+                alternatives.extend([
+                    ("mineral wool board", "07"),
+                    ("mineral wool rigid", "07"),
+                    ("mineral wool heavy density", "07"),
+                    ("mineral wool batts", "07"),
+                ])
+            elif "light" in name_lower:
+                alternatives.extend([
+                    ("mineral wool blanket", "07"),
+                    ("mineral wool light density", "07"),
+                    ("mineral wool batts", "07"),
+                ])
+            else:
+                alternatives.extend([
+                    ("mineral wool batts", "07"),
+                    ("mineral wool blanket", "07"),
+                    ("mineral wool insulation", "07"),
+                ])
         if "polyiso" in name_lower:
             alternatives.extend([
                 ("polyiso insulation", "07"),
                 ("polyiso board", "07"),
                 ("polyiso foam", "07"),
             ])
-        if "polystyrene" in name_lower or "eps" in name_lower:
-            alternatives.extend([
-                ("expanded polystyrene", "07"),
-                ("eps foam board", "07"),
-                ("eps insulation", "07"),
-            ])
-        if "extruded" in name_lower or "xps" in name_lower:
+        xps_match = (
+            ("extruded" in name_lower and "polystyrene" in name_lower)
+            or "xps" in name_lower
+        )
+        gps_match = (
+            ("graphite" in name_lower and "polystyrene" in name_lower)
+            or "gps" in name_lower
+        )
+        eps_match = (
+            ("expanded" in name_lower and "polystyrene" in name_lower)
+            or "eps" in name_lower
+        )
+        if xps_match:
             alternatives.extend([
                 ("extruded polystyrene", "07"),
                 ("xps foam board", "07"),
                 ("xps insulation", "07"),
             ])
-        if "graphite" in name_lower or "gps" in name_lower:
+        elif gps_match:
             alternatives.extend([
                 ("graphite polystyrene", "07"),
                 ("gps foam board", "07"),
+                ("gps insulation", "07"),
+            ])
+        elif eps_match:
+            alternatives.extend([
+                ("expanded polystyrene", "07"),
+                ("eps foam board", "07"),
+                ("eps insulation", "07"),
+            ])
+        elif "polystyrene" in name_lower:
+            # Generic polystyrene fallback (type not specified)
+            alternatives.extend([
+                ("foam board insulation", "07"),
+                ("polystyrene insulation", "07"),
             ])
         if "wool" in name_lower or "batts" in name_lower:
-            alternatives.extend([
-                ("wool batts", "07"),
-                ("wool insulation", "07"),
-            ])
+            is_natural_wool = (
+                "pure wool" in name_lower
+                or "natural wool" in name_lower
+                or "sheep wool" in name_lower
+            )
+            if is_natural_wool:
+                alternatives.extend([
+                    ("natural wool insulation", "07"),
+                    ("sheep wool insulation", "07"),
+                    ("wool batt insulation", "07"),
+                    ("batt insulation", "07"),
+                ])
+            elif "mineral" not in name_lower:
+                # Non-mineral wool (e.g. glass wool, pure wool)
+                alternatives.extend([
+                    ("wool batts", "07"),
+                    ("wool insulation", "07"),
+                ])
         # Generic fallback
         alternatives.extend([
             ("wall insulation", "07"),

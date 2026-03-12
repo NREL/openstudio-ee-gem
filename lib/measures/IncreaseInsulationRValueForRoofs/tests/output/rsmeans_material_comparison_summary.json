@@ -2,89 +2,78 @@
   {
     "material": "Fiberglass Batts",
     "success": true,
-    "material_cost": 8149.999999999977,
-    "total_cost": 8964.999999999975,
-    "rsmeans_id": "072216100830",
-    "output_dir": "C:\\All_repos\\openstudio-ee-gem\\lib\\measures\\IncreaseInsulationRValueForRoofs\\tests\\output\\fiberglass_batts"
+    "material_cost": 11049.999999999969,
+    "total_cost": 12154.999999999965,
+    "rsmeans_id": "072116102100"
+  },
+  {
+    "material": "Blown Fiberglass",
+    "success": true,
+    "material_cost": 11899.999999999967,
+    "total_cost": 13089.999999999964,
+    "rsmeans_id": "072126101300"
   },
   {
     "material": "Blown Cellulose",
     "success": true,
     "material_cost": 7749.999999999979,
     "total_cost": 8524.999999999976,
-    "rsmeans_id": "072126100100",
-    "output_dir": "C:\\All_repos\\openstudio-ee-gem\\lib\\measures\\IncreaseInsulationRValueForRoofs\\tests\\output\\blown_cellulose"
+    "rsmeans_id": "072126100100"
   },
   {
-    "material": "Blown Fiberglass",
-    "success": true,
-    "material_cost": 8149.999999999977,
-    "total_cost": 8964.999999999975,
-    "rsmeans_id": "072216100830",
-    "output_dir": "C:\\All_repos\\openstudio-ee-gem\\lib\\measures\\IncreaseInsulationRValueForRoofs\\tests\\output\\blown_fiberglass"
-  },
-  {
-    "material": "Blown Mineral Wool",
+    "material": "Mineral Wool Heavy Density Blanket",
     "success": true,
     "material_cost": 11149.999999999969,
     "total_cost": 12264.999999999965,
-    "rsmeans_id": "072116201320",
-    "output_dir": "C:\\All_repos\\openstudio-ee-gem\\lib\\measures\\IncreaseInsulationRValueForRoofs\\tests\\output\\blown_mineral_wool"
+    "rsmeans_id": "072116201320"
+  },
+  {
+    "material": "Mineral Wool Light Density Blanket",
+    "success": true,
+    "material_cost": 11149.999999999969,
+    "total_cost": 12264.999999999965,
+    "rsmeans_id": "072116201320"
   },
   {
     "material": "Polyiso Insulation Foam Board",
     "success": true,
-    "material_cost": 8149.999999999977,
-    "total_cost": 8964.999999999975,
-    "rsmeans_id": "072216100830",
-    "output_dir": "C:\\All_repos\\openstudio-ee-gem\\lib\\measures\\IncreaseInsulationRValueForRoofs\\tests\\output\\polyiso_insulation_foam_board"
-  },
-  {
-    "material": "Graphite Polystyrene (GPS) Foam Board",
-    "success": true,
     "material_cost": 10549.99999999997,
     "total_cost": 11604.999999999967,
-    "rsmeans_id": "072113101900",
-    "output_dir": "C:\\All_repos\\openstudio-ee-gem\\lib\\measures\\IncreaseInsulationRValueForRoofs\\tests\\output\\graphite_polystyrene_gps_foam_board"
+    "rsmeans_id": "072113101900"
   },
   {
     "material": "Expanded Polystyrene (EPS) Foam Board",
     "success": true,
     "material_cost": 7099.99999999998,
     "total_cost": 7809.999999999978,
-    "rsmeans_id": "072113130600",
-    "output_dir": "C:\\All_repos\\openstudio-ee-gem\\lib\\measures\\IncreaseInsulationRValueForRoofs\\tests\\output\\expanded_polystyrene_eps_foam_board"
+    "rsmeans_id": "072113130600"
   },
   {
     "material": "Extruded Polystyrene (XPS) Foam Board",
     "success": true,
-    "material_cost": 10549.99999999997,
-    "total_cost": 11604.999999999967,
-    "rsmeans_id": "072113101900",
-    "output_dir": "C:\\All_repos\\openstudio-ee-gem\\lib\\measures\\IncreaseInsulationRValueForRoofs\\tests\\output\\extruded_polystyrene_xps_foam_board"
+    "material_cost": 6699.999999999982,
+    "total_cost": 7369.99999999998,
+    "rsmeans_id": "072216101948"
   },
   {
-    "material": "Mineral Wool Heavy Density Blanket",
+    "material": "Graphite Polystyrene (GPS) Foam Board",
     "success": true,
-    "material_cost": 10549.99999999997,
-    "total_cost": 11604.999999999967,
-    "rsmeans_id": "072113101900",
-    "output_dir": "C:\\All_repos\\openstudio-ee-gem\\lib\\measures\\IncreaseInsulationRValueForRoofs\\tests\\output\\mineral_wool_heavy_density_blanket"
-  },
-  {
-    "material": "Mineral Wool Light Density Blanket",
-    "success": true,
-    "material_cost": 10549.99999999997,
-    "total_cost": 11604.999999999967,
-    "rsmeans_id": "072113101900",
-    "output_dir": "C:\\All_repos\\openstudio-ee-gem\\lib\\measures\\IncreaseInsulationRValueForRoofs\\tests\\output\\mineral_wool_light_density_blanket"
+    "material_cost": 7099.99999999998,
+    "total_cost": 7809.999999999978,
+    "rsmeans_id": "072113130600"
   },
   {
     "material": "Pure Wool Batts",
     "success": true,
     "material_cost": 11149.999999999969,
     "total_cost": 12264.999999999965,
-    "rsmeans_id": "072116201320",
-    "output_dir": "C:\\All_repos\\openstudio-ee-gem\\lib\\measures\\IncreaseInsulationRValueForRoofs\\tests\\output\\pure_wool_batts"
+    "rsmeans_id": "072116201320"
+  },
+  {
+    "material": "Blown Mineral Wool",
+    "success": true,
+    "material_cost": 11149.999999999969,
+    "total_cost": 12264.999999999965,
+    "rsmeans_id": "072116201320"
   }
 ]
