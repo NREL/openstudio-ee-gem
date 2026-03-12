@@ -27,6 +27,11 @@ def _load_shared_helper():
     spec = importlib.util.spec_from_file_location(
         "window_enhancement_call_rsmeans_api", helper_path
     )
+    if spec is None or spec.loader is None:
+        raise ImportError(
+            f"Unable to load shared RSMeans helper from {helper_path}: "
+            f"invalid module spec {spec!r}."
+        )
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     return module
