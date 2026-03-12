@@ -13,8 +13,12 @@
 /test_results_dashboard_cli_bundler/
 /test_with_cli_bundler/
 /lib/measures/test_results
-/lib/measures/*/tests/output
-/lib/measures/*/tests/outputs
+/lib/measures/*/tests/output/*
+!/lib/measures/*/tests/output/*.osm
+!/lib/measures/*/tests/output/*.json
+!/lib/measures/IncreaseInsulationRValueForRoofs/tests/output/**/*.json
+!/lib/measures/IncreaseInsulationRValueForRoofs/tests/output/**/*.osm
+!/lib/measures/window_enhancement/tests/output/**/*.json
 /lib/measures/*/tests/run
 /lib/measures/*/tests/obsolete
 /lib/measures/IncreaseInsulationRValueForRoofs/tests/DOE_small_office/
@@ -34,6 +38,9 @@
 # ignore mac files
 .DS_Store
 
+# ignore environment.yml
+environment.yml
+
 # ignore files made when run openstudio measure -r locally for testing
 lib/measures/.rubocop.yml
 lib/test/*
@@ -43,7 +50,9 @@ test_results/
 
 lib/measures/window_enhancement/__pycache__/
 lib/measures/window_enhancement/tests/__pycache__/
-lib/measures/window_enhancement/tests/output/
+lib/measures/window_enhancement/tests/output/*
+!lib/measures/window_enhancement/tests/output/*.osm
+!lib/measures/window_enhancement/tests/output/apply_measure_results.json
 lib/measures/window_enhancement/resources/__pycache__/
 lib/measures/window_enhancement/tests/.pytest_cache/
 lib/measures/window_enhancement/tests/example_model/run/

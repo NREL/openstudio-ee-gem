@@ -97,6 +97,89 @@ def _filter_demo_items(items: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
     return filtered or items
 
 
+def _normalize_search_text(text: str) -> str:
+    cleaned = re.sub(r"[^a-z0-9]+", " ", str(text).lower())
+    return re.sub(r"\s+", " ", cleaned).strip()
+
+
+def _tokenize_search_text(text: str) -> set:
+    tokens = _normalize_search_text(text).split()
+    return {tok for tok in tokens if len(tok) > 2}
+
+
+def _score_rsmeans_candidate(
+    material_name: str,
+    item: Dict[str, Any],
+) -> float:
+    description = str(item.get("description", ""))
+    if not description:
+        return -1.0
+
+    material_norm = _normalize_search_text(material_name)
+    description_norm = _normalize_search_text(description)
+
+    material_tokens = _tokenize_search_text(material_name)
+    description_tokens = _tokenize_search_text(description)
+    overlap = material_tokens.intersection(description_tokens)
+
+    score = 0.0
+    if material_norm == description_norm:
+        score += 100.0
+    elif material_norm and material_norm in description_norm:
+        score += 60.0
+
+    # Heavy weighting for exact material-keyword matches
+    for token in material_tokens:
+        if token in description_tokens:
+            score += 15.0
+
+    # Penalize overly generic descriptions
+    if "insulation" in description_norm and len(overlap) < 2:
+        score -= 20.0
+    if "roof" not in description_norm and "roof" in material_norm:
+        score -= 10.0
+
+    # Slightly favor specific descriptions over very short generic strings.
+    score += min(len(description_norm), 120) / 120.0
+    return score
+
+
+def _select_best_rsmeans_candidate(
+    material_name: str,
+    items: List[Dict[str, Any]],
+) -> tuple:
+    """Select best candidate and return scoring details for logging.
+    
+    Returns:
+        (best_candidate, candidate_details_list) where candidate_details_list
+        contains all candidates with their scores for audit logging
+    """
+    if not items:
+        return None, []
+
+    # Score all candidates
+    scored = []
+    for idx, item in enumerate(items):
+        score = _score_rsmeans_candidate(material_name, item)
+        desc = item.get("description", "")
+        desc = desc[:80] if desc else ""
+        scored.append({
+            "index": idx,
+            "rsmeans_id": item.get("costlineID", "unknown"),
+            "description": desc,
+            "score": round(score, 2)
+        })
+
+    # Sort by score descending
+    scored.sort(key=lambda x: -x["score"])
+    
+    # Find the best item
+    best_idx = scored[0]["index"]
+    best_candidate = items[best_idx]
+    
+    return best_candidate, scored
+
+
 def generate_search_term_alternatives(material_name: str) -> List[tuple]:
     """
     Generate alternative search terms and divisions for a material.
@@ -166,6 +249,54 @@ def generate_search_term_alternatives(material_name: str) -> List[tuple]:
     
     # Strategy 4: Insulation alternatives
     elif "insulation" in name_lower or "insul" in name_lower:
+        # Material-specific insulation search terms
+        if "fiberglass" in name_lower or "fiber glass" in name_lower:
+            alternatives.extend([
+                ("fiberglass batts", "07"),
+                ("fiberglass blanket", "07"),
+                ("blown fiberglass", "07"),
+                ("roof fiberglass", "07"),
+            ])
+        if "cellulose" in name_lower:
+            alternatives.extend([
+                ("blown cellulose", "07"),
+                ("cellulose insulation", "07"),
+            ])
+        if "mineral wool" in name_lower or "mineral" in name_lower:
+            alternatives.extend([
+                ("mineral wool batts", "07"),
+                ("mineral wool blanket", "07"),
+                ("mineral wool insulation", "07"),
+            ])
+        if "polyiso" in name_lower:
+            alternatives.extend([
+                ("polyiso insulation", "07"),
+                ("polyiso board", "07"),
+                ("polyiso foam", "07"),
+            ])
+        if "polystyrene" in name_lower or "eps" in name_lower:
+            alternatives.extend([
+                ("expanded polystyrene", "07"),
+                ("eps foam board", "07"),
+                ("eps insulation", "07"),
+            ])
+        if "extruded" in name_lower or "xps" in name_lower:
+            alternatives.extend([
+                ("extruded polystyrene", "07"),
+                ("xps foam board", "07"),
+                ("xps insulation", "07"),
+            ])
+        if "graphite" in name_lower or "gps" in name_lower:
+            alternatives.extend([
+                ("graphite polystyrene", "07"),
+                ("gps foam board", "07"),
+            ])
+        if "wool" in name_lower or "batts" in name_lower:
+            alternatives.extend([
+                ("wool batts", "07"),
+                ("wool insulation", "07"),
+            ])
+        # Generic fallback
         alternatives.extend([
             ("wall insulation", "07"),
             ("roof insulation", "07"),
@@ -1068,12 +1199,20 @@ def search_materials_across_catalogs(
                     
                     items = _filter_demo_items(_extract_search_items(results))
                     if items:
-                        # Take first match
-                        match = items[0]
+                        # Choose best match rather than taking first hit.
+                        match, candidate_details = _select_best_rsmeans_candidate(
+                            material_name, items
+                        )
+                        if not match:
+                            continue
                         division_id = match.get("id", "")
                         print("  Match:")
                         print(f"    ID          : {division_id}")
                         print(f"    Description : {match.get('description', '')}")
+                        print(
+                            f"    Candidates  : {len(items)} "
+                            "(best-scored selected)"
+                        )
                         
                         # Get detailed cost data
                         cost_line = client.get_unit_costlines(
@@ -1107,6 +1246,12 @@ def search_materials_across_catalogs(
                                             "catalog": catalog,
                                             "division": alt_division,
                                             "status": status_msg,
+                                            "candidates_considered": len(items),
+                                            "candidate_scores": candidate_details,
+                                            "rsmeans_id": division_id,
+                                            "rsmeans_description": match.get(
+                                                "description", ""
+                                            ),
                                             "unit_cost": unit_cost,
                                             "quantity": quantity,
                                             "total_cost": best_cost
