@@ -30,8 +30,9 @@ ModelMeasure
 | insulation_material_density | Double | kg/m³ | 0.0 | 0 = use typical or EPD-derived value |
 | calculate_costs | Boolean | - | true | Enable cost calculation (RSMeans or custom) |
 | use_custom_costs | Boolean | - | false | If true, skip RSMeans and use custom cost inputs |
+| use_exact_costline_id | Boolean | - | false | If true, force RSMeans to use exact `exact_costline_id` |
+| exact_costline_id | String | - | "" | Exact RSMeans unit costline ID to use |
 | custom_cost_per_sf | Double | $/SF | 0.0 | Custom insulation material cost per square foot |
-| labor_cost_multiplier | Double | - | 1.0 | Multiplier applied to custom material cost to estimate labor |
 | overhead_profit_percent | Double | % | 10.0 | Overhead + profit applied to RSMeans material cost |
 
 ## Costing (RSMeans or Custom)

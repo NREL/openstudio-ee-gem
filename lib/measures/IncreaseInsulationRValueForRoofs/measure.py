@@ -178,6 +178,16 @@ class IncreaseInsulationRValueForRoofs(openstudio.measure.ModelMeasure):
         use_custom_costs.setDefaultValue(False)
         args.append(use_custom_costs)
 
+        use_exact_costline_id = openstudio.measure.OSArgument.makeBoolArgument("use_exact_costline_id", True)
+        use_exact_costline_id.setDisplayName("Use Exact RSMeans Costline ID")
+        use_exact_costline_id.setDefaultValue(False)
+        args.append(use_exact_costline_id)
+
+        exact_costline_id = openstudio.measure.OSArgument.makeStringArgument("exact_costline_id", True)
+        exact_costline_id.setDisplayName("Exact RSMeans Costline ID (used when exact-ID mode is enabled)")
+        exact_costline_id.setDefaultValue("")
+        args.append(exact_costline_id)
+
         custom_cost_per_sf = openstudio.measure.OSArgument.makeDoubleArgument("custom_cost_per_sf", True)
         custom_cost_per_sf.setDisplayName("Custom Insulation Cost ($/SF)")
         custom_cost_per_sf.setDefaultValue(0.0)
@@ -206,8 +216,12 @@ class IncreaseInsulationRValueForRoofs(openstudio.measure.ModelMeasure):
         insulation_material_density = runner.getDoubleArgumentValue("insulation_material_density", user_arguments)
         calculate_costs = runner.getBoolArgumentValue("calculate_costs", user_arguments)
         use_custom_costs = runner.getBoolArgumentValue("use_custom_costs", user_arguments)
+        use_exact_costline_id = runner.getBoolArgumentValue("use_exact_costline_id", user_arguments)
+        exact_costline_id = runner.getStringArgumentValue("exact_costline_id", user_arguments)
         custom_cost_per_sf = runner.getDoubleArgumentValue("custom_cost_per_sf", user_arguments)
         overhead_profit_percent = runner.getDoubleArgumentValue("overhead_profit_percent", user_arguments)
+
+        exact_costline_id = (exact_costline_id or "").strip()
         
         # Track if user provided explicit density value (non-zero means user-specified)
         user_specified_density = insulation_material_density > 0.0
@@ -227,6 +241,12 @@ class IncreaseInsulationRValueForRoofs(openstudio.measure.ModelMeasure):
             return False
         if insulation_material_density < 0.0:
             runner.registerError("Density of insulation material must be non-negative.")
+            return False
+        if use_custom_costs and use_exact_costline_id:
+            runner.registerError("Choose only one cost mode: custom cost OR exact RSMeans costline ID.")
+            return False
+        if use_exact_costline_id and not exact_costline_id:
+            runner.registerError("Exact RSMeans costline ID mode is enabled, but no costline ID was provided.")
             return False
 
         # Typical material k and density (same style as your wall measure)
@@ -811,6 +831,7 @@ class IncreaseInsulationRValueForRoofs(openstudio.measure.ModelMeasure):
                 "quantity_si": float(area_m2),
                 "unit_si": "m2",
                 "division_code": "07",
+                "rsmeans_id": exact_costline_id if use_exact_costline_id else None,
             })
 
         if rsmeans_materials:
@@ -904,6 +925,10 @@ class IncreaseInsulationRValueForRoofs(openstudio.measure.ModelMeasure):
                                     "Could not serialize RSMeans "
                                     "diagnostics to JSON."
                                 )
+                                if use_exact_costline_id:
+                                    runner.registerInfo(
+                                        f"RSMeans exact-ID mode enabled. Requested costline_id={exact_costline_id}"
+                                    )
                             if materials_results:
                                 runner.registerInfo("RSMeans materials detail:")
                                 for mat in materials_results:
@@ -942,6 +967,12 @@ class IncreaseInsulationRValueForRoofs(openstudio.measure.ModelMeasure):
         results.setFeature("roof_insulation_total_additional_overhead_profit_cost_$", total_overhead_profit_cost)
         results.setFeature("roof_insulation_total_cost_with_overhead_and_profit_$", total_material_cost + total_overhead_profit_cost)
         results.setFeature("roof_insulation_cost_source", cost_source)
+        results.setFeature(
+            "roof_insulation_rsmeans_selection_mode",
+            "exact_id" if use_exact_costline_id else ("custom_input" if use_custom_costs else "closest_match")
+        )
+        if use_exact_costline_id and exact_costline_id:
+            results.setFeature("roof_insulation_rsmeans_requested_costline_id", exact_costline_id)
         results.setFeature("roof_insulation_total_embodied_carbon_kgCO2eq", total_embodied_carbon)
 
         # Mirror key cost outputs on Facility AdditionalProperties for persistence/visibility
@@ -949,6 +980,12 @@ class IncreaseInsulationRValueForRoofs(openstudio.measure.ModelMeasure):
         facility.additionalProperties().setFeature("roof_insulation_total_additional_overhead_profit_cost_$", total_overhead_profit_cost)
         facility.additionalProperties().setFeature("roof_insulation_total_cost_with_overhead_and_profit_$", total_material_cost + total_overhead_profit_cost)
         facility.additionalProperties().setFeature("roof_insulation_cost_source", cost_source)
+        facility.additionalProperties().setFeature(
+            "roof_insulation_rsmeans_selection_mode",
+            "exact_id" if use_exact_costline_id else ("custom_input" if use_custom_costs else "closest_match")
+        )
+        if use_exact_costline_id and exact_costline_id:
+            facility.additionalProperties().setFeature("roof_insulation_rsmeans_requested_costline_id", exact_costline_id)
 
         # Emission factors aggregated from selected statistic lists
         if gwp_values["gwp_per_kg"]:
