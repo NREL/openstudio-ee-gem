@@ -67,6 +67,97 @@ class IncreaseInsulationRValueForRoofs(openstudio.measure.ModelMeasure):
             return f"{number:,.2f}"
         return f"{round(number):,}"
 
+    @staticmethod
+    def _collect_unmatched_rsmeans_materials(
+        requested_materials,
+        matched_materials,
+    ):
+        matched_names = {
+            str(material.get("name", "")).strip()
+            for material in matched_materials
+            if material.get("name")
+        }
+        unmatched_names = []
+        seen_names = set()
+
+        for material in requested_materials:
+            material_name = str(material.get("name", "")).strip()
+            if not material_name or material_name in matched_names:
+                continue
+            if material_name in seen_names:
+                continue
+            seen_names.add(material_name)
+            unmatched_names.append(material_name)
+
+        return unmatched_names
+
+    @staticmethod
+    def _register_rsmeans_resolution_error(
+        runner,
+        unresolved_materials,
+        use_exact_costline_id,
+        exact_costline_id,
+    ):
+        materials_text = "; ".join(unresolved_materials)
+
+        if use_exact_costline_id:
+            runner.registerError(
+                "RSMeans exact-ID mode could not validate the requested "
+                f"costline ID '{exact_costline_id}' for: {materials_text}. "
+                "Provide a valid `exact_costline_id`, or disable exact-ID "
+                "mode and rerun with `use_custom_costs` enabled and a "
+                "non-zero `custom_cost_per_sf`."
+            )
+            return
+
+        runner.registerError(
+            "RSMeans did not find a database match for: "
+            f"{materials_text}. Provide cost data by rerunning with either "
+            "`use_custom_costs` enabled and a non-zero `custom_cost_per_sf`, "
+            "or `use_exact_costline_id` enabled with a valid "
+            "`exact_costline_id`."
+        )
+
+    @staticmethod
+    def _detect_rsmeans_ambiguous_candidates(search_log):
+        """Scan the RSMeans search log for entries where 2+ candidates
+        share the top score, indicating an ambiguous auto-selection.
+
+        Returns a list of dicts, one per ambiguous lookup:
+          material          – original material name sent to RSMeans
+          matched_rsmeans_id  – the ID that was auto-selected
+          matched_description – description of the auto-selected item
+          search_term_used  – the search term that produced the match
+          tied_candidates   – sorted list of candidate dicts (score, desc)
+        """
+        ambiguous = []
+        for entry in search_log:
+            status = entry.get("status", "")
+            if "no_match" in status or "error" in status:
+                continue
+            candidates = entry.get("candidate_scores", [])
+            if len(candidates) < 2:
+                continue
+            sorted_cands = sorted(
+                candidates, key=lambda c: -c.get("score", 0.0)
+            )
+            top_score = sorted_cands[0].get("score", 0.0)
+            tied = [
+                c for c in sorted_cands
+                if c.get("score", 0.0) == top_score
+            ]
+            if len(tied) > 1:
+                ambiguous.append({
+                    "material": entry.get("material", ""),
+                    "matched_rsmeans_id": entry.get("rsmeans_id", ""),
+                    "matched_description": entry.get(
+                        "rsmeans_description", ""
+                    ),
+                    "search_term_used": entry.get("search_term", ""),
+                    "tied_candidates": tied,
+                })
+        return ambiguous
+
     def _generate_url_by_material_type(self, material_type):
         # Same mapping as your wall measure
         if material_type == "Blown Cellulose":
@@ -719,7 +810,7 @@ class IncreaseInsulationRValueForRoofs(openstudio.measure.ModelMeasure):
                 total_gwp = item["gwp_per_kg"] * added_mass_kg * mult
 
             gwp_summary_rows.append({
-                "construction_name": c.nameString(),
+                "construction_name": item["construction"].nameString(),
                 "orig_construction": item["orig_construction_name"],
                 "insulation_material_type": insulation_material_type,
                 "added_total_area_m2": area_m2,
@@ -887,6 +978,90 @@ class IncreaseInsulationRValueForRoofs(openstudio.measure.ModelMeasure):
                             search_log = rsmeans_lookup.get(
                                 "results", {}
                             ).get("search_log", [])
+                            unmatched_materials = self._collect_unmatched_rsmeans_materials(
+                                rsmeans_materials,
+                                materials_results,
+                            )
+                            exact_id_fallbacks = []
+                            if use_exact_costline_id:
+                                exact_id_fallbacks = sorted({
+                                    str(material.get("name", "")).strip()
+                                    for material in materials_results
+                                    if material.get("match_type") != "exact_id_match"
+                                    and material.get("name")
+                                })
+
+                            unresolved_materials = []
+                            for material_name in unmatched_materials + exact_id_fallbacks:
+                                if material_name and material_name not in unresolved_materials:
+                                    unresolved_materials.append(material_name)
+
+                            if unresolved_materials:
+                                for material_name in unmatched_materials:
+                                    runner.registerWarning(
+                                        "RSMeans did not find a catalog match for "
+                                        f"retrofit material '{material_name}'."
+                                    )
+                                if use_exact_costline_id:
+                                    for material_name in exact_id_fallbacks:
+                                        runner.registerWarning(
+                                            "RSMeans exact-ID mode did not return "
+                                            f"the requested costline ID '{exact_costline_id}' "
+                                            f"for '{material_name}'."
+                                        )
+                                self._register_rsmeans_resolution_error(
+                                    runner,
+                                    unresolved_materials,
+                                    use_exact_costline_id,
+                                    exact_costline_id,
+                                )
+                                return False
+
+                            # Ambiguity guard: halt when closest-match mode
+                            # auto-selected from tied candidates so the user
+                            # can confirm the right subdivision.
+                            if not use_exact_costline_id:
+                                ambiguous_matches = (
+                                    self
+                                    ._detect_rsmeans_ambiguous_candidates(
+                                        search_log
+                                    )
+                                )
+                                if ambiguous_matches:
+                                    for amb in ambiguous_matches:
+                                        tied = amb["tied_candidates"]
+                                        tied_descs = "; ".join(
+                                            f"'{c.get('description','?')}'" for c in tied[:6]
+                                        )
+                                        auto_id = amb["matched_rsmeans_id"]
+                                        auto_desc = amb["matched_description"]
+                                        runner.registerWarning(
+                                            f"RSMeans found "
+                                            f"{len(tied)} equally-scored candidates "
+                                            f"for '{amb['material']}' "
+                                            f"(search term: "
+                                            f"'{amb['search_term_used']}'). "
+                                            f"Auto-selected: "
+                                            f"'{auto_desc}' "
+                                            f"(ID: {auto_id}). "
+                                            f"All tied candidates: "
+                                            f"{tied_descs}."
+                                        )
+                                    runner.registerError(
+                                        "RSMeans auto-selection is ambiguous: "
+                                        "multiple candidates share the same "
+                                        "score for the requested insulation "
+                                        "material. Review the warnings above "
+                                        "and rerun with "
+                                        "`use_exact_costline_id=True` and "
+                                        "`exact_costline_id` set to the ID "
+                                        "shown for the desired entry. "
+                                        "Alternatively, set "
+                                        "`use_custom_costs=True` and provide "
+                                        "a `custom_cost_per_sf` value."
+                                    )
+                                    return False
+
                             rsmeans_diagnostics = {
                                 "materials": materials_results,
                                 "search_log": search_log,

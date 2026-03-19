@@ -120,6 +120,8 @@ def run_measure(model, args_overrides=None):
     # set_arg("insulation_material_type", "Extruded Polystyrene (XPS) Foam Board")
     # set_arg("insulation_material_type", "Mineral Wool Heavy Density Blanket")
     # set_arg("insulation_material_type", "Mineral Wool Light Density Blanket")
+    # set_arg("insulation_material_type", "Poured Loose-Fill Insulation")
+    # set_arg("insulation_material_type", "Roof Deck Insulation")
     set_arg("insulation_material_type", "Pure Wool Batts")
     set_arg("insulation_material_lifetime", 30)
     set_arg("insulation_thermal_conductivity", 0.0)   # 0 = use typical
@@ -200,6 +202,99 @@ def verify_additional_properties(model):
     return found
 
 
+def build_cost_response(ap_data):
+    """Build a JSON-friendly cost summary with explicit units."""
+    props = {prop_name: value for _, prop_name, value in ap_data}
+
+    cost_response = {
+        "cost_source": props.get("roof_insulation_cost_source"),
+        "selection_mode": props.get("roof_insulation_rsmeans_selection_mode"),
+        "material_cost": {
+            "value": props.get(
+                "roof_insulation_total_additional_material_cost_$"
+            ),
+            "unit": "$",
+        },
+        "overhead_profit_cost": {
+            "value": props.get(
+                "roof_insulation_total_additional_overhead_profit_cost_$"
+            ),
+            "unit": "$",
+        },
+        "total_cost_with_overhead_and_profit": {
+            "value": props.get(
+                "roof_insulation_total_cost_with_overhead_and_profit_$"
+            ),
+            "unit": "$",
+        },
+        "materials": [],
+    }
+
+    matches_json = props.get("roof_insulation_rsmeans_matches_json")
+    if matches_json:
+        try:
+            matches = json.loads(matches_json)
+            for material in matches.get("materials", []):
+                unit = material.get("unit")
+                unit_cost_unit = f"$/ {unit}" if unit else "$ / unit"
+                cost_response["materials"].append({
+                    "name": material.get("name"),
+                    "description": material.get("description"),
+                    "match_type": material.get("match_type"),
+                    "rsmeans_id": material.get("rsmeans_id"),
+                    "catalog": material.get("catalog"),
+                    "search_term_used": material.get("search_term_used"),
+                    "quantity": {
+                        "value": material.get("quantity"),
+                        "unit": unit,
+                    },
+                    "unit_cost": {
+                        "value": material.get("unit_cost"),
+                        "unit": unit_cost_unit,
+                    },
+                    "total_cost": {
+                        "value": material.get("total_cost"),
+                        "unit": "$",
+                    },
+                })
+        except json.JSONDecodeError:
+            cost_response["materials_parse_error"] = (
+                "Could not parse roof_insulation_rsmeans_matches_json"
+            )
+
+    if not cost_response["materials"]:
+        retrofit_materials_json = props.get(
+            "roof_insulation_retrofit_materials_json"
+        )
+        if retrofit_materials_json:
+            try:
+                retrofit_materials = json.loads(retrofit_materials_json)
+                for material in retrofit_materials:
+                    unit = material.get("unit")
+                    cost_response["materials"].append({
+                        "name": material.get("name"),
+                        "description": material.get("description"),
+                        "quantity": {
+                            "value": material.get("quantity"),
+                            "unit": unit,
+                        },
+                        "unit_cost": {
+                            "value": None,
+                            "unit": f"$/ {unit}" if unit else "$ / unit",
+                        },
+                        "total_cost": {
+                            "value": None,
+                            "unit": "$",
+                        },
+                    })
+            except json.JSONDecodeError:
+                cost_response["materials_parse_error"] = (
+                    "Could not parse roof_insulation_retrofit_materials_json"
+                )
+
+    return cost_response
+
+
 def main():
     print("=" * 80)
     print("IncreaseInsulationRValueForRoofs – apply_measure.py")
@@ -268,6 +363,32 @@ def main():
         for k, v in step_values.items():
             print(f"  {k}: {v}")
 
+    if not success:
+        print("\n" + "=" * 80)
+        print("HALTING OUTPUT SAVE")
+        print("=" * 80)
+        print(
+            "Measure reported failure. The modified model will not be saved. "
+            "Update the cost inputs and rerun."
+        )
+
+        results = {
+            "measure": "IncreaseInsulationRValueForRoofs",
+            "success": success,
+            "step_values": step_values,
+            "cost_response": None,
+            "additional_properties_count": 0,
+            "additional_properties_sample": [],
+        }
+        with open(results_json_path, "w") as f:
+            json.dump(results, f, indent=2)
+        print(f"  Failure summary JSON saved to: {results_json_path}")
+
+        print("\n" + "=" * 80)
+        print("FAILURE: Measure did not complete successfully.")
+        print("=" * 80 + "\n")
+        return 1
+
     # Verify AdditionalProperties
     print("\n" + "=" * 80)
     print("VERIFYING SEPARATE ADDITIONAL PROPERTIES")
@@ -294,6 +415,7 @@ def main():
         "measure": "IncreaseInsulationRValueForRoofs",
         "success": success,
         "step_values": step_values,
+        "cost_response": build_cost_response(ap_data),
         "additional_properties_count": len(ap_data),
         "additional_properties_sample": [
             {"construction": c, "property": p, "value": v}

@@ -37,7 +37,7 @@ OS:Building,
   ,                                       !- North Axis {deg}
   ,                                       !- Nominal Floor to Floor Height {m}
   {2d524ba6-938a-4aa5-a16a-60a01316a593}, !- Space Type Name
-  {ab19c2bb-f968-499b-afef-91e3fbdea967}, !- Default Construction Set Name
+  {a973c97c-9ad6-42a8-ac3a-dc65c22aa294}, !- Default Construction Set Name
   ,                                       !- Default Schedule Set Name
   ,                                       !- Standards Number of Stories
   ,                                       !- Standards Number of Above Ground Stories
@@ -391,7 +391,7 @@ OS:Surface,
   {323c4460-98ac-4fd9-9f59-ba67420e3ceb}, !- Handle
   West Perimeter Space - Story ground RoofCeiling 1, !- Name
   RoofCeiling,                            !- Surface Type
-  {23185115-38f4-4e7a-b15c-40dc960db7eb}, !- Construction Name
+  {21aa87f2-b449-463f-903f-ff6ada792e1a}, !- Construction Name
   {83c4e9ff-5637-4707-a2aa-6eb7c30581ba}, !- Space Name
   Outdoors,                               !- Outside Boundary Condition
   ,                                       !- Outside Boundary Condition Object
@@ -609,7 +609,7 @@ OS:Surface,
   {31e00403-4a5d-4c06-9bcd-9a02873b0c9e}, !- Handle
   North Perimeter Space - Story ground RoofCeiling 1, !- Name
   RoofCeiling,                            !- Surface Type
-  {23185115-38f4-4e7a-b15c-40dc960db7eb}, !- Construction Name
+  {21aa87f2-b449-463f-903f-ff6ada792e1a}, !- Construction Name
   {7ab78f69-8037-4dad-8269-74931fa47239}, !- Space Name
   Outdoors,                               !- Outside Boundary Condition
   ,                                       !- Outside Boundary Condition Object
@@ -827,7 +827,7 @@ OS:Surface,
   {bf9e1a0c-d38c-4c8c-af59-f356483bca16}, !- Handle
   East Perimeter Space - Story ground RoofCeiling 1, !- Name
   RoofCeiling,                            !- Surface Type
-  {23185115-38f4-4e7a-b15c-40dc960db7eb}, !- Construction Name
+  {21aa87f2-b449-463f-903f-ff6ada792e1a}, !- Construction Name
   {a3ca5320-0a29-4714-8f5f-7d98e8d34c42}, !- Space Name
   Outdoors,                               !- Outside Boundary Condition
   ,                                       !- Outside Boundary Condition Object
@@ -1045,7 +1045,7 @@ OS:Surface,
   {3bcbc92b-a916-491d-a1b3-a0c6938c632a}, !- Handle
   South Perimeter Space - Story ground RoofCeiling 1, !- Name
   RoofCeiling,                            !- Surface Type
-  {23185115-38f4-4e7a-b15c-40dc960db7eb}, !- Construction Name
+  {21aa87f2-b449-463f-903f-ff6ada792e1a}, !- Construction Name
   {8424b6ea-bb22-4725-a328-ecb7c3005a8f}, !- Space Name
   Outdoors,                               !- Outside Boundary Condition
   ,                                       !- Outside Boundary Condition Object
@@ -1263,7 +1263,7 @@ OS:Surface,
   {45276f21-8c1b-4d65-a66d-17abf7ad3e6e}, !- Handle
   Core Space - Story ground RoofCeiling 1, !- Name
   RoofCeiling,                            !- Surface Type
-  {23185115-38f4-4e7a-b15c-40dc960db7eb}, !- Construction Name
+  {21aa87f2-b449-463f-903f-ff6ada792e1a}, !- Construction Name
   {5e2c7e8f-383a-43c9-b38f-be5bbf0c0a1a}, !- Space Name
   Outdoors,                               !- Outside Boundary Condition
   ,                                       !- Outside Boundary Condition Object
@@ -7255,21 +7255,21 @@ OS:WeatherFile,
   Sunday;                                 !- Start Day of Week
 
 OS:Construction,
-  {23185115-38f4-4e7a-b15c-40dc960db7eb}, !- Handle
+  {21aa87f2-b449-463f-903f-ff6ada792e1a}, !- Handle
   Typical IEAD Roof R-15.87 adj roof insulation, !- Name
   ,                                       !- Surface Rendering Name
   {72454668-6251-46de-93d0-6b6855fe3e3f}, !- Layer 1
-  {238a296d-bb5a-498b-b9ef-3773de99692d}, !- Layer 2
+  {b42e07ad-9509-462e-a9ff-b59425fe36ad}, !- Layer 2
   {8287a39d-10ab-4ef2-a655-e7c5e4656897}; !- Layer 3
 
 OS:StandardsInformation:Construction,
-  {69b93948-24d2-4713-8eb5-698498e1ef46}, !- Handle
-  {23185115-38f4-4e7a-b15c-40dc960db7eb}, !- Construction Name
+  {b0c9db05-a648-422c-aafa-8d57ab495432}, !- Handle
+  {21aa87f2-b449-463f-903f-ff6ada792e1a}, !- Construction Name
   ExteriorRoof,                           !- Intended Surface Type
   IEAD;                                   !- Standards Construction Type
 
 OS:Material:NoMass,
-  {238a296d-bb5a-498b-b9ef-3773de99692d}, !- Handle
+  {b42e07ad-9509-462e-a9ff-b59425fe36ad}, !- Handle
   Typical Insulation R-14.76_R-value 30.0 (ft^2*h*R/Btu), !- Name
   Smooth,                                 !- Roughness
   5.28330551046918,                       !- Thermal Resistance {m2-K/W}
@@ -7278,13 +7278,13 @@ OS:Material:NoMass,
   0.7;                                    !- Visible Absorptance
 
 OS:StandardsInformation:Material,
-  {bd46bd0e-bf23-4dc7-af1a-a77582812991}, !- Handle
-  {238a296d-bb5a-498b-b9ef-3773de99692d}; !- Material Name
+  {6b69af97-2cc4-417a-a09b-399cfab04250}, !- Handle
+  {b42e07ad-9509-462e-a9ff-b59425fe36ad}; !- Material Name
 
 OS:DefaultConstructionSet,
-  {ab19c2bb-f968-499b-afef-91e3fbdea967}, !- Handle
+  {a973c97c-9ad6-42a8-ac3a-dc65c22aa294}, !- Handle
   90.1-2004 - Office - ASHRAE 169-2013-5B adj roof insulation, !- Name
-  {e55426df-b4f6-45a7-8fde-fa6f436e5d9f}, !- Default Exterior Surface Constructions Name
+  {754f01d0-9d44-4861-a77a-49cd66a42fa1}, !- Default Exterior Surface Constructions Name
   {2d004610-bf7d-4e70-88dd-06f90080fc75}, !- Default Interior Surface Constructions Name
   {2508ebc9-5fea-4b19-a538-abb8c410fea0}, !- Default Ground Contact Surface Constructions Name
   {65e4fb96-c51c-404c-9285-4e455d0361a0}, !- Default Exterior SubSurface Constructions Name
@@ -7296,18 +7296,18 @@ OS:DefaultConstructionSet,
   ;                                       !- Adiabatic Surface Construction Name
 
 OS:DefaultSurfaceConstructions,
-  {e55426df-b4f6-45a7-8fde-fa6f436e5d9f}, !- Handle
+  {754f01d0-9d44-4861-a77a-49cd66a42fa1}, !- Handle
   Default Surface Constructions 1 adj roof insulation, !- Name
   {b898be60-183c-41ca-8d10-7d2d36a2049e}, !- Floor Construction Name
   {571d5e7f-3517-4d08-a9af-f1575fa38b55}, !- Wall Construction Name
-  {23185115-38f4-4e7a-b15c-40dc960db7eb}; !- Roof Ceiling Construction Name
+  {21aa87f2-b449-463f-903f-ff6ada792e1a}; !- Roof Ceiling Construction Name
 
 OS:AdditionalProperties,
-  {aca053f0-4219-4e8d-b011-9828ab14a0e5}, !- Handle
-  {23185115-38f4-4e7a-b15c-40dc960db7eb}; !- Object Name
+  {e0cff726-165a-42d2-9019-ddea47d12ff9}, !- Handle
+  {21aa87f2-b449-463f-903f-ff6ada792e1a}; !- Object Name
 
 OS:AdditionalProperties,
-  {305538e1-3ff2-4857-9501-386f4d4c9dd9}, !- Handle
+  {d2e741ee-a0e5-4193-85bf-60f2907a55cf}, !- Handle
   {272d9a4d-ec25-4bbb-b083-822aef42268c}, !- Object Name
   roof_target_insulation_r_value_ip,      !- Feature Name 1
   Double,                                 !- Feature Data Type 1
@@ -7320,63 +7320,75 @@ OS:AdditionalProperties,
   464.51519999999874;                     !- Feature Value 3
 
 OS:AdditionalProperties,
-  {3024c8b3-0642-4677-9065-a1452a87dc89}, !- Handle
+  {7034ff62-327d-4714-bb32-b07a83e72473}, !- Handle
   {fabc41a8-018f-4730-a73a-b7ae2e5ab091}, !- Object Name
   roof_insulation_retrofit_materials_json, !- Feature Name 1
   String,                                 !- Feature Data Type 1
-  [{"name": "Pure Wool Batts roof insulation"&#44 "description": "Added insulation to reach R-30.0&#59 avg added thickness 4.23 in"&#44 "quantity": 4999.999999999986&#44 "unit": "SF"&#44 "quantity_si": 464.51519999999874&#44 "unit_si": "m2"&#44 "division_code": "07"}], !- Feature Value 1
+  [{"name": "Pure Wool Batts roof insulation (Typical IEAD Roof R-15.87)"&#44 "description": "Added insulation to reach R-30.0&#59 actual added thickness 4.23 in"&#44 "quantity": 4999.999999999986&#44 "unit": "SF"&#44 "quantity_si": 464.51519999999874&#44 "unit_si": "m2"&#44 "division_code": "07"&#44 "rsmeans_id": "072126100020"}], !- Feature Value 1
   roof_insulation_rsmeans_matches_json,   !- Feature Name 2
   String,                                 !- Feature Data Type 2
-  {"materials": [{"name": "Pure Wool Batts roof insulation"&#44 "description": "Added insulation to reach R-30.0&#59 avg added thickness 4.23 in"&#44 "quantity": 4999.999999999986&#44 "unit": "SF"&#44 "quantity_si": 464.51519999999874&#44 "unit_si": "m2"&#44 "division_code": "07"&#44 "catalog": "bc-mf"&#44 "search_term_used": "Pure Wool Batts roof insulation"&#44 "unit_cost": 2.23&#44 "total_cost": 11149.999999999969&#44 "rsmeans_id": "072116201320"&#44 "rsmeans_description": "Blanket insulation&#44 for walls or ceilings&#44 mineral wool batts&#44 3-1/2\" thick&#44 R15"&#44 "match_type": "closest_match"}]&#44 "search_log": [{"material": "Pure Wool Batts roof insulation"&#44 "search_term": "Pure Wool Batts roof insulation"&#44 "catalog": "bc-mf"&#44 "division": "07"&#44 "status": "match_found"&#44 "candidates_considered": 3&#44 "rsmeans_id": "072116201320"&#44 "rsmeans_description": "Blanket insulation&#44 for walls or ceilings&#44 mineral wool batts&#44 3-1/2\" thick&#44 R15"&#44 "unit_cost": 2.23&#44 "quantity": 4999.999999999986&#44 "total_cost": 11149.999999999969}]&#44 "summary": {"release_id": "2024-an"&#44 "location_id": "us-us-national"&#44 "labor_type": "std"&#44 "measurement_system": "imp"&#44 "catalogs_searched": ["bc-mf"&#44 "gb-mf"&#44 "rp-mf"]}}, !- Feature Value 2
+  {"materials": [{"name": "Pure Wool Batts roof insulation (Typical IEAD Roof R-15.87)"&#44 "description": "Added insulation to reach R-30.0&#59 actual added thickness 4.23 in"&#44 "quantity": 4999.999999999986&#44 "unit": "SF"&#44 "quantity_si": 464.51519999999874&#44 "unit_si": "m2"&#44 "division_code": "07"&#44 "rsmeans_id": "072126100020"&#44 "catalog": "bc-mf"&#44 "search_term_used": "rsmeans_id:072126100020"&#44 "unit_cost": 0.73&#44 "total_cost": 3649.99999999999&#44 "rsmeans_description": "Blown-in insulation&#44 ceilings&#44 with open access&#44 cellulose&#44 3-1/2\" thick&#44 R13"&#44 "match_type": "exact_id_match"}]&#44 "search_log": [{"material": "Pure Wool Batts roof insulation (Typical IEAD Roof R-15.87)"&#44 "search_term": "072126100020"&#44 "catalog": "bc-mf"&#44 "division": "07"&#44 "status": "exact_id_match"&#44 "unit_cost": 0.73&#44 "quantity": 4999.999999999986&#44 "total_cost": 3649.99999999999}]&#44 "summary": {"release_id": "2024-an"&#44 "location_id": "us-us-national"&#44 "labor_type": "std"&#44 "measurement_system": "imp"&#44 "catalogs_searched": ["bc-mf"&#44 "gb-mf"&#44 "rp-mf"]}}, !- Feature Value 2
   roof_insulation_total_additional_material_cost_$, !- Feature Name 3
   Double,                                 !- Feature Data Type 3
-  11149.999999999969,                     !- Feature Value 3
+  3649.99999999999,                       !- Feature Value 3
   roof_insulation_total_additional_overhead_profit_cost_$, !- Feature Name 4
   Double,                                 !- Feature Data Type 4
-  1114.999999999997,                      !- Feature Value 4
+  364.99999999999903,                     !- Feature Value 4
   roof_insulation_total_cost_with_overhead_and_profit_$, !- Feature Name 5
   Double,                                 !- Feature Data Type 5
-  12264.999999999965,                     !- Feature Value 5
+  4014.9999999999891,                     !- Feature Value 5
   roof_insulation_cost_source,            !- Feature Name 6
   String,                                 !- Feature Data Type 6
   rsmeans_api,                            !- Feature Value 6
-  roof_insulation_material_gwp_per_kg,    !- Feature Name 7
-  Double,                                 !- Feature Data Type 7
-  2.6379137410000002,                     !- Feature Value 7
-  roof_insulation_material_gwp_per_m2,    !- Feature Name 8
-  Double,                                 !- Feature Data Type 8
-  2.6299999999999999;                     !- Feature Value 8
+  roof_insulation_rsmeans_selection_mode, !- Feature Name 7
+  String,                                 !- Feature Data Type 7
+  exact_id,                               !- Feature Value 7
+  roof_insulation_rsmeans_requested_costline_id, !- Feature Name 8
+  String,                                 !- Feature Data Type 8
+  072126100020,                           !- Feature Value 8
+  roof_insulation_material_gwp_per_kg,    !- Feature Name 9
+  Double,                                 !- Feature Data Type 9
+  2.6379137410000002,                     !- Feature Value 9
+  roof_insulation_material_gwp_per_m2,    !- Feature Name 10
+  Double,                                 !- Feature Data Type 10
+  2.6299999999999999;                     !- Feature Value 10
 
 OS:AdditionalProperties,
-  {d4e27036-c120-4fc2-bd72-bc1d346b2592}, !- Handle
+  {f30c58bf-d885-4606-ae6a-aaba4be0f6d3}, !- Handle
   {c0b51378-f9a5-4264-951f-3845cfc487fd}, !- Object Name
   roof_insulation_retrofit_materials_json, !- Feature Name 1
   String,                                 !- Feature Data Type 1
-  [{"name": "Pure Wool Batts roof insulation"&#44 "description": "Added insulation to reach R-30.0&#59 avg added thickness 4.23 in"&#44 "quantity": 4999.999999999986&#44 "unit": "SF"&#44 "quantity_si": 464.51519999999874&#44 "unit_si": "m2"&#44 "division_code": "07"}], !- Feature Value 1
+  [{"name": "Pure Wool Batts roof insulation (Typical IEAD Roof R-15.87)"&#44 "description": "Added insulation to reach R-30.0&#59 actual added thickness 4.23 in"&#44 "quantity": 4999.999999999986&#44 "unit": "SF"&#44 "quantity_si": 464.51519999999874&#44 "unit_si": "m2"&#44 "division_code": "07"&#44 "rsmeans_id": "072126100020"}], !- Feature Value 1
   roof_insulation_rsmeans_matches_json,   !- Feature Name 2
   String,                                 !- Feature Data Type 2
-  {"materials": [{"name": "Pure Wool Batts roof insulation"&#44 "description": "Added insulation to reach R-30.0&#59 avg added thickness 4.23 in"&#44 "quantity": 4999.999999999986&#44 "unit": "SF"&#44 "quantity_si": 464.51519999999874&#44 "unit_si": "m2"&#44 "division_code": "07"&#44 "catalog": "bc-mf"&#44 "search_term_used": "Pure Wool Batts roof insulation"&#44 "unit_cost": 2.23&#44 "total_cost": 11149.999999999969&#44 "rsmeans_id": "072116201320"&#44 "rsmeans_description": "Blanket insulation&#44 for walls or ceilings&#44 mineral wool batts&#44 3-1/2\" thick&#44 R15"&#44 "match_type": "closest_match"}]&#44 "search_log": [{"material": "Pure Wool Batts roof insulation"&#44 "search_term": "Pure Wool Batts roof insulation"&#44 "catalog": "bc-mf"&#44 "division": "07"&#44 "status": "match_found"&#44 "candidates_considered": 3&#44 "rsmeans_id": "072116201320"&#44 "rsmeans_description": "Blanket insulation&#44 for walls or ceilings&#44 mineral wool batts&#44 3-1/2\" thick&#44 R15"&#44 "unit_cost": 2.23&#44 "quantity": 4999.999999999986&#44 "total_cost": 11149.999999999969}]&#44 "summary": {"release_id": "2024-an"&#44 "location_id": "us-us-national"&#44 "labor_type": "std"&#44 "measurement_system": "imp"&#44 "catalogs_searched": ["bc-mf"&#44 "gb-mf"&#44 "rp-mf"]}}, !- Feature Value 2
+  {"materials": [{"name": "Pure Wool Batts roof insulation (Typical IEAD Roof R-15.87)"&#44 "description": "Added insulation to reach R-30.0&#59 actual added thickness 4.23 in"&#44 "quantity": 4999.999999999986&#44 "unit": "SF"&#44 "quantity_si": 464.51519999999874&#44 "unit_si": "m2"&#44 "division_code": "07"&#44 "rsmeans_id": "072126100020"&#44 "catalog": "bc-mf"&#44 "search_term_used": "rsmeans_id:072126100020"&#44 "unit_cost": 0.73&#44 "total_cost": 3649.99999999999&#44 "rsmeans_description": "Blown-in insulation&#44 ceilings&#44 with open access&#44 cellulose&#44 3-1/2\" thick&#44 R13"&#44 "match_type": "exact_id_match"}]&#44 "search_log": [{"material": "Pure Wool Batts roof insulation (Typical IEAD Roof R-15.87)"&#44 "search_term": "072126100020"&#44 "catalog": "bc-mf"&#44 "division": "07"&#44 "status": "exact_id_match"&#44 "unit_cost": 0.73&#44 "quantity": 4999.999999999986&#44 "total_cost": 3649.99999999999}]&#44 "summary": {"release_id": "2024-an"&#44 "location_id": "us-us-national"&#44 "labor_type": "std"&#44 "measurement_system": "imp"&#44 "catalogs_searched": ["bc-mf"&#44 "gb-mf"&#44 "rp-mf"]}}, !- Feature Value 2
   roof_insulation_total_additional_embodied_carbon_kg, !- Feature Name 3
   Double,                                 !- Feature Data Type 3
   3287.024536230414,                      !- Feature Value 3
   roof_insulation_total_additional_material_cost_$, !- Feature Name 4
   Double,                                 !- Feature Data Type 4
-  11149.999999999969,                     !- Feature Value 4
+  3649.99999999999,                       !- Feature Value 4
   roof_insulation_total_additional_overhead_profit_cost_$, !- Feature Name 5
   Double,                                 !- Feature Data Type 5
-  1114.999999999997,                      !- Feature Value 5
+  364.99999999999903,                     !- Feature Value 5
   roof_insulation_total_cost_with_overhead_and_profit_$, !- Feature Name 6
   Double,                                 !- Feature Data Type 6
-  12264.999999999965,                     !- Feature Value 6
+  4014.9999999999891,                     !- Feature Value 6
   roof_insulation_cost_source,            !- Feature Name 7
   String,                                 !- Feature Data Type 7
   rsmeans_api,                            !- Feature Value 7
-  roof_insulation_total_embodied_carbon_kgCO2eq, !- Feature Name 8
-  Double,                                 !- Feature Data Type 8
-  3287.024536230414;                      !- Feature Value 8
+  roof_insulation_rsmeans_selection_mode, !- Feature Name 8
+  String,                                 !- Feature Data Type 8
+  exact_id,                               !- Feature Value 8
+  roof_insulation_rsmeans_requested_costline_id, !- Feature Name 9
+  String,                                 !- Feature Data Type 9
+  072126100020,                           !- Feature Value 9
+  roof_insulation_total_embodied_carbon_kgCO2eq, !- Feature Name 10
+  Double,                                 !- Feature Data Type 10
+  3287.024536230414;                      !- Feature Value 10
 
 OS:AdditionalProperties,
-  {2185c573-4371-4e97-93f7-5b002a0db98e}, !- Handle
+  {be86029e-fdbb-4098-bfa4-c4ad55112a77}, !- Handle
   {1caa628a-3341-4dc5-9562-7eeadd446702}, !- Object Name
   roof_insulation_material_lifetime_years, !- Feature Name 1
   Integer,                                !- Feature Data Type 1
