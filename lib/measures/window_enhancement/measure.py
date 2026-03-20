@@ -380,7 +380,7 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
         gap_thickness = openstudio.measure.OSArgument.makeDoubleArgument("gap_thickness", True)
         gap_thickness.setDisplayName("Gap Thickness Between Glass Panes (m)")
         gap_thickness.setDescription(
-            "Thickness of the air/gas gap between glass panes in meters. This is used when creating new "
+            "Thickness of the air/gas gap between glass panes in meters. Enter 0.0 to use default value. This is used when creating new "
             "multi-pane window constructions. Default value is 0.013 m (13 mm), which is typical for double "
             "and triple pane windows. Sources: ISO 10077-1:2017 'Thermal performance of windows, doors and "
             "shutters' specifies 12-16 mm optimal air gap spacing. Curcija, D., et al. (2018) 'WINDOW "
@@ -562,6 +562,9 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
         # wind_speed_squared_coefficient = runner.getDoubleArgumentValue('wind_speed_squared_coefficient', user_arguments)
         # for EC calculation
         caulking_thickness = runner.getDoubleArgumentValue("caulking_thickness", user_arguments)
+        if caulking_thickness == 0.0:
+            caulking_thickness = 0.008
+            runner.registerInfo("Argument 'caulking_thickness' set to 0.0, using default value 0.008 m.")
         gwp_statistic = runner.getStringArgumentValue("gwp_statistic", user_arguments)
         wf_option = runner.getStringArgumentValue("wf_option", user_arguments)
         caulking_option = runner.getStringArgumentValue("caulking_option", user_arguments)
@@ -588,6 +591,12 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
         user_num_panes = runner.getIntegerArgumentValue("user_num_panes", user_arguments)
         glass_pane_thickness = runner.getDoubleArgumentValue("glass_pane_thickness", user_arguments)
         gap_thickness = runner.getDoubleArgumentValue("gap_thickness", user_arguments)
+        if glass_pane_thickness == 0.0:
+            glass_pane_thickness = 0.003
+            runner.registerInfo("Argument 'glass_pane_thickness' set to 0.0, using default value 0.003 m.")
+        if gap_thickness == 0.0:
+            gap_thickness = 0.013
+            runner.registerInfo("Argument 'gap_thickness' set to 0.0, using default value 0.013 m.")
         glass_solar_transmittance = runner.getDoubleArgumentValue(
             "glass_solar_transmittance", user_arguments)
         glass_visible_transmittance = runner.getDoubleArgumentValue(
@@ -603,6 +612,9 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
         glass_back_visible_reflectance = runner.getDoubleArgumentValue(
             "glass_back_visible_reflectance", user_arguments)
         length_per_unit = runner.getDoubleArgumentValue("length_per_unit", user_arguments)
+        if length_per_unit == 0.0:
+            length_per_unit = 5.1816
+            runner.registerInfo("Argument 'length_per_unit' set to 0.0, using default value 5.1816 m.")
         num_horizontal_dividers = runner.getIntegerArgumentValue("num_horizontal_dividers", user_arguments)
         num_vertical_dividers = runner.getIntegerArgumentValue("num_vertical_dividers", user_arguments)
 

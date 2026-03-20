@@ -336,6 +336,9 @@ class DoorEnhancement(openstudio.measure.ModelMeasure):
             door_lifetime = default_lifetime
         api_key = runner.getStringArgumentValue("api_key", user_arguments)
         door_area_per_unit = runner.getDoubleArgumentValue("door_area_per_unit", user_arguments)
+        if door_area_per_unit == 0.0:
+            door_area_per_unit = 1.95
+            runner.registerInfo("Argument 'door_area_per_unit' set to 0.0, using default value 1.95 m2.")
         door_thermal_conductivity = runner.getDoubleArgumentValue("door_thermal_conductivity", user_arguments)
         door_density = runner.getDoubleArgumentValue("door_density", user_arguments)
         door_thickness = runner.getDoubleArgumentValue("door_thickness", user_arguments)
