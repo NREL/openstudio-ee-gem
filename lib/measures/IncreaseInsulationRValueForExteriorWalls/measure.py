@@ -483,8 +483,10 @@ class IncreaseInsulationRValueForExteriorWalls(openstudio.measure.ModelMeasure):
 
             # Calculate total GWP for this added insulation
             total_gwp = item['gwp_per_m3'] * (total_area_m2*added_thickness_m) * multiplier
-            if total_gwp == 0.0 and item["gwp_per_kg"] != 0.0:
+            if (not np.isfinite(total_gwp) or total_gwp == 0.0) and item["gwp_per_kg"] != 0.0:
                 total_gwp = item["gwp_per_kg"] * (insulation_material_density * total_area_m2 * added_thickness_m) * multiplier
+            if not np.isfinite(total_gwp):
+                total_gwp = 0.0
 
             # Store result in summary table
             gwp_summary.append({

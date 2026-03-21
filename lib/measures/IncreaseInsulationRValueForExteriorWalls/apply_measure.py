@@ -94,7 +94,7 @@ def run_measure(model, args_overrides=None):
     set_arg("analysis_period", 30)                    # years
     set_arg("gwp_statistic", "median")
     set_arg("api_key", API_TOKEN)
-    set_arg("insulation_material_type", "Fiberglass Batts")
+    set_arg("insulation_material_type", "Expanded Polystyrene (EPS) Foam Board")
     set_arg("insulation_material_lifetime", 30)
     set_arg("insulation_thermal_conductivity", 0.0)   # 0 = use typical
     set_arg("insulation_material_density", 0.0)       # 0 = use typical
