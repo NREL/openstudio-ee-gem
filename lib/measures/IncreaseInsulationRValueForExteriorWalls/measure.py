@@ -143,6 +143,18 @@ class IncreaseInsulationRValueForExteriorWalls(openstudio.measure.ModelMeasure):
         overhead_profit_percent.setDefaultValue(10.0)
         args.append(overhead_profit_percent)
 
+        use_exact_costline_id = openstudio.measure.OSArgument.makeBoolArgument("use_exact_costline_id", True)
+        use_exact_costline_id.setDisplayName("Use Exact RSMeans Costline ID")
+        use_exact_costline_id.setDescription("If true, use exact_costline_id for deterministic RSMeans selection.")
+        use_exact_costline_id.setDefaultValue(False)
+        args.append(use_exact_costline_id)
+
+        exact_costline_id = openstudio.measure.OSArgument.makeStringArgument("exact_costline_id", True)
+        exact_costline_id.setDisplayName("Exact RSMeans Costline ID")
+        exact_costline_id.setDescription("Optional explicit RSMeans ID, for example 072216101700")
+        exact_costline_id.setDefaultValue("")
+        args.append(exact_costline_id)
+
         return args
 
     def generate_url_by_material_type(self, material_type):
@@ -219,6 +231,12 @@ class IncreaseInsulationRValueForExteriorWalls(openstudio.measure.ModelMeasure):
         use_custom_costs = runner.getBoolArgumentValue("use_custom_costs", user_arguments)
         custom_cost_per_sf = runner.getDoubleArgumentValue("custom_cost_per_sf", user_arguments)
         overhead_profit_percent = runner.getDoubleArgumentValue("overhead_profit_percent", user_arguments)
+        use_exact_costline_id = runner.getBoolArgumentValue("use_exact_costline_id", user_arguments)
+        exact_costline_id = runner.getStringArgumentValue("exact_costline_id", user_arguments).strip()
+
+        if use_exact_costline_id and not exact_costline_id:
+            runner.registerError("use_exact_costline_id is enabled, but exact_costline_id is empty.")
+            return False
 
         # Check if numeric values are reasonable
         # if analysis_period <= 0:
@@ -613,17 +631,25 @@ class IncreaseInsulationRValueForExteriorWalls(openstudio.measure.ModelMeasure):
         rsmeans_materials = []
         if total_wall_area > 0.0:
             total_wall_area_ft2 = self._unit_convert(total_wall_area, "m^2", "ft^2")
+            total_added_volume_ft3 = self._unit_convert(total_added_volume_m3, "m^3", "ft^3") if total_added_volume_m3 > 0 else 0.0
             avg_added_thickness_m = (total_added_volume_m3 / total_wall_area) if total_wall_area > 0 else 0.0
             avg_added_thickness_in = self._unit_convert(avg_added_thickness_m, "m", "in") if avg_added_thickness_m > 0 else 0.0
-            rsmeans_materials.append({
+            material_entry = {
                 "name": f"{insulation_material_type} insulation",
                 "description": f"Added insulation to reach R-{r_value_ip}; avg added thickness {avg_added_thickness_in:.2f} in",
                 "quantity": float(total_wall_area_ft2),
                 "unit": "SF",
+                "quantity_volume": float(total_added_volume_ft3),
+                "unit_volume": "CF",
+                "rsmeans_thickness_ft": float(avg_added_thickness_m) * 3.28084 if avg_added_thickness_m > 0 else 0.0,
+                "costing_mode": "volume_from_area",
                 "quantity_si": float(total_wall_area),
                 "unit_si": "m2",
                 "division_code": "07",
-            })
+            }
+            if use_exact_costline_id:
+                material_entry["rsmeans_id"] = exact_costline_id
+            rsmeans_materials.append(material_entry)
 
         if rsmeans_materials:
             try:
@@ -683,9 +709,10 @@ class IncreaseInsulationRValueForExteriorWalls(openstudio.measure.ModelMeasure):
                                     mat_div = mat.get("division_code", "")
                                     mat_unit_cost = mat.get("unit_cost", 0.0)
                                     mat_total_cost = mat.get("total_cost", 0.0)
+                                    mat_unit_basis = mat.get("unit_cost_basis", mat.get("unit", ""))
                                     runner.registerInfo(
                                         f"  - {mat_name} | {mat_desc} | {mat_qty} {mat_unit} | "
-                                        f"division {mat_div} | unit=${mat_unit_cost:.2f} | total=${mat_total_cost:,.2f}"
+                                        f"division {mat_div} | unit=${mat_unit_cost:.2f}/{mat_unit_basis} | total=${mat_total_cost:,.2f}"
                                     )
                             runner.registerInfo(
                                 f"RSMeans cost summary: materials={len(materials_results)}, "

@@ -108,6 +108,8 @@ def run_measure(model, args_overrides=None):
     set_arg("insulation_material_lifetime", 30)
     set_arg("insulation_thermal_conductivity", 0.0)   # 0 = use typical
     set_arg("insulation_material_density", 0.0)       # 0 = use typical
+    set_arg("use_exact_costline_id", True)
+    set_arg("exact_costline_id", "072116201320")
 
     # Apply any caller-supplied overrides
     if args_overrides:
