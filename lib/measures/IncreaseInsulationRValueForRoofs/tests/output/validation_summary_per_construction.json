@@ -1,217 +1,19 @@
 {
   "test_date": "C:\\All_repos\\openstudio-ee-gem\\lib\\measures\\IncreaseInsulationRValueForRoofs\\tests",
   "total_materials": 11,
-  "successful": 11,
-  "failed": 0,
+  "successful": 3,
+  "failed": 8,
   "materials_tested": [
     {
       "material": "Fiberglass Batts",
-      "success": true,
+      "success": false,
       "messages": [
         "median",
         "Obtain the key from EC3 website",
-        "Fiberglass Batts"
+        "Fiberglass Batts",
+        ""
       ],
-      "rsmeans_data": {
-        "materials": [
-          {
-            "name": "Fiberglass Batts roof insulation (Typical IEAD Roof R-15.87)",
-            "description": "Added insulation to reach R-30.0; actual added thickness 3.49 in",
-            "quantity": 4999.999999999986,
-            "unit": "SF",
-            "quantity_si": 464.51519999999874,
-            "unit_si": "m2",
-            "division_code": "07",
-            "catalog": "bc-mf",
-            "search_term_used": "fiberglass blanket",
-            "unit_cost": 2.21,
-            "total_cost": 11049.999999999969,
-            "rsmeans_id": "072116102100",
-            "rsmeans_description": "Blanket insulation for floors/ceilings, fiberglass, paper or foil backing, 1 side, 3-1/2\" thick, R13, incl. spring type wire fasteners",
-            "match_type": "closest_match"
-          }
-        ],
-        "search_log": [
-          {
-            "material": "Fiberglass Batts roof insulation (Typical IEAD Roof R-15.87)",
-            "search_term": "fiberglass blanket",
-            "catalog": "bc-mf",
-            "division": "07",
-            "status": "match_found (using 'fiberglass blanket')",
-            "candidates_considered": 25,
-            "candidate_scores": [
-              {
-                "index": 0,
-                "rsmeans_id": "unknown",
-                "description": "Blanket insulation for floors/ceilings, fiberglass, paper or foil backing, 1 sid",
-                "score": 21.0
-              },
-              {
-                "index": 1,
-                "rsmeans_id": "unknown",
-                "description": "Blanket insulation for floors/ceilings, fiberglass, paper or foil backing, 1 sid",
-                "score": 21.0
-              },
-              {
-                "index": 2,
-                "rsmeans_id": "unknown",
-                "description": "Blanket insulation for floors/ceilings, fiberglass, paper or foil backing, 1 sid",
-                "score": 21.0
-              },
-              {
-                "index": 3,
-                "rsmeans_id": "unknown",
-                "description": "Blanket insulation for floors/ceilings, fiberglass, paper or foil backing, 1 sid",
-                "score": 21.0
-              },
-              {
-                "index": 4,
-                "rsmeans_id": "unknown",
-                "description": "Blanket insulation for floors/ceilings, fiberglass, unfaced, 3-1/2\" thick, R13, ",
-                "score": 20.88
-              },
-              {
-                "index": 5,
-                "rsmeans_id": "unknown",
-                "description": "Blanket insulation for floors/ceilings, fiberglass, unfaced, 6-1/4\" thick, R 19,",
-                "score": 20.88
-              },
-              {
-                "index": 6,
-                "rsmeans_id": "unknown",
-                "description": "Blanket insulation for floors/ceilings, fiberglass, unfaced, 9-1/2\" thick, R 30,",
-                "score": 20.88
-              },
-              {
-                "index": 7,
-                "rsmeans_id": "unknown",
-                "description": "Blanket insulation for floors/ceilings, fiberglass, unfaced, 12\" thick, R 38, in",
-                "score": 20.86
-              },
-              {
-                "index": 8,
-                "rsmeans_id": "unknown",
-                "description": "Blanket insulation, for walls or ceilings, kraft faced fiberglass, 3-1/2\" thick,",
-                "score": 20.73
-              },
-              {
-                "index": 9,
-                "rsmeans_id": "unknown",
-                "description": "Blanket insulation, for walls or ceilings, kraft faced fiberglass, 3-1/2\" thick,",
-                "score": 20.73
-              },
-              {
-                "index": 10,
-                "rsmeans_id": "unknown",
-                "description": "Blanket insulation, for walls or ceilings, kraft faced fiberglass, 3-1/2\" thick,",
-                "score": 20.73
-              },
-              {
-                "index": 11,
-                "rsmeans_id": "unknown",
-                "description": "Blanket insulation, for walls or ceilings, kraft faced fiberglass, 3-1/2\" thick,",
-                "score": 20.73
-              },
-              {
-                "index": 12,
-                "rsmeans_id": "unknown",
-                "description": "Blanket insulation, for walls or ceilings, kraft faced fiberglass, 3-1/2\" thick,",
-                "score": 20.73
-              },
-              {
-                "index": 13,
-                "rsmeans_id": "unknown",
-                "description": "Blanket insulation, for walls or ceilings, kraft faced fiberglass, 3-1/2\" thick,",
-                "score": 20.73
-              },
-              {
-                "index": 14,
-                "rsmeans_id": "unknown",
-                "description": "Blanket insulation, for walls or ceilings, kraft faced fiberglass, 3-1/2\" thick,",
-                "score": 20.73
-              },
-              {
-                "index": 15,
-                "rsmeans_id": "unknown",
-                "description": "Blanket insulation, for walls or ceilings, kraft faced fiberglass, 3-1/2\" thick,",
-                "score": 20.73
-              },
-              {
-                "index": 16,
-                "rsmeans_id": "unknown",
-                "description": "Blanket insulation, for walls or ceilings, kraft faced fiberglass, 6\" thick, R19",
-                "score": 20.69
-              },
-              {
-                "index": 17,
-                "rsmeans_id": "unknown",
-                "description": "Blanket insulation, for walls or ceilings, kraft faced fiberglass, 6\" thick, R19",
-                "score": 20.69
-              },
-              {
-                "index": 18,
-                "rsmeans_id": "unknown",
-                "description": "Blanket insulation, for walls or ceilings, kraft faced fiberglass, 6\" thick, R19",
-                "score": 20.69
-              },
-              {
-                "index": 19,
-                "rsmeans_id": "unknown",
-                "description": "Blanket insulation, for walls or ceilings, kraft faced fiberglass, 6\" thick, R21",
-                "score": 20.69
-              },
-              {
-                "index": 20,
-                "rsmeans_id": "unknown",
-                "description": "Blanket insulation, for walls or ceilings, kraft faced fiberglass, 6\" thick, R21",
-                "score": 20.69
-              },
-              {
-                "index": 21,
-                "rsmeans_id": "unknown",
-                "description": "Blanket insulation, for walls or ceilings, kraft faced fiberglass, 6\" thick, R21",
-                "score": 20.69
-              },
-              {
-                "index": 22,
-                "rsmeans_id": "unknown",
-                "description": "Blanket insulation, for walls or ceilings, kraft faced fiberglass, 9\" thick, R30",
-                "score": 20.69
-              },
-              {
-                "index": 23,
-                "rsmeans_id": "unknown",
-                "description": "Blanket insulation, for walls or ceilings, kraft faced fiberglass, 9\" thick, R30",
-                "score": 20.69
-              },
-              {
-                "index": 24,
-                "rsmeans_id": "unknown",
-                "description": "Blanket insulation, for walls or ceilings, kraft faced fiberglass, 9\" thick, R30",
-                "score": 20.69
-              }
-            ],
-            "rsmeans_id": "072116102100",
-            "rsmeans_description": "Blanket insulation for floors/ceilings, fiberglass, paper or foil backing, 1 side, 3-1/2\" thick, R13, incl. spring type wire fasteners",
-            "unit_cost": 2.21,
-            "quantity": 4999.999999999986,
-            "total_cost": 11049.999999999969
-          }
-        ],
-        "summary": {
-          "release_id": "2024-an",
-          "location_id": "us-us-national",
-          "labor_type": "std",
-          "measurement_system": "imp",
-          "catalogs_searched": [
-            "bc-mf",
-            "gb-mf",
-            "rp-mf"
-          ]
-        }
-      },
-      "material_cost": 11049.999999999969,
-      "total_cost": 12154.999999999965
+      "rsmeans_data": null
     },
     {
       "material": "Blown Fiberglass",
@@ -219,7 +21,8 @@
       "messages": [
         "median",
         "Obtain the key from EC3 website",
-        "Blown Fiberglass"
+        "Blown Fiberglass",
+        ""
       ],
       "rsmeans_data": {
         "materials": [
@@ -228,16 +31,21 @@
             "description": "Added insulation to reach R-30.0; actual added thickness 3.49 in",
             "quantity": 4999.999999999986,
             "unit": "SF",
+            "quantity_volume": 1453.3124107562005,
+            "unit_volume": "CF",
+            "rsmeans_thickness_ft": 0.2906624821512409,
+            "costing_mode": "volume_from_area",
             "quantity_si": 464.51519999999874,
             "unit_si": "m2",
             "division_code": "07",
+            "rsmeans_id": "072126101300",
             "catalog": "bc-mf",
             "search_term_used": "blown fiberglass",
-            "unit_cost": 2.38,
-            "total_cost": 11899.999999999967,
-            "rsmeans_id": "072126101300",
+            "unit_cost": 2.483478260869565,
+            "total_cost": 3609.2697783649637,
             "rsmeans_description": "Fiberglass insulation, ceilings, with open access, 11.5\" thick, R26, blown-in",
-            "match_type": "closest_match"
+            "match_type": "closest_match",
+            "unit_cost_basis": "CF"
           }
         ],
         "search_log": [
@@ -300,9 +108,11 @@
             ],
             "rsmeans_id": "072126101300",
             "rsmeans_description": "Fiberglass insulation, ceilings, with open access, 11.5\" thick, R26, blown-in",
-            "unit_cost": 2.38,
+            "unit_cost": 2.483478260869565,
+            "unit_cost_basis": "CF",
+            "costing_mode": "volume_from_area",
             "quantity": 4999.999999999986,
-            "total_cost": 11899.999999999967
+            "total_cost": 3609.2697783649637
           }
         ],
         "summary": {
@@ -317,8 +127,8 @@
           ]
         }
       },
-      "material_cost": 11899.999999999967,
-      "total_cost": 13089.999999999964
+      "material_cost": 3609.2697783649637,
+      "total_cost": 3970.19675620146
     },
     {
       "material": "Blown Cellulose",
@@ -326,7 +136,8 @@
       "messages": [
         "median",
         "Obtain the key from EC3 website",
-        "Blown Cellulose"
+        "Blown Cellulose",
+        ""
       ],
       "rsmeans_data": {
         "materials": [
@@ -335,16 +146,21 @@
             "description": "Added insulation to reach R-30.0; actual added thickness 4.23 in",
             "quantity": 4999.999999999986,
             "unit": "SF",
+            "quantity_volume": 1761.5908009166067,
+            "unit_volume": "CF",
+            "rsmeans_thickness_ft": 0.3523181601833223,
+            "costing_mode": "volume_from_area",
             "quantity_si": 464.51519999999874,
             "unit_si": "m2",
             "division_code": "07",
+            "rsmeans_id": "072126100100",
             "catalog": "bc-mf",
             "search_term_used": "blown cellulose",
-            "unit_cost": 1.55,
-            "total_cost": 7749.999999999979,
-            "rsmeans_id": "072126100100",
+            "unit_cost": 2.141007194244604,
+            "total_cost": 3771.578578077569,
             "rsmeans_description": "Blown-in insulation, ceilings, with open access, cellulose, 8-11/16\" thick, R30",
-            "match_type": "closest_match"
+            "match_type": "closest_match",
+            "unit_cost_basis": "CF"
           }
         ],
         "search_log": [
@@ -389,9 +205,11 @@
             ],
             "rsmeans_id": "072126100100",
             "rsmeans_description": "Blown-in insulation, ceilings, with open access, cellulose, 8-11/16\" thick, R30",
-            "unit_cost": 1.55,
+            "unit_cost": 2.141007194244604,
+            "unit_cost_basis": "CF",
+            "costing_mode": "volume_from_area",
             "quantity": 4999.999999999986,
-            "total_cost": 7749.999999999979
+            "total_cost": 3771.578578077569
           }
         ],
         "summary": {
@@ -406,198 +224,30 @@
           ]
         }
       },
-      "material_cost": 7749.999999999979,
-      "total_cost": 8524.999999999976
+      "material_cost": 3771.578578077569,
+      "total_cost": 4148.7364358853265
     },
     {
       "material": "Mineral Wool Heavy Density Blanket",
-      "success": true,
+      "success": false,
       "messages": [
         "median",
         "Obtain the key from EC3 website",
-        "Mineral Wool Heavy Density Blanket"
+        "Mineral Wool Heavy Density Blanket",
+        ""
       ],
-      "rsmeans_data": {
-        "materials": [
-          {
-            "name": "Mineral Wool Heavy Density Blanket roof insulation (Typical IEAD Roof R-15.87)",
-            "description": "Added insulation to reach R-30.0; actual added thickness 3.38 in",
-            "quantity": 4999.999999999986,
-            "unit": "SF",
-            "quantity_si": 464.51519999999874,
-            "unit_si": "m2",
-            "division_code": "07",
-            "catalog": "bc-mf",
-            "search_term_used": "mineral wool board",
-            "unit_cost": 2.23,
-            "total_cost": 11149.999999999969,
-            "rsmeans_id": "072116201320",
-            "rsmeans_description": "Blanket insulation, for walls or ceilings, mineral wool batts, 3-1/2\" thick, R15",
-            "match_type": "closest_match"
-          }
-        ],
-        "search_log": [
-          {
-            "material": "Mineral Wool Heavy Density Blanket roof insulation (Typical IEAD Roof R-15.87)",
-            "search_term": "mineral wool board",
-            "catalog": "bc-mf",
-            "division": "07",
-            "status": "match_found (using 'mineral wool board')",
-            "candidates_considered": 6,
-            "candidate_scores": [
-              {
-                "index": 0,
-                "rsmeans_id": "unknown",
-                "description": "Blanket insulation, for walls or ceilings, mineral wool batts, 3-1/2\" thick, R15",
-                "score": 50.62
-              },
-              {
-                "index": 1,
-                "rsmeans_id": "unknown",
-                "description": "Blanket insulation, for walls or ceilings, mineral wool batts, 5-1/2\" thick, R23",
-                "score": 50.62
-              },
-              {
-                "index": 2,
-                "rsmeans_id": "unknown",
-                "description": "Blanket insulation, for walls or ceilings, mineral wool batts, 7-1/4\" thick, R30",
-                "score": 50.62
-              },
-              {
-                "index": 4,
-                "rsmeans_id": "unknown",
-                "description": "Poured insulation, mineral wool, R3 per inch, 4\" thick",
-                "score": 35.42
-              },
-              {
-                "index": 5,
-                "rsmeans_id": "unknown",
-                "description": "Poured insulation, mineral wool, R3 per inch, 6\" thick",
-                "score": 35.42
-              },
-              {
-                "index": 3,
-                "rsmeans_id": "unknown",
-                "description": "Mineral wool insulation, R3 per inch, poured in",
-                "score": 35.38
-              }
-            ],
-            "rsmeans_id": "072116201320",
-            "rsmeans_description": "Blanket insulation, for walls or ceilings, mineral wool batts, 3-1/2\" thick, R15",
-            "unit_cost": 2.23,
-            "quantity": 4999.999999999986,
-            "total_cost": 11149.999999999969
-          }
-        ],
-        "summary": {
-          "release_id": "2024-an",
-          "location_id": "us-us-national",
-          "labor_type": "std",
-          "measurement_system": "imp",
-          "catalogs_searched": [
-            "bc-mf",
-            "gb-mf",
-            "rp-mf"
-          ]
-        }
-      },
-      "material_cost": 11149.999999999969,
-      "total_cost": 12264.999999999965
+      "rsmeans_data": null
     },
     {
       "material": "Mineral Wool Light Density Blanket",
-      "success": true,
+      "success": false,
       "messages": [
         "median",
         "Obtain the key from EC3 website",
-        "Mineral Wool Light Density Blanket"
+        "Mineral Wool Light Density Blanket",
+        ""
       ],
-      "rsmeans_data": {
-        "materials": [
-          {
-            "name": "Mineral Wool Light Density Blanket roof insulation (Typical IEAD Roof R-15.87)",
-            "description": "Added insulation to reach R-30.0; actual added thickness 3.38 in",
-            "quantity": 4999.999999999986,
-            "unit": "SF",
-            "quantity_si": 464.51519999999874,
-            "unit_si": "m2",
-            "division_code": "07",
-            "catalog": "bc-mf",
-            "search_term_used": "mineral wool blanket",
-            "unit_cost": 2.23,
-            "total_cost": 11149.999999999969,
-            "rsmeans_id": "072116201320",
-            "rsmeans_description": "Blanket insulation, for walls or ceilings, mineral wool batts, 3-1/2\" thick, R15",
-            "match_type": "closest_match"
-          }
-        ],
-        "search_log": [
-          {
-            "material": "Mineral Wool Light Density Blanket roof insulation (Typical IEAD Roof R-15.87)",
-            "search_term": "mineral wool blanket",
-            "catalog": "bc-mf",
-            "division": "07",
-            "status": "match_found (using 'mineral wool blanket')",
-            "candidates_considered": 6,
-            "candidate_scores": [
-              {
-                "index": 0,
-                "rsmeans_id": "unknown",
-                "description": "Blanket insulation, for walls or ceilings, mineral wool batts, 3-1/2\" thick, R15",
-                "score": 50.62
-              },
-              {
-                "index": 1,
-                "rsmeans_id": "unknown",
-                "description": "Blanket insulation, for walls or ceilings, mineral wool batts, 5-1/2\" thick, R23",
-                "score": 50.62
-              },
-              {
-                "index": 2,
-                "rsmeans_id": "unknown",
-                "description": "Blanket insulation, for walls or ceilings, mineral wool batts, 7-1/4\" thick, R30",
-                "score": 50.62
-              },
-              {
-                "index": 4,
-                "rsmeans_id": "unknown",
-                "description": "Poured insulation, mineral wool, R3 per inch, 4\" thick",
-                "score": 35.42
-              },
-              {
-                "index": 5,
-                "rsmeans_id": "unknown",
-                "description": "Poured insulation, mineral wool, R3 per inch, 6\" thick",
-                "score": 35.42
-              },
-              {
-                "index": 3,
-                "rsmeans_id": "unknown",
-                "description": "Mineral wool insulation, R3 per inch, poured in",
-                "score": 35.38
-              }
-            ],
-            "rsmeans_id": "072116201320",
-            "rsmeans_description": "Blanket insulation, for walls or ceilings, mineral wool batts, 3-1/2\" thick, R15",
-            "unit_cost": 2.23,
-            "quantity": 4999.999999999986,
-            "total_cost": 11149.999999999969
-          }
-        ],
-        "summary": {
-          "release_id": "2024-an",
-          "location_id": "us-us-national",
-          "labor_type": "std",
-          "measurement_system": "imp",
-          "catalogs_searched": [
-            "bc-mf",
-            "gb-mf",
-            "rp-mf"
-          ]
-        }
-      },
-      "material_cost": 11149.999999999969,
-      "total_cost": 12264.999999999965
+      "rsmeans_data": null
     },
     {
       "material": "Polyiso Insulation Foam Board",
@@ -605,7 +255,8 @@
       "messages": [
         "median",
         "Obtain the key from EC3 website",
-        "Polyiso Insulation Foam Board"
+        "Polyiso Insulation Foam Board",
+        ""
       ],
       "rsmeans_data": {
         "materials": [
@@ -614,183 +265,35 @@
             "description": "Added insulation to reach R-30.0; actual added thickness 2.64 in",
             "quantity": 4999.999999999986,
             "unit": "SF",
+            "quantity_volume": 1100.9942505728795,
+            "unit_volume": "CF",
+            "rsmeans_thickness_ft": 0.2201988501145765,
+            "costing_mode": "volume_from_area",
             "quantity_si": 464.51519999999874,
             "unit_si": "m2",
             "division_code": "07",
+            "rsmeans_id": "072216101700",
             "catalog": "bc-mf",
-            "search_term_used": "wall insulation",
-            "unit_cost": 2.11,
-            "total_cost": 10549.99999999997,
-            "rsmeans_id": "072113101900",
-            "rsmeans_description": "Extruded polystyrene insulation, rigid, for walls, 25 psi compressive strength, 1\" thick, R5",
-            "match_type": "closest_match"
+            "search_term_used": "rsmeans_id:072216101700",
+            "unit_cost": 23.2,
+            "total_cost": 25543.066613290805,
+            "rsmeans_description": "Polyisocyanurate insulation, for roof decks, 3/4\" thick, 2#/CF density, fastening excluded",
+            "match_type": "exact_id_match",
+            "unit_cost_basis": "CF"
           }
         ],
         "search_log": [
           {
             "material": "Polyiso Insulation Foam Board roof insulation (Typical IEAD Roof R-15.87)",
-            "search_term": "wall insulation",
+            "search_term": "072216101700",
             "catalog": "bc-mf",
             "division": "07",
-            "status": "match_found (using 'wall insulation')",
-            "candidates_considered": 25,
-            "candidate_scores": [
-              {
-                "index": 24,
-                "rsmeans_id": "unknown",
-                "description": "Extruded polystyrene insulation, rigid, for walls, 25 psi compressive strength, ",
-                "score": -14.28
-              },
-              {
-                "index": 18,
-                "rsmeans_id": "unknown",
-                "description": "Isocyanurate insulation, rigid, for walls, 4' x 8' sheet, 1-1/2\" thick, foil fac",
-                "score": -14.29
-              },
-              {
-                "index": 16,
-                "rsmeans_id": "unknown",
-                "description": "Isocyanurate insulation, rigid, for walls, 4' x 8' sheet, 3/4\" thick, foil faced",
-                "score": -14.31
-              },
-              {
-                "index": 17,
-                "rsmeans_id": "unknown",
-                "description": "Isocyanurate insulation, rigid, for walls, 4' x 8' sheet, 1\" thick, foil faced, ",
-                "score": -14.32
-              },
-              {
-                "index": 19,
-                "rsmeans_id": "unknown",
-                "description": "Isocyanurate insulation, rigid, for walls, 4' x 8' sheet, 2\" thick, foil faced, ",
-                "score": -14.32
-              },
-              {
-                "index": 14,
-                "rsmeans_id": "unknown",
-                "description": "Wall insulation, rigid, isocyanurate, foil faced, both sides, 4' x 8' sheet, 1/2",
-                "score": -14.35
-              },
-              {
-                "index": 15,
-                "rsmeans_id": "unknown",
-                "description": "Wall insulation, rigid, isocyanurate, foil faced, both sides, 4' x 8' sheet, 5/8",
-                "score": -14.35
-              },
-              {
-                "index": 20,
-                "rsmeans_id": "unknown",
-                "description": "Wall insulation, rigid, isocyanurate, foil faced, both sides, 4' x 8' sheet, 3\" ",
-                "score": -14.37
-              },
-              {
-                "index": 21,
-                "rsmeans_id": "unknown",
-                "description": "Wall insulation, rigid, isocyanurate, foil faced, both sides, 4' x 8' sheet, 4\" ",
-                "score": -14.37
-              },
-              {
-                "index": 12,
-                "rsmeans_id": "unknown",
-                "description": "Wall insulation, rigid, fiberglass, foil faced, 2-1/2\" thick, R10.9, 3#/CF",
-                "score": -14.45
-              },
-              {
-                "index": 0,
-                "rsmeans_id": "unknown",
-                "description": "Unfaced fiberglass insulation, rigid, for walls, 1\" thick, R4.1, 1.5#/CF",
-                "score": -14.46
-              },
-              {
-                "index": 2,
-                "rsmeans_id": "unknown",
-                "description": "Unfaced fiberglass insulation, rigid, for walls, 2\" thick, R8.3, 1.5#/CF",
-                "score": -14.46
-              },
-              {
-                "index": 10,
-                "rsmeans_id": "unknown",
-                "description": "Wall insulation, rigid, fiberglass, foil faced, 1-1/2\" thick, R6.5, 3#/CF",
-                "score": -14.46
-              },
-              {
-                "index": 1,
-                "rsmeans_id": "unknown",
-                "description": "Wall insulation, rigid, fiberglass, unfaced, 1-1/2\" thick, R6.2, 1.5#/CF",
-                "score": -14.47
-              },
-              {
-                "index": 7,
-                "rsmeans_id": "unknown",
-                "description": "Wall insulation, rigid, fiberglass, unfaced, 2-1/2\" thick, R10.9, 3#/CF",
-                "score": -14.47
-              },
-              {
-                "index": 5,
-                "rsmeans_id": "unknown",
-                "description": "Wall insulation, rigid, fiberglass, unfaced, 1-1/2\" thick, R6.5, 3#/CF",
-                "score": -14.48
-              },
-              {
-                "index": 3,
-                "rsmeans_id": "unknown",
-                "description": "Wall insulation, rigid, fiberglass, unfaced, 3\" thick, R12.4, 1.5#/CF",
-                "score": -14.49
-              },
-              {
-                "index": 9,
-                "rsmeans_id": "unknown",
-                "description": "Wall insulation, rigid, fiberglass, foil faced, 1\" thick, R4.3, 3#/CF",
-                "score": -14.49
-              },
-              {
-                "index": 11,
-                "rsmeans_id": "unknown",
-                "description": "Wall insulation, rigid, fiberglass, foil faced, 2\" thick, R8.7, 3#/CF",
-                "score": -14.49
-              },
-              {
-                "index": 13,
-                "rsmeans_id": "unknown",
-                "description": "Wall insulation, rigid, fiberglass, foil faced, 3\" thick, R13, 3#/CF",
-                "score": -14.5
-              },
-              {
-                "index": 4,
-                "rsmeans_id": "unknown",
-                "description": "Wall insulation, rigid, fiberglass, unfaced, 1\" thick, R4.3, 3#/CF",
-                "score": -14.52
-              },
-              {
-                "index": 6,
-                "rsmeans_id": "unknown",
-                "description": "Wall insulation, rigid, fiberglass, unfaced, 2\" thick, R8.7, 3#/CF",
-                "score": -14.52
-              },
-              {
-                "index": 8,
-                "rsmeans_id": "unknown",
-                "description": "Wall insulation, rigid, fiberglass, unfaced, 3\" thick, R13, 3#/CF",
-                "score": -14.53
-              },
-              {
-                "index": 22,
-                "rsmeans_id": "unknown",
-                "description": "Wall insulation, rigid, perlite, 1\" thick, R2.77",
-                "score": -14.64
-              },
-              {
-                "index": 23,
-                "rsmeans_id": "unknown",
-                "description": "Wall insulation, rigid, perlite, 2\" thick, R5.55",
-                "score": -14.64
-              }
-            ],
-            "rsmeans_id": "072113101900",
-            "rsmeans_description": "Extruded polystyrene insulation, rigid, for walls, 25 psi compressive strength, 1\" thick, R5",
-            "unit_cost": 2.11,
+            "status": "exact_id_match",
+            "unit_cost": 23.2,
+            "unit_cost_basis": "CF",
+            "costing_mode": "volume_from_area",
             "quantity": 4999.999999999986,
-            "total_cost": 10549.99999999997
+            "total_cost": 25543.066613290805
           }
         ],
         "summary": {
@@ -805,669 +308,63 @@
           ]
         }
       },
-      "material_cost": 10549.99999999997,
-      "total_cost": 11604.999999999967
+      "material_cost": 25543.066613290805,
+      "total_cost": 28097.373274619884
     },
     {
       "material": "Expanded Polystyrene (EPS) Foam Board",
-      "success": true,
+      "success": false,
       "messages": [
         "median",
         "Obtain the key from EC3 website",
-        "Expanded Polystyrene (EPS) Foam Board"
+        "Expanded Polystyrene (EPS) Foam Board",
+        ""
       ],
-      "rsmeans_data": {
-        "materials": [
-          {
-            "name": "Expanded Polystyrene (EPS) Foam Board roof insulation (Typical IEAD Roof R-15.87)",
-            "description": "Added insulation to reach R-30.0; actual added thickness 3.59 in",
-            "quantity": 4999.999999999986,
-            "unit": "SF",
-            "quantity_si": 464.51519999999874,
-            "unit_si": "m2",
-            "division_code": "07",
-            "catalog": "bc-mf",
-            "search_term_used": "expanded polystyrene",
-            "unit_cost": 1.42,
-            "total_cost": 7099.99999999998,
-            "rsmeans_id": "072113130600",
-            "rsmeans_description": "Foam board insulation, polystyrene, expanded, 1\" thick, R4",
-            "match_type": "closest_match"
-          }
-        ],
-        "search_log": [
-          {
-            "material": "Expanded Polystyrene (EPS) Foam Board roof insulation (Typical IEAD Roof R-15.87)",
-            "search_term": "expanded polystyrene",
-            "catalog": "bc-mf",
-            "division": "07",
-            "status": "match_found (using 'expanded polystyrene')",
-            "candidates_considered": 21,
-            "candidate_scores": [
-              {
-                "index": 11,
-                "rsmeans_id": "unknown",
-                "description": "Foam board insulation, polystyrene, expanded, 1\" thick, R4",
-                "score": 65.44
-              },
-              {
-                "index": 12,
-                "rsmeans_id": "unknown",
-                "description": "Foam board insulation, polystyrene, expanded, 2\" thick, R8",
-                "score": 65.44
-              },
-              {
-                "index": 13,
-                "rsmeans_id": "unknown",
-                "description": "Roof deck insulation, expanded polystyrene, 3/4\" thick R2.89, 1#/CF density, fas",
-                "score": 60.74
-              },
-              {
-                "index": 14,
-                "rsmeans_id": "unknown",
-                "description": "Roof deck insulation, expanded polystyrene, 1\" thick, R3.85, 1#/CF density, fast",
-                "score": 60.73
-              },
-              {
-                "index": 15,
-                "rsmeans_id": "unknown",
-                "description": "Roof deck insulation, expanded polystyrene, 2\" thick, R7.69, 1#/CF density, fast",
-                "score": 60.73
-              },
-              {
-                "index": 16,
-                "rsmeans_id": "unknown",
-                "description": "Roof deck insulation, expanded polystyrene, 3\" thick, R11.49, 1#/CF density, fas",
-                "score": 60.73
-              },
-              {
-                "index": 17,
-                "rsmeans_id": "unknown",
-                "description": "Roof deck insulation, expanded polystyrene, 4\" thick, R15.38, 1#/CF density, fas",
-                "score": 60.73
-              },
-              {
-                "index": 18,
-                "rsmeans_id": "unknown",
-                "description": "Roof deck insulation, expanded polystyrene, 5\" thick, R19.23, 1#/CF density, fas",
-                "score": 60.73
-              },
-              {
-                "index": 19,
-                "rsmeans_id": "unknown",
-                "description": "Roof deck insulation, expanded polystyrene, 6\" thick, R23.26, 1#/CF density, fas",
-                "score": 60.73
-              },
-              {
-                "index": 20,
-                "rsmeans_id": "unknown",
-                "description": "Roof deck insulation, expanded polystyrene, tapered for drainage, fastening excl",
-                "score": 60.67
-              },
-              {
-                "index": 4,
-                "rsmeans_id": "unknown",
-                "description": "Bentonite, drain board, expanded polystyrene, with filter fabric, 1-1/2\" thick",
-                "score": 35.61
-              },
-              {
-                "index": 5,
-                "rsmeans_id": "unknown",
-                "description": "Bentonite, drain board, expanded polystyrene, with filter fabric, 2\" thick",
-                "score": 35.58
-              },
-              {
-                "index": 6,
-                "rsmeans_id": "unknown",
-                "description": "Bentonite, drain board, expanded polystyrene, with filter fabric, 3\" thick",
-                "score": 35.58
-              },
-              {
-                "index": 7,
-                "rsmeans_id": "unknown",
-                "description": "Bentonite, drain board, expanded polystyrene, with filter fabric, 4\" thick",
-                "score": 35.58
-              },
-              {
-                "index": 10,
-                "rsmeans_id": "unknown",
-                "description": "Wall insulation, rigid, expanded polystyrene, 3\" thick, R11.49",
-                "score": 35.48
-              },
-              {
-                "index": 8,
-                "rsmeans_id": "unknown",
-                "description": "Wall insulation, rigid, expanded polystyrene, 1\" thick, R3.85",
-                "score": 35.47
-              },
-              {
-                "index": 9,
-                "rsmeans_id": "unknown",
-                "description": "Wall insulation, rigid, expanded polystyrene, 2\" thick, R7.69",
-                "score": 35.47
-              },
-              {
-                "index": 0,
-                "rsmeans_id": "unknown",
-                "description": "Bentonite, drain board, expanded polystyrene, 1-1/2\" thick",
-                "score": 35.45
-              },
-              {
-                "index": 1,
-                "rsmeans_id": "unknown",
-                "description": "Bentonite, drain board, expanded polystyrene, 2\" thick",
-                "score": 35.42
-              },
-              {
-                "index": 2,
-                "rsmeans_id": "unknown",
-                "description": "Bentonite, drain board, expanded polystyrene, 3\" thick",
-                "score": 35.42
-              },
-              {
-                "index": 3,
-                "rsmeans_id": "unknown",
-                "description": "Bentonite, drain board, expanded polystyrene, 4\" thick",
-                "score": 35.42
-              }
-            ],
-            "rsmeans_id": "072113130600",
-            "rsmeans_description": "Foam board insulation, polystyrene, expanded, 1\" thick, R4",
-            "unit_cost": 1.42,
-            "quantity": 4999.999999999986,
-            "total_cost": 7099.99999999998
-          }
-        ],
-        "summary": {
-          "release_id": "2024-an",
-          "location_id": "us-us-national",
-          "labor_type": "std",
-          "measurement_system": "imp",
-          "catalogs_searched": [
-            "bc-mf",
-            "gb-mf",
-            "rp-mf"
-          ]
-        }
-      },
-      "material_cost": 7099.99999999998,
-      "total_cost": 7809.999999999978
+      "rsmeans_data": null
     },
     {
       "material": "Extruded Polystyrene (XPS) Foam Board",
-      "success": true,
+      "success": false,
       "messages": [
         "median",
         "Obtain the key from EC3 website",
-        "Extruded Polystyrene (XPS) Foam Board"
+        "Extruded Polystyrene (XPS) Foam Board",
+        ""
       ],
-      "rsmeans_data": {
-        "materials": [
-          {
-            "name": "Extruded Polystyrene (XPS) Foam Board roof insulation (Typical IEAD Roof R-15.87)",
-            "description": "Added insulation to reach R-30.0; actual added thickness 3.49 in",
-            "quantity": 4999.999999999986,
-            "unit": "SF",
-            "quantity_si": 464.51519999999874,
-            "unit_si": "m2",
-            "division_code": "07",
-            "catalog": "bc-mf",
-            "search_term_used": "extruded polystyrene",
-            "unit_cost": 1.34,
-            "total_cost": 6699.999999999982,
-            "rsmeans_id": "072216101948",
-            "rsmeans_description": "Roof deck insulation, extruded polystyrene, tapered for drainage, 25 psi compressive strength, fastening excluded",
-            "match_type": "closest_match"
-          }
-        ],
-        "search_log": [
-          {
-            "material": "Extruded Polystyrene (XPS) Foam Board roof insulation (Typical IEAD Roof R-15.87)",
-            "search_term": "extruded polystyrene",
-            "catalog": "bc-mf",
-            "division": "07",
-            "status": "match_found (using 'extruded polystyrene')",
-            "candidates_considered": 23,
-            "candidate_scores": [
-              {
-                "index": 10,
-                "rsmeans_id": "unknown",
-                "description": "Roof deck insulation, extruded polystyrene, tapered for drainage, 25 psi compres",
-                "score": 60.91
-              },
-              {
-                "index": 15,
-                "rsmeans_id": "unknown",
-                "description": "Roof deck insulation, extruded polystyrene, tapered for drainage, 40 psi compres",
-                "score": 60.91
-              },
-              {
-                "index": 4,
-                "rsmeans_id": "unknown",
-                "description": "Extruded polystyrene insulation, for roof decks, 2\" thick, R10, 15 psi compressi",
-                "score": 60.88
-              },
-              {
-                "index": 5,
-                "rsmeans_id": "unknown",
-                "description": "Extruded polystyrene insulation, for roof decks, 3\" thick, R15, 15 psi compressi",
-                "score": 60.88
-              },
-              {
-                "index": 3,
-                "rsmeans_id": "unknown",
-                "description": "Extruded polystyrene insulation, for roof decks, 1\" thick, R5, 15 psi compressiv",
-                "score": 60.87
-              },
-              {
-                "index": 6,
-                "rsmeans_id": "unknown",
-                "description": "Roof deck insulation, extruded polystyrene, 1\" thick, R5, 25 psi compressive str",
-                "score": 60.83
-              },
-              {
-                "index": 7,
-                "rsmeans_id": "unknown",
-                "description": "Roof deck insulation, extruded polystyrene, 2\" thick, R10, 25 psi compressive st",
-                "score": 60.83
-              },
-              {
-                "index": 8,
-                "rsmeans_id": "unknown",
-                "description": "Roof deck insulation, extruded polystyrene, 3\" thick, R15, 25 psi compressive st",
-                "score": 60.83
-              },
-              {
-                "index": 9,
-                "rsmeans_id": "unknown",
-                "description": "Roof deck insulation, extruded polystyrene, 4\" thick, R20, 25 psi compressive st",
-                "score": 60.83
-              },
-              {
-                "index": 11,
-                "rsmeans_id": "unknown",
-                "description": "Roof deck insulation, extruded polystyrene, 1\" thick, R5, 40 psi compressive str",
-                "score": 60.83
-              },
-              {
-                "index": 12,
-                "rsmeans_id": "unknown",
-                "description": "Roof deck insulation, extruded polystyrene, 2\" thick, R10, 40 psi compressive st",
-                "score": 60.83
-              },
-              {
-                "index": 13,
-                "rsmeans_id": "unknown",
-                "description": "Roof deck insulation, extruded polystyrene, 3\" thick, R15, 40 psi compressive st",
-                "score": 60.83
-              },
-              {
-                "index": 14,
-                "rsmeans_id": "unknown",
-                "description": "Roof deck insulation, extruded polystyrene, 4\" thick, R20, 40 psi compressive st",
-                "score": 60.83
-              },
-              {
-                "index": 16,
-                "rsmeans_id": "unknown",
-                "description": "Roof deck insulation, extruded polystyrene, 1\" thick, R5, 60 psi compressive str",
-                "score": 60.83
-              },
-              {
-                "index": 17,
-                "rsmeans_id": "unknown",
-                "description": "Roof deck insulation, extruded polystyrene, 2\" thick, R10, 60 psi compressive st",
-                "score": 60.83
-              },
-              {
-                "index": 18,
-                "rsmeans_id": "unknown",
-                "description": "Roof deck insulation, extruded polystyrene, 3\" thick, R15, 60 psi compressive st",
-                "score": 60.83
-              },
-              {
-                "index": 19,
-                "rsmeans_id": "unknown",
-                "description": "Roof deck insulation, extruded polystyrene, 4\" thick, R20, 60 psi compressive st",
-                "score": 60.83
-              },
-              {
-                "index": 20,
-                "rsmeans_id": "unknown",
-                "description": "Roof deck insulation, extruded polystyrene, 60 psi compressive strength, fasteni",
-                "score": 60.73
-              },
-              {
-                "index": 1,
-                "rsmeans_id": "unknown",
-                "description": "Extruded polystyrene insulation, rigid, for walls, 25 psi compressive strength, ",
-                "score": 35.73
-              },
-              {
-                "index": 0,
-                "rsmeans_id": "unknown",
-                "description": "Extruded polystyrene insulation, rigid, for walls, 25 psi compressive strength, ",
-                "score": 35.72
-              },
-              {
-                "index": 2,
-                "rsmeans_id": "unknown",
-                "description": "Wall insulation, rigid, extruded polystyrene, 25 psi compressive strength, 3\" th",
-                "score": 35.68
-              },
-              {
-                "index": 21,
-                "rsmeans_id": "unknown",
-                "description": "Vinyl siding, insulation, fan folded extruded polystyrene, 1/4\"",
-                "score": 35.49
-              },
-              {
-                "index": 22,
-                "rsmeans_id": "unknown",
-                "description": "Vinyl siding, insulation, fan folded extruded polystyrene, 3/8\"",
-                "score": 35.49
-              }
-            ],
-            "rsmeans_id": "072216101948",
-            "rsmeans_description": "Roof deck insulation, extruded polystyrene, tapered for drainage, 25 psi compressive strength, fastening excluded",
-            "unit_cost": 1.34,
-            "quantity": 4999.999999999986,
-            "total_cost": 6699.999999999982
-          }
-        ],
-        "summary": {
-          "release_id": "2024-an",
-          "location_id": "us-us-national",
-          "labor_type": "std",
-          "measurement_system": "imp",
-          "catalogs_searched": [
-            "bc-mf",
-            "gb-mf",
-            "rp-mf"
-          ]
-        }
-      },
-      "material_cost": 6699.999999999982,
-      "total_cost": 7369.99999999998
+      "rsmeans_data": null
     },
     {
       "material": "Graphite Polystyrene (GPS) Foam Board",
-      "success": true,
+      "success": false,
       "messages": [
         "median",
         "Obtain the key from EC3 website",
-        "Graphite Polystyrene (GPS) Foam Board"
+        "Graphite Polystyrene (GPS) Foam Board",
+        ""
       ],
-      "rsmeans_data": {
-        "materials": [
-          {
-            "name": "Graphite Polystyrene (GPS) Foam Board roof insulation (Typical IEAD Roof R-15.87)",
-            "description": "Added insulation to reach R-30.0; actual added thickness 3.17 in",
-            "quantity": 4999.999999999986,
-            "unit": "SF",
-            "quantity_si": 464.51519999999874,
-            "unit_si": "m2",
-            "division_code": "07",
-            "catalog": "bc-mf",
-            "search_term_used": "gps foam board",
-            "unit_cost": 1.42,
-            "total_cost": 7099.99999999998,
-            "rsmeans_id": "072113130600",
-            "rsmeans_description": "Foam board insulation, polystyrene, expanded, 1\" thick, R4",
-            "match_type": "closest_match"
-          }
-        ],
-        "search_log": [
-          {
-            "material": "Graphite Polystyrene (GPS) Foam Board roof insulation (Typical IEAD Roof R-15.87)",
-            "search_term": "gps foam board",
-            "catalog": "bc-mf",
-            "division": "07",
-            "status": "match_found (using 'gps foam board')",
-            "candidates_considered": 2,
-            "candidate_scores": [
-              {
-                "index": 0,
-                "rsmeans_id": "unknown",
-                "description": "Foam board insulation, polystyrene, expanded, 1\" thick, R4",
-                "score": 50.44
-              },
-              {
-                "index": 1,
-                "rsmeans_id": "unknown",
-                "description": "Foam board insulation, polystyrene, expanded, 2\" thick, R8",
-                "score": 50.44
-              }
-            ],
-            "rsmeans_id": "072113130600",
-            "rsmeans_description": "Foam board insulation, polystyrene, expanded, 1\" thick, R4",
-            "unit_cost": 1.42,
-            "quantity": 4999.999999999986,
-            "total_cost": 7099.99999999998
-          }
-        ],
-        "summary": {
-          "release_id": "2024-an",
-          "location_id": "us-us-national",
-          "labor_type": "std",
-          "measurement_system": "imp",
-          "catalogs_searched": [
-            "bc-mf",
-            "gb-mf",
-            "rp-mf"
-          ]
-        }
-      },
-      "material_cost": 7099.99999999998,
-      "total_cost": 7809.999999999978
+      "rsmeans_data": null
     },
     {
       "material": "Pure Wool Batts",
-      "success": true,
+      "success": false,
       "messages": [
         "median",
         "Obtain the key from EC3 website",
-        "Pure Wool Batts"
+        "Pure Wool Batts",
+        ""
       ],
-      "rsmeans_data": {
-        "materials": [
-          {
-            "name": "Pure Wool Batts roof insulation (Typical IEAD Roof R-15.87)",
-            "description": "Added insulation to reach R-30.0; actual added thickness 4.23 in",
-            "quantity": 4999.999999999986,
-            "unit": "SF",
-            "quantity_si": 464.51519999999874,
-            "unit_si": "m2",
-            "division_code": "07",
-            "catalog": "bc-mf",
-            "search_term_used": "natural wool insulation",
-            "unit_cost": 2.23,
-            "total_cost": 11149.999999999969,
-            "rsmeans_id": "072116201320",
-            "rsmeans_description": "Blanket insulation, for walls or ceilings, mineral wool batts, 3-1/2\" thick, R15",
-            "match_type": "closest_match"
-          }
-        ],
-        "search_log": [
-          {
-            "material": "Pure Wool Batts roof insulation (Typical IEAD Roof R-15.87)",
-            "search_term": "natural wool insulation",
-            "catalog": "bc-mf",
-            "division": "07",
-            "status": "match_found (using 'natural wool insulation')",
-            "candidates_considered": 9,
-            "candidate_scores": [
-              {
-                "index": 0,
-                "rsmeans_id": "unknown",
-                "description": "Blanket insulation, for walls or ceilings, mineral wool batts, 3-1/2\" thick, R15",
-                "score": 35.62
-              },
-              {
-                "index": 1,
-                "rsmeans_id": "unknown",
-                "description": "Blanket insulation, for walls or ceilings, mineral wool batts, 5-1/2\" thick, R23",
-                "score": 35.62
-              },
-              {
-                "index": 2,
-                "rsmeans_id": "unknown",
-                "description": "Blanket insulation, for walls or ceilings, mineral wool batts, 7-1/4\" thick, R30",
-                "score": 35.62
-              },
-              {
-                "index": 4,
-                "rsmeans_id": "unknown",
-                "description": "Poured insulation, fiberglass wool, R4 per inch, 4\" thick",
-                "score": 20.44
-              },
-              {
-                "index": 5,
-                "rsmeans_id": "unknown",
-                "description": "Poured insulation, fiberglass wool, R4 per inch, 6\" thick",
-                "score": 20.44
-              },
-              {
-                "index": 7,
-                "rsmeans_id": "unknown",
-                "description": "Poured insulation, mineral wool, R3 per inch, 4\" thick",
-                "score": 20.42
-              },
-              {
-                "index": 8,
-                "rsmeans_id": "unknown",
-                "description": "Poured insulation, mineral wool, R3 per inch, 6\" thick",
-                "score": 20.42
-              },
-              {
-                "index": 3,
-                "rsmeans_id": "unknown",
-                "description": "Fiberglass wool insulation, R4 per inch, poured in",
-                "score": 20.4
-              },
-              {
-                "index": 6,
-                "rsmeans_id": "unknown",
-                "description": "Mineral wool insulation, R3 per inch, poured in",
-                "score": 20.38
-              }
-            ],
-            "rsmeans_id": "072116201320",
-            "rsmeans_description": "Blanket insulation, for walls or ceilings, mineral wool batts, 3-1/2\" thick, R15",
-            "unit_cost": 2.23,
-            "quantity": 4999.999999999986,
-            "total_cost": 11149.999999999969
-          }
-        ],
-        "summary": {
-          "release_id": "2024-an",
-          "location_id": "us-us-national",
-          "labor_type": "std",
-          "measurement_system": "imp",
-          "catalogs_searched": [
-            "bc-mf",
-            "gb-mf",
-            "rp-mf"
-          ]
-        }
-      },
-      "material_cost": 11149.999999999969,
-      "total_cost": 12264.999999999965
+      "rsmeans_data": null
     },
     {
       "material": "Blown Mineral Wool",
-      "success": true,
+      "success": false,
       "messages": [
         "median",
         "Obtain the key from EC3 website",
-        "Blown Mineral Wool"
+        "Blown Mineral Wool",
+        ""
       ],
-      "rsmeans_data": {
-        "materials": [
-          {
-            "name": "Blown Mineral Wool roof insulation (Typical IEAD Roof R-15.87)",
-            "description": "Added insulation to reach R-30.0; actual added thickness 3.38 in",
-            "quantity": 4999.999999999986,
-            "unit": "SF",
-            "quantity_si": 464.51519999999874,
-            "unit_si": "m2",
-            "division_code": "07",
-            "catalog": "bc-mf",
-            "search_term_used": "blown mineral wool",
-            "unit_cost": 2.23,
-            "total_cost": 11149.999999999969,
-            "rsmeans_id": "072116201320",
-            "rsmeans_description": "Blanket insulation, for walls or ceilings, mineral wool batts, 3-1/2\" thick, R15",
-            "match_type": "closest_match"
-          }
-        ],
-        "search_log": [
-          {
-            "material": "Blown Mineral Wool roof insulation (Typical IEAD Roof R-15.87)",
-            "search_term": "blown mineral wool",
-            "catalog": "bc-mf",
-            "division": "07",
-            "status": "match_found (using 'blown mineral wool')",
-            "candidates_considered": 6,
-            "candidate_scores": [
-              {
-                "index": 0,
-                "rsmeans_id": "unknown",
-                "description": "Blanket insulation, for walls or ceilings, mineral wool batts, 3-1/2\" thick, R15",
-                "score": 35.62
-              },
-              {
-                "index": 1,
-                "rsmeans_id": "unknown",
-                "description": "Blanket insulation, for walls or ceilings, mineral wool batts, 5-1/2\" thick, R23",
-                "score": 35.62
-              },
-              {
-                "index": 2,
-                "rsmeans_id": "unknown",
-                "description": "Blanket insulation, for walls or ceilings, mineral wool batts, 7-1/4\" thick, R30",
-                "score": 35.62
-              },
-              {
-                "index": 4,
-                "rsmeans_id": "unknown",
-                "description": "Poured insulation, mineral wool, R3 per inch, 4\" thick",
-                "score": 35.42
-              },
-              {
-                "index": 5,
-                "rsmeans_id": "unknown",
-                "description": "Poured insulation, mineral wool, R3 per inch, 6\" thick",
-                "score": 35.42
-              },
-              {
-                "index": 3,
-                "rsmeans_id": "unknown",
-                "description": "Mineral wool insulation, R3 per inch, poured in",
-                "score": 35.38
-              }
-            ],
-            "rsmeans_id": "072116201320",
-            "rsmeans_description": "Blanket insulation, for walls or ceilings, mineral wool batts, 3-1/2\" thick, R15",
-            "unit_cost": 2.23,
-            "quantity": 4999.999999999986,
-            "total_cost": 11149.999999999969
-          }
-        ],
-        "summary": {
-          "release_id": "2024-an",
-          "location_id": "us-us-national",
-          "labor_type": "std",
-          "measurement_system": "imp",
-          "catalogs_searched": [
-            "bc-mf",
-            "gb-mf",
-            "rp-mf"
-          ]
-        }
-      },
-      "material_cost": 11149.999999999969,
-      "total_cost": 12264.999999999965
+      "rsmeans_data": null
     }
   ]
 }

@@ -1,79 +1,79 @@
 [
   {
     "material": "Fiberglass Batts",
-    "success": true,
-    "material_cost": 11049.999999999969,
-    "total_cost": 12154.999999999965,
-    "rsmeans_id": "072116102100"
+    "success": false,
+    "material_cost": 0,
+    "total_cost": 0,
+    "rsmeans_id": "N/A"
   },
   {
     "material": "Blown Fiberglass",
     "success": true,
-    "material_cost": 11899.999999999967,
-    "total_cost": 13089.999999999964,
+    "material_cost": 3609.2697783649637,
+    "total_cost": 3970.19675620146,
     "rsmeans_id": "072126101300"
   },
   {
     "material": "Blown Cellulose",
     "success": true,
-    "material_cost": 7749.999999999979,
-    "total_cost": 8524.999999999976,
+    "material_cost": 3771.578578077569,
+    "total_cost": 4148.7364358853265,
     "rsmeans_id": "072126100100"
   },
   {
     "material": "Mineral Wool Heavy Density Blanket",
-    "success": true,
-    "material_cost": 11149.999999999969,
-    "total_cost": 12264.999999999965,
-    "rsmeans_id": "072116201320"
+    "success": false,
+    "material_cost": 0,
+    "total_cost": 0,
+    "rsmeans_id": "N/A"
   },
   {
     "material": "Mineral Wool Light Density Blanket",
-    "success": true,
-    "material_cost": 11149.999999999969,
-    "total_cost": 12264.999999999965,
-    "rsmeans_id": "072116201320"
+    "success": false,
+    "material_cost": 0,
+    "total_cost": 0,
+    "rsmeans_id": "N/A"
   },
   {
     "material": "Polyiso Insulation Foam Board",
     "success": true,
-    "material_cost": 10549.99999999997,
-    "total_cost": 11604.999999999967,
-    "rsmeans_id": "072113101900"
+    "material_cost": 25543.066613290805,
+    "total_cost": 28097.373274619884,
+    "rsmeans_id": "072216101700"
   },
   {
     "material": "Expanded Polystyrene (EPS) Foam Board",
-    "success": true,
-    "material_cost": 7099.99999999998,
-    "total_cost": 7809.999999999978,
-    "rsmeans_id": "072113130600"
+    "success": false,
+    "material_cost": 0,
+    "total_cost": 0,
+    "rsmeans_id": "N/A"
   },
   {
     "material": "Extruded Polystyrene (XPS) Foam Board",
-    "success": true,
-    "material_cost": 6699.999999999982,
-    "total_cost": 7369.99999999998,
-    "rsmeans_id": "072216101948"
+    "success": false,
+    "material_cost": 0,
+    "total_cost": 0,
+    "rsmeans_id": "N/A"
   },
   {
     "material": "Graphite Polystyrene (GPS) Foam Board",
-    "success": true,
-    "material_cost": 7099.99999999998,
-    "total_cost": 7809.999999999978,
-    "rsmeans_id": "072113130600"
+    "success": false,
+    "material_cost": 0,
+    "total_cost": 0,
+    "rsmeans_id": "N/A"
   },
   {
     "material": "Pure Wool Batts",
-    "success": true,
-    "material_cost": 11149.999999999969,
-    "total_cost": 12264.999999999965,
-    "rsmeans_id": "072116201320"
+    "success": false,
+    "material_cost": 0,
+    "total_cost": 0,
+    "rsmeans_id": "N/A"
   },
   {
     "material": "Blown Mineral Wool",
-    "success": true,
-    "material_cost": 11149.999999999969,
-    "total_cost": 12264.999999999965,
-    "rsmeans_id": "072116201320"
+    "success": false,
+    "material_cost": 0,
+    "total_cost": 0,
+    "rsmeans_id": "N/A"
   }
 ]
