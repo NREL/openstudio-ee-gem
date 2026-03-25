@@ -128,8 +128,8 @@ def run_measure(model, args_overrides=None):
     set_arg("insulation_material_density", 0.0)       # 0 = use typical
     set_arg("calculate_costs", True)
     set_arg("use_custom_costs", False)
-    set_arg("use_exact_costline_id", False)
-    set_arg("exact_costline_id", "072126100020") # Blown Insulation - Cellulose , 3-1/2" thick, R-13 (example for testing exact ID)
+    set_arg("use_exact_costline_id", True)
+    set_arg("exact_costline_id", "072116201320") # Mineral wool batts, 3-1/2 in, R15 (matches default Pure Wool Batts mapping)
     set_arg("custom_cost_per_sf", 0.73)
     set_arg("overhead_profit_percent", 10.0)
 

@@ -913,12 +913,18 @@ class IncreaseInsulationRValueForRoofs(openstudio.measure.ModelMeasure):
             
             area_ft2 = self._unit_convert(area_m2, "m^2", "ft^2")
             thickness_in = self._unit_convert(thickness_m, "m", "in")
+            thickness_ft = max(thickness_in / 12.0, 0.0)
+            volume_ft3 = area_ft2 * thickness_ft
             
             rsmeans_materials.append({
                 "name": f"{insulation_material_type} roof insulation ({const_name})",
                 "description": f"Added insulation to reach R-{r_value_ip}; actual added thickness {thickness_in:.2f} in",
                 "quantity": float(area_ft2),
                 "unit": "SF",
+                "quantity_volume": float(volume_ft3),
+                "unit_volume": "CF",
+                "rsmeans_thickness_ft": float(thickness_ft),
+                "costing_mode": "volume_from_area",
                 "quantity_si": float(area_m2),
                 "unit_si": "m2",
                 "division_code": "07",
@@ -1115,11 +1121,12 @@ class IncreaseInsulationRValueForRoofs(openstudio.measure.ModelMeasure):
                                     mat_rsmeans_id = mat.get("rsmeans_id", "N/A")
                                     mat_unit_cost = mat.get("unit_cost", 0.0)
                                     mat_total_cost = mat.get("total_cost", 0.0)
+                                    mat_unit_cost_basis = mat.get("unit_cost_basis", mat_unit)
                                     runner.registerInfo(
                                         f"  - {mat_name} | {mat_desc} | {mat_qty} {mat_unit} | "
                                         f"division {mat_div} | "
                                         f"costline_id={mat_rsmeans_id} | "
-                                        f"unit=${mat_unit_cost:,.2f} | total=${mat_total_cost:,.2f}"
+                                        f"unit=${mat_unit_cost:,.2f}/{mat_unit_cost_basis} | total=${mat_total_cost:,.2f}"
                                     )
                             runner.registerInfo(
                                 "RSMeans cost summary: "

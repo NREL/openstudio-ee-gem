@@ -1,6 +1,6 @@
 {
   "measure": "IncreaseInsulationRValueForRoofs",
-  "success": false,
+  "success": true,
   "step_values": {
     "r_value": 30.0,
     "analysis_period": 30,
@@ -12,12 +12,100 @@
     "insulation_material_density": 0.0,
     "calculate_costs": true,
     "use_custom_costs": false,
-    "use_exact_costline_id": false,
-    "exact_costline_id": "072126100020",
+    "use_exact_costline_id": true,
+    "exact_costline_id": "072116201320",
     "custom_cost_per_sf": 0.73,
     "overhead_profit_percent": 10.0
   },
-  "cost_response": null,
-  "additional_properties_count": 0,
-  "additional_properties_sample": []
+  "cost_response": {
+    "cost_source": "rsmeans_api",
+    "selection_mode": "exact_id",
+    "material_cost": {
+      "value": 13468.619952150968,
+      "unit": "$"
+    },
+    "overhead_profit_cost": {
+      "value": 1346.8619952150968,
+      "unit": "$"
+    },
+    "total_cost_with_overhead_and_profit": {
+      "value": 14815.481947366065,
+      "unit": "$"
+    },
+    "materials": [
+      {
+        "name": "Pure Wool Batts roof insulation (Typical IEAD Roof R-15.87)",
+        "description": "Added insulation to reach R-30.0; actual added thickness 4.23 in",
+        "match_type": "exact_id_match",
+        "rsmeans_id": "072116201320",
+        "catalog": "bc-mf",
+        "search_term_used": "rsmeans_id:072116201320",
+        "quantity": {
+          "value": 4999.999999999986,
+          "unit": "SF"
+        },
+        "unit_cost": {
+          "value": 7.645714285714285,
+          "unit": "$/ SF"
+        },
+        "total_cost": {
+          "value": 13468.619952150968,
+          "unit": "$"
+        }
+      }
+    ]
+  },
+  "additional_properties_count": 20,
+  "additional_properties_sample": [
+    {
+      "construction": "Facility",
+      "property": "roof_insulation_cost_source",
+      "value": "rsmeans_api"
+    },
+    {
+      "construction": "Facility",
+      "property": "roof_insulation_material_gwp_per_kg",
+      "value": 2.637913741
+    },
+    {
+      "construction": "Facility",
+      "property": "roof_insulation_material_gwp_per_m2",
+      "value": 2.63
+    },
+    {
+      "construction": "Facility",
+      "property": "roof_insulation_retrofit_materials_json",
+      "value": "[{\"name\": \"Pure Wool Batts roof insulation (Typical IEAD Roof R-15.87)\", \"description\": \"Added insulation to reach R-30.0; actual added thickness 4.23 in\", \"quantity\": 4999.999999999986, \"unit\": \"SF\", \"quantity_volume\": 1761.5908009166067, \"unit_volume\": \"CF\", \"rsmeans_thickness_ft\": 0.3523181601833223, \"costing_mode\": \"volume_from_area\", \"quantity_si\": 464.51519999999874, \"unit_si\": \"m2\", \"division_code\": \"07\", \"rsmeans_id\": \"072116201320\"}]"
+    },
+    {
+      "construction": "Facility",
+      "property": "roof_insulation_rsmeans_matches_json",
+      "value": "{\"materials\": [{\"name\": \"Pure Wool Batts roof insulation (Typical IEAD Roof R-15.87)\", \"description\": \"Added insulation to reach R-30.0; actual added thickness 4.23 in\", \"quantity\": 4999.999999999986, \"unit\": \"SF\", \"quantity_volume\": 1761.5908009166067, \"unit_volume\": \"CF\", \"rsmeans_thickness_ft\": 0.3523181601833223, \"costing_mode\": \"volume_from_area\", \"quantity_si\": 464.51519999999874, \"unit_si\": \"m2\", \"division_code\": \"07\", \"rsmeans_id\": \"072116201320\", \"catalog\": \"bc-mf\", \"search_term_used\": \"rsmeans_id:072116201320\", \"unit_cost\": 7.645714285714285, \"total_cost\": 13468.619952150968, \"rsmeans_description\": \"Blanket insulation, for walls or ceilings, mineral wool batts, 3-1/2\\\" thick, R15\", \"match_type\": \"exact_id_match\", \"unit_cost_basis\": \"CF\"}], \"search_log\": [{\"material\": \"Pure Wool Batts roof insulation (Typical IEAD Roof R-15.87)\", \"search_term\": \"072116201320\", \"catalog\": \"bc-mf\", \"division\": \"07\", \"status\": \"exact_id_match\", \"unit_cost\": 7.645714285714285, \"unit_cost_basis\": \"CF\", \"costing_mode\": \"volume_from_area\", \"quantity\": 4999.999999999986, \"total_cost\": 13468.619952150968}], \"summary\": {\"release_id\": \"2024-an\", \"location_id\": \"us-us-national\", \"labor_type\": \"std\", \"measurement_system\": \"imp\", \"catalogs_searched\": [\"bc-mf\", \"gb-mf\", \"rp-mf\"]}}"
+    },
+    {
+      "construction": "Facility",
+      "property": "roof_insulation_rsmeans_requested_costline_id",
+      "value": "072116201320"
+    },
+    {
+      "construction": "Facility",
+      "property": "roof_insulation_rsmeans_selection_mode",
+      "value": "exact_id"
+    },
+    {
+      "construction": "Facility",
+      "property": "roof_insulation_total_additional_material_cost_$",
+      "value": 13468.619952150968
+    },
+    {
+      "construction": "Facility",
+      "property": "roof_insulation_total_additional_overhead_profit_cost_$",
+      "value": 1346.8619952150968
+    },
+    {
+      "construction": "Facility",
+      "property": "roof_insulation_total_cost_with_overhead_and_profit_$",
+      "value": 14815.481947366065
+    }
+  ]
 }
