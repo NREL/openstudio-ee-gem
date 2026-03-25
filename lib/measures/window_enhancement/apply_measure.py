@@ -25,8 +25,8 @@ try:
     print(f"Using OpenStudio from installed package")
 except ImportError:
     # Fall back to system installations
-    OPENSTUDIO_VERSION = "3.8.0"
-    WINDOWS_OPENSTUDIO_PATH = r"C:\openstudio-3.8.0\Python"
+    OPENSTUDIO_VERSION = "3.9.0"
+    WINDOWS_OPENSTUDIO_PATH = r"C:\openstudio-3.9.0\Python"
     MAC_OPENSTUDIO_VERSION = "3.11.0"
     mac_openstudio_path = f"/Applications/OpenStudio-{MAC_OPENSTUDIO_VERSION}/Python"
 
@@ -198,7 +198,7 @@ def run_measure(model, args_overrides=None):
     set_arg("api_key", API_TOKEN)
     
     # --- Cost calculation ---
-    set_arg("calculate_costs", True)
+    set_arg("calculate_costs", False)  # Disable EC3 for faster testing
     
     # --- Custom cost mode (set to False to use RSMeans API, True to use custom costs below) ---
     set_arg("use_custom_costs", False)

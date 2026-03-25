@@ -1137,12 +1137,22 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
         def _m_to_lf(value_m: float) -> float:
             return value_m * 3.28084
 
+        def _m_to_ft(value_m: float) -> float:
+            return value_m * 3.28084
+
         if glass_option != "none" and user_num_panes > 0 and total_glazing_area_m2 > 0:
+            pane_count = max(1, int(user_num_panes))
+            glass_thickness_ft = _m_to_ft(float(glass_pane_thickness)) if glass_pane_thickness > 0 else 0.0
+            glazing_qty_sf = _m2_to_sf(total_glazing_area_m2)
             glazing_material = {
                 "name": "window glazing",
                 "description": f"{user_num_panes}-pane glass replacement",
-                "quantity": _m2_to_sf(total_glazing_area_m2),
+                "quantity": glazing_qty_sf,
                 "unit": "SF",
+                "quantity_volume": float(glazing_qty_sf * glass_thickness_ft * pane_count),
+                "unit_volume": "CF",
+                "rsmeans_thickness_ft": float(glass_thickness_ft),
+                "costing_mode": "volume_from_area",
                 "quantity_si": total_glazing_area_m2,
                 "unit_si": "m2",
                 "division_code": "08",
@@ -1208,11 +1218,17 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
             materials.append(weatherstrip_material)
 
         if secondary_glazing_option != "none" and total_glazing_area_m2 > 0:
+            secondary_glazing_qty_sf = _m2_to_sf(total_glazing_area_m2)
+            secondary_glass_thickness_ft = _m_to_ft(float(glass_pane_thickness)) if glass_pane_thickness > 0 else 0.0
             secondary_glazing_material = {
                 "name": "secondary glazing",
                 "description": "secondary glazing installation",
-                "quantity": _m2_to_sf(total_glazing_area_m2),
+                "quantity": secondary_glazing_qty_sf,
                 "unit": "SF",
+                "quantity_volume": float(secondary_glazing_qty_sf * secondary_glass_thickness_ft),
+                "unit_volume": "CF",
+                "rsmeans_thickness_ft": float(secondary_glass_thickness_ft),
+                "costing_mode": "volume_from_area",
                 "quantity_si": total_glazing_area_m2,
                 "unit_si": "m2",
                 "division_code": "08",
@@ -1260,7 +1276,12 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
                 runner.registerInfo("ATTEMPTING RSMeans API LOOKUP FOR CAPITAL COSTS")
                 runner.registerInfo("=" * 80)
                 
-                rsmeans_lookup = self.pull_rsmeans_cost_from_api(runner, materials, use_custom_costs=False)
+                rsmeans_lookup = self.pull_rsmeans_cost_from_api(
+                    runner,
+                    materials,
+                    use_custom_costs=False,
+                    overhead_profit_percent=overhead_profit_percent,
+                )
                 
                 if rsmeans_lookup and rsmeans_lookup.get("status") == "ok":
                     # RSMeans lookup successful
@@ -1274,6 +1295,20 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
                     runner.registerInfo(f"  Total material cost: ${summary.get('total_material_cost', 0):,.2f}")
                     runner.registerInfo(f"  Overhead + Profit: ${summary.get('total_overhead_profit_cost', 0):,.2f}")
                     runner.registerInfo(f"  Total cost with O&P: ${total_material_cost:,.2f}")
+                    materials_results = rsmeans_lookup.get("results", {}).get("materials", [])
+                    if materials_results:
+                        runner.registerInfo("  RSMeans materials detail:")
+                        for mat in materials_results:
+                            mat_name = mat.get("name", "(unknown)")
+                            mat_qty = mat.get("quantity", 0.0)
+                            mat_unit = mat.get("unit", "")
+                            mat_unit_cost = mat.get("unit_cost", 0.0)
+                            mat_total_cost = mat.get("total_cost", 0.0)
+                            mat_basis = mat.get("unit_cost_basis", mat_unit)
+                            runner.registerInfo(
+                                f"    - {mat_name}: {mat_qty:.2f} {mat_unit}, "
+                                f"unit=${mat_unit_cost:.2f}/{mat_basis}, total=${mat_total_cost:,.2f}"
+                            )
                     
                     try:
                         results.setFeature("window_enhancement_rsmeans_results_json", json.dumps(rsmeans_lookup))
@@ -1501,7 +1536,13 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
         
         return total_cost
 
-    def pull_rsmeans_cost_from_api(self, runner, materials, use_custom_costs=False):
+    def pull_rsmeans_cost_from_api(
+        self,
+        runner,
+        materials,
+        use_custom_costs=False,
+        overhead_profit_percent=10.0,
+    ):
         """
         Pull RSMeans cost data for retrofit materials using API credentials.
         If use_custom_costs is True, returns an empty dict to signal custom cost mode.
@@ -1542,7 +1583,7 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
                 labor_type='std',
                 measurement_system='imp',
                 use_sandbox=False,
-                overhead_profit_percent=10.0,
+                overhead_profit_percent=overhead_profit_percent,
             )
             
             if result.get('status') == 'success' or result.get('status') == 'ok':
