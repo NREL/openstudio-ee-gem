@@ -757,6 +757,7 @@ class IncreaseInsulationRValueForRoofs(openstudio.measure.ModelMeasure):
 
         # Renovation details / quantities
         reno_detail.setFeature("roof_insulation_renovated_area_m2", total_roof_area)
+        reno_detail.setFeature("roof_insulation_added_volume_m3", sum(item["added_total_volume_m3"] for item in gwp_summary_rows))
         # reno_detail.setFeature("roof_insulation_modified_constructions_count", len(modified_constructions))
 
         # Results (standardized fields)

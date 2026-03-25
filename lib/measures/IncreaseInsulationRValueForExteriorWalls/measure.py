@@ -571,6 +571,7 @@ class IncreaseInsulationRValueForExteriorWalls(openstudio.measure.ModelMeasure):
 
         # Renovation details / quantities
         reno_detail.setFeature("wall_insulation_renovated_area_m2", total_wall_area)
+        reno_detail.setFeature("wall_insulation_added_volume_m3", sum(item["added_thickness_m"] * item["total_area_m2"] for item in modified_constructions))
         # reno_detail.setFeature("wall_insulation_modified_constructions_count", len(modified_constructions))
 
         # Results (standardized fields)
