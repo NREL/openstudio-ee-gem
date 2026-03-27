@@ -1290,12 +1290,10 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
         # Glass pane EPD
         urls["glass"] = None
         if glass_option != "none":
-            if num_panes == 1:
-                urls["glass"] = generate_url_byname(category='6daae3d967104f5c8c85199b259f58c8', name_like='monolithic glass')
-            elif num_panes == 2:
-                urls["glass"] = generate_url_byname(category='ade3ad3405124279955e7d3085f59383', name_like='double pane')
-            elif num_panes == 3:
-                urls["glass"] = generate_url_byname(category='ade3ad3405124279955e7d3085f59383', name_like='triple pane')
+            urls["glass"] = generate_url_byname(
+                category='6daae3d967104f5c8c85199b259f58c8',
+                name_like='monolithic glass'
+            )
         else:
             # Reduced verbosity
             pass
