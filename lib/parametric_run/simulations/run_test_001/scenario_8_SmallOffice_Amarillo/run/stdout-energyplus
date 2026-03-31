@@ -2,15 +2,17 @@ ExpandObjects Started.
 No expanded file generated.
 ExpandObjects Finished. Time:     0.078
 EnergyPlus Starting
-EnergyPlus, Version 25.2.0-cf7368216c, YMD=2026.03.27 14:57
+EnergyPlus, Version 25.2.0-cf7368216c, YMD=2026.03.31 10:02
 Initializing Response Factors
 Calculating CTFs for "INTERIORFURNISHINGS"
 Calculating CTFs for "TYPICAL ATTIC SOFFIT"
-Calculating CTFs for "TYPICAL INSULATED METAL DOOR R-1.43"
-Calculating CTFs for "TYPICAL INSULATED WOOD FRAMED EXTERIOR WALL R-11.24"
+Calculating CTFs for "TYPICAL INSULATED METAL DOOR R-1.43 - POLYSTYRENE CORE STEEL DOOR R-0.43"
+Calculating CTFs for "TYPICAL INSULATED METAL DOOR R-1.43 - POLYSTYRENE CORE STEEL DOOR R-0.43 1"
+Calculating CTFs for "TYPICAL INSULATED WOOD FRAMED EXTERIOR WALL R-11.24 1"
 Calculating CTFs for "TYPICAL INTERIOR WALL"
 Calculating CTFs for "TYPICAL UNINSULATED WOOD JOIST ATTIC ROOF ADJ ROOF INSULATION"
 Calculating CTFs for "TYPICAL WOOD JOIST ATTIC FLOOR R-37.04 1"
+Calculating CTFs for "U 0.9 SHGC 0.25 SIMPLE GLAZING - POLYSTYRENE CORE STEEL DOOR R-0.43"
 Calculating CTFs for "FOUNDATION F 1.26W/M*K PERIM 0.0M AREA 149.66M2"
 Calculating CTFs for "FOUNDATION F 1.26W/M*K PERIM 18.46M AREA 67.3M2"
 Calculating CTFs for "FOUNDATION F 1.26W/M*K PERIM 27.69M AREA 113.45M2"
@@ -79,7 +81,6 @@ Warming up
 Warming up
 Warming up
 Warming up
-Warming up
 Performing Zone Sizing Simulation
 ...for Sizing Period: #3 EL PASO INTERNATIONAL AP  UT ANN HTG 99.6% CONDNS DB
 Calculating System sizing
@@ -113,6 +114,7 @@ Warming up {15}
 Warming up {16}
 Warming up {17}
 Warming up {18}
+Warming up {19}
 Starting Simulation at 01/01/2006 for RUN PERIOD 1
 Updating Shadowing Calculations, Start Date=01/31/2006
 Updating Detailed Daylighting Factors, Start Date=01/31
@@ -153,5 +155,5 @@ Continuing Simulation at 12/27/2006 for RUN PERIOD 1
 Writing tabular output file results using HTML format.
 Computing Life Cycle Costs and Reporting
 Writing final SQL reports
-EnergyPlus Run Time=00hr 00min  9.04sec
+EnergyPlus Run Time=00hr 00min  9.68sec
 EnergyPlus Completed Successfully.

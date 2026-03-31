@@ -3,6 +3,10 @@
 # See also https://openstudio.net/license
 # *******************************************************************************
 
+
+import sys
+import os
+sys.path.insert(0, os.path.dirname(__file__))
 import openstudio
 import numpy as np
 from resources.EC3_lookup import *

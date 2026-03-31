@@ -2,17 +2,17 @@ ExpandObjects Started.
 No expanded file generated.
 ExpandObjects Finished. Time:     0.078
 EnergyPlus Starting
-EnergyPlus, Version 25.2.0-cf7368216c, YMD=2026.03.27 14:50
+EnergyPlus, Version 25.2.0-cf7368216c, YMD=2026.03.31 11:46
 Initializing Response Factors
 Calculating CTFs for "INTERIORFURNISHINGS"
 Calculating CTFs for "TYPICAL ATTIC SOFFIT"
-Calculating CTFs for "TYPICAL INSULATED METAL DOOR R-1.43 - WOODEN DOOR R-0.30"
-Calculating CTFs for "TYPICAL INSULATED METAL DOOR R-1.43 - WOODEN DOOR R-0.30 1"
+Calculating CTFs for "TYPICAL INSULATED METAL DOOR R-1.43 - GLASS DOOR R-0.50"
+Calculating CTFs for "TYPICAL INSULATED METAL DOOR R-1.43 - GLASS DOOR R-0.50 1"
 Calculating CTFs for "TYPICAL INSULATED WOOD FRAMED EXTERIOR WALL R-11.24 1"
 Calculating CTFs for "TYPICAL INTERIOR WALL"
-Calculating CTFs for "TYPICAL UNINSULATED WOOD JOIST ATTIC ROOF"
+Calculating CTFs for "TYPICAL UNINSULATED WOOD JOIST ATTIC ROOF ADJ ROOF INSULATION"
 Calculating CTFs for "TYPICAL WOOD JOIST ATTIC FLOOR R-37.04 1"
-Calculating CTFs for "U 0.9 SHGC 0.25 SIMPLE GLAZING - WOODEN DOOR R-0.30"
+Calculating CTFs for "U 0.9 SHGC 0.25 SIMPLE GLAZING - GLASS DOOR R-0.50"
 Calculating CTFs for "FOUNDATION F 1.26W/M*K PERIM 0.0M AREA 149.66M2"
 Calculating CTFs for "FOUNDATION F 1.26W/M*K PERIM 18.46M AREA 67.3M2"
 Calculating CTFs for "FOUNDATION F 1.26W/M*K PERIM 27.69M AREA 113.45M2"
@@ -48,6 +48,9 @@ Warming up
 Warming up
 Warming up
 Warming up
+Warming up
+Warming up
+Warming up
 Performing Zone Sizing Simulation
 ...for Sizing Period: #1 EL PASO INTERNATIONAL AP  UT ANN CLG .4% CONDNS DB=>MWB
 Warming up
@@ -57,10 +60,18 @@ Warming up
 Warming up
 Warming up
 Warming up
+Warming up
+Warming up
 Performing Zone Sizing Simulation
 ...for Sizing Period: #2 EL PASO INTERNATIONAL AP  UT ANN CLG .4% CONDNS WB=>MDB
 Warming up
 Calculating Detailed Daylighting Factors, Start Date=12/21
+Warming up
+Warming up
+Warming up
+Warming up
+Warming up
+Warming up
 Warming up
 Warming up
 Warming up
@@ -139,5 +150,5 @@ Continuing Simulation at 12/27/2006 for RUN PERIOD 1
 Writing tabular output file results using HTML format.
 Computing Life Cycle Costs and Reporting
 Writing final SQL reports
-EnergyPlus Run Time=00hr 00min 12.34sec
+EnergyPlus Run Time=00hr 00min 27.60sec
 EnergyPlus Completed Successfully.

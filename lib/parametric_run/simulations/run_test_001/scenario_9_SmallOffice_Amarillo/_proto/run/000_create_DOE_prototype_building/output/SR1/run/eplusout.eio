@@ -1,4 +1,4 @@
-Program Version,EnergyPlus, Version 25.2.0-cf7368216c, YMD=2026.03.27 15:54
+Program Version,EnergyPlus, Version 25.2.0-cf7368216c, YMD=2026.03.31 10:02
 ! <Version>, Version ID
  Version, 25.2
 ! <Timesteps per Hour>, #TimeSteps, Minutes per TimeStep {minutes}
@@ -34,7 +34,7 @@ Site:Location,El Paso International Ap  Ut TX USA TMY3 WMO#=722700,31.77,-106.50
 ! <Site Water Mains Temperature Information>,Calculation Method{},Water Mains Temperature Schedule Name{},Annual Average Outdoor Air Temperature{C},Maximum Difference In Monthly Average Outdoor Air Temperatures{deltaC},Fixed Default Water Mains Temperature{C}
 Site Water Mains Temperature Information,Correlation,NA,17.94,21.10,NA
 ! <Building Information>, Building Name,North Axis {deg},Terrain,  Loads Convergence Tolerance Value,Temperature Convergence Tolerance Value,  Solar Distribution,Maximum Number of Warmup Days,Minimum Number of Warmup Days
- Building Information,-SmallOffice-ASHRAE 169-2013-3B created: 2026-03-27 15:54:56 -0600,0.000,City,4.00000E-002,0.20000,FullInteriorAndExterior,25,6
+ Building Information,-SmallOffice-ASHRAE 169-2013-3B created: 2026-03-31 10:02:27 -0600,0.000,City,4.00000E-002,0.20000,FullInteriorAndExterior,25,6
 ! <Inside Convection Algorithm>, Algorithm {Simple | TARP | CeilingDiffuser | AdaptiveConvectionAlgorithm}
 Inside Convection Algorithm,TARP
 ! <Outside Convection Algorithm>, Algorithm {SimpleCombined | TARP | MoWitt | DOE-2 | AdaptiveConvectionAlgorithm}

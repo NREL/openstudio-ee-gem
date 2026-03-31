@@ -348,7 +348,8 @@ class DoorEnhancement(openstudio.measure.ModelMeasure):
             "brush weatherstrip": 0.9144,  # 36" = 0.9144 m, source: https://www.pemko.com/en/view-pdf?id=AADSS1046707&page=1
             "silicone adhesive smoke gasket": 5.1816,  # 17' = 5.1816 m, source: https://buildingtransparency.org/ec3/epds/ec327rq0
             "automatic door bottom": 0.9144,  # 36" = 0.9144 m, source: https://www.adair.com/p-1537-automatic-door-bottom.aspx
-            "jamb weatherstrip": 5.181  # 5.181 m, source: https://buildingtransparency.org/ec3/epds/ec3zsugu
+            "jamb weatherstrip": 5.181,  # 5.181 m, source: https://buildingtransparency.org/ec3/epds/ec3zsugu
+            "none": 0.0
         }
         if length_per_unit_bottom_side == 0.0:
             length_per_unit_bottom_side = length_per_unit_dict[door_bottom_seal_option]
@@ -366,17 +367,17 @@ class DoorEnhancement(openstudio.measure.ModelMeasure):
                 runner.registerInfo(f"Error processing argument: {arg_name} - {str(e)}")
         
         # Check if numeric values are reasonable
-        if analysis_period <= 0:
+        if analysis_period < 0:
             runner.registerError("Choose an integer larger than 0 for analysis period of embodied carbon calculation.")
-        if strip_lifetime <= 0:
+        if strip_lifetime < 0:
             runner.registerError("Choose an integer larger than 0 for product lifetime of door bottom strip.")
-        if door_area_per_unit <= 0:
+        if door_area_per_unit < 0:
             runner.registerError("Choose a numeric value larger than 0 for door area per unit.")
-        if door_lifetime <= 0:
+        if door_lifetime < 0:
             runner.registerError("Choose an integer larger than 0 for product lifetime of door.")
-        if length_per_unit_bottom_side <= 0:
+        if length_per_unit_bottom_side < 0:
             runner.registerError("Choose a numeric value larger than 0 for length per unit of door bottom sealing strip.")
-        if length_per_unit_other_sides <= 0:
+        if length_per_unit_other_sides < 0:
             runner.registerError("Choose a numeric value larger than 0 for length per unit of door other sides sealing strip.")
         if door_thermal_conductivity < 0:
             runner.registerError("Door thermal conductivity must be non-negative.")

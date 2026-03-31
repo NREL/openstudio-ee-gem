@@ -201,7 +201,7 @@ LifeCycleCost:UsePriceEscalation,
   1.0950;                                 !- Year Escalation 30
 
 Building,
-  -SmallOffice-ASHRAE 169-2013-3B created: 2026-03-27 14:50:51 -0600, !- Name
+  -SmallOffice-ASHRAE 169-2013-3B created: 2026-03-31 09:56:39 -0600, !- Name
   0,                                      !- North Axis {deg}
   City,                                   !- Terrain
   0.04,                                   !- Loads Convergence Tolerance Value {W}
@@ -464,13 +464,13 @@ InternalMass,
   1135.9548;                              !- Surface Area {m2}
 
 ZoneInfiltration:DesignFlowRate,
-  Attic HVAC Off Infiltration 30.0 percent reduction, !- Name
+  Attic HVAC Off Infiltration 25.0 percent reduction 25.0 percent reduction, !- Name
   Attic,                                  !- Zone or ZoneList or Space or SpaceList Name
   Infiltration HVAC Off Schedule,         !- Schedule Name
   Flow/ExteriorArea,                      !- Design Flow Rate Calculation Method
   ,                                       !- Design Flow Rate {m3/s}
   ,                                       !- Flow Rate per Floor Area {m3/s-m2}
-  0.000399230579187159,                   !- Flow Rate per Exterior Surface Area {m3/s-m2}
+  0.000320810286846824,                   !- Flow Rate per Exterior Surface Area {m3/s-m2}
   ,                                       !- Air Changes per Hour {1/hr}
   0,                                      !- Constant Term Coefficient
   0.0179,                                 !- Temperature Term Coefficient
@@ -479,13 +479,13 @@ ZoneInfiltration:DesignFlowRate,
   Outdoor;                                !- Density Basis
 
 ZoneInfiltration:DesignFlowRate,
-  Attic HVAC On Infiltration 30.0 percent reduction, !- Name
+  Attic HVAC On Infiltration 25.0 percent reduction 25.0 percent reduction, !- Name
   Attic,                                  !- Zone or ZoneList or Space or SpaceList Name
   Infiltration HVAC On Schedule,          !- Schedule Name
   Flow/ExteriorArea,                      !- Design Flow Rate Calculation Method
   ,                                       !- Design Flow Rate {m3/s}
   ,                                       !- Flow Rate per Floor Area {m3/s-m2}
-  0.000399230579187159,                   !- Flow Rate per Exterior Surface Area {m3/s-m2}
+  0.000320810286846824,                   !- Flow Rate per Exterior Surface Area {m3/s-m2}
   ,                                       !- Air Changes per Hour {1/hr}
   0.0209,                                 !- Constant Term Coefficient
   0.0064,                                 !- Temperature Term Coefficient
@@ -494,11 +494,11 @@ ZoneInfiltration:DesignFlowRate,
   Outdoor;                                !- Density Basis
 
 ZoneInfiltration:DesignFlowRate,
-  attic Infiltration 30.0 percent reduction, !- Name
+  attic Infiltration 25.0 percent reduction 25.0 percent reduction, !- Name
   Attic,                                  !- Zone or ZoneList or Space or SpaceList Name
   Always On,                              !- Schedule Name
   Flow/Zone,                              !- Design Flow Rate Calculation Method
-  0.14007,                                !- Design Flow Rate {m3/s}
+  0.11255625,                             !- Design Flow Rate {m3/s}
   ,                                       !- Flow Rate per Floor Area {m3/s-m2}
   ,                                       !- Flow Rate per Exterior Surface Area {m3/s-m2}
   ,                                       !- Air Changes per Hour {1/hr}
@@ -1459,7 +1459,7 @@ BuildingSurface:Detailed,
 BuildingSurface:Detailed,
   Perimeter_ZN_1_wall_south,              !- Name
   Wall,                                   !- Surface Type
-  Typical Insulated Wood Framed Exterior Wall R-11.24, !- Construction Name
+  Typical Insulated Wood Framed Exterior Wall R-11.24 1, !- Construction Name
   Perimeter_ZN_1 ZN,                      !- Zone Name
   Perimeter_ZN_1,                         !- Space Name
   Outdoors,                               !- Outside Boundary Condition
@@ -1475,8 +1475,8 @@ BuildingSurface:Detailed,
 
 FenestrationSurface:Detailed,
   Perimeter_ZN_1_wall_south_door,         !- Name
-  GlassDoor,                              !- Surface Type
-  U 0.9 SHGC 0.25 Simple Glazing,         !- Construction Name
+  Door,                                   !- Surface Type
+  U 0.9 SHGC 0.25 Simple Glazing - polystyrene core steel door R-0.43, !- Construction Name
   Perimeter_ZN_1_wall_south,              !- Building Surface Name
   ,                                       !- Outside Boundary Condition Object
   ,                                       !- View Factor to Ground
@@ -1603,11 +1603,11 @@ InternalMass,
   226.9;                                  !- Surface Area {m2}
 
 ZoneInfiltration:DesignFlowRate,
-  entry door Infiltration 30.0 percent reduction, !- Name
+  entry door Infiltration 25.0 percent reduction 25.0 percent reduction, !- Name
   Perimeter_ZN_1,                         !- Zone or ZoneList or Space or SpaceList Name
   OfficeSmall INFIL_Door_Opening_SCH_2013, !- Schedule Name
   Flow/Zone,                              !- Design Flow Rate Calculation Method
-  0.0535187898,                           !- Design Flow Rate {m3/s}
+  0.043006170375,                         !- Design Flow Rate {m3/s}
   ,                                       !- Flow Rate per Floor Area {m3/s-m2}
   ,                                       !- Flow Rate per Exterior Surface Area {m3/s-m2}
   ,                                       !- Air Changes per Hour {1/hr}
@@ -1618,13 +1618,13 @@ ZoneInfiltration:DesignFlowRate,
   Outdoor;                                !- Density Basis
 
 ZoneInfiltration:DesignFlowRate,
-  Perimeter_ZN_1 HVAC Off Infiltration 30.0 percent reduction, !- Name
+  Perimeter_ZN_1 HVAC Off Infiltration 25.0 percent reduction 25.0 percent reduction, !- Name
   Perimeter_ZN_1,                         !- Zone or ZoneList or Space or SpaceList Name
   Infiltration HVAC Off Schedule,         !- Schedule Name
   Flow/ExteriorArea,                      !- Design Flow Rate Calculation Method
   ,                                       !- Design Flow Rate {m3/s}
   ,                                       !- Flow Rate per Floor Area {m3/s-m2}
-  0.000399230579187159,                   !- Flow Rate per Exterior Surface Area {m3/s-m2}
+  0.000320810286846824,                   !- Flow Rate per Exterior Surface Area {m3/s-m2}
   ,                                       !- Air Changes per Hour {1/hr}
   0,                                      !- Constant Term Coefficient
   0.0179,                                 !- Temperature Term Coefficient
@@ -1633,13 +1633,13 @@ ZoneInfiltration:DesignFlowRate,
   Outdoor;                                !- Density Basis
 
 ZoneInfiltration:DesignFlowRate,
-  Perimeter_ZN_1 HVAC On Infiltration 30.0 percent reduction, !- Name
+  Perimeter_ZN_1 HVAC On Infiltration 25.0 percent reduction 25.0 percent reduction, !- Name
   Perimeter_ZN_1,                         !- Zone or ZoneList or Space or SpaceList Name
   Infiltration HVAC On Schedule,          !- Schedule Name
   Flow/ExteriorArea,                      !- Design Flow Rate Calculation Method
   ,                                       !- Design Flow Rate {m3/s}
   ,                                       !- Flow Rate per Floor Area {m3/s-m2}
-  0.000399230579187159,                   !- Flow Rate per Exterior Surface Area {m3/s-m2}
+  0.000320810286846824,                   !- Flow Rate per Exterior Surface Area {m3/s-m2}
   ,                                       !- Air Changes per Hour {1/hr}
   0.0209,                                 !- Constant Term Coefficient
   0.0064,                                 !- Temperature Term Coefficient
@@ -1855,7 +1855,7 @@ BuildingSurface:Detailed,
 BuildingSurface:Detailed,
   Perimeter_ZN_2_wall_east,               !- Name
   Wall,                                   !- Surface Type
-  Typical Insulated Wood Framed Exterior Wall R-11.24, !- Construction Name
+  Typical Insulated Wood Framed Exterior Wall R-11.24 1, !- Construction Name
   Perimeter_ZN_2 ZN,                      !- Zone Name
   Perimeter_ZN_2,                         !- Space Name
   Outdoors,                               !- Outside Boundary Condition
@@ -1988,13 +1988,13 @@ InternalMass,
   134.6;                                  !- Surface Area {m2}
 
 ZoneInfiltration:DesignFlowRate,
-  Perimeter_ZN_2 HVAC Off Infiltration 30.0 percent reduction, !- Name
+  Perimeter_ZN_2 HVAC Off Infiltration 25.0 percent reduction 25.0 percent reduction, !- Name
   Perimeter_ZN_2,                         !- Zone or ZoneList or Space or SpaceList Name
   Infiltration HVAC Off Schedule,         !- Schedule Name
   Flow/ExteriorArea,                      !- Design Flow Rate Calculation Method
   ,                                       !- Design Flow Rate {m3/s}
   ,                                       !- Flow Rate per Floor Area {m3/s-m2}
-  0.000399230579187159,                   !- Flow Rate per Exterior Surface Area {m3/s-m2}
+  0.000320810286846824,                   !- Flow Rate per Exterior Surface Area {m3/s-m2}
   ,                                       !- Air Changes per Hour {1/hr}
   0,                                      !- Constant Term Coefficient
   0.0179,                                 !- Temperature Term Coefficient
@@ -2003,13 +2003,13 @@ ZoneInfiltration:DesignFlowRate,
   Outdoor;                                !- Density Basis
 
 ZoneInfiltration:DesignFlowRate,
-  Perimeter_ZN_2 HVAC On Infiltration 30.0 percent reduction, !- Name
+  Perimeter_ZN_2 HVAC On Infiltration 25.0 percent reduction 25.0 percent reduction, !- Name
   Perimeter_ZN_2,                         !- Zone or ZoneList or Space or SpaceList Name
   Infiltration HVAC On Schedule,          !- Schedule Name
   Flow/ExteriorArea,                      !- Design Flow Rate Calculation Method
   ,                                       !- Design Flow Rate {m3/s}
   ,                                       !- Flow Rate per Floor Area {m3/s-m2}
-  0.000399230579187159,                   !- Flow Rate per Exterior Surface Area {m3/s-m2}
+  0.000320810286846824,                   !- Flow Rate per Exterior Surface Area {m3/s-m2}
   ,                                       !- Air Changes per Hour {1/hr}
   0.0209,                                 !- Constant Term Coefficient
   0.0064,                                 !- Temperature Term Coefficient
@@ -2242,7 +2242,7 @@ BuildingSurface:Detailed,
 BuildingSurface:Detailed,
   Perimeter_ZN_3_wall_north,              !- Name
   Wall,                                   !- Surface Type
-  Typical Insulated Wood Framed Exterior Wall R-11.24, !- Construction Name
+  Typical Insulated Wood Framed Exterior Wall R-11.24 1, !- Construction Name
   Perimeter_ZN_3 ZN,                      !- Zone Name
   Perimeter_ZN_3,                         !- Space Name
   Outdoors,                               !- Outside Boundary Condition
@@ -2259,7 +2259,7 @@ BuildingSurface:Detailed,
 FenestrationSurface:Detailed,
   Perimeter_ZN_3_wall_north_Door1,        !- Name
   Door,                                   !- Surface Type
-  Typical Insulated Metal Door R-1.43,    !- Construction Name
+  Typical Insulated Metal Door R-1.43 - polystyrene core steel door R-0.43, !- Construction Name
   Perimeter_ZN_3_wall_north,              !- Building Surface Name
   ,                                       !- Outside Boundary Condition Object
   ,                                       !- View Factor to Ground
@@ -2274,7 +2274,7 @@ FenestrationSurface:Detailed,
 FenestrationSurface:Detailed,
   Perimeter_ZN_3_wall_north_Door2,        !- Name
   Door,                                   !- Surface Type
-  Typical Insulated Metal Door R-1.43,    !- Construction Name
+  Typical Insulated Metal Door R-1.43 - polystyrene core steel door R-0.43 1, !- Construction Name
   Perimeter_ZN_3_wall_north,              !- Building Surface Name
   ,                                       !- Outside Boundary Condition Object
   ,                                       !- View Factor to Ground
@@ -2418,13 +2418,13 @@ InternalMass,
   226.9;                                  !- Surface Area {m2}
 
 ZoneInfiltration:DesignFlowRate,
-  Perimeter_ZN_3 HVAC Off Infiltration 30.0 percent reduction, !- Name
+  Perimeter_ZN_3 HVAC Off Infiltration 25.0 percent reduction 25.0 percent reduction, !- Name
   Perimeter_ZN_3,                         !- Zone or ZoneList or Space or SpaceList Name
   Infiltration HVAC Off Schedule,         !- Schedule Name
   Flow/ExteriorArea,                      !- Design Flow Rate Calculation Method
   ,                                       !- Design Flow Rate {m3/s}
   ,                                       !- Flow Rate per Floor Area {m3/s-m2}
-  0.000399230579187159,                   !- Flow Rate per Exterior Surface Area {m3/s-m2}
+  0.000320810286846824,                   !- Flow Rate per Exterior Surface Area {m3/s-m2}
   ,                                       !- Air Changes per Hour {1/hr}
   0,                                      !- Constant Term Coefficient
   0.0179,                                 !- Temperature Term Coefficient
@@ -2433,13 +2433,13 @@ ZoneInfiltration:DesignFlowRate,
   Outdoor;                                !- Density Basis
 
 ZoneInfiltration:DesignFlowRate,
-  Perimeter_ZN_3 HVAC On Infiltration 30.0 percent reduction, !- Name
+  Perimeter_ZN_3 HVAC On Infiltration 25.0 percent reduction 25.0 percent reduction, !- Name
   Perimeter_ZN_3,                         !- Zone or ZoneList or Space or SpaceList Name
   Infiltration HVAC On Schedule,          !- Schedule Name
   Flow/ExteriorArea,                      !- Design Flow Rate Calculation Method
   ,                                       !- Design Flow Rate {m3/s}
   ,                                       !- Flow Rate per Floor Area {m3/s-m2}
-  0.000399230579187159,                   !- Flow Rate per Exterior Surface Area {m3/s-m2}
+  0.000320810286846824,                   !- Flow Rate per Exterior Surface Area {m3/s-m2}
   ,                                       !- Air Changes per Hour {1/hr}
   0.0209,                                 !- Constant Term Coefficient
   0.0064,                                 !- Temperature Term Coefficient
@@ -2706,7 +2706,7 @@ BuildingSurface:Detailed,
 BuildingSurface:Detailed,
   Perimeter_ZN_4_wall_west,               !- Name
   Wall,                                   !- Surface Type
-  Typical Insulated Wood Framed Exterior Wall R-11.24, !- Construction Name
+  Typical Insulated Wood Framed Exterior Wall R-11.24 1, !- Construction Name
   Perimeter_ZN_4 ZN,                      !- Zone Name
   Perimeter_ZN_4,                         !- Space Name
   Outdoors,                               !- Outside Boundary Condition
@@ -2788,13 +2788,13 @@ InternalMass,
   134.6;                                  !- Surface Area {m2}
 
 ZoneInfiltration:DesignFlowRate,
-  Perimeter_ZN_4 HVAC Off Infiltration 30.0 percent reduction, !- Name
+  Perimeter_ZN_4 HVAC Off Infiltration 25.0 percent reduction 25.0 percent reduction, !- Name
   Perimeter_ZN_4,                         !- Zone or ZoneList or Space or SpaceList Name
   Infiltration HVAC Off Schedule,         !- Schedule Name
   Flow/ExteriorArea,                      !- Design Flow Rate Calculation Method
   ,                                       !- Design Flow Rate {m3/s}
   ,                                       !- Flow Rate per Floor Area {m3/s-m2}
-  0.000399230579187159,                   !- Flow Rate per Exterior Surface Area {m3/s-m2}
+  0.000320810286846824,                   !- Flow Rate per Exterior Surface Area {m3/s-m2}
   ,                                       !- Air Changes per Hour {1/hr}
   0,                                      !- Constant Term Coefficient
   0.0179,                                 !- Temperature Term Coefficient
@@ -2803,13 +2803,13 @@ ZoneInfiltration:DesignFlowRate,
   Outdoor;                                !- Density Basis
 
 ZoneInfiltration:DesignFlowRate,
-  Perimeter_ZN_4 HVAC On Infiltration 30.0 percent reduction, !- Name
+  Perimeter_ZN_4 HVAC On Infiltration 25.0 percent reduction 25.0 percent reduction, !- Name
   Perimeter_ZN_4,                         !- Zone or ZoneList or Space or SpaceList Name
   Infiltration HVAC On Schedule,          !- Schedule Name
   Flow/ExteriorArea,                      !- Design Flow Rate Calculation Method
   ,                                       !- Design Flow Rate {m3/s}
   ,                                       !- Flow Rate per Floor Area {m3/s-m2}
-  0.000399230579187159,                   !- Flow Rate per Exterior Surface Area {m3/s-m2}
+  0.000320810286846824,                   !- Flow Rate per Exterior Surface Area {m3/s-m2}
   ,                                       !- Air Changes per Hour {1/hr}
   0.0209,                                 !- Constant Term Coefficient
   0.0064,                                 !- Temperature Term Coefficient
@@ -3119,9 +3119,9 @@ Material,
   0.7;                                    !- Visible Absorptance
 
 Material,
-  Asphalt Shingles_R-value 30.0 (ft^2*h*R/Btu), !- Name
+  Asphalt Shingles_R-value 25.0 (ft^2*h*R/Btu), !- Name
   VeryRough,                              !- Roughness
-  0.211332220418767,                      !- Thickness {m}
+  0.176110183682306,                      !- Thickness {m}
   0.04,                                   !- Conductivity {W/m-K}
   1120,                                   !- Density {kg/m3}
   1260,                                   !- Specific Heat {J/kg-K}
@@ -3174,6 +3174,39 @@ Material,
   0.7;                                    !- Visible Absorptance
 
 Material,
+  polystyrene core steel door R-0.43,     !- Name
+  Smooth,                                 !- Roughness
+  0.04445,                                !- Thickness {m}
+  0.104,                                  !- Conductivity {W/m-K}
+  472.3,                                  !- Density {kg/m3}
+  1000,                                   !- Specific Heat {J/kg-K}
+  0.9,                                    !- Thermal Absorptance
+  0.7,                                    !- Solar Absorptance
+  0.7;                                    !- Visible Absorptance
+
+Material,
+  polystyrene core steel door R-0.43 1,   !- Name
+  Smooth,                                 !- Roughness
+  0.04445,                                !- Thickness {m}
+  0.104,                                  !- Conductivity {W/m-K}
+  472.3,                                  !- Density {kg/m3}
+  1000,                                   !- Specific Heat {J/kg-K}
+  0.9,                                    !- Thermal Absorptance
+  0.7,                                    !- Solar Absorptance
+  0.7;                                    !- Visible Absorptance
+
+Material,
+  polystyrene core steel door R-0.43 2,   !- Name
+  Smooth,                                 !- Roughness
+  0.04445,                                !- Thickness {m}
+  0.104,                                  !- Conductivity {W/m-K}
+  472.3,                                  !- Density {kg/m3}
+  1000,                                   !- Specific Heat {J/kg-K}
+  0.9,                                    !- Thermal Absorptance
+  0.7,                                    !- Solar Absorptance
+  0.7;                                    !- Visible Absorptance
+
+Material,
   Std Wood 6inch,                         !- Name
   MediumSmooth,                           !- Roughness
   0.15,                                   !- Thickness {m}
@@ -3199,6 +3232,14 @@ Material:NoMass,
   0.9,                                    !- Thermal Absorptance
   0.7,                                    !- Solar Absorptance
   0.8;                                    !- Visible Absorptance
+
+Material:NoMass,
+  Expanded Polystyrene (EPS) Foam Board_Added, !- Name
+  Smooth,                                 !- Roughness
+  2.80770991717544,                       !- Thermal Resistance {m2-K/W}
+  0.9,                                    !- Thermal Absorptance
+  0.7,                                    !- Solar Absorptance
+  0.7;                                    !- Visible Absorptance
 
 Material:NoMass,
   Nonres_Floor_Insulation,                !- Name
@@ -3329,11 +3370,27 @@ Construction,
   Typical Insulation R-0.58;              !- Layer 2
 
 Construction,
+  Typical Insulated Metal Door R-1.43 - polystyrene core steel door R-0.43, !- Name
+  polystyrene core steel door R-0.43 1;   !- Layer 1
+
+Construction,
+  Typical Insulated Metal Door R-1.43 - polystyrene core steel door R-0.43 1, !- Name
+  polystyrene core steel door R-0.43 2;   !- Layer 1
+
+Construction,
   Typical Insulated Wood Framed Exterior Wall R-11.24, !- Name
   25mm Stucco,                            !- Layer 1
   5/8 in. Gypsum Board,                   !- Layer 2
   Typical Insulation R-9.06,              !- Layer 3
   5/8 in. Gypsum Board;                   !- Layer 4
+
+Construction,
+  Typical Insulated Wood Framed Exterior Wall R-11.24 1, !- Name
+  25mm Stucco,                            !- Layer 1
+  5/8 in. Gypsum Board,                   !- Layer 2
+  Typical Insulation R-9.06,              !- Layer 3
+  Expanded Polystyrene (EPS) Foam Board_Added, !- Layer 4
+  5/8 in. Gypsum Board;                   !- Layer 5
 
 Construction,
   Typical Interior Ceiling,               !- Name
@@ -3373,7 +3430,7 @@ Construction,
 
 Construction,
   Typical Uninsulated Wood Joist Attic Roof adj roof insulation, !- Name
-  Asphalt Shingles_R-value 30.0 (ft^2*h*R/Btu), !- Layer 1
+  Asphalt Shingles_R-value 25.0 (ft^2*h*R/Btu), !- Layer 1
   5/8 in. Plywood;                        !- Layer 2
 
 Construction,
@@ -3398,6 +3455,10 @@ Construction,
 Construction,
   U 0.9 SHGC 0.25 Simple Glazing,         !- Name
   U 0.9 SHGC 0.25 Simple Glazing;         !- Layer 1
+
+Construction,
+  U 0.9 SHGC 0.25 Simple Glazing - polystyrene core steel door R-0.43, !- Name
+  polystyrene core steel door R-0.43;     !- Layer 1
 
 Construction,
   U 1.17 SHGC 0.39 Simple Glazing,        !- Name
