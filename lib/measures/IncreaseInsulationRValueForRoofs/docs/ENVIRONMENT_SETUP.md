@@ -22,7 +22,7 @@ conda env create -f environment.yml
 ### 2. Activate the Environment
 
 ```bash
-conda activate openstudio-3.8
+conda activate openstudio-3.11
 ```
 
 ### 3. Verify Installation
@@ -45,7 +45,7 @@ python apply_measure.py
 Ensure the environment is activated and has the openstudio package:
 
 ```bash
-conda activate openstudio-3.8
+conda activate openstudio-3.11
 python -c "import openstudio; print(openstudio.openStudioVersion())"
 ```
 

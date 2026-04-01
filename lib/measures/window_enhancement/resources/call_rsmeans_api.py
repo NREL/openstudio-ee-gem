@@ -202,7 +202,7 @@ def _compute_total_cost_for_material(
 def _score_rsmeans_candidate(
     material_name: str,
     item: Dict[str, Any],
-) -> float:
+) -> tuple:
     description = str(item.get("description", ""))
     if not description:
         return -1.0
@@ -246,7 +246,37 @@ def _score_rsmeans_candidate(
 
     # Slightly favor specific descriptions over very short generic strings.
     score += min(len(description_norm), 120) / 120.0
-    return score
+    
+    # Clamp score to 0-100 range and also return raw score for fallback logic.
+    clamped_score = max(0.0, min(100.0, score))
+    return score, clamped_score
+
+
+def _resolve_fallback_costline_id(
+    material_name: str,
+    fallback_costline_ids: Dict[str, str],
+) -> Optional[str]:
+    """Resolve fallback ID by exact material name, then keyword, then default.
+
+    Keyword mappings use keys of the form: "keyword:<phrase>".
+    Example: {"keyword:blown cellulose": "072126100020"}
+    """
+    if not fallback_costline_ids:
+        return None
+
+    exact = fallback_costline_ids.get(material_name)
+    if exact:
+        return exact
+
+    material_norm = _normalize_search_text(material_name)
+    for key, fallback_id in fallback_costline_ids.items():
+        if not isinstance(key, str) or not key.lower().startswith("keyword:"):
+            continue
+        keyword = _normalize_search_text(key.split(":", 1)[1])
+        if keyword and keyword in material_norm:
+            return fallback_id
+
+    return fallback_costline_ids.get("__default__")
 
 
 def _is_disallowed_candidate(item: Dict[str, Any]) -> bool:
@@ -314,14 +344,17 @@ def _select_best_rsmeans_candidate(
     # Score all candidates
     scored = []
     for idx, item in enumerate(eligible_items):
-        score = _score_rsmeans_candidate(material_name, item)
+        raw_score, clamped_score = _score_rsmeans_candidate(
+            material_name, item
+        )
         desc = item.get("description", "")
         desc = desc[:80] if desc else ""
         scored.append({
             "index": idx,
             "rsmeans_id": item.get("costlineID", "unknown"),
             "description": desc,
-            "score": round(score, 2)
+            "raw_score": round(raw_score, 2),
+            "score": round(clamped_score, 2),
         })
 
     # Sort by score descending
@@ -1297,6 +1330,7 @@ def search_materials_across_catalogs(
     location_id: str = "us-us-national",
     labor_type: str = "std",
     measurement_system: str = "imp",
+    fallback_costline_ids: Optional[Dict[str, str]] = None,
 ) -> Dict[str, Any]:
     """
     Search for materials across multiple RSMeans catalogs and return best matches.
@@ -1309,6 +1343,8 @@ def search_materials_across_catalogs(
         location_id: Location for pricing
         labor_type: Labor type code
         measurement_system: "imp" or "met"
+        fallback_costline_ids: Dict mapping material names to fallback costline IDs
+                              (used when no match found or scoring out of bounds)
     
     Returns:
         Dict with 'total_cost', 'materials' (with catalog info), 'errors', 'search_log'
@@ -1316,6 +1352,9 @@ def search_materials_across_catalogs(
     if catalogs is None:
         # Default to common building-related catalogs
         catalogs = ["bc-mf", "gb-mf", "rp-mf"]  # Building Construction, Green Building, Repair & Remodeling
+    
+    if fallback_costline_ids is None:
+        fallback_costline_ids = {}
     
     all_results = []
     search_log = []
@@ -1336,6 +1375,10 @@ def search_materials_across_catalogs(
             if "polyiso" in material_name_norm or "polyisocyanurate" in material_name_norm:
                 specified_id = "072216101700"
 
+        material_fallback_id = _resolve_fallback_costline_id(
+            material_name, fallback_costline_ids
+        )
+
         print("\n" + "-" * 70)
         print(f"RSMeans lookup for material: {material_name}")
         print(f"  Quantity : {quantity} {unit}")
@@ -1345,6 +1388,7 @@ def search_materials_across_catalogs(
         best_cost = None
         best_catalog = None
         matched_term = None
+        force_fallback_due_to_score = False
         
         # If a specific RSMeans line item ID is provided, attempt exact match first
         if specified_id:
@@ -1465,6 +1509,26 @@ def search_materials_across_catalogs(
                                     )
 
                                     if cost_calc["total_cost"] > 0:
+                                        top_raw_score = candidate_details[0].get(
+                                            "raw_score", 0.0
+                                        )
+                                        if (
+                                            top_raw_score < 0.0
+                                            and material_fallback_id
+                                        ):
+                                            force_fallback_due_to_score = True
+                                            search_log.append({
+                                                "material": material_name,
+                                                "search_term": alt_term,
+                                                "catalog": catalog,
+                                                "status": "poor_match_raw_score_fallback",
+                                                "raw_score": top_raw_score,
+                                                "fallback_costline_id": material_fallback_id,
+                                                "candidates_considered": len(items),
+                                                "candidate_scores": candidate_details,
+                                            })
+                                            break
+
                                         best_match = item
                                         best_cost = unit_cost * quantity
                                         best_catalog = catalog
@@ -1498,6 +1562,8 @@ def search_materials_across_catalogs(
                             
                             if best_match:
                                 break  # Exit alternative terms loop
+                            if force_fallback_due_to_score:
+                                break
                     
                 except Exception as e:
                     search_log.append({
@@ -1507,6 +1573,8 @@ def search_materials_across_catalogs(
                         "status": "error",
                         "error": str(e)
                     })
+            if force_fallback_due_to_score:
+                break
         
         if best_match:
             match_type = "closest_match"
@@ -1539,13 +1607,70 @@ def search_materials_across_catalogs(
             all_results.append(material_result)
             total_cost += best_cost
         else:
-            errors.append(f"No RSMeans match found in any catalog for: {material_name}")
-            search_log.append({
-                "material": material_name,
-                "status": "no_match",
-                "catalogs_searched": catalogs,
-                "alternatives_tried": len(search_alternatives)
-            })
+            # Try fallback costline ID if available
+            # Lookup: first try exact material name, then try __default__
+            fallback_id = material_fallback_id
+            if fallback_id:
+                print(f"  Fallback: Using default costline ID '{fallback_id}' for {material_name}")
+                try:
+                    for catalog in catalogs:
+                        cost_line = client.get_unit_costlines(
+                            release_id=release_id,
+                            catalog=catalog,
+                            location_id=location_id,
+                            labor_type=labor_type,
+                            measurement_system=measurement_system,
+                            division_code=fallback_id,
+                        )
+                        if cost_line and "items" in cost_line:
+                            for item in cost_line["items"]:
+                                if item.get("id") == fallback_id:
+                                    unit_cost = item.get("localizedCosts", {}).get("totalOpCost", 0.0)
+                                    cost_calc = _compute_total_cost_for_material(
+                                        material,
+                                        unit_cost,
+                                        item.get("description", ""),
+                                    )
+                                    if cost_calc["total_cost"] > 0:
+                                        material_result = {
+                                            **material,
+                                            "catalog": catalog,
+                                            "search_term_used": f"fallback:{fallback_id}",
+                                            "unit_cost": cost_calc["unit_cost"],
+                                            "total_cost": cost_calc["total_cost"],
+                                            "rsmeans_id": item.get("id", ""),
+                                            "rsmeans_description": item.get("description", ""),
+                                            "match_type": "fallback_id",
+                                            "unit_cost_basis": cost_calc.get("effective_unit", ""),
+                                            "costing_mode": cost_calc.get("costing_mode", "area")
+                                        }
+                                        all_results.append(material_result)
+                                        total_cost += cost_calc["total_cost"]
+                                        search_log.append({
+                                            "material": material_name,
+                                            "status": "fallback_id_used",
+                                            "fallback_costline_id": fallback_id,
+                                            "catalog": catalog,
+                                            "rsmeans_id": item.get("id", ""),
+                                            "unit_cost": cost_calc["unit_cost"],
+                                            "total_cost": cost_calc["total_cost"]
+                                        })
+                                        best_match = item  # Mark as found via fallback
+                                        break
+                            if best_match:
+                                break
+                except Exception as e:
+                    print(f"  Fallback error: {e}")
+            
+            if not best_match:
+                errors.append(f"No RSMeans match found in any catalog for: {material_name}")
+                search_log.append({
+                    "material": material_name,
+                    "status": "no_match",
+                    "catalogs_searched": catalogs,
+                    "alternatives_tried": len(search_alternatives),
+                    "fallback_available": fallback_id is not None
+                })
     
     return {
         "total_cost": total_cost,
@@ -1565,6 +1690,7 @@ def run_rsmeans_cost_lookup(
     measurement_system: str = "imp",
     use_sandbox: bool = False,
     overhead_profit_percent: float = 0.0,
+    fallback_costline_ids: Optional[Dict[str, str]] = None,
 ) -> Dict[str, Any]:
     """Run RSMeans lookup for provided materials and return summary/results."""
     load_dotenv()
@@ -1592,6 +1718,7 @@ def run_rsmeans_cost_lookup(
         location_id=location_id,
         labor_type=labor_type,
         measurement_system=measurement_system,
+        fallback_costline_ids=fallback_costline_ids,
     )
 
     total_material_cost = float(results.get("total_cost", 0.0))

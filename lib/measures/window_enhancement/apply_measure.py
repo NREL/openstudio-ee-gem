@@ -1,3 +1,4 @@
+# pyright: reportAttributeAccessIssue=false
 """
 Apply WindowEnhancement measure to a test model.
 

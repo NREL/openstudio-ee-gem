@@ -1,3 +1,4 @@
+# pyright: reportAttributeAccessIssue=false
 """
 Apply IncreaseInsulationRValueForRoofs measure to a test model.
 
@@ -24,7 +25,7 @@ try:
     import openstudio
     print("Using OpenStudio from installed package")
 except ImportError:
-    OPENSTUDIO_VERSION = "3.11.0"
+    OPENSTUDIO_VERSION = "3.9.0"
     WINDOWS_OPENSTUDIO_PATH = rf"C:\openstudio-{OPENSTUDIO_VERSION}\Python"
     mac_openstudio_path = f"/Applications/OpenStudio-{OPENSTUDIO_VERSION}/Python"
 

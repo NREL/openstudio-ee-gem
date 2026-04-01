@@ -1,3 +1,4 @@
+# pyright: reportAttributeAccessIssue=false
 # *******************************************************************************
 # OpenStudio(R), Copyright (c) Alliance for Sustainable Energy, LLC.
 # See also https://openstudio.net/license
@@ -884,6 +885,7 @@ class IncreaseInsulationRValueForRoofs(openstudio.measure.ModelMeasure):
 
         # Basic measure inputs
         basic_input.setFeature("measure_name", "Increase Insulation R-Value for Roofs")
+        basic_input.setFeature("scope_measure", "true")  # Tag as SCOPE Measure
         reno_detail.setFeature("roof_target_insulation_r_value_ip", r_value_ip)
         reno_detail.setFeature("roof_insulation_material_type", insulation_material_type)
         basic_input.setFeature("analysis_period_years", analysis_period)
@@ -900,6 +902,9 @@ class IncreaseInsulationRValueForRoofs(openstudio.measure.ModelMeasure):
         # reno_detail.setFeature("roof_insulation_modified_constructions_count", len(modified_constructions))
 
         # ===================== RSMeans cost lookup =====================
+        total_installed_cost = 0.0
+        # Backward-compatible alias; historically this field name was used
+        # even when RSMeans values included both material and labor.
         total_material_cost = 0.0
         total_overhead_profit_cost = 0.0
         cost_source = "none"
@@ -944,13 +949,14 @@ class IncreaseInsulationRValueForRoofs(openstudio.measure.ModelMeasure):
                 if custom_cost_per_sf <= 0.0:
                     runner.registerWarning("Custom cost mode enabled, but custom_cost_per_sf is 0. Skipping cost calculation.")
                 else:
-                    total_material_cost = custom_cost_per_sf * sum(
+                    total_installed_cost = custom_cost_per_sf * sum(
                         float(m["quantity"]) for m in rsmeans_materials
                     )
+                    total_material_cost = total_installed_cost
                     cost_source = "custom_input"
                     runner.registerInfo(
                         "Custom cost summary (cost_source=custom_input): "
-                        f"material_cost=${total_material_cost:,.2f} "
+                        f"installed_cost=${total_installed_cost:,.2f} "
                         f"(rate ${custom_cost_per_sf}/SF)"
                     )
             else:
@@ -970,12 +976,31 @@ class IncreaseInsulationRValueForRoofs(openstudio.measure.ModelMeasure):
                             measurement_system="imp",
                             use_sandbox=False,
                             overhead_profit_percent=overhead_profit_percent,
+                            fallback_costline_ids={
+                                "keyword:blown cellulose": "072126100020",
+                                "keyword:blown fiberglass": "072126101000",
+                                "keyword:blown mineral wool": "072123100100",
+                                "keyword:polyiso insulation foam board": "072216101700",
+                                "keyword:polyiso foam board": "072216101700",
+                                "keyword:graphite polystyrene": "072113130600",
+                                "keyword:gps foam board": "072113130600",
+                                "keyword:expanded polystyrene": "072113130600",
+                                "keyword:eps foam board": "072113130600",
+                                "keyword:extruded polystyrene": "072216101910",
+                                "keyword:xps foam board": "072216101910",
+                                "keyword:mineral wool heavy density blanket": "072116201320",
+                                "keyword:mineral wool light density blanket": "072116201320",
+                                "keyword:fiberglass batts": "072116200620",
+                                "__default__": "072116201320",
+                            },  # Keyword fallback + default fallback
                         )
                         if rsmeans_lookup and rsmeans_lookup.get("status") == "ok":
                             summary = rsmeans_lookup.get("summary", {})
-                            # Note: total_material_cost from RSMeans already includes labor
-                            # RSMeans totalOpCost combines material + labor costs
-                            total_material_cost = float(summary.get("total_material_cost", 0.0))
+                            # RSMeans summary "total_material_cost" currently
+                            # reflects total installed cost (material + labor).
+                            total_installed_cost = float(summary.get("total_material_cost", 0.0))
+                            # Backward-compatible alias for downstream consumers.
+                            total_material_cost = total_installed_cost
                             total_overhead_profit_cost = float(summary.get("total_overhead_profit_cost", 0.0))
                             cost_source = "rsmeans_api"
                             materials_results = rsmeans_lookup.get(
@@ -1145,9 +1170,10 @@ class IncreaseInsulationRValueForRoofs(openstudio.measure.ModelMeasure):
 
         # Results (standardized fields)
         results.setFeature("roof_insulation_total_additional_embodied_carbon_kg", total_embodied_carbon)
+        results.setFeature("roof_insulation_total_additional_installed_cost_$", total_installed_cost)
         results.setFeature("roof_insulation_total_additional_material_cost_$", total_material_cost)
         results.setFeature("roof_insulation_total_additional_overhead_profit_cost_$", total_overhead_profit_cost)
-        results.setFeature("roof_insulation_total_cost_with_overhead_and_profit_$", total_material_cost + total_overhead_profit_cost)
+        results.setFeature("roof_insulation_total_cost_with_overhead_and_profit_$", total_installed_cost + total_overhead_profit_cost)
         results.setFeature("roof_insulation_cost_source", cost_source)
         results.setFeature(
             "roof_insulation_rsmeans_selection_mode",
@@ -1158,9 +1184,10 @@ class IncreaseInsulationRValueForRoofs(openstudio.measure.ModelMeasure):
         results.setFeature("roof_insulation_total_embodied_carbon_kgCO2eq", total_embodied_carbon)
 
         # Mirror key cost outputs on Facility AdditionalProperties for persistence/visibility
+        facility.additionalProperties().setFeature("roof_insulation_total_additional_installed_cost_$", total_installed_cost)
         facility.additionalProperties().setFeature("roof_insulation_total_additional_material_cost_$", total_material_cost)
         facility.additionalProperties().setFeature("roof_insulation_total_additional_overhead_profit_cost_$", total_overhead_profit_cost)
-        facility.additionalProperties().setFeature("roof_insulation_total_cost_with_overhead_and_profit_$", total_material_cost + total_overhead_profit_cost)
+        facility.additionalProperties().setFeature("roof_insulation_total_cost_with_overhead_and_profit_$", total_installed_cost + total_overhead_profit_cost)
         facility.additionalProperties().setFeature("roof_insulation_cost_source", cost_source)
         facility.additionalProperties().setFeature(
             "roof_insulation_rsmeans_selection_mode",
