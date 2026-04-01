@@ -44,6 +44,21 @@ DEFAULT_FEATURE_KEYS = {
     "total_cost": "rsmeans_total_cost",
 }
 
+# Fallback RSMeans IDs for insulation materials when scoring fails
+INSULATION_FALLBACK_IDS = {
+    "Blown Cellulose": "072126100020",
+    "Blown Fiberglass": "072126101000",
+    "Blown Mineral Wool": "072123100100",
+    "Polyiso Insulation Foam Board": "072216101700",
+    "polyiso foam board": "072216101700",
+    "Graphite Polystyrene (GPS) Foam Board": "072113130600",
+    "Expanded Polystyrene (EPS) Foam Board": "072113130600",
+    "Extruded Polystyrene (XPS) Foam Board": "072216101910",
+    "Mineral Wool Heavy Density Blanket": "072116201320",
+    "Mineral Wool Light Density Blanket": "072116201320",
+    "Fiberglass Batts": "072116200620",
+}
+
 
 def _get_feature_as_string(props, feature_name: str) -> Optional[str]:
     if not props.hasFeature(feature_name):
@@ -147,7 +162,8 @@ def _score_rsmeans_candidate(material_name: str, item: Dict[str, Any]) -> float:
             score -= 30.0
 
     score += min(len(description_norm), 120) / 120.0
-    return score
+    # Clamp score to 0-100 range
+    return max(0.0, min(100.0, score))
 
 
 def _is_disallowed_candidate(item: Dict[str, Any]) -> bool:
@@ -208,6 +224,18 @@ def _select_best_rsmeans_candidate(material_name: str, items: List[Dict[str, Any
         })
 
     scored.sort(key=lambda x: -x["score"])
+    
+    # If best score is below 0 (poor match), use fallback ID if available
+    best_score = scored[0]["score"] if scored else -1.0
+    if best_score < 0.0 and material_name in INSULATION_FALLBACK_IDS:
+        fallback_id = INSULATION_FALLBACK_IDS[material_name]
+        # Create a synthetic candidate with fallback ID and score indicator
+        return {
+            "costlineID": fallback_id,
+            "description": f"[Fallback ID: {fallback_id}]",
+            "is_fallback": True,
+        }, scored
+    
     best_idx = scored[0]["index"]
     best_candidate = eligible_items[best_idx]
     return best_candidate, scored
