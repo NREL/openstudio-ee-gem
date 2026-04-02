@@ -913,7 +913,50 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
         
         # Store infiltration reduction
         reno_detail.setFeature("window_infiltration_reduction_percent", space_infiltration_reduction_percent)
-        
+        # Store total window weatherstrip length
+        reno_detail.setFeature("window_weatherstrip_length_m", total_weatherstrip_length_m)
+        # Store total window area renovated
+        reno_detail.setFeature("window_total_renovated_area_m2", total_window_area_m2)
+        # Store material geometry and density info for window renovation.
+        # Use existing variables only; write "NA" where no direct variable exists.
+        reno_detail.setFeature("window_glass_volume_m3", "NA")
+        reno_detail.setFeature("window_glass_area_m2", total_glazing_area_m2)
+        reno_detail.setFeature("window_glass_length_m", "NA")
+        reno_detail.setFeature("window_glass_thickness_m", glass_pane_thickness)
+        reno_detail.setFeature("window_glass_density_kg_per_m3", "NA")
+
+        reno_detail.setFeature("window_frame_volume_m3", "NA")
+        reno_detail.setFeature("window_frame_area_m2", total_frame_area_m2)
+        reno_detail.setFeature("window_frame_length_m", "NA")
+        reno_detail.setFeature("window_frame_thickness_m", "NA")
+        reno_detail.setFeature("window_frame_density_kg_per_m3", "NA")
+
+        reno_detail.setFeature("window_caulking_volume_m3", total_caulking_volume_m3)
+        reno_detail.setFeature("window_caulking_area_m2", "NA")
+        reno_detail.setFeature("window_caulking_length_m", total_perimeter_m)
+        reno_detail.setFeature("window_caulking_thickness_m", caulking_thickness)
+        reno_detail.setFeature("window_caulking_density_kg_per_m3", "NA")
+
+        reno_detail.setFeature("window_film_volume_m3", "NA")
+        reno_detail.setFeature("window_film_area_m2", "NA")
+        reno_detail.setFeature("window_film_length_m", "NA")
+        reno_detail.setFeature("window_film_thickness_m", "NA")
+        reno_detail.setFeature("window_film_density_kg_per_m3", "NA")
+
+        reno_detail.setFeature("window_weatherstrip_volume_m3", "NA")
+        reno_detail.setFeature("window_weatherstrip_area_m2", "NA")
+        reno_detail.setFeature("window_weatherstrip_length_m_total", total_weatherstrip_length_m)
+        reno_detail.setFeature("window_weatherstrip_thickness_m", "NA")
+        reno_detail.setFeature("window_weatherstrip_density_kg_per_m3", "NA")
+
+        reno_detail.setFeature("window_secondary_glazing_volume_m3", "NA")
+        reno_detail.setFeature("window_secondary_glazing_area_m2", "NA")
+        reno_detail.setFeature("window_secondary_glazing_length_m", "NA")
+        reno_detail.setFeature("window_secondary_glazing_thickness_m", glass_pane_thickness)
+        reno_detail.setFeature("window_secondary_glazing_density_kg_per_m3", "NA")
+
+        reno_detail.setFeature("window_glazing_gap_thickness_m", gap_thickness)
+        # 
         # Store renovation options selected
         reno_detail.setFeature("window_frame_option", wf_option)
         reno_detail.setFeature("window_caulking_option", caulking_option)
