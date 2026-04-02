@@ -1,0 +1,108 @@
+{
+  "measure": "WindowEnhancement",
+  "success": true,
+  "step_values": {
+    "space_type": "{a7cf4cff-4723-488b-887e-4787bc032293}",
+    "space_infiltration_reduction_percent": 30.0,
+    "analysis_period": 30,
+    "glass_lifetime": 15,
+    "wf_lifetime": 15,
+    "caulking_lifetime": 10,
+    "film_lifetime": 10,
+    "weatherstrip_lifetime": 10,
+    "overhead_profit_percent": 0.1,
+    "wf_option": "wood window frame",
+    "caulking_option": "polyurethane",
+    "film_option": "low-e film",
+    "film_visible_transmittance": 0.0,
+    "film_solar_transmittance": 0.0,
+    "film_thermal_emissivity": 0.0,
+    "film_thermal_resistance": 0.0,
+    "glass_option": "provide user_num_panes",
+    "weatherstrip_option": "silicone adhesive smoke gasket",
+    "secondary_glazing_option": "install secondary glazing",
+    "caulking_thickness": 0.008,
+    "user_num_panes": 3,
+    "glass_pane_thickness": 0.003,
+    "gap_thickness": 0.013,
+    "glass_solar_transmittance": 0.0,
+    "glass_visible_transmittance": 0.0,
+    "glass_front_emissivity": 0.0,
+    "glass_back_emissivity": 0.0,
+    "glass_front_solar_reflectance": 0.0,
+    "glass_back_solar_reflectance": 0.0,
+    "glass_front_visible_reflectance": 0.0,
+    "glass_back_visible_reflectance": 0.0,
+    "gwp_statistic": "median",
+    "api_key": "<redacted>",
+    "length_per_unit": 5.1816,
+    "num_horizontal_dividers": -1,
+    "num_vertical_dividers": -1,
+    "glass_cost_per_sf": 0.0,
+    "frame_cost_per_sf": 0.0,
+    "caulking_cost_per_cy": 0.0,
+    "labor_cost_multiplier": 1.0,
+    "calculate_costs": true,
+    "use_custom_costs": false,
+    "use_specific_rsmeans_line_item_ids": false,
+    "rsmeans_id_glazing": "084126100020",
+    "rsmeans_id_frame": "084113200050",
+    "rsmeans_id_caulking": "",
+    "rsmeans_id_film": "",
+    "rsmeans_id_weatherstrip": "",
+    "rsmeans_id_secondary_glazing": "",
+    "west_perimeter_space_story_ground_wall_4_fixed_window_1_total_embodied_carbon_kg_co_2_eq": 4602.378488730971,
+    "south_perimeter_space_story_ground_wall_2_fixed_window_1_total_embodied_carbon_kg_co_2_eq": 6903.409440049066,
+    "north_perimeter_space_story_ground_wall_4_fixed_window_1_total_embodied_carbon_kg_co_2_eq": 6903.409440049066,
+    "glass_embodied_carbon_kg_co_2_eq": 2848.156302599575,
+    "frame_embodied_carbon_kg_co_2_eq": 1649.6778765113472,
+    "caulking_embodied_carbon_kg_co_2_eq": 13.950411407418244,
+    "film_embodied_carbon_kg_co_2_eq": 90.59389821263055,
+    "weatherstrip_embodied_carbon_kg_co_2_eq": 0.0,
+    "east_perimeter_space_story_ground_wall_1_fixed_window_1_total_embodied_carbon_kg_co_2_eq": 4602.378488730971
+  },
+  "windows_in_model": 4,
+  "additional_properties_count": 8,
+  "additional_properties_sample": [
+    {
+      "subsurface": "Facility",
+      "property": "window_caulking_gwp_per_m3_kgCO2eq",
+      "value": 5138.0
+    },
+    {
+      "subsurface": "Facility",
+      "property": "window_enhancement_retrofit_materials_json",
+      "value": "[{\"name\": \"window glazing\", \"description\": \"3-pane glass replacement\", \"quantity\": 433.01228284677114, \"unit\": \"SF\", \"quantity_si\": 40.22819636440056, \"unit_si\": \"m2\", \"division_code\": \"08\"}, {\"name\": \"window frame\", \"description\": \"wood window frame frame replacement\", \"quantity\": 433.01228284677114, \"unit\": \"SF\", \"quantity_si\": 40.22819636440056, \"unit_si\": \"m2\", \"division_code\": \"08\"}, {\"name\": \"glazing film\", \"description\": \"low-e film\", \"quantity\": 433.01228284677114, \"unit\": \"SF\", \"quantity_si\": 40.22819636440056, \"unit_si\": \"m2\", \"division_code\": \"08\"}, {\"name\": \"sealant\", \"description\": \"polyurethane caulking\", \"quantity\": 0.005891924498452895, \"unit\": \"CY\", \"quantity_si\": 0.004504701631142548, \"unit_si\": \"m3\", \"division_code\": \"07\"}]"
+    },
+    {
+      "subsurface": "Facility",
+      "property": "window_enhancement_rsmeans_results_json",
+      "value": "{\"status\": \"ok\", \"summary\": {\"total_material_cost\": 52706.25701244407, \"overhead_profit_percent\": 10.0, \"total_overhead_profit_cost\": 5270.6257012444075, \"total_cost_with_overhead_profit\": 57976.88271368848, \"materials_count\": 4, \"materials_searched\": 4, \"catalogs_searched\": [\"bc-mf\", \"gb-mf\", \"rp-mf\"], \"release_id\": \"2024-an\", \"location_id\": \"us-us-national\", \"labor_type\": \"std\", \"measurement_system\": \"imp\", \"use_sandbox\": false}, \"results\": {\"total_cost\": 52706.25701244407, \"materials\": [{\"name\": \"window glazing\", \"description\": \"3-pane glass replacement\", \"quantity\": 433.01228284677114, \"unit\": \"SF\", \"quantity_si\": 40.22819636440056, \"unit_si\": \"m2\", \"division_code\": \"08\", \"catalog\": \"bc-mf\", \"search_term_used\": \"window glazing\", \"unit_cost\": 80.7, \"total_cost\": 34944.09122573443, \"rsmeans_id\": \"084126100020\", \"rsmeans_description\": \"Window wall, aluminum, stock, including glazing, minimum\", \"match_type\": \"closest_match\"}, {\"name\": \"window frame\", \"description\": \"wood window frame frame replacement\", \"quantity\": 433.01228284677114, \"unit\": \"SF\", \"quantity_si\": 40.22819636440056, \"unit_si\": \"m2\", \"division_code\": \"08\", \"catalog\": \"bc-mf\", \"search_term_used\": \"window frame\", \"unit_cost\": 28.65, \"total_cost\": 12405.801903559992, \"rsmeans_id\": \"084113200050\", \"rsmeans_description\": \"Tube framing, for window walls and storefronts, aluminum, stock, plain tube frame, mill finish, 1-3/4\\\" x 1-3/4\\\"\", \"match_type\": \"closest_match\"}, {\"name\": \"glazing film\", \"description\": \"low-e film\", \"quantity\": 433.01228284677114, \"unit\": \"SF\", \"quantity_si\": 40.22819636440056, \"unit_si\": \"m2\", \"division_code\": \"08\", \"catalog\": \"bc-mf\", \"search_term_used\": \"glazing film\", \"unit_cost\": 12.37, \"total_cost\": 5356.361938814559, \"rsmeans_id\": \"088713101000\", \"rsmeans_description\": \"Heat reflecting, solar film on glass, bronze, 20% VLT, excl. glass\", \"match_type\": \"closest_match\"}, {\"name\": \"sealant\", \"description\": \"polyurethane caulking\", \"quantity\": 0.005891924498452895, \"unit\": \"CY\", \"quantity_si\": 0.004504701631142548, \"unit_si\": \"m3\", \"division_code\": \"07\", \"catalog\": \"bc-mf\", \"search_term_used\": \"sealant\", \"unit_cost\": 0.33, \"total_cost\": 0.0019443350844894555, \"rsmeans_id\": \"070190810112\", \"rsmeans_description\": \"Joint sealant replacement, joints in concrete floors/slabs, option 1 for hard dry sealant, step 1: sawcut to remove 95% of old sealant, 1/4\\\" x 1/2\\\" deep, with single saw blade\", \"match_type\": \"closest_match\"}], \"errors\": [], \"search_log\": [{\"material\": \"window glazing\", \"search_term\": \"window glazing\", \"catalog\": \"bc-mf\", \"division\": \"08\", \"status\": \"match_found\", \"unit_cost\": 80.7, \"quantity\": 433.01228284677114, \"total_cost\": 34944.09122573443}, {\"material\": \"window frame\", \"search_term\": \"window frame\", \"catalog\": \"bc-mf\", \"division\": \"08\", \"status\": \"match_found\", \"unit_cost\": 28.65, \"quantity\": 433.01228284677114, \"total_cost\": 12405.801903559992}, {\"material\": \"glazing film\", \"search_term\": \"glazing film\", \"catalog\": \"bc-mf\", \"division\": \"08\", \"status\": \"match_found\", \"unit_cost\": 12.37, \"quantity\": 433.01228284677114, \"total_cost\": 5356.361938814559}, {\"material\": \"sealant\", \"search_term\": \"sealant\", \"catalog\": \"bc-mf\", \"division\": \"07\", \"status\": \"match_found\", \"unit_cost\": 0.33, \"quantity\": 0.005891924498452895, \"total_cost\": 0.0019443350844894555}], \"catalogs_searched\": [\"bc-mf\", \"gb-mf\", \"rp-mf\"]}}"
+    },
+    {
+      "subsurface": "Facility",
+      "property": "window_film_gwp_per_m2_kgCO2eq",
+      "value": 5.63
+    },
+    {
+      "subsurface": "Facility",
+      "property": "window_frame_gwp_per_m2_kgCO2eq",
+      "value": 102.52000000000001
+    },
+    {
+      "subsurface": "Facility",
+      "property": "window_glass_gwp_per_m2_kgCO2eq",
+      "value": 90.9
+    },
+    {
+      "subsurface": "Facility",
+      "property": "window_glass_gwp_per_m3_kgCO2eq",
+      "value": 19666.666666666668
+    },
+    {
+      "subsurface": "Facility",
+      "property": "window_weatherstrip_gwp_per_m_kgCO2eq",
+      "value": 0.6947660954405974
+    }
+  ]
+}

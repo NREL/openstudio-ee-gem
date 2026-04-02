@@ -1,3 +1,4 @@
+# pyright: reportAttributeAccessIssue=false
 """
 Apply WindowEnhancement measure to a test model.
 
@@ -19,101 +20,33 @@ import subprocess
 # ---------------------------------------------------------------------------
 # OpenStudio path setup
 # ---------------------------------------------------------------------------
-OPENSTUDIO_VERSION = "3.11.0"
+import platform
 
+# Try to use installed openstudio package first (via pip/conda)
+# Fall back to system installations if needed
+try:
+    import openstudio
+    print("Using OpenStudio from installed package")
+except ImportError:
+    # Fall back to system installations
+    OPENSTUDIO_VERSION = "3.11.0"
+    WINDOWS_OPENSTUDIO_PATH = rf"C:\openstudio-{OPENSTUDIO_VERSION}\Python"
+    mac_openstudio_path = f"/Applications/OpenStudio-{OPENSTUDIO_VERSION}/Python"
 
-def detect_openstudio_python_path():
-    env_path = os.environ.get("OPENSTUDIO_PYTHON_PATH")
-    candidates = [
-        env_path,
-        f"C:/Program Files/openstudio-{OPENSTUDIO_VERSION}/Python",
-        f"C:/Program Files/OpenStudio-{OPENSTUDIO_VERSION}/Python",
-        f"/Applications/OpenStudio-{OPENSTUDIO_VERSION}/Python",
-    ]
-    for candidate in candidates:
-        if candidate and Path(candidate).exists():
-            return candidate
-    return None
+    openstudio_path = None
+    if platform.system() == "Windows":
+        if Path(WINDOWS_OPENSTUDIO_PATH).exists():
+            openstudio_path = WINDOWS_OPENSTUDIO_PATH
+            sys.path.insert(0, openstudio_path)
+            print(f"Using OpenStudio from: {openstudio_path}")
+    else:
+        if Path(mac_openstudio_path).exists():
+            openstudio_path = mac_openstudio_path
+            sys.path.insert(0, openstudio_path)
+            print(f"Using OpenStudio from: {openstudio_path}")
 
-
-def detect_python312_command():
-    """Return a command list to launch Python 3.12, or None if not found."""
-    env_python = os.environ.get("PYTHON312_EXE")
-    if env_python and Path(env_python).exists():
-        return [env_python]
-
-    py_launcher = shutil.which("py")
-    if py_launcher:
-        return [py_launcher, "-3.12"]
-
-    py312 = shutil.which("python3.12")
-    if py312:
-        return [py312]
-
-    common_candidates = [
-        Path.home() / "AppData/Local/Programs/Python/Python312/python.exe",
-        Path("C:/Python312/python.exe"),
-    ]
-    for candidate in common_candidates:
-        if candidate.exists():
-            return [str(candidate)]
-
-    return None
-
-
-def ensure_python_compatibility(openstudio_python_path):
-    """
-    OpenStudio 3.11 Python bindings on Windows are compiled for Python 3.12.
-    If a different Python is running, attempt to relaunch this script with 3.12.
-    """
-    if not openstudio_python_path:
-        return
-
-    requires_python_312 = "openstudio-3.11" in openstudio_python_path.lower()
-    if not requires_python_312:
-        return
-
-    if sys.version_info[:2] == (3, 12):
-        return
-
-    relaunch_guard = os.environ.get("WINDOW_ENHANCEMENT_PY312_RELAUNCH") == "1"
-    version_str = f"{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}"
-
-    if relaunch_guard:
-        raise RuntimeError(
-            "OpenStudio 3.11 requires Python 3.12, but script is still running under "
-            f"Python {version_str}."
-        )
-
-    cmd_prefix = detect_python312_command()
-    if not cmd_prefix:
-        raise RuntimeError(
-            "OpenStudio 3.11 Python bindings require Python 3.12. "
-            f"Current interpreter is Python {version_str} at {sys.executable}. "
-            "Install Python 3.12 and rerun, or set PYTHON312_EXE to your Python 3.12 executable."
-        )
-
-    print(
-        "Detected incompatible Python version for OpenStudio 3.11 bindings "
-        f"(current: {version_str}). Relaunching with Python 3.12..."
-    )
-
-    env = os.environ.copy()
-    env["WINDOW_ENHANCEMENT_PY312_RELAUNCH"] = "1"
-    script_path = Path(__file__).resolve()
-    completed = subprocess.run([*cmd_prefix, str(script_path), *sys.argv[1:]], env=env)
-    sys.exit(completed.returncode)
-
-
-openstudio_path = detect_openstudio_python_path()
-ensure_python_compatibility(openstudio_path)
-if openstudio_path:
-    if openstudio_path not in sys.path:
-        sys.path.insert(0, openstudio_path)
-    print(f"Using OpenStudio Python bindings from: {openstudio_path}")
-else:
-    print("Warning: OpenStudio Python path not found for 3.11.0")
-    print("Will attempt to use system OpenStudio installation")
+    if openstudio_path is None:
+        print(f"Warning: OpenStudio {OPENSTUDIO_VERSION} path not found")
 
 try:
     import openstudio
@@ -211,13 +144,14 @@ def run_measure(model, args_overrides=None):
     set_arg("caulking_lifetime", 10)        # years
     set_arg("film_lifetime", 10)            # years
     set_arg("weatherstrip_lifetime", 10)    # years
+    set_arg("overhead_profit_percent", 0.0) # percent
 
-    # --- Enhancement options aligned with workflow Scenario 1 (window-only) ---
-    set_arg("wf_option", "none")                        # window frame option
-    set_arg("caulking_option", "none")               # apply acrylic caulking
+    # --- Enhancement options (glass + frame) ---
+    set_arg("wf_option", "wood window frame")           # window frame option
+    set_arg("caulking_option", "none")                  # no caulking
     set_arg("film_option", "none")                      # no glazing film
     set_arg("weatherstrip_option", "none")              # no weatherstrip
-    set_arg("glass_option", "provide user_num_panes")   # match workflow window scenario
+    set_arg("glass_option", "provide user_num_panes")   # glass replacement
     set_arg("secondary_glazing_option", "none")         # no secondary glazing
 
     # --- Film properties (only used when film_option != 'none') ---
@@ -230,7 +164,7 @@ def run_measure(model, args_overrides=None):
     set_arg("caulking_thickness", 0.003)                # m (8 mm bead)
 
     # --- Glass geometry (only used when glass_option != 'none') ---
-    set_arg("user_num_panes", 3)                        # U=0.20 -> 3 panes in workflow
+    set_arg("user_num_panes", 2)                        # 2 = double pane
     set_arg("glass_pane_thickness", 0.003)              # m (3 mm)
     set_arg("gap_thickness", 0.013)                     # m (13 mm)
     set_arg("length_per_unit", 5.1816)
@@ -252,6 +186,23 @@ def run_measure(model, args_overrides=None):
     # --- EC3 / GWP ---
     set_arg("gwp_statistic", "median")
     set_arg("api_key", API_TOKEN)
+    
+    # --- Cost calculation ---
+    set_arg("calculate_costs", True)
+    
+    # --- Custom cost mode (set to False to use RSMeans API, True to use custom costs below) ---
+    set_arg("use_custom_costs", False)
+
+    # --- RSMeans exact line item ID mode ---
+    set_arg("use_specific_rsmeans_line_item_ids", True)
+    set_arg("rsmeans_id_glazing", "084126100020")
+    set_arg("rsmeans_id_frame", "084113200050")
+    
+    # --- Custom cost inputs (only used when use_custom_costs = True) ---
+    # set_arg("glass_cost_per_sf", 25.0)        # $/SF (e.g., $25/SF for double-pane IGU)
+    # set_arg("frame_cost_per_sf", 15.0)        # $/SF (e.g., $15/SF for wood frame)
+    # set_arg("caulking_cost_per_cy", 800.0)    # $/CY (e.g., $800/CY for silicone sealant)
+    # set_arg("labor_cost_multiplier", 2.0)     # Multiplier (e.g., 2.0 = 100% labor markup)
 
     # Apply any caller-supplied overrides
     if args_overrides:
@@ -269,15 +220,14 @@ def print_runner_output(runner):
     result = runner.result()
     print(f"\nResult: {result.value().valueName()}")
 
-    if result.info():
-        print("\nInfo:")
-        for msg in result.info():
-            print(f"  [INFO] {msg.logMessage()}")
-
-    if result.warnings():
-        print("\nWarnings:")
-        for msg in result.warnings():
-            print(f"  [WARN] {msg.logMessage()}")
+    # Skip detailed info/warning printing due to potential Unicode encoding issues
+    # Just report counts
+    info_count = len(list(result.info())) if result.info() else 0
+    warn_count = len(list(result.warnings())) if result.warnings() else 0
+    if info_count > 0:
+        print(f"\nInfo: {info_count} messages (skipping detailed output due to encoding)")
+    if warn_count > 0:
+        print(f"\nWarnings: {warn_count} messages (skipping detailed output due to encoding)")
 
     if result.errors():
         print("\nErrors:")
@@ -370,6 +320,10 @@ def main():
         except Exception as exc:
             step_values[sv.name()] = f"<error: {exc}>"
 
+    # Redact sensitive API key from output
+    if "api_key" in step_values:
+        step_values["api_key"] = "<redacted>"
+
     if step_values:
         print("\nStep Values reported by measure:")
         for k, v in step_values.items():
@@ -395,6 +349,33 @@ def main():
 
     model.save(openstudio.toPath(str(output_model_path)), True)
     print(f"  Modified model saved to: {output_model_path}")
+
+    # Extract and save retrofit materials if present in step values
+    materials_data = None
+    rsmeans_results_data = None
+    if "window_enhancement_retrofit_materials_json" in step_values:
+        try:
+            materials_json_str = step_values["window_enhancement_retrofit_materials_json"]
+            if isinstance(materials_json_str, str):
+                materials_data = json.loads(materials_json_str)
+                materials_path = output_dir / "window_enhancement_retrofit_materials.json"
+                with open(materials_path, "w") as f:
+                    json.dump(materials_data, f, indent=2)
+                print(f"  Retrofit materials saved to: {materials_path}")
+        except Exception as e:
+            print(f"  Warning: Could not extract retrofit materials: {e}")
+
+    if "window_enhancement_rsmeans_results_json" in step_values:
+        try:
+            rsmeans_json_str = step_values["window_enhancement_rsmeans_results_json"]
+            if isinstance(rsmeans_json_str, str):
+                rsmeans_results_data = json.loads(rsmeans_json_str)
+                rsmeans_path = output_dir / "window_enhancement_rsmeans_results.json"
+                with open(rsmeans_path, "w") as f:
+                    json.dump(rsmeans_results_data, f, indent=2)
+                print(f"  RSMeans results saved to: {rsmeans_path}")
+        except Exception as e:
+            print(f"  Warning: Could not extract RSMeans results: {e}")
 
     # Save JSON summary
     results = {

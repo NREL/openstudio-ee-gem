@@ -1,3 +1,4 @@
+# pyright: reportAttributeAccessIssue=false
 """
 Apply IncreaseInsulationRValueForRoofs measure to a test model.
 
@@ -13,19 +14,35 @@ import sys
 import json
 import os
 import configparser
+import platform
 
 # ---------------------------------------------------------------------------
 # OpenStudio path setup
 # ---------------------------------------------------------------------------
-OPENSTUDIO_VERSION = "3.11.0"
-openstudio_path = f"/Applications/OpenStudio-{OPENSTUDIO_VERSION}/Python"
+# Try to use installed openstudio package first (via pip/conda)
+# Fall back to system installations if needed
+try:
+    import openstudio
+    print("Using OpenStudio from installed package")
+except ImportError:
+    OPENSTUDIO_VERSION = "3.9.0"
+    WINDOWS_OPENSTUDIO_PATH = rf"C:\openstudio-{OPENSTUDIO_VERSION}\Python"
+    mac_openstudio_path = f"/Applications/OpenStudio-{OPENSTUDIO_VERSION}/Python"
 
-if Path(openstudio_path).exists():
-    sys.path.insert(0, openstudio_path)
-    print(f"Using OpenStudio from: {openstudio_path}")
-else:
-    print(f"Warning: OpenStudio path not found at {openstudio_path}")
-    print("Will attempt to use system OpenStudio installation")
+    openstudio_path = None
+    if platform.system() == "Windows":
+        if Path(WINDOWS_OPENSTUDIO_PATH).exists():
+            openstudio_path = WINDOWS_OPENSTUDIO_PATH
+            sys.path.insert(0, openstudio_path)
+            print(f"Using OpenStudio from: {openstudio_path}")
+    else:
+        if Path(mac_openstudio_path).exists():
+            openstudio_path = mac_openstudio_path
+            sys.path.insert(0, openstudio_path)
+            print(f"Using OpenStudio from: {openstudio_path}")
+
+    if openstudio_path is None:
+        print("Warning: OpenStudio path not found")
 
 import openstudio
 from measure import IncreaseInsulationRValueForRoofs
@@ -94,10 +111,28 @@ def run_measure(model, args_overrides=None):
     set_arg("analysis_period", 30)                    # years
     set_arg("gwp_statistic", "median")
     set_arg("api_key", API_TOKEN)
-    set_arg("insulation_material_type", "Polyiso Insulation Foam Board")
+    # set_arg("insulation_material_type", "Fiberglass Batts")
+    # set_arg("insulation_material_type", "Blown Cellulose")
+    # set_arg("insulation_material_type", "Blown Fiberglass")
+    # set_arg("insulation_material_type", "Blown Mineral Wool")
+    # set_arg("insulation_material_type", "Polyiso Insulation Foam Board")
+    # set_arg("insulation_material_type", "Graphite Polystyrene (GPS) Foam Board")
+    # set_arg("insulation_material_type", "Expanded Polystyrene (EPS) Foam Board")
+    # set_arg("insulation_material_type", "Extruded Polystyrene (XPS) Foam Board")
+    # set_arg("insulation_material_type", "Mineral Wool Heavy Density Blanket")
+    # set_arg("insulation_material_type", "Mineral Wool Light Density Blanket")
+    # set_arg("insulation_material_type", "Poured Loose-Fill Insulation")
+    # set_arg("insulation_material_type", "Roof Deck Insulation")
+    set_arg("insulation_material_type", "Pure Wool Batts")
     set_arg("insulation_material_lifetime", 30)
     set_arg("insulation_thermal_conductivity", 0.0)   # 0 = use typical
     set_arg("insulation_material_density", 0.0)       # 0 = use typical
+    set_arg("calculate_costs", True)
+    set_arg("use_custom_costs", False)
+    set_arg("use_exact_costline_id", True)
+    set_arg("exact_costline_id", "072116201320") # Mineral wool batts, 3-1/2 in, R15 (matches default Pure Wool Batts mapping)
+    set_arg("custom_cost_per_sf", 0.73)
+    set_arg("overhead_profit_percent", 10.0)
 
     # Apply any caller-supplied overrides
     if args_overrides:
@@ -118,12 +153,19 @@ def print_runner_output(runner):
     if result.info():
         print("\nInfo:")
         for msg in result.info():
-            print(f"  [INFO] {msg.logMessage()}")
+            try:
+                print(f"  [INFO] {msg.logMessage()}")
+            except UnicodeEncodeError:
+                # Handle Unicode characters that can't be encoded in Windows console
+                print(f"  [INFO] {msg.logMessage().encode('ascii', 'replace').decode('ascii')}")
 
     if result.warnings():
         print("\nWarnings:")
         for msg in result.warnings():
-            print(f"  [WARN] {msg.logMessage()}")
+            try:
+                print(f"  [WARN] {msg.logMessage()}")
+            except UnicodeEncodeError:
+                print(f"  [WARN] {msg.logMessage().encode('ascii', 'replace').decode('ascii')}")
 
     if result.errors():
         print("\nErrors:")
@@ -133,7 +175,7 @@ def print_runner_output(runner):
 
 def verify_additional_properties(model):
     """
-    Check the new separate Facility AdditionalProperties (summary block).
+    Check Facility and SimulationControl AdditionalProperties (summary blocks).
     Returns a list of (object_name, prop_name, value) tuples.
     """
     found = []
@@ -147,7 +189,111 @@ def verify_additional_properties(model):
             val_str = ap.getFeatureAsString(feature_name)
             if val_str.is_initialized():
                 found.append(("Facility", feature_name, val_str.get()))
+
+    simcontrol = model.getSimulationControl()
+    sim_ap = simcontrol.additionalProperties()
+    for feature_name in sim_ap.featureNames():
+        val_opt = sim_ap.getFeatureAsDouble(feature_name)
+        if val_opt.is_initialized():
+            found.append(("SimulationControl", feature_name, val_opt.get()))
+        else:
+            val_str = sim_ap.getFeatureAsString(feature_name)
+            if val_str.is_initialized():
+                found.append(("SimulationControl", feature_name, val_str.get()))
     return found
+
+
+def build_cost_response(ap_data):
+    """Build a JSON-friendly cost summary with explicit units."""
+    props = {prop_name: value for _, prop_name, value in ap_data}
+
+    cost_response = {
+        "cost_source": props.get("roof_insulation_cost_source"),
+        "selection_mode": props.get("roof_insulation_rsmeans_selection_mode"),
+        "material_cost": {
+            "value": props.get(
+                "roof_insulation_total_additional_material_cost_$"
+            ),
+            "unit": "$",
+        },
+        "overhead_profit_cost": {
+            "value": props.get(
+                "roof_insulation_total_additional_overhead_profit_cost_$"
+            ),
+            "unit": "$",
+        },
+        "total_cost_with_overhead_and_profit": {
+            "value": props.get(
+                "roof_insulation_total_cost_with_overhead_and_profit_$"
+            ),
+            "unit": "$",
+        },
+        "materials": [],
+    }
+
+    matches_json = props.get("roof_insulation_rsmeans_matches_json")
+    if matches_json:
+        try:
+            matches = json.loads(matches_json)
+            for material in matches.get("materials", []):
+                unit = material.get("unit")
+                unit_cost_unit = f"$/ {unit}" if unit else "$ / unit"
+                cost_response["materials"].append({
+                    "name": material.get("name"),
+                    "description": material.get("description"),
+                    "match_type": material.get("match_type"),
+                    "rsmeans_id": material.get("rsmeans_id"),
+                    "catalog": material.get("catalog"),
+                    "search_term_used": material.get("search_term_used"),
+                    "quantity": {
+                        "value": material.get("quantity"),
+                        "unit": unit,
+                    },
+                    "unit_cost": {
+                        "value": material.get("unit_cost"),
+                        "unit": unit_cost_unit,
+                    },
+                    "total_cost": {
+                        "value": material.get("total_cost"),
+                        "unit": "$",
+                    },
+                })
+        except json.JSONDecodeError:
+            cost_response["materials_parse_error"] = (
+                "Could not parse roof_insulation_rsmeans_matches_json"
+            )
+
+    if not cost_response["materials"]:
+        retrofit_materials_json = props.get(
+            "roof_insulation_retrofit_materials_json"
+        )
+        if retrofit_materials_json:
+            try:
+                retrofit_materials = json.loads(retrofit_materials_json)
+                for material in retrofit_materials:
+                    unit = material.get("unit")
+                    cost_response["materials"].append({
+                        "name": material.get("name"),
+                        "description": material.get("description"),
+                        "quantity": {
+                            "value": material.get("quantity"),
+                            "unit": unit,
+                        },
+                        "unit_cost": {
+                            "value": None,
+                            "unit": f"$/ {unit}" if unit else "$ / unit",
+                        },
+                        "total_cost": {
+                            "value": None,
+                            "unit": "$",
+                        },
+                    })
+            except json.JSONDecodeError:
+                cost_response["materials_parse_error"] = (
+                    "Could not parse roof_insulation_retrofit_materials_json"
+                )
+
+    return cost_response
 
 
 def main():
@@ -209,23 +355,53 @@ def main():
         except Exception as exc:
             step_values[sv.name()] = f"<error: {exc}>"
 
+    # Redact sensitive API key from output
+    if "api_key" in step_values:
+        step_values["api_key"] = "<redacted>"
+
     if step_values:
         print("\nStep Values reported by measure:")
         for k, v in step_values.items():
             print(f"  {k}: {v}")
 
+    if not success:
+        print("\n" + "=" * 80)
+        print("HALTING OUTPUT SAVE")
+        print("=" * 80)
+        print(
+            "Measure reported failure. The modified model will not be saved. "
+            "Update the cost inputs and rerun."
+        )
+
+        results = {
+            "measure": "IncreaseInsulationRValueForRoofs",
+            "success": success,
+            "step_values": step_values,
+            "cost_response": None,
+            "additional_properties_count": 0,
+            "additional_properties_sample": [],
+        }
+        with open(results_json_path, "w") as f:
+            json.dump(results, f, indent=2)
+        print(f"  Failure summary JSON saved to: {results_json_path}")
+
+        print("\n" + "=" * 80)
+        print("FAILURE: Measure did not complete successfully.")
+        print("=" * 80 + "\n")
+        return 1
+
     # Verify AdditionalProperties
     print("\n" + "=" * 80)
-    print("VERIFYING SEPARATE FACILITY ADDITIONAL PROPERTIES")
+    print("VERIFYING SEPARATE ADDITIONAL PROPERTIES")
     print("=" * 80)
 
     ap_data = verify_additional_properties(model)
     if ap_data:
-        print(f"Found {len(ap_data)} properties in separate Facility AdditionalProperties:")
+        print(f"Found {len(ap_data)} properties in separate AdditionalProperties:")
         for obj_name, prop_name, value in ap_data:
             print(f"  [{obj_name}] {prop_name}: {value}")
     else:
-        print("  No properties found on Facility.")
+        print("  No properties found on Facility or SimulationControl.")
 
     # Save modified model
     print("\n" + "=" * 80)
@@ -240,6 +416,7 @@ def main():
         "measure": "IncreaseInsulationRValueForRoofs",
         "success": success,
         "step_values": step_values,
+        "cost_response": build_cost_response(ap_data),
         "additional_properties_count": len(ap_data),
         "additional_properties_sample": [
             {"construction": c, "property": p, "value": v}

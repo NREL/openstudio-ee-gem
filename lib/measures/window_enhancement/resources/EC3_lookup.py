@@ -3,6 +3,7 @@ from ast import parse
 import requests
 import json
 import re
+import time
 from typing import Dict, Any, Optional
 import configparser
 from datetime import datetime
@@ -124,11 +125,17 @@ def generate_url_byname(
     return f"{base_url}?{urllib.parse.urlencode(params)}"
 
 # this function is sending API call, the response is json format
-def fetch_epd_data(url,api_token):
+def fetch_epd_data(url, api_token, max_retries=3, timeout=30):
     """
     input url address generted by generate_url()
-    Fetch EPD data from the EC3 API.
+    Fetch EPD data from the EC3 API with retry logic and timeout.
     return: Parsed JSON response or empty list on failure.
+    
+    Args:
+        url: The EC3 API URL to fetch from
+        api_token: The EC3 API authentication token
+        max_retries: Maximum number of retry attempts (default: 3)
+        timeout: Request timeout in seconds (default: 30)
     """
 
     # Handle the case when renovation option is "none", return empty list directly
@@ -140,21 +147,46 @@ def fetch_epd_data(url,api_token):
         print("EC3_API_TOKEN not set; skipping EC3 API request.")
         return []
     
-    try: 
-        # print(f"Fetching data from URL: {url}")  # Log the URL being fetched
-        # API configuration - Try both authentication methods
-        HEADERS = {
-            "Accept": "application/json",
-            "Authorization": f"Bearer {api_token}",
-            "X-API-Key": api_token  # Some APIs use this instead
-        }
-        response = requests.get(url, headers=HEADERS, verify=False)
-        response.raise_for_status() # HTTPError if failure 
-        return response.json()
-    except requests.exceptions.RequestException as e:
-        print(f"Error fetching data from {url}: {e}")
-        print("Request failed; response content is suppressed for security.")
-        return []
+    # Retry logic with exponential backoff
+    import time
+    for attempt in range(max_retries):
+        try: 
+            # print(f"Fetching data from URL: {url}")  # Log the URL being fetched
+            # API configuration - Try both authentication methods
+            HEADERS = {
+                "Accept": "application/json",
+                "Authorization": f"Bearer {api_token}",
+                "X-API-Key": api_token  # Some APIs use this instead
+            }
+            response = requests.get(url, headers=HEADERS, verify=False, timeout=timeout)
+            response.raise_for_status() # HTTPError if failure 
+            print(f"Successfully fetched EPD data (attempt {attempt + 1}/{max_retries})")
+            return response.json()
+        except requests.exceptions.Timeout:
+            wait_time = 2 ** attempt  # Exponential backoff: 1s, 2s, 4s
+            print(f"Timeout fetching EPD data (attempt {attempt + 1}/{max_retries}). Retrying in {wait_time}s...")
+            if attempt < max_retries - 1:
+                time.sleep(wait_time)
+            else:
+                print(f"Failed to fetch EPD data after {max_retries} attempts. Returning empty list.")
+                return []
+        except requests.exceptions.ConnectionError as e:
+            wait_time = 2 ** attempt
+            print(f"Connection error fetching EPD data (attempt {attempt + 1}/{max_retries}): {e}. Retrying in {wait_time}s...")
+            if attempt < max_retries - 1:
+                time.sleep(wait_time)
+            else:
+                print(f"Failed to connect after {max_retries} attempts. Returning empty list.")
+                return []
+        except requests.exceptions.RequestException as e:
+            print(f"Error fetching data from EC3 API (attempt {attempt + 1}/{max_retries}): {e}")
+            print("Request failed; response content is suppressed for security.")
+            if attempt < max_retries - 1:
+                wait_time = 2 ** attempt
+                print(f"Retrying in {wait_time}s...")
+                time.sleep(wait_time)
+            else:
+                return []
     
 # process the json response obtained from fetch_epd_data function for product epds
 # process the json response obtained from fetch_epd_data function for product epds

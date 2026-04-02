@@ -1,7 +1,12 @@
+# pyright: reportAttributeAccessIssue=false
 # *******************************************************************************
 # OpenStudio(R), Copyright (c) Alliance for Sustainable Energy, LLC.
 # See also https://openstudio.net/license
 # *******************************************************************************
+
+import importlib.util
+import json
+from pathlib import Path
 
 import openstudio
 import numpy as np
@@ -62,6 +67,97 @@ class IncreaseInsulationRValueForRoofs(openstudio.measure.ModelMeasure):
         if roundto == 2:
             return f"{number:,.2f}"
         return f"{round(number):,}"
+
+    @staticmethod
+    def _collect_unmatched_rsmeans_materials(
+        requested_materials,
+        matched_materials,
+    ):
+        matched_names = {
+            str(material.get("name", "")).strip()
+            for material in matched_materials
+            if material.get("name")
+        }
+        unmatched_names = []
+        seen_names = set()
+
+        for material in requested_materials:
+            material_name = str(material.get("name", "")).strip()
+            if not material_name or material_name in matched_names:
+                continue
+            if material_name in seen_names:
+                continue
+            seen_names.add(material_name)
+            unmatched_names.append(material_name)
+
+        return unmatched_names
+
+    @staticmethod
+    def _register_rsmeans_resolution_error(
+        runner,
+        unresolved_materials,
+        use_exact_costline_id,
+        exact_costline_id,
+    ):
+        materials_text = "; ".join(unresolved_materials)
+
+        if use_exact_costline_id:
+            runner.registerError(
+                "RSMeans exact-ID mode could not validate the requested "
+                f"costline ID '{exact_costline_id}' for: {materials_text}. "
+                "Provide a valid `exact_costline_id`, or disable exact-ID "
+                "mode and rerun with `use_custom_costs` enabled and a "
+                "non-zero `custom_cost_per_sf`."
+            )
+            return
+
+        runner.registerError(
+            "RSMeans did not find a database match for: "
+            f"{materials_text}. Provide cost data by rerunning with either "
+            "`use_custom_costs` enabled and a non-zero `custom_cost_per_sf`, "
+            "or `use_exact_costline_id` enabled with a valid "
+            "`exact_costline_id`."
+        )
+
+    @staticmethod
+    def _detect_rsmeans_ambiguous_candidates(search_log):
+        """Scan the RSMeans search log for entries where 2+ candidates
+        share the top score, indicating an ambiguous auto-selection.
+
+        Returns a list of dicts, one per ambiguous lookup:
+          material          – original material name sent to RSMeans
+          matched_rsmeans_id  – the ID that was auto-selected
+          matched_description – description of the auto-selected item
+          search_term_used  – the search term that produced the match
+          tied_candidates   – sorted list of candidate dicts (score, desc)
+        """
+        ambiguous = []
+        for entry in search_log:
+            status = entry.get("status", "")
+            if "no_match" in status or "error" in status:
+                continue
+            candidates = entry.get("candidate_scores", [])
+            if len(candidates) < 2:
+                continue
+            sorted_cands = sorted(
+                candidates, key=lambda c: -c.get("score", 0.0)
+            )
+            top_score = sorted_cands[0].get("score", 0.0)
+            tied = [
+                c for c in sorted_cands
+                if c.get("score", 0.0) == top_score
+            ]
+            if len(tied) > 1:
+                ambiguous.append({
+                    "material": entry.get("material", ""),
+                    "matched_rsmeans_id": entry.get("rsmeans_id", ""),
+                    "matched_description": entry.get(
+                        "rsmeans_description", ""
+                    ),
+                    "search_term_used": entry.get("search_term", ""),
+                    "tied_candidates": tied,
+                })
+        return ambiguous
 
     def _generate_url_by_material_type(self, material_type):
         # Same mapping as your wall measure
@@ -145,7 +241,7 @@ class IncreaseInsulationRValueForRoofs(openstudio.measure.ModelMeasure):
             mat_types.append(opt)
         insulation_material_type = openstudio.measure.OSArgument.makeChoiceArgument("insulation_material_type", mat_types, True)
         insulation_material_type.setDisplayName("Chosen Retrofit Material for Roof Insulation")
-        insulation_material_type.setDefaultValue("Polyiso (ISO)")
+        insulation_material_type.setDefaultValue("Fiberglass Batts")
         args.append(insulation_material_type)
 
         insulation_material_lifetime = openstudio.measure.OSArgument.makeIntegerArgument("insulation_material_lifetime", True)
@@ -163,6 +259,37 @@ class IncreaseInsulationRValueForRoofs(openstudio.measure.ModelMeasure):
         insulation_material_density.setDefaultValue(0.0)
         args.append(insulation_material_density)
 
+        # Cost / RSMeans args
+        calculate_costs = openstudio.measure.OSArgument.makeBoolArgument("calculate_costs", True)
+        calculate_costs.setDisplayName("Calculate Costs (RSMeans or Custom)")
+        calculate_costs.setDefaultValue(True)
+        args.append(calculate_costs)
+
+        use_custom_costs = openstudio.measure.OSArgument.makeBoolArgument("use_custom_costs", True)
+        use_custom_costs.setDisplayName("Use Custom Cost Inputs (skip RSMeans)")
+        use_custom_costs.setDefaultValue(False)
+        args.append(use_custom_costs)
+
+        use_exact_costline_id = openstudio.measure.OSArgument.makeBoolArgument("use_exact_costline_id", True)
+        use_exact_costline_id.setDisplayName("Use Exact RSMeans Costline ID")
+        use_exact_costline_id.setDefaultValue(False)
+        args.append(use_exact_costline_id)
+
+        exact_costline_id = openstudio.measure.OSArgument.makeStringArgument("exact_costline_id", True)
+        exact_costline_id.setDisplayName("Exact RSMeans Costline ID (used when exact-ID mode is enabled)")
+        exact_costline_id.setDefaultValue("")
+        args.append(exact_costline_id)
+
+        custom_cost_per_sf = openstudio.measure.OSArgument.makeDoubleArgument("custom_cost_per_sf", True)
+        custom_cost_per_sf.setDisplayName("Custom Insulation Cost ($/SF)")
+        custom_cost_per_sf.setDefaultValue(0.0)
+        args.append(custom_cost_per_sf)
+
+        overhead_profit_percent = openstudio.measure.OSArgument.makeDoubleArgument("overhead_profit_percent", True)
+        overhead_profit_percent.setDisplayName("Overhead + Profit Percent (RSMeans only)")
+        overhead_profit_percent.setDefaultValue(10.0)
+        args.append(overhead_profit_percent)
+
         return args
 
     def run(self, model, runner, user_arguments):
@@ -179,6 +306,14 @@ class IncreaseInsulationRValueForRoofs(openstudio.measure.ModelMeasure):
         insulation_material_lifetime = runner.getIntegerArgumentValue("insulation_material_lifetime", user_arguments)
         insulation_thermal_conductivity = runner.getDoubleArgumentValue("insulation_thermal_conductivity", user_arguments)
         insulation_material_density = runner.getDoubleArgumentValue("insulation_material_density", user_arguments)
+        calculate_costs = runner.getBoolArgumentValue("calculate_costs", user_arguments)
+        use_custom_costs = runner.getBoolArgumentValue("use_custom_costs", user_arguments)
+        use_exact_costline_id = runner.getBoolArgumentValue("use_exact_costline_id", user_arguments)
+        exact_costline_id = runner.getStringArgumentValue("exact_costline_id", user_arguments)
+        custom_cost_per_sf = runner.getDoubleArgumentValue("custom_cost_per_sf", user_arguments)
+        overhead_profit_percent = runner.getDoubleArgumentValue("overhead_profit_percent", user_arguments)
+
+        exact_costline_id = (exact_costline_id or "").strip()
         
         # Track if user provided explicit density value (non-zero means user-specified)
         user_specified_density = insulation_material_density > 0.0
@@ -198,6 +333,12 @@ class IncreaseInsulationRValueForRoofs(openstudio.measure.ModelMeasure):
             return False
         if insulation_material_density < 0.0:
             runner.registerError("Density of insulation material must be non-negative.")
+            return False
+        if use_custom_costs and use_exact_costline_id:
+            runner.registerError("Choose only one cost mode: custom cost OR exact RSMeans costline ID.")
+            return False
+        if use_exact_costline_id and not exact_costline_id:
+            runner.registerError("Exact RSMeans costline ID mode is enabled, but no costline ID was provided.")
             return False
 
         # Typical material k and density (same style as your wall measure)
@@ -670,7 +811,7 @@ class IncreaseInsulationRValueForRoofs(openstudio.measure.ModelMeasure):
                 total_gwp = item["gwp_per_kg"] * added_mass_kg * mult
 
             gwp_summary_rows.append({
-                "construction_name": c.nameString(),
+                "construction_name": item["construction"].nameString(),
                 "orig_construction": item["orig_construction_name"],
                 "insulation_material_type": insulation_material_type,
                 "added_total_area_m2": area_m2,
@@ -744,6 +885,7 @@ class IncreaseInsulationRValueForRoofs(openstudio.measure.ModelMeasure):
 
         # Basic measure inputs
         basic_input.setFeature("measure_name", "Increase Insulation R-Value for Roofs")
+        basic_input.setFeature("scope_measure", "true")  # Tag as SCOPE Measure
         reno_detail.setFeature("roof_target_insulation_r_value_ip", r_value_ip)
         reno_detail.setFeature("roof_insulation_material_type", insulation_material_type)
         basic_input.setFeature("analysis_period_years", analysis_period)
@@ -760,12 +902,300 @@ class IncreaseInsulationRValueForRoofs(openstudio.measure.ModelMeasure):
         reno_detail.setFeature("roof_insulation_added_volume_m3", sum(item["added_total_volume_m3"] for item in gwp_summary_rows))
         # reno_detail.setFeature("roof_insulation_modified_constructions_count", len(modified_constructions))
 
+        # ===================== RSMeans cost lookup =====================
+        total_installed_cost = 0.0
+        # Backward-compatible alias; historically this field name was used
+        # even when RSMeans values included both material and labor.
+        total_material_cost = 0.0
+        total_overhead_profit_cost = 0.0
+        cost_source = "none"
+
+        # Create per-construction RSMeans material entries with actual thicknesses
+        rsmeans_materials = []
+        for row in gwp_summary_rows:
+            const_name = row.get("orig_construction", "unknown")
+            area_m2 = row.get("added_total_area_m2", 0.0)
+            thickness_m = row.get("added_thickness_m", 0.0)
+            
+            area_ft2 = self._unit_convert(area_m2, "m^2", "ft^2")
+            thickness_in = self._unit_convert(thickness_m, "m", "in")
+            thickness_ft = max(thickness_in / 12.0, 0.0)
+            volume_ft3 = area_ft2 * thickness_ft
+            
+            rsmeans_materials.append({
+                "name": f"{insulation_material_type} roof insulation ({const_name})",
+                "description": f"Added insulation to reach R-{r_value_ip}; actual added thickness {thickness_in:.2f} in",
+                "quantity": float(area_ft2),
+                "unit": "SF",
+                "quantity_volume": float(volume_ft3),
+                "unit_volume": "CF",
+                "rsmeans_thickness_ft": float(thickness_ft),
+                "costing_mode": "volume_from_area",
+                "quantity_si": float(area_m2),
+                "unit_si": "m2",
+                "division_code": "07",
+                "rsmeans_id": exact_costline_id if use_exact_costline_id else None,
+            })
+
+        if rsmeans_materials:
+            try:
+                materials_json = json.dumps(rsmeans_materials)
+                results.setFeature("roof_insulation_retrofit_materials_json", materials_json)
+                facility.additionalProperties().setFeature("roof_insulation_retrofit_materials_json", materials_json)
+            except Exception:
+                runner.registerWarning("Could not serialize RSMeans retrofit materials to JSON.")
+
+        if calculate_costs and rsmeans_materials:
+            if use_custom_costs:
+                if custom_cost_per_sf <= 0.0:
+                    runner.registerWarning("Custom cost mode enabled, but custom_cost_per_sf is 0. Skipping cost calculation.")
+                else:
+                    total_installed_cost = custom_cost_per_sf * sum(
+                        float(m["quantity"]) for m in rsmeans_materials
+                    )
+                    total_material_cost = total_installed_cost
+                    cost_source = "custom_input"
+                    runner.registerInfo(
+                        "Custom cost summary (cost_source=custom_input): "
+                        f"installed_cost=${total_installed_cost:,.2f} "
+                        f"(rate ${custom_cost_per_sf}/SF)"
+                    )
+            else:
+                rsmeans_module_path = Path(__file__).parent / "resources" / "call_rsmeans_api.py"
+                if rsmeans_module_path.exists():
+                    try:
+                        runner.registerInfo("Starting RSMeans lookup for roof insulation...")
+                        spec = importlib.util.spec_from_file_location("call_rsmeans_api", rsmeans_module_path)
+                        rsmeans_module = importlib.util.module_from_spec(spec)
+                        spec.loader.exec_module(rsmeans_module)
+                        rsmeans_lookup = rsmeans_module.run_rsmeans_cost_lookup(
+                            materials=rsmeans_materials,
+                            release_id="2024-an",
+                            catalogs=["bc-mf", "gb-mf", "rp-mf"],
+                            location_id="us-us-national",
+                            labor_type="std",
+                            measurement_system="imp",
+                            use_sandbox=False,
+                            overhead_profit_percent=overhead_profit_percent,
+                            fallback_costline_ids={
+                                "keyword:blown cellulose": "072126100020",
+                                "keyword:blown fiberglass": "072126101000",
+                                "keyword:blown mineral wool": "072123100100",
+                                "keyword:polyiso insulation foam board": "072216101700",
+                                "keyword:polyiso foam board": "072216101700",
+                                "keyword:graphite polystyrene": "072113130600",
+                                "keyword:gps foam board": "072113130600",
+                                "keyword:expanded polystyrene": "072113130600",
+                                "keyword:eps foam board": "072113130600",
+                                "keyword:extruded polystyrene": "072216101910",
+                                "keyword:xps foam board": "072216101910",
+                                "keyword:mineral wool heavy density blanket": "072116201320",
+                                "keyword:mineral wool light density blanket": "072116201320",
+                                "keyword:fiberglass batts": "072116200620",
+                                "__default__": "072116201320",
+                            },  # Keyword fallback + default fallback
+                        )
+                        if rsmeans_lookup and rsmeans_lookup.get("status") == "ok":
+                            summary = rsmeans_lookup.get("summary", {})
+                            # RSMeans summary "total_material_cost" currently
+                            # reflects total installed cost (material + labor).
+                            total_installed_cost = float(summary.get("total_material_cost", 0.0))
+                            # Backward-compatible alias for downstream consumers.
+                            total_material_cost = total_installed_cost
+                            total_overhead_profit_cost = float(summary.get("total_overhead_profit_cost", 0.0))
+                            cost_source = "rsmeans_api"
+                            materials_results = rsmeans_lookup.get(
+                                "results", {}
+                            ).get("materials", [])
+                            search_log = rsmeans_lookup.get(
+                                "results", {}
+                            ).get("search_log", [])
+                            unmatched_materials = self._collect_unmatched_rsmeans_materials(
+                                rsmeans_materials,
+                                materials_results,
+                            )
+                            exact_id_fallbacks = []
+                            if use_exact_costline_id:
+                                exact_id_fallbacks = sorted({
+                                    str(material.get("name", "")).strip()
+                                    for material in materials_results
+                                    if material.get("match_type") != "exact_id_match"
+                                    and material.get("name")
+                                })
+
+                            unresolved_materials = []
+                            for material_name in unmatched_materials + exact_id_fallbacks:
+                                if material_name and material_name not in unresolved_materials:
+                                    unresolved_materials.append(material_name)
+
+                            if unresolved_materials:
+                                for material_name in unmatched_materials:
+                                    runner.registerWarning(
+                                        "RSMeans did not find a catalog match for "
+                                        f"retrofit material '{material_name}'."
+                                    )
+                                if use_exact_costline_id:
+                                    for material_name in exact_id_fallbacks:
+                                        runner.registerWarning(
+                                            "RSMeans exact-ID mode did not return "
+                                            f"the requested costline ID '{exact_costline_id}' "
+                                            f"for '{material_name}'."
+                                        )
+                                self._register_rsmeans_resolution_error(
+                                    runner,
+                                    unresolved_materials,
+                                    use_exact_costline_id,
+                                    exact_costline_id,
+                                )
+                                return False
+
+                            # Ambiguity guard: halt when closest-match mode
+                            # auto-selected from tied candidates so the user
+                            # can confirm the right subdivision.
+                            if not use_exact_costline_id:
+                                ambiguous_matches = (
+                                    self
+                                    ._detect_rsmeans_ambiguous_candidates(
+                                        search_log
+                                    )
+                                )
+                                if ambiguous_matches:
+                                    for amb in ambiguous_matches:
+                                        tied = amb["tied_candidates"]
+                                        tied_descs = "; ".join(
+                                            f"'{c.get('description','?')}'" for c in tied[:6]
+                                        )
+                                        auto_id = amb["matched_rsmeans_id"]
+                                        auto_desc = amb["matched_description"]
+                                        runner.registerWarning(
+                                            f"RSMeans found "
+                                            f"{len(tied)} equally-scored candidates "
+                                            f"for '{amb['material']}' "
+                                            f"(search term: "
+                                            f"'{amb['search_term_used']}'). "
+                                            f"Auto-selected: "
+                                            f"'{auto_desc}' "
+                                            f"(ID: {auto_id}). "
+                                            f"All tied candidates: "
+                                            f"{tied_descs}."
+                                        )
+                                    runner.registerError(
+                                        "RSMeans auto-selection is ambiguous: "
+                                        "multiple candidates share the same "
+                                        "score for the requested insulation "
+                                        "material. Review the warnings above "
+                                        "and rerun with "
+                                        "`use_exact_costline_id=True` and "
+                                        "`exact_costline_id` set to the ID "
+                                        "shown for the desired entry. "
+                                        "Alternatively, set "
+                                        "`use_custom_costs=True` and provide "
+                                        "a `custom_cost_per_sf` value."
+                                    )
+                                    return False
+
+                            rsmeans_diagnostics = {
+                                "materials": materials_results,
+                                "search_log": search_log,
+                                "summary": {
+                                    "release_id": summary.get("release_id"),
+                                    "location_id": summary.get("location_id"),
+                                    "labor_type": summary.get("labor_type"),
+                                    "measurement_system": summary.get(
+                                        "measurement_system"
+                                    ),
+                                    "catalogs_searched": summary.get(
+                                        "catalogs_searched", []
+                                    ),
+                                },
+                            }
+                            try:
+                                diagnostics_json = json.dumps(
+                                    rsmeans_diagnostics
+                                )
+                                feature_name = (
+                                    "roof_insulation_rsmeans_matches_json"
+                                )
+                                results.setFeature(
+                                    feature_name, diagnostics_json
+                                )
+                                facility.additionalProperties().setFeature(
+                                    feature_name, diagnostics_json
+                                )
+                                sim_ap = model.getSimulationControl(
+                                ).additionalProperties()
+                                sim_ap.setFeature(
+                                    feature_name, diagnostics_json
+                                )
+                            except Exception:
+                                runner.registerWarning(
+                                    "Could not serialize RSMeans "
+                                    "diagnostics to JSON."
+                                )
+                                if use_exact_costline_id:
+                                    runner.registerInfo(
+                                        f"RSMeans exact-ID mode enabled. Requested costline_id={exact_costline_id}"
+                                    )
+                            if materials_results:
+                                runner.registerInfo("RSMeans materials detail:")
+                                for mat in materials_results:
+                                    mat_name = mat.get("name", "(unknown)")
+                                    mat_desc = mat.get("description", "")
+                                    mat_qty = mat.get("quantity", 0.0)
+                                    mat_unit = mat.get("unit", "")
+                                    mat_div = mat.get("division_code", "")
+                                    mat_rsmeans_id = mat.get("rsmeans_id", "N/A")
+                                    mat_unit_cost = mat.get("unit_cost", 0.0)
+                                    mat_total_cost = mat.get("total_cost", 0.0)
+                                    mat_unit_cost_basis = mat.get("unit_cost_basis", mat_unit)
+                                    runner.registerInfo(
+                                        f"  - {mat_name} | {mat_desc} | {mat_qty} {mat_unit} | "
+                                        f"division {mat_div} | "
+                                        f"costline_id={mat_rsmeans_id} | "
+                                        f"unit=${mat_unit_cost:,.2f}/{mat_unit_cost_basis} | total=${mat_total_cost:,.2f}"
+                                    )
+                            runner.registerInfo(
+                                "RSMeans cost summary: "
+                                f"materials={summary.get('materials_count', 0)}, "
+                                f"total_cost=${summary.get('total_cost_with_overhead_profit', 0.0):,.2f} "
+                                f"(Note: RSMeans unit costs include both material and labor)"
+                            )
+                        else:
+                            runner.registerWarning(
+                                f"RSMeans lookup failed: {rsmeans_lookup.get('message', 'unknown error')}"
+                            )
+                    except Exception as e:
+                        runner.registerWarning(f"RSMeans lookup failed: {e}")
+                else:
+                    runner.registerWarning("RSMeans lookup skipped: call_rsmeans_api.py not found")
+
         # Results (standardized fields)
         results.setFeature("roof_insulation_total_additional_embodied_carbon_kg", total_embodied_carbon)
-        results.setFeature("roof_insulation_total_additional_material_cost_$", 0.0)  # Placeholder
-        results.setFeature("roof_insulation_total_additional_overhead_profit_cost_$", 0.0)  # Placeholder
-        results.setFeature("roof_insulation_total_additional_labour_cost_$", 0.0)  # Placeholder
+        results.setFeature("roof_insulation_total_additional_installed_cost_$", total_installed_cost)
+        results.setFeature("roof_insulation_total_additional_material_cost_$", total_material_cost)
+        results.setFeature("roof_insulation_total_additional_overhead_profit_cost_$", total_overhead_profit_cost)
+        results.setFeature("roof_insulation_total_cost_with_overhead_and_profit_$", total_installed_cost + total_overhead_profit_cost)
+        results.setFeature("roof_insulation_cost_source", cost_source)
+        results.setFeature(
+            "roof_insulation_rsmeans_selection_mode",
+            "exact_id" if use_exact_costline_id else ("custom_input" if use_custom_costs else "closest_match")
+        )
+        if use_exact_costline_id and exact_costline_id:
+            results.setFeature("roof_insulation_rsmeans_requested_costline_id", exact_costline_id)
         results.setFeature("roof_insulation_total_embodied_carbon_kgCO2eq", total_embodied_carbon)
+
+        # Mirror key cost outputs on Facility AdditionalProperties for persistence/visibility
+        facility.additionalProperties().setFeature("roof_insulation_total_additional_installed_cost_$", total_installed_cost)
+        facility.additionalProperties().setFeature("roof_insulation_total_additional_material_cost_$", total_material_cost)
+        facility.additionalProperties().setFeature("roof_insulation_total_additional_overhead_profit_cost_$", total_overhead_profit_cost)
+        facility.additionalProperties().setFeature("roof_insulation_total_cost_with_overhead_and_profit_$", total_installed_cost + total_overhead_profit_cost)
+        facility.additionalProperties().setFeature("roof_insulation_cost_source", cost_source)
+        facility.additionalProperties().setFeature(
+            "roof_insulation_rsmeans_selection_mode",
+            "exact_id" if use_exact_costline_id else ("custom_input" if use_custom_costs else "closest_match")
+        )
+        if use_exact_costline_id and exact_costline_id:
+            facility.additionalProperties().setFeature("roof_insulation_rsmeans_requested_costline_id", exact_costline_id)
 
         # Emission factors aggregated from selected statistic lists
         if gwp_values["gwp_per_kg"]:
@@ -783,6 +1213,16 @@ class IncreaseInsulationRValueForRoofs(openstudio.measure.ModelMeasure):
         # # Cross-measure extraction fields on Facility
         # factors.setFeature("name", "Increase_Insulation_R-Value_for_Roofs")
         # factors.setFeature("total_additional_embodied_carbon_kgCO2", total_embodied_carbon)
+        
+        # Report per-construction areas
+        runner.registerInfo("Roof area by construction:")
+        for row in gwp_summary_rows:
+            const_name = row.get("orig_construction", "unknown")
+            area_m2 = row.get("added_total_area_m2", 0.0)
+            area_ft2 = self._unit_convert(area_m2, "m^2", "ft^2")
+            runner.registerInfo(
+                f"  - {const_name}: {area_m2:.2f} m² ({area_ft2:.2f} ft²)"
+            )
         
         runner.registerInfo(
             f"Building-level summary: Total embodied carbon = {total_embodied_carbon:.2f} kg CO2 eq "
