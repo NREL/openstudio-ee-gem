@@ -1,0 +1,221 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SCOPE Retrofit Measure Analysis Report</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6; color: #333; background-color: #f5f5f5; }
+        .container { max-width: 900px; margin: 0 auto; background-color: white; padding: 40px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+        .header { border-bottom: 3px solid #1f4788; padding-bottom: 20px; margin-bottom: 30px; }
+        h1 { color: #1f4788; font-size: 28px; margin-bottom: 5px; }
+        .subtitle { color: #666; font-size: 14px; margin-top: 5px; }
+        h2 { color: #1f4788; font-size: 18px; margin-top: 30px; margin-bottom: 15px; border-left: 4px solid #1f4788; padding-left: 10px; }
+        h3 { color: #1f4788; font-size: 15px; margin-top: 15px; margin-bottom: 10px; }
+        .section { margin-bottom: 30px; }
+        .summary-box { background-color: #e8f0f8; border-left: 4px solid #1f4788; padding: 15px; margin-bottom: 20px; border-radius: 3px; }
+        table { width: 100%; border-collapse: collapse; margin: 15px 0; }
+        th { background-color: #1f4788; color: white; padding: 12px; text-align: left; font-weight: bold; border: 1px solid #ddd; }
+        td { padding: 10px 12px; border: 1px solid #ddd; }
+        .renovation-table th:first-child,
+        .renovation-table td:first-child { white-space: nowrap; min-width: 100px; }
+        .material-costs-table th:first-child,
+        .material-costs-table td:first-child { white-space: nowrap; min-width: 100px; }
+        .material-list-table { table-layout: fixed; width: 100%; }
+        .material-list-table th,
+        .material-list-table td { font-size: 11px; padding: 6px 8px; word-break: break-word; }
+        .material-list-table th:first-child,
+        .material-list-table td:first-child { min-width: 72px; }
+        tr:nth-child(even) { background-color: #f9f9f9; }
+        .metric-box { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin: 20px 0; }
+        .metric-card { background-color: #f9f9f9; border: 1px solid #ddd; padding: 15px; border-radius: 5px; text-align: center; }
+        .metric-value { font-size: 24px; font-weight: bold; color: #1f4788; margin: 10px 0; }
+        .metric-label { font-size: 12px; color: #666; }
+        .positive { color: #28a745; font-weight: bold; }
+        .viz-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 15px; }
+        .chart-card { border: 1px solid #ddd; border-radius: 6px; padding: 15px; background: #fafafa; }
+        .chart-title { font-size: 14px; font-weight: 600; color: #1f4788; margin-bottom: 10px; }
+        .bar-chart { display: grid; gap: 10px; }
+        .bar-row { display: grid; grid-template-columns: 130px 1fr 80px; align-items: center; gap: 10px; }
+        .bar-label { font-size: 12px; color: #444; }
+        .bar-track { height: 12px; background: #e6e6e6; border-radius: 6px; overflow: hidden; }
+        .bar { height: 100%; border-radius: 6px; }
+        .bar.baseline { background: #6c757d; }
+        .bar.retrofit { background: #28a745; }
+        .bar-value { font-size: 12px; color: #333; text-align: right; white-space: nowrap; }
+        .legend { display: flex; gap: 12px; margin-top: 10px; font-size: 12px; color: #555; flex-wrap: wrap; }
+        .legend-item { display: inline-flex; align-items: center; gap: 6px; }
+        .legend-swatch { width: 12px; height: 12px; border-radius: 3px; }
+        .stacked-chart { display: grid; gap: 10px; margin-top: 10px; }
+        .stacked-row { display: grid; grid-template-columns: 130px 1fr 120px; align-items: center; gap: 10px; }
+        .stacked-label { font-size: 12px; color: #444; }
+        .stacked-track { display: flex; height: 14px; background: #e6e6e6; border-radius: 7px; overflow: hidden; }
+        .stacked-segment { height: 100%; }
+        .stacked-segment.embodied { background: #fd7e14; }
+        .stacked-segment.operational { background: #007bff; }
+        .stacked-value { font-size: 12px; color: #333; text-align: right; white-space: nowrap; }
+        .iframe-wrap { border: 1px solid #ddd; border-radius: 6px; overflow: hidden; background: #fff; margin-top: 10px; }
+        .iframe-wrap iframe { width: 100%; height: 520px; border: 0; }
+        .footer { margin-top: 40px; padding-top: 20px; border-top: 1px solid #ddd; color: #999; font-size: 12px; text-align: center; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>SCOPE Retrofit Measure Analysis Report</h1>
+            <div class="subtitle">Comprehensive Energy and Financial Analysis</div>
+        </div>
+
+        <div class="section">
+            <h2>Executive Summary</h2>
+            <div class="summary-box">
+                <p>This report compares energy consumption and operational costs between baseline and all applied renovation scenarios from CSV results. Embodied carbon is annualized using an analysis period of 30 years, while operational carbon is reported over 1 year. The construction cost data is from RSMeans Database. The embodied carbon is calculated using data from EC3 Environmental Product Declaration (EPD) Database.</p>
+            </div>
+        <div class="section">
+            <h2>Building Information</h2>
+            <div class="summary-box">
+                <ul style="margin:8px 0 0 20px;padding:0;list-style-type:disc;">
+                    <li>Weather Zone: ASHRAE 169-2013-3B</li>
+                    <li>Building Name: SmallOffice</li>
+                    <li>Building Location: Amarillo</li>
+                    <li>Total Floor Area: 511 m²</li>
+                </ul>
+            </div>
+        </div>
+
+            <h3>Renovation Details by Scenario</h3>
+            <table class="renovation-table">
+                <tr><th>Scenario</th><th>Renovation Type</th><th>Renovation Details</th></tr>
+                <tr><td>Baseline</td><td>unknown</td><td>Baseline (no envelope renovation)</td></tr><tr><td>Scenario 1</td><td>unknown</td><td>Wall insulation improved to R-10.0 using Fiberglass Batts</td></tr><tr><td>Scenario 2</td><td>unknown</td><td>Wall insulation improved to R-13.0 using Fiberglass Batts</td></tr><tr><td>Scenario 3</td><td>unknown</td><td>Wall insulation improved to R-13.0 using Expanded Polystyrene (EPS) Foam Board</td></tr><tr><td>Scenario 4</td><td>unknown</td><td>Wall insulation improved to R-20.0 using Fiberglass Batts</td></tr><tr><td>Scenario 5</td><td>unknown</td><td>Wall insulation improved to R-30.0 using Expanded Polystyrene (EPS) Foam Board</td></tr><tr><td>Scenario 6</td><td>unknown</td><td>Roof insulation improved to R-30.0 using Blown Fiberglass</td></tr><tr><td>Scenario 7</td><td>unknown</td><td>Wall insulation improved to R-20.0 using Extruded Polystyrene (XPS) Foam Board; Roof insulation improved to R-20.0 using Blown Mineral Wool; Window system failed to upgrade to 1-pane because all window constructions are simple glazing objects; infiltration reduction set to 20.0%; parameters: glass_option=provide user_num_panes, wf_option=wood-aluminium window frame, film_option=safety film, weatherstrip_option=silicone adhesive smoke gasket, caulking_thickness=0 m, glass_pane_thickness=0 m, gap_thickness=0 m; Door system upgraded (glass door) with 20.0% infiltration reduction</td></tr><tr><td>Scenario 8</td><td>unknown</td><td>Wall insulation improved to R-25.0 using Expanded Polystyrene (EPS) Foam Board; Roof insulation improved to R-25.0 using Polyiso Insulation Foam Board; Window system failed to upgrade to 2-pane because all window constructions are simple glazing objects; infiltration reduction set to 25.0%; parameters: glass_option=provide user_num_panes, wf_option=wood window frame, caulking_option=polyurethane, film_option=anti-graffiti film, weatherstrip_option=silicone adhesive smoke gasket, caulking_thickness=0 m, glass_pane_thickness=0 m, gap_thickness=0 m; Door system upgraded (polystyrene core steel door) with 25.0% infiltration reduction; parameters: door_bottom_seal_option=brush weatherstrip, door_top_side_seal_option=silicone adhesive smoke gasket</td></tr><tr><td>Scenario 9</td><td>unknown</td><td>Wall insulation improved to R-30.0 using Fiberglass Batts; Roof insulation improved to R-30.0 using Blown Fiberglass; Window system failed to upgrade to 3-pane because all window constructions are simple glazing objects; infiltration reduction set to 30.0%; parameters: glass_option=provide user_num_panes, wf_option=wood window frame, caulking_option=acrylic, film_option=low-e film, weatherstrip_option=silicone adhesive smoke gasket, caulking_thickness=0 m, glass_pane_thickness=0 m, gap_thickness=0 m; Door system upgraded (wooden door) with 30.0% infiltration reduction; parameters: door_bottom_seal_option=automatic door bottom, door_top_side_seal_option=jamb weatherstrip</td></tr>
+            </table>
+        </div>
+
+        <div class="section">
+            <h2>Annual Energy Analysis</h2>
+            <table>
+                <tr><th>Scenario</th><th>Metric</th><th>Baseline</th><th>Renovation</th><th>Delta</th><th>Savings %</th></tr>
+                <tr><td>Scenario 1</td><td>Total Site Energy (GJ)</td><td>195.48</td><td>195.12</td><td class="positive">0.36</td><td class="positive">0.18%</td></tr><tr><td>Scenario 2</td><td>Total Site Energy (GJ)</td><td>195.48</td><td>194.27</td><td class="positive">1.21</td><td class="positive">0.62%</td></tr><tr><td>Scenario 3</td><td>Total Site Energy (GJ)</td><td>195.48</td><td>194.27</td><td class="positive">1.21</td><td class="positive">0.62%</td></tr><tr><td>Scenario 4</td><td>Total Site Energy (GJ)</td><td>195.48</td><td>193.19</td><td class="positive">2.29</td><td class="positive">1.17%</td></tr><tr><td>Scenario 5</td><td>Total Site Energy (GJ)</td><td>195.48</td><td>192.47</td><td class="positive">3.01</td><td class="positive">1.54%</td></tr><tr><td>Scenario 6</td><td>Total Site Energy (GJ)</td><td>195.48</td><td>193.63</td><td class="positive">1.85</td><td class="positive">0.95%</td></tr><tr><td>Scenario 7</td><td>Total Site Energy (GJ)</td><td>195.48</td><td>189.61</td><td class="positive">5.87</td><td class="positive">3.00%</td></tr><tr><td>Scenario 8</td><td>Total Site Energy (GJ)</td><td>195.48</td><td>189.06</td><td class="positive">6.42</td><td class="positive">3.28%</td></tr><tr><td>Scenario 9</td><td>Total Site Energy (GJ)</td><td>195.48</td><td>188.61</td><td class="positive">6.87</td><td class="positive">3.51%</td></tr>
+            </table>
+        </div>
+
+        <div class="section">
+            <h2>Key Performance Metrics</h2>
+            <div class="metric-box">
+                <div class="chart-card">
+                    <div class="chart-title">Operational Cost Saving (Scenario - Baseline) ($/yr) Comparison</div>
+                    <div class="bar-chart">
+                        <div class="bar-row">
+                            <div class="bar-label">Baseline</div>
+                            <div class="bar-track"><div class="bar baseline" style="width: 100.0%;"></div></div>
+                            <div class="bar-value">$9,667</div>
+                        </div>
+                        <div class="bar-row">
+                            <div class="bar-label">Scenario 9</div>
+                            <div class="bar-track"><div class="bar retrofit" style="width: 94.2%;"></div></div>
+                            <div class="bar-value">$9,110</div>
+                        </div>
+                    </div>
+                    <div class="legend">
+                        <span class="legend-item"><span class="legend-swatch" style="background:#6c757d"></span>Baseline</span>
+                        <span class="legend-item"><span class="legend-swatch" style="background:#28a745"></span>Scenario 9</span>
+                    </div>
+                    <p style="font-size:12px;color:#666;margin-top:8px;">Max saving: <span class="positive">$-558 (-5.77%)</span></p>
+                </div>
+                <div class="chart-card">
+                    <div class="chart-title">Operational Carbon Saving (Scenario - Baseline) (kg CO<sub>2</sub>e/yr) Comparison</div>
+                    <div class="bar-chart">
+                        <div class="bar-row">
+                            <div class="bar-label">Baseline</div>
+                            <div class="bar-track"><div class="bar baseline" style="width: 100.0%;"></div></div>
+                            <div class="bar-value">18,943</div>
+                        </div>
+                        <div class="bar-row">
+                            <div class="bar-label">Scenario 9</div>
+                            <div class="bar-track"><div class="bar retrofit" style="width: 96.6%;"></div></div>
+                            <div class="bar-value">18,296</div>
+                        </div>
+                    </div>
+                    <div class="legend">
+                        <span class="legend-item"><span class="legend-swatch" style="background:#6c757d"></span>Baseline</span>
+                        <span class="legend-item"><span class="legend-swatch" style="background:#28a745"></span>Scenario 9</span>
+                    </div>
+                    <p style="font-size:12px;color:#666;margin-top:8px;">Max saving: <span class="positive">-647 kg CO<sub>2</sub>e (-3.41%)</span></p>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-label">Min Construction Cost</div>
+                    <div class="metric-value">$228.06</div>
+                    <div style="font-size:12px;color:#666;">Scenario 1</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-label">Min Embodied Carbon</div>
+                    <div class="metric-value">6.81 kg CO<sub>2</sub>e</div>
+                    <div style="font-size:12px;color:#666;">Embodied carbon intensity (ECI): 0.01 kgCO₂e/m²</div>
+                    <div style="font-size:12px;color:#666;">Scenario 1</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-label">Lowest Cost Payback Period</div>
+                    <div class="metric-value">9.88 years</div>
+                    <div style="font-size:12px;color:#666;">Scenario 2</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-label">Lowest Carbon Payback Period</div>
+                    <div class="metric-value">0.20 years</div>
+                    <div style="font-size:12px;color:#666;">Scenario 1</div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>Comparative Visualizations</h2>
+            <div class="chart-card" style="margin-top: 20px;">
+                <div class="chart-title">Spider Chart Visualization</div>
+                <p style="font-size:12px;color:#666;margin-bottom:8px;">Embedded from parametric_spider_chart.html in the same output folder.</p>
+                <div class="iframe-wrap">
+                    <iframe src="parametric_spider_chart.html" title="Spider Chart Visualization"></iframe>
+                </div>
+            </div>
+
+        </div>
+
+        <div class="section">
+            <h2>Payback Period</h2>
+            <div class="viz-grid">
+                <div class="chart-card">
+                    <div class="chart-title">Cost Payback Period</div>
+                    <p style="font-size:12px;color:#666;margin-bottom:8px;">Payback = total construction cost / abs(Operational Cost Saving (Scenario - Baseline) ($/yr)).</p>
+                    <div class="bar-chart">
+                        <div class='bar-row'><div class='bar-label'>Scenario 1</div><div class='bar-track'><div class='bar retrofit' style='width:3.0%;'></div></div><div class='bar-value'>13 yrs</div></div><div class='bar-row'><div class='bar-label'>Scenario 2</div><div class='bar-track'><div class='bar retrofit' style='width:2.2%;'></div></div><div class='bar-value'>9.88 yrs</div></div><div class='bar-row'><div class='bar-label'>Scenario 3</div><div class='bar-track'><div class='bar retrofit' style='width:10.1%;'></div></div><div class='bar-value'>46 yrs</div></div><div class='bar-row'><div class='bar-label'>Scenario 4</div><div class='bar-track'><div class='bar retrofit' style='width:3.1%;'></div></div><div class='bar-value'>14 yrs</div></div><div class='bar-row'><div class='bar-label'>Scenario 5</div><div class='bar-track'><div class='bar retrofit' style='width:23.2%;'></div></div><div class='bar-value'>104 yrs</div></div><div class='bar-row'><div class='bar-label'>Scenario 6</div><div class='bar-track'><div class='bar retrofit' style='width:100.0%;'></div></div><div class='bar-value'>451 yrs</div></div><div class='bar-row'><div class='bar-label'>Scenario 7</div><div class='bar-track'><div class='bar retrofit' style='width:45.7%;'></div></div><div class='bar-value'>206 yrs</div></div><div class='bar-row'><div class='bar-label'>Scenario 8</div><div class='bar-track'><div class='bar retrofit' style='width:78.7%;'></div></div><div class='bar-value'>354 yrs</div></div><div class='bar-row'><div class='bar-label'>Scenario 9</div><div class='bar-track'><div class='bar retrofit' style='width:56.3%;'></div></div><div class='bar-value'>254 yrs</div></div>
+                    </div>
+                </div>
+
+                <div class="chart-card">
+                    <div class="chart-title">Carbon Payback Period</div>
+                    <p style="font-size:12px;color:#666;margin-bottom:8px;">Payback = total embodied carbon / abs(Operational Carbon Saving (Scenario - Baseline) (kg CO<sub>2</sub>e/yr)).</p>
+                    <div class="bar-chart">
+                        <div class='bar-row'><div class='bar-label'>Scenario 1</div><div class='bar-track'><div class='bar retrofit' style='width:0.3%;'></div></div><div class='bar-value'>0.20 yrs</div></div><div class='bar-row'><div class='bar-label'>Scenario 2</div><div class='bar-track'><div class='bar retrofit' style='width:0.3%;'></div></div><div class='bar-value'>0.25 yrs</div></div><div class='bar-row'><div class='bar-label'>Scenario 3</div><div class='bar-track'><div class='bar retrofit' style='width:5.5%;'></div></div><div class='bar-value'>4.29 yrs</div></div><div class='bar-row'><div class='bar-label'>Scenario 4</div><div class='bar-track'><div class='bar retrofit' style='width:0.5%;'></div></div><div class='bar-value'>0.36 yrs</div></div><div class='bar-row'><div class='bar-label'>Scenario 5</div><div class='bar-track'><div class='bar retrofit' style='width:11.8%;'></div></div><div class='bar-value'>9.23 yrs</div></div><div class='bar-row'><div class='bar-label'>Scenario 6</div><div class='bar-track'><div class='bar retrofit' style='width:59.2%;'></div></div><div class='bar-value'>46 yrs</div></div><div class='bar-row'><div class='bar-label'>Scenario 7</div><div class='bar-track'><div class='bar retrofit' style='width:100.0%;'></div></div><div class='bar-value'>78 yrs</div></div><div class='bar-row'><div class='bar-label'>Scenario 8</div><div class='bar-track'><div class='bar retrofit' style='width:51.1%;'></div></div><div class='bar-value'>40 yrs</div></div><div class='bar-row'><div class='bar-label'>Scenario 9</div><div class='bar-track'><div class='bar retrofit' style='width:41.5%;'></div></div><div class='bar-value'>33 yrs</div></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        
+
+        <div class='section'><h2>Material List</h2><div class='summary-box'><p>No material consumption data found for renovation scenarios.</p></div></div>
+
+        <div class="section">
+            <h2>Result Summary</h2>
+            </div>
+            <table class="material-costs-table">
+                <tr><th>Scenario</th><th>Total Embodied Carbon (kg CO<sub>2</sub>e)</th><th>Annual Operational Carbon (kg CO<sub>2</sub>e)</th><th>Annual Operational Cost (USD)</th><th>Total Construction Cost (USD)</th></tr>
+                <tr><td>Baseline</td><td>0.00</td><td>18,943</td><td>$9,667</td><td>$0.00</td></tr><tr><td>Scenario 1</td><td>6.81</td><td>18,909</td><td>$9,650</td><td>$228</td></tr><tr><td>Scenario 2</td><td>28</td><td>18,828</td><td>$9,571</td><td>$954</td></tr><tr><td>Scenario 3</td><td>494</td><td>18,828</td><td>$9,571</td><td>$4,399</td></tr><tr><td>Scenario 4</td><td>79</td><td>18,726</td><td>$9,481</td><td>$2,647</td></tr><tr><td>Scenario 5</td><td>2,626</td><td>18,658</td><td>$9,444</td><td>$23,368</td></tr><tr><td>Scenario 6</td><td>8,391</td><td>18,763</td><td>$9,515</td><td>$68,550</td></tr><tr><td>Scenario 7</td><td>43,609</td><td>18,387</td><td>$9,209</td><td>$94,364</td></tr><tr><td>Scenario 8</td><td>24,288</td><td>18,337</td><td>$9,163</td><td>$178,908</td></tr><tr><td>Scenario 9</td><td>21,058</td><td>18,296</td><td>$9,110</td><td>$141,428</td></tr>
+
+            </table>
+        </div>
+
+        <div class="footer">
+            <p>Generated: April 03, 2026 | Report Type: Retrofit Impact Analysis | Run: run_test_002</p>
+        </div>
+    </div>
+</body>
+</html>
