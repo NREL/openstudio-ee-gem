@@ -6,6 +6,9 @@
 
 import sys
 import os
+import json
+import importlib.util
+from pathlib import Path
 sys.path.insert(0, os.path.dirname(__file__))
 import openstudio
 import numpy as np
@@ -51,6 +54,10 @@ class IncreaseInsulationRValueForExteriorWalls(openstudio.measure.ModelMeasure):
             "Fiberglass Batts",
             "Pure Wool Batts"
         ]  
+
+    @staticmethod
+    def _unit_convert(value, from_u, to_u):
+        return openstudio.convert(value, from_u, to_u).get()
     
     def arguments(self, model):
         args = openstudio.measure.OSArgumentVector()
@@ -596,6 +603,7 @@ class IncreaseInsulationRValueForExteriorWalls(openstudio.measure.ModelMeasure):
         # Calculate building-level totals for summarization
         total_embodied_carbon = sum(gwp_summary[idx]["total_gwp_kg_co2_eq"] for idx in range(len(modified_constructions)))
         total_wall_area = sum(item["total_area_m2"] for item in modified_constructions)
+        total_added_volume_m3 = sum(item["added_thickness_m"] * item["total_area_m2"] for item in modified_constructions)
         
         # Store building-level summary in organized AdditionalProperties buckets
         building = model.getBuilding()
@@ -624,7 +632,7 @@ class IncreaseInsulationRValueForExteriorWalls(openstudio.measure.ModelMeasure):
 
         # Renovation details / quantities
         reno_detail.setFeature("wall_insulation_renovated_area_m2", total_wall_area)
-        reno_detail.setFeature("wall_insulation_added_volume_m3", sum(item["added_thickness_m"] * item["total_area_m2"] for item in modified_constructions))
+        reno_detail.setFeature("wall_insulation_added_volume_m3", total_added_volume_m3)
         # reno_detail.setFeature("wall_insulation_modified_constructions_count", len(modified_constructions))
 
         # ===================== RSMeans cost lookup =====================
