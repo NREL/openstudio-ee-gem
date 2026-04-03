@@ -29,9 +29,38 @@ from typing import Optional, Dict, Any, List
 
 import requests
 import urllib3
-from dotenv import load_dotenv
+try:
+    from dotenv import load_dotenv as _dotenv_load_dotenv
+except Exception:
+    _dotenv_load_dotenv = None
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+
+
+def load_dotenv() -> bool:
+    """Load .env values if python-dotenv is present, otherwise parse .env manually."""
+    if _dotenv_load_dotenv is not None:
+        _dotenv_load_dotenv()
+        return True
+
+    for base in [Path.cwd(), *Path.cwd().parents]:
+        env_path = base / ".env"
+        if not env_path.exists():
+            continue
+        try:
+            for raw_line in env_path.read_text(encoding="utf-8").splitlines():
+                line = raw_line.strip()
+                if not line or line.startswith("#") or "=" not in line:
+                    continue
+                key, value = line.split("=", 1)
+                key = key.strip()
+                value = value.strip().strip('"').strip("'")
+                if key:
+                    os.environ.setdefault(key, value)
+            return True
+        except Exception:
+            continue
+    return False
 
 
 DEFAULT_FEATURE_KEYS = {
@@ -1233,6 +1262,7 @@ def search_materials_across_catalogs(
         unit = material.get("unit", "")
         division_code = material.get("division_code")
         specified_id = material.get("rsmeans_id")
+        force_fallback_due_to_score = False
 
         material_name_lower = str(material_name).lower()
         if not specified_id and any(k in material_name_lower for k in ["polyiso", "polyisocyanurate"]):

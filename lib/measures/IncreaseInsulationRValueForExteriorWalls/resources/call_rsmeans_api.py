@@ -22,6 +22,7 @@ Optional keys:
 """
 
 import argparse
+import importlib.util
 import json
 import os
 from pathlib import Path
@@ -29,9 +30,38 @@ from typing import Optional, Dict, Any, List
 
 import requests
 import urllib3
-from dotenv import load_dotenv
+try:
+    from dotenv import load_dotenv as _dotenv_load_dotenv
+except Exception:
+    _dotenv_load_dotenv = None
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+
+
+def load_dotenv() -> bool:
+    """Load .env values if python-dotenv is present, otherwise parse .env manually."""
+    if _dotenv_load_dotenv is not None:
+        _dotenv_load_dotenv()
+        return True
+
+    for base in [Path.cwd(), *Path.cwd().parents]:
+        env_path = base / ".env"
+        if not env_path.exists():
+            continue
+        try:
+            for raw_line in env_path.read_text(encoding="utf-8").splitlines():
+                line = raw_line.strip()
+                if not line or line.startswith("#") or "=" not in line:
+                    continue
+                key, value = line.split("=", 1)
+                key = key.strip()
+                value = value.strip().strip('"').strip("'")
+                if key:
+                    os.environ.setdefault(key, value)
+            return True
+        except Exception:
+            continue
+    return False
 
 
 DEFAULT_FEATURE_KEYS = {
@@ -439,6 +469,52 @@ def extract_materials_from_model(model, feature_keys: Dict[str, str]) -> List[Di
         materials.append(material)
 
     return materials
+
+
+def run_rsmeans_cost_lookup(
+    materials: Optional[List[Dict[str, Any]]] = None,
+    release_id: str = "2025-q4",
+    catalogs: Optional[List[str]] = None,
+    location_id: str = "us-us-national",
+    labor_type: str = "std",
+    measurement_system: str = "imp",
+    use_sandbox: bool = False,
+    overhead_profit_percent: float = 0.0,
+    fallback_costline_ids: Optional[Dict[str, str]] = None,
+) -> Dict[str, Any]:
+    """Delegate to the shared RSMeans lookup implementation used by envelope measures."""
+    helper_path = (
+        Path(__file__).resolve().parents[2]
+        / "window_enhancement"
+        / "resources"
+        / "call_rsmeans_api.py"
+    )
+    try:
+        spec = importlib.util.spec_from_file_location(
+            "window_enhancement_call_rsmeans_api", helper_path
+        )
+        if spec is None or spec.loader is None:
+            raise ImportError(f"Invalid module spec for {helper_path}")
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        return module.run_rsmeans_cost_lookup(
+            materials=materials,
+            release_id=release_id,
+            catalogs=catalogs,
+            location_id=location_id,
+            labor_type=labor_type,
+            measurement_system=measurement_system,
+            use_sandbox=use_sandbox,
+            overhead_profit_percent=overhead_profit_percent,
+            fallback_costline_ids=fallback_costline_ids,
+        )
+    except Exception as e:
+        return {
+            "status": "error",
+            "message": f"Wall RSMeans helper delegation failed: {e}",
+            "summary": {},
+            "results": {"materials": [], "search_log": []},
+        }
 
 
 def parse_args() -> argparse.Namespace:
