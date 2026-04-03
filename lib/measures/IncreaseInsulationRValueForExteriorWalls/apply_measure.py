@@ -209,6 +209,10 @@ def main():
         except Exception as exc:
             step_values[sv.name()] = f"<error: {exc}>"
 
+    # Redact sensitive API key from output
+    if "api_key" in step_values:
+        step_values["api_key"] = "<redacted>"
+
     if step_values:
         print("\nStep Values reported by measure:")
         for k, v in step_values.items():
@@ -222,8 +226,30 @@ def main():
     ap_data = verify_additional_properties(model)
     if ap_data:
         print(f"Found {len(ap_data)} properties in separate Facility AdditionalProperties:")
+        
+        # Track material and overhead costs to calculate total
+        material_cost = None
+        overhead_cost = None
+        
         for obj_name, prop_name, value in ap_data:
             print(f"  [{obj_name}] {prop_name}: {value}")
+            
+            # Capture cost values for total calculation
+            if prop_name == "wall_insulation_total_additional_material_cost_$":
+                try:
+                    material_cost = float(value)
+                except (ValueError, TypeError):
+                    pass
+            elif prop_name == "wall_insulation_total_additional_overhead_profit_cost_$":
+                try:
+                    overhead_cost = float(value)
+                except (ValueError, TypeError):
+                    pass
+        
+        # Print total cost if both values are available
+        if material_cost is not None and overhead_cost is not None:
+            total_cost = material_cost + overhead_cost
+            print(f"  [Facility] wall_insulation_total_cost_with_overhead_and_profit_$: {total_cost:.2f}")
     else:
         print("  No properties found on Facility.")
 

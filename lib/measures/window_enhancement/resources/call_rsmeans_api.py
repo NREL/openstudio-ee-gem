@@ -78,6 +78,295 @@ def _get_feature_as_float(props, feature_name: str) -> Optional[float]:
     return None
 
 
+def _extract_search_items(search_results: Dict[str, Any]) -> List[Dict[str, Any]]:
+    if not search_results:
+        return []
+    items = search_results.get("items")
+    if isinstance(items, list):
+        return items
+    return search_results.get("unitLines", {}).get("items", [])
+
+
+def _filter_demo_items(items: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    filtered = []
+    for item in items:
+        description = str(item.get("description", "")).lower()
+        if "demolition" in description or "demo" in description:
+            continue
+        filtered.append(item)
+    return filtered or items
+
+
+def _normalize_search_text(text: str) -> str:
+    cleaned = re.sub(r"[^a-z0-9]+", " ", str(text).lower())
+    return re.sub(r"\s+", " ", cleaned).strip()
+
+
+def _tokenize_search_text(text: str) -> set:
+    tokens = _normalize_search_text(text).split()
+    return {tok for tok in tokens if len(tok) > 2}
+
+
+def _parse_inches_token(token: str) -> Optional[float]:
+    token = str(token).strip()
+    if not token:
+        return None
+    if "-" in token:
+        whole, frac = token.split("-", 1)
+        try:
+            whole_val = float(whole)
+        except ValueError:
+            return None
+        if "/" in frac:
+            num, den = frac.split("/", 1)
+            try:
+                return whole_val + (float(num) / float(den))
+            except (ValueError, ZeroDivisionError):
+                return None
+        return None
+    if "/" in token:
+        num, den = token.split("/", 1)
+        try:
+            return float(num) / float(den)
+        except (ValueError, ZeroDivisionError):
+            return None
+    try:
+        return float(token)
+    except ValueError:
+        return None
+
+
+def _extract_thickness_ft_from_description(description: str) -> Optional[float]:
+    desc = str(description or "")
+    if not desc:
+        return None
+
+    # Matches common forms: 3-1/2", 2", 3 1/2 in, 2.5 in
+    patterns = [
+        r"(\d+(?:-\d+/\d+|/\d+|\.\d+)?)\s*\"",
+        r"(\d+(?:-\d+/\d+|/\d+|\.\d+)?)\s*(?:in|inch|inches)\b",
+    ]
+    for pattern in patterns:
+        match = re.search(pattern, desc, flags=re.IGNORECASE)
+        if match:
+            inches = _parse_inches_token(match.group(1))
+            if inches and inches > 0:
+                return inches / 12.0
+    return None
+
+
+def _compute_total_cost_for_material(
+    material: Dict[str, Any],
+    unit_cost: float,
+    matched_description: str,
+) -> Dict[str, Any]:
+    """Compute total cost for a material, optionally converting area pricing to volume pricing."""
+    quantity = float(material.get("quantity", 1.0) or 1.0)
+    default = {
+        "unit_cost": float(unit_cost),
+        "total_cost": float(unit_cost) * quantity,
+        "costing_mode": "area",
+        "effective_unit": material.get("unit", ""),
+    }
+
+    if str(material.get("costing_mode", "")).lower() != "volume_from_area":
+        return default
+
+    quantity_volume = material.get("quantity_volume")
+    if quantity_volume is None:
+        return default
+
+    line_thickness_ft = _extract_thickness_ft_from_description(matched_description)
+    if line_thickness_ft is None:
+        line_thickness_ft = material.get("rsmeans_thickness_ft")
+    try:
+        line_thickness_ft = float(line_thickness_ft)
+    except (TypeError, ValueError):
+        return default
+
+    if line_thickness_ft <= 0.0:
+        return default
+
+    unit_cost_per_cf = float(unit_cost) / line_thickness_ft
+    total_cost = unit_cost_per_cf * float(quantity_volume)
+    return {
+        "unit_cost": unit_cost_per_cf,
+        "total_cost": total_cost,
+        "costing_mode": "volume_from_area",
+        "effective_unit": material.get("unit_volume", "CF"),
+        "source_unit_cost_per_sf": float(unit_cost),
+        "source_line_thickness_ft": line_thickness_ft,
+    }
+
+
+def _score_rsmeans_candidate(
+    material_name: str,
+    item: Dict[str, Any],
+) -> tuple:
+    description = str(item.get("description", ""))
+    if not description:
+        return -1.0
+
+    material_norm = _normalize_search_text(material_name)
+    description_norm = _normalize_search_text(description)
+
+    material_tokens = _tokenize_search_text(material_name)
+    description_tokens = _tokenize_search_text(description)
+    overlap = material_tokens.intersection(description_tokens)
+
+    score = 0.0
+    if material_norm == description_norm:
+        score += 100.0
+    elif material_norm and material_norm in description_norm:
+        score += 60.0
+
+    # Heavy weighting for exact material-keyword matches
+    for token in material_tokens:
+        if token in description_tokens:
+            score += 15.0
+
+    # Penalize overly generic descriptions
+    if "insulation" in description_norm and len(overlap) < 2:
+        score -= 20.0
+    if "roof" not in description_norm and "roof" in material_norm:
+        score -= 10.0
+
+    # Penalize wall-only descriptions for roof insulation queries.
+    if "roof" in material_norm and "wall" in description_norm and "roof" not in description_norm:
+        score -= 25.0
+
+    # Strongly prefer polyiso/polyisocyanurate descriptions for polyiso materials.
+    if "polyiso" in material_norm or "polyisocyanurate" in material_norm:
+        if "polyisocyanurate" in description_norm:
+            score += 40.0
+        elif "polyiso" in description_norm:
+            score += 30.0
+        else:
+            score -= 30.0
+
+    # Slightly favor specific descriptions over very short generic strings.
+    score += min(len(description_norm), 120) / 120.0
+    
+    # Clamp score to 0-100 range and also return raw score for fallback logic.
+    clamped_score = max(0.0, min(100.0, score))
+    return score, clamped_score
+
+
+def _resolve_fallback_costline_id(
+    material_name: str,
+    fallback_costline_ids: Dict[str, str],
+) -> Optional[str]:
+    """Resolve fallback ID by exact material name, then keyword, then default.
+
+    Keyword mappings use keys of the form: "keyword:<phrase>".
+    Example: {"keyword:blown cellulose": "072126100020"}
+    """
+    if not fallback_costline_ids:
+        return None
+
+    exact = fallback_costline_ids.get(material_name)
+    if exact:
+        return exact
+
+    material_norm = _normalize_search_text(material_name)
+    for key, fallback_id in fallback_costline_ids.items():
+        if not isinstance(key, str) or not key.lower().startswith("keyword:"):
+            continue
+        keyword = _normalize_search_text(key.split(":", 1)[1])
+        if keyword and keyword in material_norm:
+            return fallback_id
+
+    return fallback_costline_ids.get("__default__")
+
+
+def _is_disallowed_candidate(item: Dict[str, Any]) -> bool:
+    """Exclude accessory/fastener-centric lines from primary material matching."""
+    desc = _normalize_search_text(item.get("description", ""))
+    if not desc:
+        return False
+
+    # Exclude tapered insulation takeoff lines that are not directly comparable
+    # to flat insulation area-based (SF) selections.
+    if "tapered for drainage" in desc or (
+        "tapered" in desc and "drainage" in desc
+    ):
+        return True
+
+    disallowed_tokens = (
+        "fastener",
+        "fasteners",
+        "wire fastener",
+        "spring type wire",
+        "clip",
+        "clips",
+        "hanger",
+        "hangers",
+        "anchor",
+        "anchors",
+        "board foot",
+        "board feet",
+        "bf",
+    )
+
+    if any(token in desc for token in disallowed_tokens):
+        return True
+
+    # Some RSMeans payloads provide unit-of-measure separately.
+    unit_tokens = [
+        _normalize_search_text(item.get("uom", "")),
+        _normalize_search_text(item.get("unit", "")),
+        _normalize_search_text(item.get("unitOfMeasure", "")),
+    ]
+    if any(token in {"bf", "board foot", "board feet"} for token in unit_tokens if token):
+        return True
+
+    return False
+
+
+def _select_best_rsmeans_candidate(
+    material_name: str,
+    items: List[Dict[str, Any]],
+) -> tuple:
+    """Select best candidate and return scoring details for logging.
+    
+    Returns:
+        (best_candidate, candidate_details_list) where candidate_details_list
+        contains all candidates with their scores for audit logging
+    """
+    if not items:
+        return None, []
+
+    # Exclude clearly irrelevant accessory/fastener lines before scoring.
+    eligible_items = [item for item in items if not _is_disallowed_candidate(item)]
+    if not eligible_items:
+        eligible_items = items
+
+    # Score all candidates
+    scored = []
+    for idx, item in enumerate(eligible_items):
+        raw_score, clamped_score = _score_rsmeans_candidate(
+            material_name, item
+        )
+        desc = item.get("description", "")
+        desc = desc[:80] if desc else ""
+        scored.append({
+            "index": idx,
+            "rsmeans_id": item.get("costlineID", "unknown"),
+            "description": desc,
+            "raw_score": round(raw_score, 2),
+            "score": round(clamped_score, 2),
+        })
+
+    # Sort by score descending
+    scored.sort(key=lambda x: -x["score"])
+    
+    # Find the best item
+    best_idx = scored[0]["index"]
+    best_candidate = eligible_items[best_idx]
+    
+    return best_candidate, scored
+
+
 def generate_search_term_alternatives(material_name: str) -> List[tuple]:
     """
     Generate alternative search terms and divisions for a material.
@@ -91,10 +380,16 @@ def generate_search_term_alternatives(material_name: str) -> List[tuple]:
     """
     alternatives = []
     name_lower = material_name.lower().strip()
+    # Remove size tokens like "5 ft 3 in x 7 ft 7 in" to improve match rate
+    cleaned_name = re.sub(r"\b\d+(?:\.\d+)?\b", "", name_lower)
+    cleaned_name = cleaned_name.replace("ft", " ").replace("in", " ").replace("x", " ")
+    cleaned_name = re.sub(r"\s+", " ", cleaned_name).strip()
     
     # Strategy 1: Original name with detected division
     original_division = get_division_from_material_type(material_name)
     alternatives.append((material_name, original_division))
+    if cleaned_name and cleaned_name != name_lower:
+        alternatives.append((cleaned_name, get_division_from_material_type(cleaned_name)))
     
     # Strategy 2: Window-specific alternatives
     if "window" in name_lower:
@@ -130,6 +425,8 @@ def generate_search_term_alternatives(material_name: str) -> List[tuple]:
     
     # Strategy 3: Door-specific alternatives
     elif "door" in name_lower:
+        if "metal" in name_lower or "steel" in name_lower:
+            alternatives.append(("metal door", "08"))
         alternatives.extend([
             ("door replacement", "08"),
             ("door unit", "08"),
@@ -139,6 +436,116 @@ def generate_search_term_alternatives(material_name: str) -> List[tuple]:
     
     # Strategy 4: Insulation alternatives
     elif "insulation" in name_lower or "insul" in name_lower:
+        # Material-specific insulation search terms
+        if "fiberglass" in name_lower or "fiber glass" in name_lower:
+            if "blown" in name_lower or "loose" in name_lower:
+                alternatives.extend([
+                    ("blown fiberglass", "07"),
+                    ("loose fill fiberglass", "07"),
+                    ("fiberglass loose fill", "07"),
+                    ("fiberglass batts", "07"),
+                ])
+            else:
+                alternatives.extend([
+                    ("fiberglass batts", "07"),
+                    ("fiberglass blanket", "07"),
+                    ("blown fiberglass", "07"),
+                    ("roof fiberglass", "07"),
+                ])
+        if "cellulose" in name_lower:
+            alternatives.extend([
+                ("blown cellulose", "07"),
+                ("cellulose insulation", "07"),
+            ])
+        if "mineral wool" in name_lower or "mineral" in name_lower:
+            if "blown" in name_lower or "loose" in name_lower:
+                alternatives.extend([
+                    ("blown mineral wool", "07"),
+                    ("mineral wool loose fill", "07"),
+                    ("loose fill mineral wool", "07"),
+                    ("mineral wool batts", "07"),
+                ])
+            elif "heavy" in name_lower:
+                alternatives.extend([
+                    ("mineral wool board", "07"),
+                    ("mineral wool rigid", "07"),
+                    ("mineral wool heavy density", "07"),
+                    ("mineral wool batts", "07"),
+                ])
+            elif "light" in name_lower:
+                alternatives.extend([
+                    ("mineral wool blanket", "07"),
+                    ("mineral wool light density", "07"),
+                    ("mineral wool batts", "07"),
+                ])
+            else:
+                alternatives.extend([
+                    ("mineral wool batts", "07"),
+                    ("mineral wool blanket", "07"),
+                    ("mineral wool insulation", "07"),
+                ])
+        if "polyiso" in name_lower:
+            alternatives.extend([
+                ("polyiso insulation", "07"),
+                ("polyiso board", "07"),
+                ("polyiso foam", "07"),
+            ])
+        xps_match = (
+            ("extruded" in name_lower and "polystyrene" in name_lower)
+            or "xps" in name_lower
+        )
+        gps_match = (
+            ("graphite" in name_lower and "polystyrene" in name_lower)
+            or "gps" in name_lower
+        )
+        eps_match = (
+            ("expanded" in name_lower and "polystyrene" in name_lower)
+            or "eps" in name_lower
+        )
+        if xps_match:
+            alternatives.extend([
+                ("extruded polystyrene", "07"),
+                ("xps foam board", "07"),
+                ("xps insulation", "07"),
+            ])
+        elif gps_match:
+            alternatives.extend([
+                ("graphite polystyrene", "07"),
+                ("gps foam board", "07"),
+                ("gps insulation", "07"),
+            ])
+        elif eps_match:
+            alternatives.extend([
+                ("expanded polystyrene", "07"),
+                ("eps foam board", "07"),
+                ("eps insulation", "07"),
+            ])
+        elif "polystyrene" in name_lower:
+            # Generic polystyrene fallback (type not specified)
+            alternatives.extend([
+                ("foam board insulation", "07"),
+                ("polystyrene insulation", "07"),
+            ])
+        if "wool" in name_lower or "batts" in name_lower:
+            is_natural_wool = (
+                "pure wool" in name_lower
+                or "natural wool" in name_lower
+                or "sheep wool" in name_lower
+            )
+            if is_natural_wool:
+                alternatives.extend([
+                    ("natural wool insulation", "07"),
+                    ("sheep wool insulation", "07"),
+                    ("wool batt insulation", "07"),
+                    ("batt insulation", "07"),
+                ])
+            elif "mineral" not in name_lower:
+                # Non-mineral wool (e.g. glass wool, pure wool)
+                alternatives.extend([
+                    ("wool batts", "07"),
+                    ("wool insulation", "07"),
+                ])
+        # Generic fallback
         alternatives.extend([
             ("wall insulation", "07"),
             ("roof insulation", "07"),
@@ -156,7 +563,7 @@ def generate_search_term_alternatives(material_name: str) -> List[tuple]:
         ])
     
     # Strategy 6: Try simplifying compound terms (remove adjectives/modifiers)
-    words = name_lower.split()
+    words = cleaned_name.split() if cleaned_name else name_lower.split()
     if len(words) > 1:
         # Try just the last word (often the noun)
         last_word = words[-1]
@@ -282,9 +689,10 @@ class RSMeansAPIClient:
         try:
             response = requests.get(endpoint, headers=self._get_headers(), params=params, verify=False)
             response.raise_for_status()
-            print(
-                f"Search: catalog={catalog_id}, division={division_code}, term={search_term}"
-            )
+            print("    Search:")
+            print(f"      Catalog : {catalog_id}")
+            print(f"      Division: {division_code or 'any'}")
+            print(f"      Term    : {search_term or ''}")
             return response.json()
         except requests.exceptions.RequestException as e:
             print(f"Error retrieving unit cost line: {e}")
@@ -376,14 +784,16 @@ class RSMeansAPIClient:
                         division_code=alt_division,
                     )
                     
-                    if search_results and "items" in search_results and len(search_results["items"]) > 0:
+                    items = _filter_demo_items(_extract_search_items(search_results))
+                    if items:
                         if alt_term != material_name:
                             print(f"  -> Found match using alternative term: '{alt_term}'")
                         break
                 except Exception as e:
                     continue
             
-            if not search_results or "items" not in search_results or len(search_results["items"]) == 0:
+            items = _filter_demo_items(_extract_search_items(search_results))
+            if not items:
                 error_msg = f"No RSMeans match found for: {material_name}"
                 if len(tried_terms) > 1:
                     error_msg += f" (tried {len(tried_terms)} alternatives)"
@@ -397,7 +807,7 @@ class RSMeansAPIClient:
             
             try:
 
-                first_item = search_results["items"][0]
+                first_item = items[0]
                 division_code = first_item.get("id")
                 item_description = first_item.get("description", material_name)
 
@@ -417,7 +827,7 @@ class RSMeansAPIClient:
                 results["search_log"].append({
                     "material_name": material_name,
                     "division_hint": division_hint,
-                    "search_results_count": len(search_results.get("items", [])),
+                    "search_results_count": len(items),
                     "division_code": division_code,
                     "first_match": first_item.get("description", ""),
                     "has_cost_data": cost_line is not None and "items" in cost_line,
@@ -471,6 +881,149 @@ def load_openstudio_model(model_path: Path):
     if not model_opt.is_initialized():
         raise RuntimeError(f"Failed to load model: {model_path}")
     return model_opt.get()
+
+
+def _format_feet_inches(value_m: float) -> str:
+    inches_total = value_m * 39.37007874
+    feet = int(inches_total // 12)
+    inches = int(round(inches_total - feet * 12))
+    if inches == 12:
+        feet += 1
+        inches = 0
+    return f"{feet} ft {inches} in"
+
+
+def _estimate_door_dimensions_m(subsurface) -> Optional[Dict[str, float]]:
+    try:
+        vertices = subsurface.vertices()
+    except Exception:
+        return None
+    if not vertices or len(vertices) < 3:
+        return None
+
+    xs = [v.x() for v in vertices]
+    ys = [v.y() for v in vertices]
+    zs = [v.z() for v in vertices]
+
+    dx = max(xs) - min(xs)
+    dy = max(ys) - min(ys)
+    dz = max(zs) - min(zs)
+
+    width_m = max(dx, dy)
+    height_m = dz if dz > 0 else min(dx, dy)
+    if width_m <= 0 or height_m <= 0:
+        return None
+    return {"width_m": width_m, "height_m": height_m}
+
+
+def _get_default_exterior_door_construction(model):
+    try:
+        building = model.getBuilding()
+        dcs_opt = building.defaultConstructionSet()
+        if not dcs_opt.is_initialized():
+            return None
+        dcs = dcs_opt.get()
+        ext_subs_opt = dcs.defaultExteriorSubSurfaceConstructions()
+        if not ext_subs_opt.is_initialized():
+            return None
+        ext_subs = ext_subs_opt.get()
+        door_opt = ext_subs.doorConstruction()
+        if door_opt.is_initialized():
+            return door_opt.get()
+    except Exception:
+        return None
+    return None
+
+
+def _collect_material_keywords_from_construction(construction) -> List[str]:
+    keywords = set()
+    try:
+        if construction.to_LayeredConstruction().is_initialized():
+            lc = construction.to_LayeredConstruction().get()
+            layers = lc.layers()
+        else:
+            layers = []
+    except Exception:
+        layers = []
+
+    for layer in layers:
+        try:
+            name = layer.nameString().lower()
+        except Exception:
+            name = ""
+        if "metal" in name or "steel" in name:
+            keywords.add("metal")
+        if "aluminum" in name or "aluminium" in name:
+            keywords.add("aluminum")
+        if "insulation" in name or "insul" in name:
+            keywords.add("insulated")
+        if "wood" in name:
+            keywords.add("wood")
+        if "glass" in name or "glaz" in name:
+            keywords.add("glass")
+    return sorted(keywords)
+
+
+def _material_phrase_from_keywords(keywords: List[str]) -> str:
+    kws = set(keywords)
+    if "glass" in kws and "metal" in kws:
+        return "metal framed glass"
+    if "glass" in kws:
+        return "glass"
+    if "metal" in kws and "insulated" in kws:
+        return "insulated metal"
+    if "metal" in kws:
+        return "metal"
+    if "wood" in kws:
+        return "wood"
+    if "insulated" in kws:
+        return "insulated"
+    return ""
+
+
+def build_door_search_material_from_model(model) -> Optional[Dict[str, Any]]:
+    doors = [ss for ss in model.getSubSurfaces()
+             if ss.subSurfaceType() in ("Door", "GlassDoor", "OverheadDoor")]
+    if not doors:
+        return None
+
+    default_door_construction = _get_default_exterior_door_construction(model)
+    all_keywords = set()
+
+    for door in doors:
+        construction = None
+        if door.construction().is_initialized():
+            construction = door.construction().get()
+        elif default_door_construction is not None:
+            construction = default_door_construction
+
+        if construction is not None:
+            for kw in _collect_material_keywords_from_construction(construction):
+                all_keywords.add(kw)
+
+    dims = _estimate_door_dimensions_m(doors[0])
+    if dims:
+        width_ft_in = _format_feet_inches(dims["width_m"])
+        height_ft_in = _format_feet_inches(dims["height_m"])
+        size_str = f"{width_ft_in} x {height_ft_in}"
+    else:
+        size_str = "approx size unknown"
+
+    material_phrase = _material_phrase_from_keywords(sorted(all_keywords))
+    if material_phrase:
+        search_term = f"{material_phrase} door {size_str}"
+    else:
+        search_term = f"door {size_str}"
+
+    description = f"{len(doors)} door(s); materials: {', '.join(sorted(all_keywords)) or 'unspecified'}; size: {size_str}"
+
+    return {
+        "name": search_term.strip(),
+        "description": description,
+        "quantity": float(len(doors)),
+        "unit": "ea",
+        "division_code": "08",
+    }
 
 
 def extract_materials_from_model(model, feature_keys: Dict[str, str]) -> List[Dict[str, Any]]:
@@ -611,7 +1164,7 @@ Examples:
     
     parser.add_argument("--model", default=str(default_output_model), help=help_text)
     parser.add_argument("--output", default=str(default_output_json), help="Path to save JSON results")
-    parser.add_argument("--release", default="2025-q4", help="RSMeans release ID (e.g., 2025-q4)")
+    parser.add_argument("--release", default="2024-an", help="RSMeans release ID (e.g., 2024-an)")
     parser.add_argument(
         "--catalogs",
         default="bc-mf,gb-mf,rp-mf",
@@ -689,6 +1242,15 @@ def main() -> int:
             if materials:
                 print(f"Extracted {len(materials)} materials using standard property keys")
 
+        # Method 4: Derive a door-based search term from the model
+        if not materials:
+            derived = build_door_search_material_from_model(model)
+            if derived:
+                materials = [derived]
+                print("Derived door-based RSMeans search term from model:")
+                print(f"  Search term: {derived['name']}")
+                print(f"  Details: {derived['description']}")
+
     if not materials:
         print("ERROR: No retrofit materials found in model.")
         print("The model must have materials stored in AdditionalProperties.")
@@ -764,10 +1326,11 @@ def search_materials_across_catalogs(
     materials: List[Dict[str, Any]],
     client: "RSMeansAPIClient",
     catalogs: Optional[List[str]] = None,
-    release_id: str = "2025-q4",
+    release_id: str = "2024-an",
     location_id: str = "us-us-national",
     labor_type: str = "std",
     measurement_system: str = "imp",
+    fallback_costline_ids: Optional[Dict[str, str]] = None,
 ) -> Dict[str, Any]:
     """
     Search for materials across multiple RSMeans catalogs and return best matches.
@@ -776,10 +1339,12 @@ def search_materials_across_catalogs(
         materials: List of material dicts with 'name', 'quantity', 'unit', etc.
         client: Authenticated RSMeansAPIClient instance
         catalogs: List of catalog codes to search (default: all common catalogs)
-        release_id: RSMeans release ID (e.g., "2025-q4")
+        release_id: RSMeans release ID (e.g., "2024-an")
         location_id: Location for pricing
         labor_type: Labor type code
         measurement_system: "imp" or "met"
+        fallback_costline_ids: Dict mapping material names to fallback costline IDs
+                              (used when no match found or scoring out of bounds)
     
     Returns:
         Dict with 'total_cost', 'materials' (with catalog info), 'errors', 'search_log'
@@ -787,6 +1352,9 @@ def search_materials_across_catalogs(
     if catalogs is None:
         # Default to common building-related catalogs
         catalogs = ["bc-mf", "gb-mf", "rp-mf"]  # Building Construction, Green Building, Repair & Remodeling
+    
+    if fallback_costline_ids is None:
+        fallback_costline_ids = {}
     
     all_results = []
     search_log = []
@@ -798,12 +1366,82 @@ def search_materials_across_catalogs(
         quantity = material.get("quantity", 1.0)
         unit = material.get("unit", "")
         division_code = material.get("division_code")
+        specified_id = material.get("rsmeans_id")
+
+        # Polyiso default: prefer the known Polyisocyanurate line item unless
+        # caller explicitly provided a different exact ID.
+        if not specified_id:
+            material_name_norm = _normalize_search_text(material_name)
+            if "polyiso" in material_name_norm or "polyisocyanurate" in material_name_norm:
+                specified_id = "072216101700"
+
+        material_fallback_id = _resolve_fallback_costline_id(
+            material_name, fallback_costline_ids
+        )
+
+        print("\n" + "-" * 70)
+        print(f"RSMeans lookup for material: {material_name}")
+        print(f"  Quantity : {quantity} {unit}")
+        print(f"  Division : {division_code or 'auto'}")
         
         best_match = None
         best_cost = None
         best_catalog = None
         matched_term = None
+        force_fallback_due_to_score = False
         
+        # If a specific RSMeans line item ID is provided, attempt exact match first
+        if specified_id:
+            for catalog in catalogs:
+                try:
+                    print(f"  Exact ID : {specified_id}")
+                    print(f"  Catalog  : {catalog}")
+                    cost_line = client.get_unit_costlines(
+                        release_id=release_id,
+                        catalog=catalog,
+                        location_id=location_id,
+                        labor_type=labor_type,
+                        measurement_system=measurement_system,
+                        division_code=specified_id,
+                    )
+                    if cost_line and "items" in cost_line:
+                        for item in cost_line["items"]:
+                            if item.get("id") == specified_id:
+                                unit_cost = item.get("localizedCosts", {}).get("totalOpCost", 0.0)
+                                cost_calc = _compute_total_cost_for_material(
+                                    material,
+                                    unit_cost,
+                                    item.get("description", ""),
+                                )
+                                if cost_calc["total_cost"] > 0:
+                                    best_match = item
+                                    best_cost = cost_calc["total_cost"]
+                                    best_catalog = catalog
+                                    matched_term = f"rsmeans_id:{specified_id}"
+                                    search_log.append({
+                                        "material": material_name,
+                                        "search_term": specified_id,
+                                        "catalog": catalog,
+                                        "division": division_code,
+                                        "status": "exact_id_match",
+                                        "unit_cost": cost_calc["unit_cost"],
+                                        "unit_cost_basis": cost_calc.get("effective_unit", ""),
+                                        "costing_mode": cost_calc.get("costing_mode", "area"),
+                                        "quantity": quantity,
+                                        "total_cost": best_cost
+                                    })
+                                    break
+                        if best_match:
+                            break
+                except Exception as e:
+                    search_log.append({
+                        "material": material_name,
+                        "search_term": specified_id,
+                        "catalog": catalog,
+                        "status": "error",
+                        "error": str(e)
+                    })
+
         # Generate alternative search terms
         search_alternatives = generate_search_term_alternatives(material_name)
         
@@ -819,6 +1457,10 @@ def search_materials_across_catalogs(
             # Try alternative search terms within this catalog
             for alt_term, alt_division in search_alternatives:
                 try:
+                    print("  Search:")
+                    print(f"    Term    : {alt_term}")
+                    print(f"    Division: {alt_division or 'any'}")
+                    print(f"    Catalog : {catalog}")
                     results = client.search_unit_costlines(
                         search_term=alt_term,
                         division_code=alt_division,
@@ -829,10 +1471,22 @@ def search_materials_across_catalogs(
                         measurement_system=measurement_system,
                     )
                     
-                    if results and "items" in results and len(results["items"]) > 0:
-                        # Take first match
-                        match = results["items"][0]
+                    items = _filter_demo_items(_extract_search_items(results))
+                    if items:
+                        # Choose best match rather than taking first hit.
+                        match, candidate_details = _select_best_rsmeans_candidate(
+                            material_name, items
+                        )
+                        if not match:
+                            continue
                         division_id = match.get("id", "")
+                        print("  Match:")
+                        print(f"    ID          : {division_id}")
+                        print(f"    Description : {match.get('description', '')}")
+                        print(
+                            f"    Candidates  : {len(items)} "
+                            "(best-scored selected)"
+                        )
                         
                         # Get detailed cost data
                         cost_line = client.get_unit_costlines(
@@ -848,17 +1502,43 @@ def search_materials_across_catalogs(
                             for item in cost_line["items"]:
                                 if item.get("id") == division_id:
                                     unit_cost = item.get("localizedCosts", {}).get("totalOpCost", 0.0)
-                                    
-                                    if unit_cost > 0:
+                                    cost_calc = _compute_total_cost_for_material(
+                                        material,
+                                        unit_cost,
+                                        match.get("description", ""),
+                                    )
+
+                                    if cost_calc["total_cost"] > 0:
+                                        top_raw_score = candidate_details[0].get(
+                                            "raw_score", 0.0
+                                        )
+                                        if (
+                                            top_raw_score < 0.0
+                                            and material_fallback_id
+                                        ):
+                                            force_fallback_due_to_score = True
+                                            search_log.append({
+                                                "material": material_name,
+                                                "search_term": alt_term,
+                                                "catalog": catalog,
+                                                "status": "poor_match_raw_score_fallback",
+                                                "raw_score": top_raw_score,
+                                                "fallback_costline_id": material_fallback_id,
+                                                "candidates_considered": len(items),
+                                                "candidate_scores": candidate_details,
+                                            })
+                                            break
+
                                         best_match = item
                                         best_cost = unit_cost * quantity
                                         best_catalog = catalog
                                         matched_term = alt_term
+                                        best_cost = cost_calc["total_cost"]
                                         
                                         status_msg = f"match_found"
                                         if alt_term != material_name:
                                             status_msg += f" (using '{alt_term}')"
-                                            print(f"  -> Found match using alternative term: '{alt_term}' in catalog {catalog}")
+                                            print(f"  Note: matched on alternative term '{alt_term}' in {catalog}")
                                         
                                         search_log.append({
                                             "material": material_name,
@@ -866,7 +1546,15 @@ def search_materials_across_catalogs(
                                             "catalog": catalog,
                                             "division": alt_division,
                                             "status": status_msg,
-                                            "unit_cost": unit_cost,
+                                            "candidates_considered": len(items),
+                                            "candidate_scores": candidate_details,
+                                            "rsmeans_id": division_id,
+                                            "rsmeans_description": match.get(
+                                                "description", ""
+                                            ),
+                                            "unit_cost": cost_calc["unit_cost"],
+                                            "unit_cost_basis": cost_calc.get("effective_unit", ""),
+                                            "costing_mode": cost_calc.get("costing_mode", "area"),
                                             "quantity": quantity,
                                             "total_cost": best_cost
                                         })
@@ -874,6 +1562,8 @@ def search_materials_across_catalogs(
                             
                             if best_match:
                                 break  # Exit alternative terms loop
+                            if force_fallback_due_to_score:
+                                break
                     
                 except Exception as e:
                     search_log.append({
@@ -883,27 +1573,104 @@ def search_materials_across_catalogs(
                         "status": "error",
                         "error": str(e)
                     })
+            if force_fallback_due_to_score:
+                break
         
         if best_match:
+            match_type = "closest_match"
+            if matched_term and str(matched_term).startswith("rsmeans_id:"):
+                match_type = "exact_id_match"
             material_result = {
                 **material,
                 "catalog": best_catalog,
                 "search_term_used": matched_term,
-                "unit_cost": best_match.get("localizedCosts", {}).get("totalOpCost", 0.0),
+                "unit_cost": next((
+                    log_entry.get("unit_cost")
+                    for log_entry in reversed(search_log)
+                    if log_entry.get("material") == material_name and log_entry.get("total_cost") == best_cost
+                ), best_match.get("localizedCosts", {}).get("totalOpCost", 0.0)),
                 "total_cost": best_cost,
                 "rsmeans_id": best_match.get("id", ""),
-                "rsmeans_description": best_match.get("description", "")
+                "rsmeans_description": best_match.get("description", ""),
+                "match_type": match_type,
+                "unit_cost_basis": next((
+                    log_entry.get("unit_cost_basis")
+                    for log_entry in reversed(search_log)
+                    if log_entry.get("material") == material_name and log_entry.get("total_cost") == best_cost
+                ), material.get("unit", "")),
+                "costing_mode": next((
+                    log_entry.get("costing_mode")
+                    for log_entry in reversed(search_log)
+                    if log_entry.get("material") == material_name and log_entry.get("total_cost") == best_cost
+                ), "area")
             }
             all_results.append(material_result)
             total_cost += best_cost
         else:
-            errors.append(f"No RSMeans match found in any catalog for: {material_name}")
-            search_log.append({
-                "material": material_name,
-                "status": "no_match",
-                "catalogs_searched": catalogs,
-                "alternatives_tried": len(search_alternatives)
-            })
+            # Try fallback costline ID if available
+            # Lookup: first try exact material name, then try __default__
+            fallback_id = material_fallback_id
+            if fallback_id:
+                print(f"  Fallback: Using default costline ID '{fallback_id}' for {material_name}")
+                try:
+                    for catalog in catalogs:
+                        cost_line = client.get_unit_costlines(
+                            release_id=release_id,
+                            catalog=catalog,
+                            location_id=location_id,
+                            labor_type=labor_type,
+                            measurement_system=measurement_system,
+                            division_code=fallback_id,
+                        )
+                        if cost_line and "items" in cost_line:
+                            for item in cost_line["items"]:
+                                if item.get("id") == fallback_id:
+                                    unit_cost = item.get("localizedCosts", {}).get("totalOpCost", 0.0)
+                                    cost_calc = _compute_total_cost_for_material(
+                                        material,
+                                        unit_cost,
+                                        item.get("description", ""),
+                                    )
+                                    if cost_calc["total_cost"] > 0:
+                                        material_result = {
+                                            **material,
+                                            "catalog": catalog,
+                                            "search_term_used": f"fallback:{fallback_id}",
+                                            "unit_cost": cost_calc["unit_cost"],
+                                            "total_cost": cost_calc["total_cost"],
+                                            "rsmeans_id": item.get("id", ""),
+                                            "rsmeans_description": item.get("description", ""),
+                                            "match_type": "fallback_id",
+                                            "unit_cost_basis": cost_calc.get("effective_unit", ""),
+                                            "costing_mode": cost_calc.get("costing_mode", "area")
+                                        }
+                                        all_results.append(material_result)
+                                        total_cost += cost_calc["total_cost"]
+                                        search_log.append({
+                                            "material": material_name,
+                                            "status": "fallback_id_used",
+                                            "fallback_costline_id": fallback_id,
+                                            "catalog": catalog,
+                                            "rsmeans_id": item.get("id", ""),
+                                            "unit_cost": cost_calc["unit_cost"],
+                                            "total_cost": cost_calc["total_cost"]
+                                        })
+                                        best_match = item  # Mark as found via fallback
+                                        break
+                            if best_match:
+                                break
+                except Exception as e:
+                    print(f"  Fallback error: {e}")
+            
+            if not best_match:
+                errors.append(f"No RSMeans match found in any catalog for: {material_name}")
+                search_log.append({
+                    "material": material_name,
+                    "status": "no_match",
+                    "catalogs_searched": catalogs,
+                    "alternatives_tried": len(search_alternatives),
+                    "fallback_available": fallback_id is not None
+                })
     
     return {
         "total_cost": total_cost,
@@ -911,6 +1678,72 @@ def search_materials_across_catalogs(
         "errors": errors,
         "search_log": search_log,
         "catalogs_searched": catalogs
+    }
+
+
+def run_rsmeans_cost_lookup(
+    materials: List[Dict[str, Any]],
+    release_id: str = "2024-an",
+    catalogs: Optional[List[str]] = None,
+    location_id: str = "us-us-national",
+    labor_type: str = "std",
+    measurement_system: str = "imp",
+    use_sandbox: bool = False,
+    overhead_profit_percent: float = 0.0,
+    fallback_costline_ids: Optional[Dict[str, str]] = None,
+) -> Dict[str, Any]:
+    """Run RSMeans lookup for provided materials and return summary/results."""
+    load_dotenv()
+    client_id = os.getenv("client_id")
+    client_secret = os.getenv("client_secret")
+
+    if not client_id or not client_secret:
+        return {
+            "status": "auth_error",
+            "message": "RSMeans API credentials not found in environment",
+        }
+
+    client = RSMeansAPIClient(client_id, client_secret, use_sandbox=use_sandbox)
+    if not client.authenticate():
+        return {
+            "status": "auth_error",
+            "message": "RSMeans authentication failed",
+        }
+
+    results = search_materials_across_catalogs(
+        materials=materials,
+        client=client,
+        catalogs=catalogs,
+        release_id=release_id,
+        location_id=location_id,
+        labor_type=labor_type,
+        measurement_system=measurement_system,
+        fallback_costline_ids=fallback_costline_ids,
+    )
+
+    total_material_cost = float(results.get("total_cost", 0.0))
+    overhead_profit_cost = total_material_cost * (overhead_profit_percent / 100.0)
+    total_cost = total_material_cost + overhead_profit_cost
+
+    summary = {
+        "total_material_cost": total_material_cost,
+        "overhead_profit_percent": overhead_profit_percent,
+        "total_overhead_profit_cost": overhead_profit_cost,
+        "total_cost_with_overhead_profit": total_cost,
+        "materials_count": len(results.get("materials", [])),
+        "materials_searched": len(materials),
+        "catalogs_searched": results.get("catalogs_searched", catalogs or []),
+        "release_id": release_id,
+        "location_id": location_id,
+        "labor_type": labor_type,
+        "measurement_system": measurement_system,
+        "use_sandbox": use_sandbox,
+    }
+
+    return {
+        "status": "ok",
+        "summary": summary,
+        "results": results,
     }
 
 

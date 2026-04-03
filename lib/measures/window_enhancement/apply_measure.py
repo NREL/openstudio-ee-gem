@@ -1,3 +1,4 @@
+# pyright: reportAttributeAccessIssue=false
 """
 Apply WindowEnhancement measure to a test model.
 
@@ -22,13 +23,12 @@ import platform
 # Fall back to system installations if needed
 try:
     import openstudio
-    print(f"Using OpenStudio from installed package")
+    print("Using OpenStudio from installed package")
 except ImportError:
     # Fall back to system installations
-    OPENSTUDIO_VERSION = "3.8.0"
-    WINDOWS_OPENSTUDIO_PATH = r"C:\openstudio-3.8.0\Python"
-    MAC_OPENSTUDIO_VERSION = "3.11.0"
-    mac_openstudio_path = f"/Applications/OpenStudio-{MAC_OPENSTUDIO_VERSION}/Python"
+    OPENSTUDIO_VERSION = "3.11.0"
+    WINDOWS_OPENSTUDIO_PATH = rf"C:\openstudio-{OPENSTUDIO_VERSION}\Python"
+    mac_openstudio_path = f"/Applications/OpenStudio-{OPENSTUDIO_VERSION}/Python"
 
     openstudio_path = None
     if platform.system() == "Windows":
@@ -43,7 +43,7 @@ except ImportError:
             print(f"Using OpenStudio from: {openstudio_path}")
 
     if openstudio_path is None:
-        print("Warning: OpenStudio path not found")
+        print(f"Warning: OpenStudio {OPENSTUDIO_VERSION} path not found")
 
 import openstudio
 from measure import WindowEnhancement
@@ -166,6 +166,23 @@ def run_measure(model, args_overrides=None):
     # --- EC3 / GWP ---
     set_arg("gwp_statistic", "median")
     set_arg("api_key", API_TOKEN)
+    
+    # --- Cost calculation ---
+    set_arg("calculate_costs", True)
+    
+    # --- Custom cost mode (set to False to use RSMeans API, True to use custom costs below) ---
+    set_arg("use_custom_costs", False)
+
+    # --- RSMeans exact line item ID mode ---
+    set_arg("use_specific_rsmeans_line_item_ids", True)
+    set_arg("rsmeans_id_glazing", "084126100020")
+    set_arg("rsmeans_id_frame", "084113200050")
+    
+    # --- Custom cost inputs (only used when use_custom_costs = True) ---
+    # set_arg("glass_cost_per_sf", 25.0)        # $/SF (e.g., $25/SF for double-pane IGU)
+    # set_arg("frame_cost_per_sf", 15.0)        # $/SF (e.g., $15/SF for wood frame)
+    # set_arg("caulking_cost_per_cy", 800.0)    # $/CY (e.g., $800/CY for silicone sealant)
+    # set_arg("labor_cost_multiplier", 2.0)     # Multiplier (e.g., 2.0 = 100% labor markup)
 
     # Apply any caller-supplied overrides
     if args_overrides:
@@ -282,6 +299,10 @@ def main():
             step_values[sv.name()] = _sv_value(sv)
         except Exception as exc:
             step_values[sv.name()] = f"<error: {exc}>"
+
+    # Redact sensitive API key from output
+    if "api_key" in step_values:
+        step_values["api_key"] = "<redacted>"
 
     if step_values:
         print("\nStep Values reported by measure:")

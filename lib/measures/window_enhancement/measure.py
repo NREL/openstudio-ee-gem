@@ -6,14 +6,13 @@
 import site
 
 import json
-import os
+import importlib.util
+from pathlib import Path
 import openstudio
 import typing
 import numpy as np
 import pprint as pp
-from dotenv import load_dotenv
 from resources.EC3_lookup import *
-from resources.call_rsmeans_api import RSMeansAPIClient
 
 
 class WindowEnhancement(openstudio.measure.ModelMeasure):
@@ -608,6 +607,68 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
         calculate_costs.setDefaultValue(True)
         args.append(calculate_costs)
 
+        # Use custom costs instead of RSMeans API
+        use_custom_costs = openstudio.measure.OSArgument.makeBoolArgument("use_custom_costs", True)
+        use_custom_costs.setDisplayName("Use Custom Cost Inputs?")
+        use_custom_costs.setDescription(
+            "If true, skip RSMeans API lookup and use the custom cost inputs below. "
+            "If false, the measure will attempt RSMeans API first and fall back to custom costs only if it fails.")
+        use_custom_costs.setDefaultValue(False)
+        args.append(use_custom_costs)
+
+        # Optional: Use specific RSMeans line item IDs instead of closest-match search
+        use_specific_rsmeans_line_item_ids = openstudio.measure.OSArgument.makeBoolArgument(
+            "use_specific_rsmeans_line_item_ids", True
+        )
+        use_specific_rsmeans_line_item_ids.setDisplayName("Use Specific RSMeans Line Item IDs?")
+        use_specific_rsmeans_line_item_ids.setDescription(
+            "If true, the measure will use the RSMeans line item IDs provided below for exact matching. "
+            "If false, the measure will search for the closest match in RSMeans catalogs.")
+        use_specific_rsmeans_line_item_ids.setDefaultValue(False)
+        args.append(use_specific_rsmeans_line_item_ids)
+
+        rsmeans_id_glazing = openstudio.measure.OSArgument.makeStringArgument("rsmeans_id_glazing", True)
+        rsmeans_id_glazing.setDisplayName("RSMeans Line Item ID - Glazing")
+        rsmeans_id_glazing.setDescription(
+            "Optional RSMeans line item ID for window glazing. Leave blank to use closest-match search.")
+        rsmeans_id_glazing.setDefaultValue("")
+        args.append(rsmeans_id_glazing)
+
+        rsmeans_id_frame = openstudio.measure.OSArgument.makeStringArgument("rsmeans_id_frame", True)
+        rsmeans_id_frame.setDisplayName("RSMeans Line Item ID - Frame")
+        rsmeans_id_frame.setDescription(
+            "Optional RSMeans line item ID for window frame. Leave blank to use closest-match search.")
+        rsmeans_id_frame.setDefaultValue("")
+        args.append(rsmeans_id_frame)
+
+        rsmeans_id_caulking = openstudio.measure.OSArgument.makeStringArgument("rsmeans_id_caulking", True)
+        rsmeans_id_caulking.setDisplayName("RSMeans Line Item ID - Caulking")
+        rsmeans_id_caulking.setDescription(
+            "Optional RSMeans line item ID for caulking/sealant. Leave blank to use closest-match search.")
+        rsmeans_id_caulking.setDefaultValue("")
+        args.append(rsmeans_id_caulking)
+
+        rsmeans_id_film = openstudio.measure.OSArgument.makeStringArgument("rsmeans_id_film", True)
+        rsmeans_id_film.setDisplayName("RSMeans Line Item ID - Film")
+        rsmeans_id_film.setDescription(
+            "Optional RSMeans line item ID for glazing film. Leave blank to use closest-match search.")
+        rsmeans_id_film.setDefaultValue("")
+        args.append(rsmeans_id_film)
+
+        rsmeans_id_weatherstrip = openstudio.measure.OSArgument.makeStringArgument("rsmeans_id_weatherstrip", True)
+        rsmeans_id_weatherstrip.setDisplayName("RSMeans Line Item ID - Weatherstrip")
+        rsmeans_id_weatherstrip.setDescription(
+            "Optional RSMeans line item ID for weatherstrip. Leave blank to use closest-match search.")
+        rsmeans_id_weatherstrip.setDefaultValue("")
+        args.append(rsmeans_id_weatherstrip)
+
+        rsmeans_id_secondary_glazing = openstudio.measure.OSArgument.makeStringArgument("rsmeans_id_secondary_glazing", True)
+        rsmeans_id_secondary_glazing.setDisplayName("RSMeans Line Item ID - Secondary Glazing")
+        rsmeans_id_secondary_glazing.setDescription(
+            "Optional RSMeans line item ID for secondary glazing. Leave blank to use closest-match search.")
+        rsmeans_id_secondary_glazing.setDefaultValue("")
+        args.append(rsmeans_id_secondary_glazing)
+
         return args
 
     def run(self, model: openstudio.model.Model, runner: openstudio.measure.OSRunner,
@@ -674,10 +735,29 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
         
         # Cost-related arguments (user-provided fallback costs)
         calculate_costs = runner.getBoolArgumentValue("calculate_costs", user_arguments)
+        use_custom_costs = runner.getBoolArgumentValue("use_custom_costs", user_arguments)
+        use_specific_rsmeans_line_item_ids = runner.getBoolArgumentValue(
+            "use_specific_rsmeans_line_item_ids", user_arguments
+        )
+        rsmeans_id_glazing = runner.getStringArgumentValue("rsmeans_id_glazing", user_arguments).strip()
+        rsmeans_id_frame = runner.getStringArgumentValue("rsmeans_id_frame", user_arguments).strip()
+        rsmeans_id_caulking = runner.getStringArgumentValue("rsmeans_id_caulking", user_arguments).strip()
+        rsmeans_id_film = runner.getStringArgumentValue("rsmeans_id_film", user_arguments).strip()
+        rsmeans_id_weatherstrip = runner.getStringArgumentValue("rsmeans_id_weatherstrip", user_arguments).strip()
+        rsmeans_id_secondary_glazing = runner.getStringArgumentValue(
+            "rsmeans_id_secondary_glazing", user_arguments
+        ).strip()
         glass_cost_per_sf = runner.getDoubleArgumentValue("glass_cost_per_sf", user_arguments)
         frame_cost_per_sf = runner.getDoubleArgumentValue("frame_cost_per_sf", user_arguments)
         caulking_cost_per_cy = runner.getDoubleArgumentValue("caulking_cost_per_cy", user_arguments)
         labor_cost_multiplier = runner.getDoubleArgumentValue("labor_cost_multiplier", user_arguments)
+
+        if use_custom_costs:
+            runner.registerInfo("Custom cost mode enabled. Will use user-provided cost values instead of RSMeans API.")
+            runner.registerInfo(f"  Glass cost: ${glass_cost_per_sf}/SF")
+            runner.registerInfo(f"  Frame cost: ${frame_cost_per_sf}/SF")
+            runner.registerInfo(f"  Caulking cost: ${caulking_cost_per_cy}/CY")
+            runner.registerInfo(f"  Labor multiplier: {labor_cost_multiplier}")
 
         # Check for conflicting renovation options
         if glass_option == "provide user_num_panes" and user_num_panes > 0 and secondary_glazing_option == "install secondary glazing":
@@ -1058,7 +1138,7 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
             return value_m * 3.28084
 
         if glass_option != "none" and user_num_panes > 0 and total_glazing_area_m2 > 0:
-            materials.append({
+            glazing_material = {
                 "name": "window glazing",
                 "description": f"{user_num_panes}-pane glass replacement",
                 "quantity": _m2_to_sf(total_glazing_area_m2),
@@ -1066,10 +1146,13 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
                 "quantity_si": total_glazing_area_m2,
                 "unit_si": "m2",
                 "division_code": "08",
-            })
+            }
+            if use_specific_rsmeans_line_item_ids and rsmeans_id_glazing:
+                glazing_material["rsmeans_id"] = rsmeans_id_glazing
+            materials.append(glazing_material)
 
         if wf_option != "none" and total_frame_area_m2 > 0:
-            materials.append({
+            frame_material = {
                 "name": "window frame",
                 "description": f"{wf_option} frame replacement",
                 "quantity": _m2_to_sf(total_frame_area_m2),
@@ -1077,10 +1160,13 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
                 "quantity_si": total_frame_area_m2,
                 "unit_si": "m2",
                 "division_code": "08",
-            })
+            }
+            if use_specific_rsmeans_line_item_ids and rsmeans_id_frame:
+                frame_material["rsmeans_id"] = rsmeans_id_frame
+            materials.append(frame_material)
 
         if film_option != "none" and total_glazing_area_m2 > 0:
-            materials.append({
+            film_material = {
                 "name": "glazing film",
                 "description": film_option,
                 "quantity": _m2_to_sf(total_glazing_area_m2),
@@ -1088,10 +1174,13 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
                 "quantity_si": total_glazing_area_m2,
                 "unit_si": "m2",
                 "division_code": "08",
-            })
+            }
+            if use_specific_rsmeans_line_item_ids and rsmeans_id_film:
+                film_material["rsmeans_id"] = rsmeans_id_film
+            materials.append(film_material)
 
         if caulking_option != "none" and total_caulking_volume_m3 > 0:
-            materials.append({
+            caulking_material = {
                 "name": "sealant",
                 "description": f"{caulking_option} caulking",
                 "quantity": _m3_to_cy(total_caulking_volume_m3),
@@ -1099,10 +1188,13 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
                 "quantity_si": total_caulking_volume_m3,
                 "unit_si": "m3",
                 "division_code": "07",
-            })
+            }
+            if use_specific_rsmeans_line_item_ids and rsmeans_id_caulking:
+                caulking_material["rsmeans_id"] = rsmeans_id_caulking
+            materials.append(caulking_material)
 
         if weatherstrip_option != "none" and total_weatherstrip_length_m > 0:
-            materials.append({
+            weatherstrip_material = {
                 "name": "weatherstrip",
                 "description": weatherstrip_option,
                 "quantity": _m_to_lf(total_weatherstrip_length_m),
@@ -1110,10 +1202,13 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
                 "quantity_si": total_weatherstrip_length_m,
                 "unit_si": "m",
                 "division_code": "08",
-            })
+            }
+            if use_specific_rsmeans_line_item_ids and rsmeans_id_weatherstrip:
+                weatherstrip_material["rsmeans_id"] = rsmeans_id_weatherstrip
+            materials.append(weatherstrip_material)
 
         if secondary_glazing_option != "none" and total_glazing_area_m2 > 0:
-            materials.append({
+            secondary_glazing_material = {
                 "name": "secondary glazing",
                 "description": "secondary glazing installation",
                 "quantity": _m2_to_sf(total_glazing_area_m2),
@@ -1121,7 +1216,10 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
                 "quantity_si": total_glazing_area_m2,
                 "unit_si": "m2",
                 "division_code": "08",
-            })
+            }
+            if use_specific_rsmeans_line_item_ids and rsmeans_id_secondary_glazing:
+                secondary_glazing_material["rsmeans_id"] = rsmeans_id_secondary_glazing
+            materials.append(secondary_glazing_material)
 
         if materials:
             try:
@@ -1140,31 +1238,11 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
         cost_source = "none"  # Track where costs came from
 
         if calculate_costs and materials:
-            # Step 1: Try RSMeans API first
-            runner.registerInfo("\n" + "=" * 80)
-            runner.registerInfo("ATTEMPTING RSMeans API LOOKUP FOR CAPITAL COSTS")
-            runner.registerInfo("=" * 80)
-            
-            rsmeans_results = self.pull_rsmeans_cost_from_api(runner, materials)
-            
-            if rsmeans_results and rsmeans_results.get("total_cost") is not None and float(rsmeans_results.get("total_cost", 0.0)) > 0:
-                # RSMeans lookup successful
-                total_material_cost = float(rsmeans_results.get("total_cost", 0.0))
-                total_labour_cost = 0.0
-                cost_source = "rsmeans_api"
-                runner.registerInfo(f"✓ RSMeans API successful: ${total_material_cost:,.2f}")
-                
-                try:
-                    results.setFeature("window_enhancement_rsmeans_results_json", json.dumps(rsmeans_results))
-                    if model.facility().is_initialized():
-                        facility = model.facility().get()
-                        facility.additionalProperties().setFeature("window_enhancement_rsmeans_results_json", json.dumps(rsmeans_results))
-                except Exception:
-                    runner.registerWarning("Could not serialize RSMeans results to JSON for AdditionalProperties.")
-            else:
-                # RSMeans lookup failed or returned $0 - use fallback costs
-                runner.registerInfo("✗ RSMeans API lookup failed or returned no costs.")
-                runner.registerInfo("\nFalling back to user-provided cost data...")
+            if use_custom_costs:
+                # Custom cost mode: skip RSMeans, use user-provided values directly
+                runner.registerInfo("\n" + "=" * 80)
+                runner.registerInfo("USING CUSTOM USER-PROVIDED COSTS (RSMeans API SKIPPED)")
+                runner.registerInfo("=" * 80)
                 
                 # Calculate costs from user-provided unit rates
                 total_material_cost = self.calculate_costs_from_user_rates(
@@ -1172,16 +1250,57 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
                     glass_cost_per_sf, frame_cost_per_sf, caulking_cost_per_cy,
                     glass_option, wf_option, caulking_option
                 )
+                total_labour_cost = total_material_cost * (labor_cost_multiplier - 1.0)
+                cost_source = "custom_input"
                 
-                # Add labor cost
-                total_labour_cost = total_material_cost * (labor_cost_multiplier / 100.0)
-                cost_source = "user_provided" if total_material_cost > 0 else "none"
+                runner.registerInfo(f"✓ Custom costs calculated: ${total_material_cost:,.2f} (material) + ${total_labour_cost:,.2f} (labor)")
+            else:
+                # RSMeans API mode: try API first, fallback to user costs if API fails
+                runner.registerInfo("\n" + "=" * 80)
+                runner.registerInfo("ATTEMPTING RSMeans API LOOKUP FOR CAPITAL COSTS")
+                runner.registerInfo("=" * 80)
                 
-                if total_material_cost > 0:
-                    runner.registerInfo(f"✓ Using user-provided costs: ${total_material_cost:,.2f} materials + ${total_labour_cost:,.2f} labor")
+                rsmeans_lookup = self.pull_rsmeans_cost_from_api(runner, materials, use_custom_costs=False)
+                
+                if rsmeans_lookup and rsmeans_lookup.get("status") == "ok":
+                    # RSMeans lookup successful
+                    summary = rsmeans_lookup.get("summary", {})
+                    total_material_cost = float(summary.get("total_cost_with_overhead_profit", 0.0))
+                    total_labour_cost = 0.0  # Labor included in RSMeans cost
+                    cost_source = "rsmeans_api"
+                    
+                    runner.registerInfo(f"✓ RSMeans API successful:")
+                    runner.registerInfo(f"  Materials found: {summary.get('materials_count', 0)}")
+                    runner.registerInfo(f"  Total material cost: ${summary.get('total_material_cost', 0):,.2f}")
+                    runner.registerInfo(f"  Overhead + Profit: ${summary.get('total_overhead_profit_cost', 0):,.2f}")
+                    runner.registerInfo(f"  Total cost with O&P: ${total_material_cost:,.2f}")
+                    
+                    try:
+                        results.setFeature("window_enhancement_rsmeans_results_json", json.dumps(rsmeans_lookup))
+                        if model.facility().is_initialized():
+                            facility = model.facility().get()
+                            facility.additionalProperties().setFeature("window_enhancement_rsmeans_results_json", json.dumps(rsmeans_lookup))
+                    except Exception:
+                        runner.registerWarning("Could not serialize RSMeans results to JSON for AdditionalProperties.")
                 else:
-                    runner.registerInfo("✗ No user-provided costs specified. Skipping cost calculation.")
-                    runner.registerInfo("  Tip: Provide values for 'Glass Cost ($/SF)', 'Frame Cost ($/SF)', etc.")
+                    # RSMeans lookup failed or returned $0 - use fallback costs
+                    runner.registerInfo("✗ RSMeans API lookup failed or returned no costs.")
+                    runner.registerInfo("\nFalling back to user-provided cost data...")
+                    
+                    # Calculate costs from user-provided unit rates
+                    total_material_cost = self.calculate_costs_from_user_rates(
+                        runner, total_glazing_area_m2, total_frame_area_m2, total_caulking_volume_m3,
+                        glass_cost_per_sf, frame_cost_per_sf, caulking_cost_per_cy,
+                        glass_option, wf_option, caulking_option
+                    )
+                    total_labour_cost = total_material_cost * (labor_cost_multiplier - 1.0)
+                    cost_source = "user_provided_fallback" if total_material_cost > 0 else "none"
+                    
+                    if total_material_cost > 0:
+                        runner.registerInfo(f"✓ Using user-provided costs: ${total_material_cost:,.2f} materials + ${total_labour_cost:,.2f} labor")
+                    else:
+                        runner.registerInfo("✗ No user-provided costs specified. Skipping cost calculation.")
+                        runner.registerInfo("  Tip: Provide values for 'Glass Cost ($/SF)', 'Frame Cost ($/SF)', etc.")
 
         if calculate_costs:
             total_overhead_profit_cost = (total_material_cost + total_labour_cost) * (overhead_profit_percent / 100.0)
@@ -1310,19 +1429,20 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
         else:
             runner.registerInfo(f"Renovations applied: None (infiltration reduction only)")
         runner.registerInfo(f"Total embodied carbon: {total_embodied_carbon:.2f} kg CO2 eq")
+        runner.registerInfo(f"Cost source: {cost_source}")
         runner.registerInfo("=" * 80)
         
         if renovation_summary:
             runner.registerFinalCondition(
                 f"Window enhancement completed: {altered_instances} infiltration objects modified, "
                 f"{len(sub_surfaces_to_change)} windows processed with {', '.join(renovation_summary)}, "
-                f"Total EC: {total_embodied_carbon:.2f} kg CO2 eq"
+                f"Total EC: {total_embodied_carbon:.2f} kg CO2 eq, Cost source: {cost_source}"
             )
         else:
             runner.registerFinalCondition(
                 f"Window enhancement completed: {altered_instances} infiltration objects modified, "
                 f"{len(sub_surfaces_to_change)} windows processed (infiltration only), "
-                f"Total EC: {total_embodied_carbon:.2f} kg CO2 eq"
+                f"Total EC: {total_embodied_carbon:.2f} kg CO2 eq, Cost source: {cost_source}"
             )
 
         pp.pprint(subsurface_dict)
@@ -1381,40 +1501,62 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
         
         return total_cost
 
-    def pull_rsmeans_cost_from_api(self, runner, materials):
+    def pull_rsmeans_cost_from_api(self, runner, materials, use_custom_costs=False):
         """
-        Pull RSMeans cost data for retrofit materials using API credentials
-        from environment variables (client_id, client_secret).
+        Pull RSMeans cost data for retrofit materials using API credentials.
+        If use_custom_costs is True, returns an empty dict to signal custom cost mode.
+        
+        Args:
+            runner: OpenStudio measure runner
+            materials: List of material dictionaries for RSMeans API (with 'name', 'description', 'quantity', 'unit' keys)
+            use_custom_costs: Boolean flag to skip RSMeans API lookup
+            
+        Returns:
+            Dictionary of RSMeans cost results, or empty dict if custom costs enabled
         """
+        if use_custom_costs:
+            runner.registerInfo("Custom cost mode enabled - skipping RSMeans API lookup.")
+            return {}
+        
         try:
-            load_dotenv()
-            client_id = os.getenv('client_id')
-            client_secret = os.getenv('client_secret')
-
-            if not client_id or not client_secret:
-                runner.registerWarning(
-                    "RSMeans API credentials (client_id, client_secret) not found in environment. Skipping RSMeans cost retrieval."
-                )
+            # Load the updated call_rsmeans_api module dynamically
+            measure_dir = Path(__file__).parent
+            rsmeans_helper_path = measure_dir / "resources" / "call_rsmeans_api.py"
+            
+            if not rsmeans_helper_path.exists():
+                runner.registerWarning(f"RSMeans helper not found at {rsmeans_helper_path}. Skipping RSMeans cost retrieval.")
                 return {}
-
-            runner.registerInfo("Initializing RSMeans API client...")
-            client = RSMeansAPIClient(client_id, client_secret, use_sandbox=False)
-
-            if not client.authenticate():
-                runner.registerWarning("Failed to authenticate with RSMeans API. Skipping cost retrieval.")
-                return {}
-
-            runner.registerInfo(f"Querying RSMeans API for {len(materials)} materials...")
-
-            return client.search_materials_batch(
+            
+            spec = importlib.util.spec_from_file_location("call_rsmeans_api", rsmeans_helper_path)
+            rsmeans_module = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(rsmeans_module)
+            
+            runner.registerInfo("Initializing RSMeans API lookup...")
+            
+            # Use the run_rsmeans_cost_lookup function from the updated module
+            result = rsmeans_module.run_rsmeans_cost_lookup(
                 materials=materials,
-                release_id='2025-q4',
-                catalog='gb-mf',
+                release_id='2024-an',
+                catalogs=['bc-mf', 'gb-mf', 'rp-mf'],
                 location_id='us-us-national',
                 labor_type='std',
                 measurement_system='imp',
-                save_search_results_path=None,
+                use_sandbox=False,
+                overhead_profit_percent=10.0,
             )
+            
+            if result.get('status') == 'success' or result.get('status') == 'ok':
+                summary = result.get('summary', {})
+                runner.registerInfo(f"RSMeans API lookup successful:")
+                runner.registerInfo(f"  Materials found: {summary.get('materials_count', 0)}")
+                runner.registerInfo(f"  Total material cost: ${summary.get('total_material_cost', 0):,.2f}")
+                runner.registerInfo(f"  Overhead + Profit ({summary.get('overhead_profit_percent', 0)}%): ${summary.get('total_overhead_profit_cost', 0):,.2f}")
+                runner.registerInfo(f"  Total cost with O&P: ${summary.get('total_cost_with_overhead_profit', 0):,.2f}")
+                return result
+            else:
+                runner.registerWarning(f"RSMeans API lookup failed: {result.get('summary', {}).get('error', 'Unknown error')}")
+                return {}
+                
         except Exception as e:
             runner.registerWarning(f"RSMeans API lookup failed: {str(e)}")
             return {}

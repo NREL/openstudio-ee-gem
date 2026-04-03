@@ -1,7 +1,7 @@
 {
     "python.REPL.enableREPLSmartSend": false,
-    "python-envs.defaultEnvManager": "ms-python.python:system"
-}{
+    "python-envs.defaultEnvManager": "ms-python.python:system",
+    "python.defaultInterpreterPath": "${workspaceFolder}/.venv/Scripts/python.exe",
     "files.exclude": {
         "**/.git": false
     }

@@ -1,0 +1,56 @@
+{
+  "measure": "IncreaseInsulationRValueForExteriorWalls",
+  "success": true,
+  "step_values": {
+    "r_value": 20.0,
+    "analysis_period": 30,
+    "gwp_statistic": "median",
+    "api_key": "<redacted>",
+    "insulation_material_type": "Pure Wool Batts",
+    "insulation_material_lifetime": 30,
+    "insulation_thermal_conductivity": 0.0,
+    "insulation_material_density": 0.0,
+    "calculate_costs": true,
+    "use_custom_costs": false,
+    "custom_cost_per_sf": 0.0,
+    "overhead_profit_percent": 10.0
+  },
+  "additional_properties_count": 7,
+  "additional_properties_sample": [
+    {
+      "construction": "Facility",
+      "property": "wall_insulation_cost_source",
+      "value": "rsmeans_api"
+    },
+    {
+      "construction": "Facility",
+      "property": "wall_insulation_material_gwp_per_kg",
+      "value": 2.637913741
+    },
+    {
+      "construction": "Facility",
+      "property": "wall_insulation_material_gwp_per_m2",
+      "value": 2.63
+    },
+    {
+      "construction": "Facility",
+      "property": "wall_insulation_retrofit_materials_json",
+      "value": "[{\"name\": \"Pure Wool Batts insulation\", \"description\": \"Added insulation to reach R-20.0; avg added thickness 3.95 in\", \"quantity\": 2886.75134594812, \"unit\": \"SF\", \"quantity_si\": 268.18797576267207, \"unit_si\": \"m2\", \"division_code\": \"07\"}]"
+    },
+    {
+      "construction": "Facility",
+      "property": "wall_insulation_total_additional_material_cost_$",
+      "value": 6437.455501464308
+    },
+    {
+      "construction": "Facility",
+      "property": "wall_insulation_total_additional_overhead_profit_cost_$",
+      "value": 643.7455501464309
+    },
+    {
+      "construction": "Facility",
+      "property": "wall_insulation_total_cost_with_overhead_and_profit_$",
+      "value": 7081.201051610739
+    }
+  ]
+}
