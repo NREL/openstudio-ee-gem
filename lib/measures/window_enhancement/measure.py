@@ -7,6 +7,7 @@ import site
 
 import json
 import importlib.util
+import re
 from pathlib import Path
 import openstudio
 import typing
@@ -1309,6 +1310,16 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
                                 f"    - {mat_name}: {mat_qty:.2f} {mat_unit}, "
                                 f"unit=${mat_unit_cost:.2f}/{mat_basis}, total=${mat_total_cost:,.2f}"
                             )
+
+                    # Optionally update window constructions with high-confidence
+                    # glazing properties inferred from matched RSMeans lines.
+                    self.apply_rsmeans_glazing_updates_to_model(
+                        runner,
+                        subsurface_dict,
+                        rsmeans_lookup,
+                        glass_pane_thickness,
+                        gap_thickness,
+                    )
                     
                     try:
                         results.setFeature("window_enhancement_rsmeans_results_json", json.dumps(rsmeans_lookup))
@@ -2643,6 +2654,261 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
         runner.registerInfo(f"    ✓ Created construction with integrated glazing film: '{new_construction_name}'")
         
         return new_layered_construction
+
+    def _parse_inches_token_to_float(self, token):
+        token = str(token).strip()
+        if not token:
+            return None
+        if "-" in token:
+            whole, frac = token.split("-", 1)
+            try:
+                whole_val = float(whole)
+            except ValueError:
+                return None
+            if "/" in frac:
+                num, den = frac.split("/", 1)
+                try:
+                    return whole_val + (float(num) / float(den))
+                except (ValueError, ZeroDivisionError):
+                    return None
+            return None
+        if "/" in token:
+            num, den = token.split("/", 1)
+            try:
+                return float(num) / float(den)
+            except (ValueError, ZeroDivisionError):
+                return None
+        try:
+            return float(token)
+        except ValueError:
+            return None
+
+    def _extract_igu_total_thickness_m(self, text):
+        desc = str(text or "")
+        if not desc:
+            return None
+
+        mm_match = re.search(r"(\d+(?:\.\d+)?)\s*mm\b", desc, flags=re.IGNORECASE)
+        if mm_match:
+            try:
+                return float(mm_match.group(1)) / 1000.0
+            except ValueError:
+                return None
+
+        patterns = [
+            r"(\d+(?:-\d+/\d+|/\d+|\.\d+)?)\s*\"",
+            r"(\d+(?:-\d+/\d+|/\d+|\.\d+)?)\s*(?:in|inch|inches)\b",
+        ]
+        for pattern in patterns:
+            match = re.search(pattern, desc, flags=re.IGNORECASE)
+            if match:
+                inches = self._parse_inches_token_to_float(match.group(1))
+                if inches and inches > 0.0:
+                    return inches * 0.0254
+        return None
+
+    def _infer_pane_count_from_text(self, text):
+        desc = str(text or "").lower()
+        if not desc:
+            return None
+        if "triple" in desc or "3 pane" in desc or "3-pane" in desc:
+            return 3
+        if "double" in desc or "2 pane" in desc or "2-pane" in desc:
+            return 2
+        if "single" in desc or "1 pane" in desc or "1-pane" in desc:
+            return 1
+        return None
+
+    def _infer_gas_type_from_text(self, text):
+        desc = str(text or "").lower()
+        if "krypton" in desc:
+            return "Krypton"
+        if "xenon" in desc:
+            return "Xenon"
+        if "argon" in desc:
+            return "Argon"
+        if "air" in desc:
+            return "Air"
+        return None
+
+    def _infer_glass_conductivity_from_text(self, text):
+        desc = str(text or "").lower()
+        if "laminated" in desc:
+            return 0.95
+        if "tempered" in desc:
+            return 1.0
+        # Low-E coatings mostly affect emissivity, not bulk conductivity.
+        return 0.9
+
+    def _infer_low_e_emissivity_from_text(self, text):
+        desc = str(text or "").lower()
+        if "low-e" in desc or "low e" in desc:
+            return 0.10
+        return None
+
+    def extract_glazing_spec_from_rsmeans_results(self, rsmeans_lookup):
+        materials_results = ((rsmeans_lookup or {}).get("results") or {}).get("materials", [])
+        if not materials_results:
+            return None
+
+        glazing_material = None
+        for mat in materials_results:
+            name_norm = str(mat.get("name", "")).strip().lower()
+            if name_norm == "window glazing":
+                glazing_material = mat
+                break
+        if glazing_material is None:
+            for mat in materials_results:
+                name_norm = str(mat.get("name", "")).strip().lower()
+                if name_norm == "secondary glazing":
+                    glazing_material = mat
+                    break
+        if glazing_material is None:
+            return None
+
+        desc = str(glazing_material.get("rsmeans_description") or glazing_material.get("description") or "")
+        pane_count = self._infer_pane_count_from_text(desc)
+        gas_type = self._infer_gas_type_from_text(desc)
+        conductivity = self._infer_glass_conductivity_from_text(desc)
+        low_e_emissivity = self._infer_low_e_emissivity_from_text(desc)
+
+        source_line_thickness_ft = glazing_material.get("source_line_thickness_ft")
+        igu_total_thickness_m = None
+        try:
+            if source_line_thickness_ft is not None:
+                igu_total_thickness_m = float(source_line_thickness_ft) * 0.3048
+        except (TypeError, ValueError):
+            igu_total_thickness_m = None
+
+        if igu_total_thickness_m is None:
+            igu_total_thickness_m = self._extract_igu_total_thickness_m(desc)
+
+        return {
+            "description": desc,
+            "pane_count": pane_count,
+            "gas_type": gas_type,
+            "glass_conductivity": conductivity,
+            "low_e_emissivity": low_e_emissivity,
+            "igu_total_thickness_m": igu_total_thickness_m,
+        }
+
+    def _apply_glazing_spec_to_layered_construction(self, runner, layered_construction, spec, glass_pane_thickness, default_gap_thickness):
+        glazing_count = 0
+        gas_count = 0
+        gas_thickness_m = default_gap_thickness
+
+        target_panes = spec.get("pane_count")
+        if not target_panes or target_panes < 1:
+            target_panes = None
+
+        igu_total_thickness_m = spec.get("igu_total_thickness_m")
+        if igu_total_thickness_m and target_panes and target_panes > 1:
+            derived_gap = (igu_total_thickness_m - target_panes * glass_pane_thickness) / float(target_panes - 1)
+            if 0.0 < derived_gap <= 0.05:
+                gas_thickness_m = derived_gap
+
+        gas_type = spec.get("gas_type")
+        glass_conductivity = spec.get("glass_conductivity", 0.9)
+        low_e_emissivity = spec.get("low_e_emissivity")
+
+        for i in range(layered_construction.numLayers()):
+            layer = layered_construction.getLayer(i)
+
+            if layer.to_StandardGlazing().is_initialized():
+                glazing = layer.to_StandardGlazing().get()
+                try:
+                    glazing.setThermalConductivity(glass_conductivity)
+                except Exception:
+                    pass
+                if low_e_emissivity is not None:
+                    try:
+                        glazing.setBackSideInfraredHemisphericalEmissivity(low_e_emissivity)
+                    except Exception:
+                        pass
+                glazing_count += 1
+
+            elif layer.to_Gas().is_initialized():
+                gas_layer = layer.to_Gas().get()
+                try:
+                    gas_layer.setThickness(gas_thickness_m)
+                except Exception:
+                    pass
+                if gas_type:
+                    try:
+                        gas_layer.setGasType(gas_type)
+                    except Exception:
+                        pass
+                gas_count += 1
+
+        return glazing_count, gas_count, gas_thickness_m
+
+    def apply_rsmeans_glazing_updates_to_model(self, runner, subsurface_dict, rsmeans_lookup, glass_pane_thickness, gap_thickness):
+        spec = self.extract_glazing_spec_from_rsmeans_results(rsmeans_lookup)
+        if not spec:
+            runner.registerWarning(
+                "RSMeans model update skipped: no matched glazing/secondary glazing line found in RSMeans results."
+            )
+            return
+
+        if spec.get("pane_count") is None:
+            runner.registerWarning(
+                "RSMeans glazing parse: pane count not identified from description; existing pane layering will be retained."
+            )
+        if spec.get("gas_type") is None:
+            runner.registerWarning(
+                "RSMeans glazing parse: gas type not identified from description; existing gas type (or Air default) will be retained."
+            )
+        if spec.get("igu_total_thickness_m") is None:
+            runner.registerWarning(
+                f"RSMeans glazing parse: IGU total thickness not identified; default gap_thickness ({gap_thickness*1000:.1f}mm) will be retained."
+            )
+
+        modified_windows = 0
+        total_glazing_layers = 0
+        total_gas_layers = 0
+        applied_gap_values = []
+
+        for subsurface_name, data in subsurface_dict.items():
+            subsurface_obj = data.get("subsurface_object")
+            if subsurface_obj is None or not subsurface_obj.construction().is_initialized():
+                continue
+
+            construction = subsurface_obj.construction().get()
+            if not construction.to_LayeredConstruction().is_initialized():
+                continue
+
+            layered = construction.to_LayeredConstruction().get()
+            glazing_count, gas_count, applied_gap = self._apply_glazing_spec_to_layered_construction(
+                runner,
+                layered,
+                spec,
+                glass_pane_thickness,
+                gap_thickness,
+            )
+            if glazing_count == 0 and gas_count == 0:
+                continue
+
+            modified_windows += 1
+            total_glazing_layers += glazing_count
+            total_gas_layers += gas_count
+            applied_gap_values.append(applied_gap)
+
+        if modified_windows > 0:
+            gap_msg = ""
+            if applied_gap_values:
+                gap_msg = f", gap≈{float(np.mean(applied_gap_values))*1000:.1f}mm"
+            runner.registerInfo(
+                "Applied RSMeans-informed glazing updates to "
+                f"{modified_windows} window construction(s): "
+                f"{total_glazing_layers} glazing layer(s), {total_gas_layers} gas layer(s){gap_msg}."
+            )
+            runner.registerInfo(
+                f"  RSMeans glazing basis: '{spec.get('description', '')}'"
+            )
+        else:
+            runner.registerWarning(
+                "RSMeans glazing parse succeeded, but no layered window constructions were eligible for model updates."
+            )
 
     def get_frame_and_divider_dimension(self, runner, subsurface):
         """Get dimensions of window frame and any dividers (muntins).

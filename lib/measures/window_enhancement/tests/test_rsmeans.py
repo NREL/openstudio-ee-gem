@@ -413,5 +413,87 @@ class TestRSMeansIntegration(unittest.TestCase):
             self.assertIn("catalog", material)
 
 
+class TestRSMeansDistinctRetrofitCosts(unittest.TestCase):
+    """Ensure different retrofit materials do not collapse to identical costs."""
+
+    def test_glazing_and_frame_costs_are_distinct(self):
+        """Window glazing and frame should report different totals for different line items."""
+        if search_materials_across_catalogs is None:
+            self.skipTest("RSMeans helper not importable in this environment")
+
+        client = Mock(spec=RSMeansAPIClient)
+        materials = [
+            {
+                "name": "window glazing",
+                "quantity": 100.0,
+                "unit": "SF",
+                "division_code": "08",
+                "rsmeans_id": "084126100020",
+            },
+            {
+                "name": "window frame",
+                "quantity": 100.0,
+                "unit": "SF",
+                "division_code": "08",
+                "rsmeans_id": "084113200050",
+            },
+        ]
+
+        def mock_get_unit_costlines(**kwargs):
+            division_code = kwargs.get("division_code")
+            if division_code == "084126100020":
+                return {
+                    "items": [
+                        {
+                            "id": "084126100020",
+                            "description": "Window glazing line",
+                            "localizedCosts": {"totalOpCost": 80.70},
+                        }
+                    ]
+                }
+            if division_code == "084113200050":
+                return {
+                    "items": [
+                        {
+                            "id": "084113200050",
+                            "description": "Window frame line",
+                            "localizedCosts": {"totalOpCost": 28.65},
+                        }
+                    ]
+                }
+            return {"items": []}
+
+        client.get_unit_costlines = Mock(side_effect=mock_get_unit_costlines)
+        client.search_unit_costlines = Mock(return_value={"items": []})
+
+        result = search_materials_across_catalogs(
+            materials=materials,
+            client=client,
+            catalogs=["bc-mf"],
+            release_id="2024-an",
+            location_id="us-us-national",
+            labor_type="std",
+            measurement_system="imp",
+        )
+
+        self.assertIn("materials", result)
+        self.assertEqual(len(result["materials"]), 2)
+
+        materials_by_name = {m["name"]: m for m in result["materials"]}
+        self.assertIn("window glazing", materials_by_name)
+        self.assertIn("window frame", materials_by_name)
+
+        glazing_total = float(materials_by_name["window glazing"]["total_cost"])
+        frame_total = float(materials_by_name["window frame"]["total_cost"])
+
+        self.assertGreater(glazing_total, 0.0)
+        self.assertGreater(frame_total, 0.0)
+        self.assertNotEqual(
+            glazing_total,
+            frame_total,
+            "Different retrofit materials returned identical costs unexpectedly.",
+        )
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)
