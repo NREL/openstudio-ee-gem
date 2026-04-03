@@ -94,10 +94,22 @@ def run_measure(model, args_overrides=None):
     set_arg("analysis_period", 30)                    # years
     set_arg("gwp_statistic", "median")
     set_arg("api_key", API_TOKEN)
-    set_arg("insulation_material_type", "Fiberglass Batts")
+    # set_arg("insulation_material_type", "Blown Cellulose")
+    # set_arg("insulation_material_type", "Blown Fiberglass")
+    # set_arg("insulation_material_type", "Blown Mineral Wool")
+    # set_arg("insulation_material_type", "Polyiso Insulation Foam Board")
+    # set_arg("insulation_material_type", "Graphite Polystyrene (GPS) Foam Board")
+    # set_arg("insulation_material_type", "Expanded Polystyrene (EPS) Foam Board")
+    # set_arg("insulation_material_type", "Extruded Polystyrene (XPS) Foam Board")
+    # set_arg("insulation_material_type", "Mineral Wool Heavy Density Blanket")
+    # set_arg("insulation_material_type", "Mineral Wool Light Density Blanket")
+    # set_arg("insulation_material_type", "Fiberglass Batts")
+    set_arg("insulation_material_type", "Pure Wool Batts")
     set_arg("insulation_material_lifetime", 30)
     set_arg("insulation_thermal_conductivity", 0.0)   # 0 = use typical
     set_arg("insulation_material_density", 0.0)       # 0 = use typical
+    set_arg("use_exact_costline_id", True)
+    set_arg("exact_costline_id", "072116201320")
 
     # Apply any caller-supplied overrides
     if args_overrides:
