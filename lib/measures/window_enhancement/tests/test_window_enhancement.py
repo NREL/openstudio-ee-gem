@@ -18,7 +18,8 @@ del sys.modules['measure']
 @pytest.fixture
 def model():
     translator = openstudio.osversion.VersionTranslator()
-    path = CURRENT_DIR_PATH / "example_model.osm"
+    # Use an existing test model in this directory.
+    path = CURRENT_DIR_PATH / "DOE_small_office.osm"
     model = translator.loadModel(path)
     assert model.is_initialized()
     return model.get()
@@ -32,33 +33,9 @@ def argument_map(model, measure):
     arguments = measure.arguments(model)
     argument_map = openstudio.measure.convertOSArgumentVectorToMap(arguments)
 
-    args_dict = {
-        "igu_component_name": "TestIGU",
-        "frame_cross_section_area": 0.02,
-        "declared_unit": "m2",
-        "gwp": 0.0
-    }
-
-    # Calculate the perimeter of all the sub-surfaces in the model
-    perimeter = 0.0
-    if model.getSubSurfaces():
-        for sub_surface in model.getSubSurfaces():
-            # Ensure the sub_surface has length and width attributes
-            length = sub_surface.length() if hasattr(sub_surface, 'length') else 0
-            width = sub_surface.width() if hasattr(sub_surface, 'width') else 0
-            perimeter += 2 * (length + width)
-    
-    print(f"Calculated frame perimeter length: {perimeter}")
-
-    # Set values for arguments, including the calculated perimeter
+    # Keep defaults for current measure arguments to avoid stale test inputs.
     for arg in arguments:
-        temp_arg_var = arg.clone()
-        if arg.name() in args_dict:
-            assert temp_arg_var.setValue(args_dict[arg.name()])
-            argument_map[arg.name()] = temp_arg_var
-        elif arg.name() == "frame_perimeter_length":
-            assert temp_arg_var.setValue(perimeter)
-            argument_map[arg.name()] = temp_arg_var
+        argument_map[arg.name()] = arg.clone()
 
     return argument_map
 
@@ -131,7 +108,7 @@ class TestWindowEnhancement:
 
     def test_apply_measure(self, model, measure, argument_map):
    
-        model_path = Path(CURRENT_DIR_PATH / "example_model.osm").absolute()
+        model_path = Path(CURRENT_DIR_PATH / "DOE_small_office.osm").absolute()
         translator = openstudio.osversion.VersionTranslator()
         model = translator.loadModel(openstudio.toPath(str(model_path))).get()
 
@@ -149,20 +126,21 @@ class TestWindowEnhancement:
             arg_map[name] = arg
 
         set_arg("analysis_period", 30)
-        #set_arg("igu_component_name", "TestIGU")
-        set_arg("igu_option", "low_emissivity")
-        set_arg("number_of_panes", 1)
-        set_arg("igu_lifetime", 15)
+        set_arg("glass_option", "none")
+        set_arg("user_num_panes", 0)
+        set_arg("glass_lifetime", 15)
         set_arg("wf_lifetime", 15)
-        set_arg("wf_option", "anodized")
-        set_arg("frame_cross_section_area", 0.025)
-        #set_arg("declared_unit", "m2")
+        set_arg("wf_option", "none")
+        set_arg("caulking_option", "none")
+        set_arg("film_option", "none")
+        set_arg("weatherstrip_option", "none")
+        set_arg("secondary_glazing_option", "none")
         set_arg("gwp_statistic", "mean")
-        set_arg("gwp_unit", "per volume (m^3)")
-        set_arg("total_embodied_carbon", 0.0)
+        set_arg("api_key", "test_token")
+        set_arg("calculate_costs", False)
 
         # Run the measure
-        # result = measure.run(model, runner, arg_map)
+        measure.run(model, runner, arg_map)
 
 
         # Print stdout logs
