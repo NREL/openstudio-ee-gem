@@ -1130,11 +1130,6 @@ class IncreaseInsulationRValueForRoofs(openstudio.measure.ModelMeasure):
                                 facility.additionalProperties().setFeature(
                                     feature_name, diagnostics_json
                                 )
-                                sim_ap = model.getSimulationControl(
-                                ).additionalProperties()
-                                sim_ap.setFeature(
-                                    feature_name, diagnostics_json
-                                )
                             except Exception:
                                 runner.registerWarning(
                                     "Could not serialize RSMeans "
