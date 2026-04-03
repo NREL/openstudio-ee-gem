@@ -6,12 +6,20 @@
 
 import importlib.util
 import json
+import os
+import sys
 from pathlib import Path
 
 import openstudio
 import numpy as np
 import pandas as pd
 import pprint as pp
+
+# Ensure local `resources` package is importable when this measure is loaded dynamically.
+measure_dir = os.path.dirname(os.path.abspath(__file__))
+if measure_dir not in sys.path:
+    sys.path.insert(0, measure_dir)
+
 from resources.EC3_lookup import *
 
 class IncreaseInsulationRValueForRoofs(openstudio.measure.ModelMeasure):

@@ -1,2 +1,0 @@
-scenario_name,status,sql_file_path
-baseline_SmallOffice_Amarillo,success,./simulations/run_test_004_cli_only\baseline_SmallOffice_Amarillo\run\eplusout.sql
