@@ -12,7 +12,7 @@ The Door Enhancement measure is a **ModelMeasure** that modifies OpenStudio mode
 
 ```
 lib/measures/door_enhancement/
-├── measure.py                              # Main measure logic (1360+ lines)
+├── measure.py                              # Main measure logic
 ├── measure.xml                             # OpenStudio measure metadata
 ├── resources/
 │   └── call_rsmeans_api.py                # RSMeans API client (modular)
@@ -111,8 +111,8 @@ Manages authentication and API calls.
 
 **Methods**:
 - `authenticate()`: Obtains bearer token via client credentials
-- `search_unit_costlines(material_name, catalogs, ...)`: Searches across RSMeans catalogs
-- `get_unit_costlines(line_ids)`: Retrieves full cost details for specific RSMeans IDs
+- `search_unit_costlines(release_id, measurement_system, search_term, catalog, location_id, labor_type, division_code)`: Searches one catalog for candidate lines
+- `get_unit_costlines(release_id, measurement_system, division_code, catalog, location_id, labor_type)`: Retrieves line-item costs for a specific unit cost line id
 
 **Configuration**:
 ```python
@@ -130,22 +130,27 @@ Intelligent multi-catalog search with fallbacks:
 3. If zero results, try RP-MF (Repair & Remodeling)
 4. Generate alternative search terms (strip sizes, simplify keywords)
 5. Retry with alternatives
+6. If still unmatched, attempt door-specific fallback RSMeans IDs for known materials
 
 **Returns**:
 ```python
 {
-    "status": "ok",
-    "results": {
-        "materials": [
-            {
-                "name": "Polystyrene Core Steel Door",
-                "rsmeans_id": "081116100020",
-                "unit_cost": 1622.50,
-                "total_cost": 3245.00,
-                "catalog": "bc-mf"
-            }
-        ]
+  "total_cost": 3245.0,
+  "materials": [
+    {
+      "name": "Polystyrene Core Steel Door",
+      "rsmeans_id": "081116100020",
+      "unit_cost": 1622.50,
+      "total_cost": 3245.00,
+      "catalog": "bc-mf",
+      "source": "rsmeans_search"
     }
+  ],
+  "warnings": [
+    "Used fallback RSMeans ID ..."
+  ],
+  "fallback_count": 1,
+  "search_log": []
 }
 ```
 
@@ -349,11 +354,19 @@ if len(sub_surfaces_to_change) == 0:
 
 ### Unit Tests (test_call_rsmeans_api.py)
 
-Tests RSMeans search logic:
-- Multi-catalog fallback
-- Search term alternative generation
-- Cost aggregation
-- Size token stripping (e.g., "5 ft 3 in" → "")
+Deterministic helper tests:
+- Handles both search response shapes (`items` and `unitLines.items`)
+- Filters demo/demolition matches
+- Resolves exact unit cost line item by id
+
+### Unit Tests (test_rsmeans.py)
+
+Deterministic lookup behavior tests:
+- Door search term alternatives include door-specific terms
+- Door fallback ID mapping is pinned to expected ids
+- Direct search match path vs fallback id path
+- Different material applications produce different RSMeans ids and costs
+- Measure-level surfacing of fallback warnings/count
 
 ### Integration Test (apply_measure.py)
 
@@ -404,7 +417,7 @@ python apply_measure.py
 
 ### API Key Protection
 
-1. **Environment variables**: `RSMEANS_CLIENT_ID`, `RSMEANS_CLIENT_SECRET` (not in code)
+1. **Environment variables**: `client_id`, `client_secret`
 2. **Config file**: `config.ini` (EC3 token) excluded via `.gitignore`
 3. **Log redaction**: API keys redacted as `<redacted>` in terminal output
 4. **.gitignore rules**:

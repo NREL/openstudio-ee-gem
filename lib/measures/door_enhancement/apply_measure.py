@@ -136,6 +136,7 @@ def run_measure(model, args_overrides=None):
 
     # --- Custom costs (optional; set use_custom_costs=True to enable) ---
     set_arg("use_custom_costs", False)                     # False = use RSMeans API; True = use custom costs below
+    set_arg("rsmeans_unit_costline_id", "")               # optional exact RSMeans line ID override
     set_arg("custom_door_cost_per_unit", 3500.0)          # $/m² (e.g., material + labor for door)
     set_arg("custom_bottom_seal_cost", 45.50)             # $/m  (e.g., material + labor for bottom seal)
     set_arg("custom_top_side_seal_cost", 22.75)           # $/m  (e.g., material + labor for top/side seal)

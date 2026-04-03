@@ -38,6 +38,7 @@ Use PAT with multiple cost values to compare scenarios.
 | **Bottom seal?** | `door_bottom_seal_option` | automatic door bottom |
 | **Top/side seal?** | `door_top_side_seal_option` | jamb weatherstrip |
 | **Costs from?** | `use_custom_costs` | False (use RSMeans API) |
+| **Exact RSMeans ID?** | `rsmeans_unit_costline_id` | 081116100020 |
 | **Custom costs?** | `custom_door_cost_per_unit` | 3500 ($/m²) |
 | **Carbon data?** | `api_key` | Your EC3 token |
 | **Time period?** | `analysis_period` | 30 (years) |
@@ -74,7 +75,7 @@ materials=1, total_cost=$3,569.50
 ```python
 use_custom_costs = False
 # Measure queries RSMeans, calculates costs automatically
-# Needs: RSMEANS_CLIENT_ID, RSMEANS_CLIENT_SECRET env vars
+# Needs: client_id, client_secret env vars
 ```
 
 ### Option B: Custom Costs (Manual)
@@ -133,7 +134,7 @@ docs/TECHNICAL.md              Architecture & algorithms
 
 ### RSMeans (Construction Costs)
 - **Account**: Gordian (https://www.gordian.com/)
-- **Env vars**: `RSMEANS_CLIENT_ID`, `RSMEANS_CLIENT_SECRET`
+- **Env vars**: `client_id`, `client_secret`
 - **Cost**: Subscription required
 
 ---

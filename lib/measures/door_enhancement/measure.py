@@ -6,8 +6,8 @@
 import openstudio
 import typing
 import json
-import importlib.util
 from pathlib import Path
+from resources.call_rsmeans_api import RSMeansAPIClient, run_rsmeans_cost_lookup
 import numpy as np
 import pprint as pp
 from resources.EC3_lookup import *
@@ -333,6 +333,13 @@ class DoorEnhancement(openstudio.measure.ModelMeasure):
         custom_top_side_seal_cost.setDefaultValue(0.0)
         args.append(custom_top_side_seal_cost)
 
+        # optional exact RSMeans unit cost line ID override
+        rsmeans_unit_costline_id = openstudio.measure.OSArgument.makeStringArgument("rsmeans_unit_costline_id", True)
+        rsmeans_unit_costline_id.setDisplayName("RSMeans Unit Cost Line ID (Optional Override)")
+        rsmeans_unit_costline_id.setDescription("Optional exact RSMeans unit cost line ID. If provided, the measure attempts this ID first before normal search logic.")
+        rsmeans_unit_costline_id.setDefaultValue("")
+        args.append(rsmeans_unit_costline_id)
+
         return args
 
     def run(self, model: openstudio.model.Model, runner: openstudio.measure.OSRunner, user_arguments: openstudio.measure.OSArgumentMap):
@@ -379,12 +386,17 @@ class DoorEnhancement(openstudio.measure.ModelMeasure):
         custom_door_cost_per_unit = runner.getDoubleArgumentValue("custom_door_cost_per_unit", user_arguments)
         custom_bottom_seal_cost = runner.getDoubleArgumentValue("custom_bottom_seal_cost", user_arguments)
         custom_top_side_seal_cost = runner.getDoubleArgumentValue("custom_top_side_seal_cost", user_arguments)
+        rsmeans_unit_costline_id = runner.getStringArgumentValue("rsmeans_unit_costline_id", user_arguments).strip()
 
         if use_custom_costs:
             runner.registerInfo("Custom cost mode enabled. Using user-provided cost values instead of RSMeans API.")
             runner.registerInfo(f"  Door cost: ${custom_door_cost_per_unit}/m²")
             runner.registerInfo(f"  Bottom seal cost: ${custom_bottom_seal_cost}/m")
             runner.registerInfo(f"  Top/side seal cost: ${custom_top_side_seal_cost}/m")
+            if rsmeans_unit_costline_id:
+                runner.registerInfo("  RSMeans Unit Cost Line ID override ignored because custom cost mode is enabled.")
+        elif rsmeans_unit_costline_id:
+            runner.registerInfo(f"RSMeans Unit Cost Line ID override requested: {rsmeans_unit_costline_id}")
         length_per_unit_dict = {
             "brush weatherstrip": 0.9144,  # 36" = 0.9144 m, source: https://www.pemko.com/en/view-pdf?id=AADSS1046707&page=1
             "silicone adhesive smoke gasket": 5.1816,  # 17' = 5.1816 m, source: https://buildingtransparency.org/ec3/epds/ec327rq0
@@ -1077,6 +1089,7 @@ class DoorEnhancement(openstudio.measure.ModelMeasure):
                     "quantity": float(len(sub_surfaces_to_change)),
                     "unit": "ea",
                     "division_code": "08",
+                    "explicit_rsmeans_id": rsmeans_unit_costline_id,
                 }
             ]
 
@@ -1108,37 +1121,27 @@ class DoorEnhancement(openstudio.measure.ModelMeasure):
                     )
                     runner.registerInfo(rsmeans_summary_line)
                 else:
-                    rsmeans_module_path = Path(__file__).parent / "resources" / "call_rsmeans_api.py"
-                    if rsmeans_module_path.exists():
-                        runner.registerInfo("Starting RSMeans lookup...")
-                        runner.registerInfo(f"RSMeans search term: {rsmeans_search_term}")
-                        spec = importlib.util.spec_from_file_location("call_rsmeans_api", rsmeans_module_path)
-                        rsmeans_module = importlib.util.module_from_spec(spec)
-                        spec.loader.exec_module(rsmeans_module)
-                        rsmeans_lookup = rsmeans_module.run_rsmeans_cost_lookup(
-                            materials=rsmeans_materials,
-                            release_id="2024-an",
-                            catalogs=["bc-mf", "gb-mf", "rp-mf"],
-                            location_id="us-us-national",
-                            labor_type="std",
-                            measurement_system="imp",
-                            use_sandbox=False,
-                            overhead_profit_percent=10.0,
+                    runner.registerInfo("Starting RSMeans lookup...")
+                    runner.registerInfo(f"RSMeans search term: {rsmeans_search_term}")
+                    rsmeans_lookup = self.pull_rsmeans_cost_from_api(runner, rsmeans_materials)
+                    # Add cost_source identifier to RSMeans API results
+                    if rsmeans_lookup:
+                        rsmeans_lookup["cost_source"] = "rsmeans_api"
+                    runner.registerInfo(f"RSMeans lookup status: {rsmeans_lookup.get('status', 'unknown')}")
+                    if rsmeans_lookup.get("status") == "ok":
+                        summary = rsmeans_lookup.get("summary", {})
+                        rsmeans_summary_line = (
+                            "RSMeans cost summary (cost_source=rsmeans_api): "
+                            f"materials={summary.get('materials_count', 0)}, "
+                            f"total_cost=${summary.get('total_cost_with_overhead_profit', 0.0):,.2f}"
                         )
-                        # Add cost_source identifier to RSMeans API results
-                        if rsmeans_lookup:
-                            rsmeans_lookup["cost_source"] = "rsmeans_api"
-                        runner.registerInfo(f"RSMeans lookup status: {rsmeans_lookup.get('status', 'unknown')}")
-                        if rsmeans_lookup.get("status") == "ok":
-                            summary = rsmeans_lookup.get("summary", {})
-                            rsmeans_summary_line = (
-                                "RSMeans cost summary (cost_source=rsmeans_api): "
-                                f"materials={summary.get('materials_count', 0)}, "
-                                f"total_cost=${summary.get('total_cost_with_overhead_profit', 0.0):,.2f}"
-                            )
-                            runner.registerInfo(rsmeans_summary_line)
-                    else:
-                        runner.registerWarning("RSMeans lookup skipped: call_rsmeans_api.py not found")
+                        runner.registerInfo(rsmeans_summary_line)
+                        rsmeans_results = rsmeans_lookup.get("results", {})
+                        for warning_msg in rsmeans_results.get("warnings", []):
+                            runner.registerWarning(f"RSMeans fallback: {warning_msg}")
+                        fallback_count = int(rsmeans_results.get("fallback_count", 0) or 0)
+                        if fallback_count > 0:
+                            runner.registerInfo(f"RSMeans fallback matches applied: {fallback_count}")
             except Exception as e:
                 runner.registerWarning(f"Cost lookup failed: {e}")
         
@@ -1364,6 +1367,48 @@ class DoorEnhancement(openstudio.measure.ModelMeasure):
             )
 
         return True
+
+    def pull_rsmeans_cost_from_api(self, runner, materials):
+        """
+        Pull RSMeans cost data for door retrofit materials using API credentials
+        from environment variables (client_id, client_secret).
+        """
+        try:
+            from dotenv import load_dotenv
+            import os
+            load_dotenv()
+            client_id = os.getenv("client_id")
+            client_secret = os.getenv("client_secret")
+
+            if not client_id or not client_secret:
+                runner.registerWarning(
+                    "RSMeans API credentials (client_id, client_secret) not found in environment. Skipping RSMeans cost retrieval."
+                )
+                return {}
+
+            runner.registerInfo("Initializing RSMeans API client...")
+            client = RSMeansAPIClient(client_id, client_secret, use_sandbox=False)
+
+            if not client.authenticate():
+                runner.registerWarning("Failed to authenticate with RSMeans API. Skipping cost retrieval.")
+                return {}
+
+            runner.registerInfo(f"Querying RSMeans API for {len(materials)} materials...")
+
+            return run_rsmeans_cost_lookup(
+                materials=materials,
+                release_id="2024-an",
+                catalogs=["bc-mf", "gb-mf", "rp-mf"],
+                location_id="us-us-national",
+                labor_type="std",
+                measurement_system="imp",
+                use_sandbox=False,
+                overhead_profit_percent=10.0,
+            )
+        except Exception as e:
+            runner.registerWarning(f"RSMeans API lookup failed: {str(e)}")
+            return {}
+
 
 # Register the measure
 DoorEnhancement().registerWithApplication()

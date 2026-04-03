@@ -53,15 +53,15 @@ export EC3_API_TOKEN=your_token_here
 
 Set environment variables for RSMeans authentication:
 ```bash
-export RSMEANS_CLIENT_ID=your_client_id
-export RSMEANS_CLIENT_SECRET=your_client_secret
+export client_id=your_client_id
+export client_secret=your_client_secret
 ```
 
-Or add to a `.env` file in the measure directory (will be loaded by `call_rsmeans_api.py`):
+Or add to a `.env` file:
 
 ```
-RSMEANS_CLIENT_ID=your_client_id
-RSMEANS_CLIENT_SECRET=your_client_secret
+client_id=your_client_id
+client_secret=your_client_secret
 ```
 
 **Security Note**: Never commit `.env` files or credentials to the repository. The `.gitignore` file prevents `config.ini`, `.env`, and `*.env` from being committed.
@@ -112,6 +112,7 @@ RSMEANS_CLIENT_SECRET=your_client_secret
 | Argument | Type | Default | Description |
 |----------|------|---------|-------------|
 | `use_custom_costs` | Boolean | False | Use custom cost inputs instead of RSMeans API |
+| `rsmeans_unit_costline_id` | String | "" | Optional exact RSMeans unit cost line ID override (tried before normal search) |
 | `custom_door_cost_per_unit` | Double ($/m²) | 0.0 | Custom material + labor cost for door replacement |
 | `custom_bottom_seal_cost` | Double ($/m) | 0.0 | Custom material + labor cost for bottom seal |
 | `custom_top_side_seal_cost` | Double ($/m) | 0.0 | Custom material + labor cost for top/side seal |
@@ -132,6 +133,8 @@ Using the OpenStudio GUI or Parametric Analysis Tool (PAT):
 6. Use custom costs: **False** (uses RSMeans API)
 
 **Result**: Measure applies door replacement + sealing, calculates embodied carbon (GWP in kg CO2 eq), estimates costs via RSMeans with 10% overhead profit.
+
+If no direct RSMeans match is found, door-specific fallback unit cost line IDs may be applied for known materials; these are reported in measure warnings.
 
 ---
 
@@ -314,7 +317,7 @@ API_TOKEN = your_token_here
 - API rate limits exceeded
 
 **Solutions**:
-1. Verify environment variables: `RSMEANS_CLIENT_ID`, `RSMEANS_CLIENT_SECRET`
+1. Verify environment variables: `client_id`, `client_secret`
 2. Check network connectivity
 3. Use custom costs instead: set `use_custom_costs = True`
 

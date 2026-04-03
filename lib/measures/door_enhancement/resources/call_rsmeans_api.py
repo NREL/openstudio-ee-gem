@@ -45,6 +45,27 @@ DEFAULT_FEATURE_KEYS = {
 }
 
 
+DOOR_FALLBACK_RSMEANS_IDS = {
+    # Door sealing components (from EC3 Query Strings sheet).
+    "silicone adhesive smoke gasket": "087125105050",
+    "brush weatherstrip": "087125103700",
+    "automatic door bottom": "087125103650",
+    "jamb weatherstrip": "083323104000",
+    "jamb weatherstripping": "083323104000",
+    # Whole door components (from EC3 Query Strings sheet).
+    "wood door leaf": "081416090025",
+    "wooden door": "081416090025",
+    "garage door": "083613200200",
+    "window door system": "083213100450",
+    "glass door": "083213100450",
+    "polystyrene core steel door": "081313130020",
+    "polyurethane core steel door": "081313130020",
+    "honeycomb core steel door": "081313130020",
+    "stiffened core steel door": "081313130020",
+    "stiffened core": "081313130020",
+}
+
+
 def _get_feature_as_string(props, feature_name: str) -> Optional[str]:
     if not props.hasFeature(feature_name):
         return None
@@ -95,6 +116,141 @@ def _filter_demo_items(items: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
             continue
         filtered.append(item)
     return filtered or items
+
+
+def _normalize_search_text(text: str) -> str:
+    cleaned = re.sub(r"[^a-z0-9]+", " ", str(text).lower())
+    return re.sub(r"\s+", " ", cleaned).strip()
+
+
+def _tokenize_search_text(text: str) -> set:
+    tokens = _normalize_search_text(text).split()
+    return {tok for tok in tokens if len(tok) > 2}
+
+
+def _score_rsmeans_candidate(material_name: str, item: Dict[str, Any]) -> float:
+    description = str(item.get("description", ""))
+    if not description:
+        return -1.0
+
+    material_norm = _normalize_search_text(material_name)
+    description_norm = _normalize_search_text(description)
+    material_tokens = _tokenize_search_text(material_name)
+    description_tokens = _tokenize_search_text(description)
+
+    score = 0.0
+    if material_norm and material_norm in description_norm:
+        score += 60.0
+
+    token_overlap = material_tokens.intersection(description_tokens)
+    score += 12.0 * len(token_overlap)
+
+    # Prefer door entries for door materials.
+    if "door" in material_norm and "door" in description_norm:
+        score += 10.0
+
+    # Penalize likely accessory lines over assembly lines.
+    if any(tok in description_norm for tok in ["fastener", "clip", "anchor", "hanger"]):
+        score -= 20.0
+
+    score += min(len(description_norm), 120) / 120.0
+    return score
+
+
+def _select_best_rsmeans_candidate(
+    material_name: str,
+    items: List[Dict[str, Any]],
+    material: Optional[Dict[str, Any]] = None,
+) -> tuple:
+    if not items:
+        return None, []
+
+    scored = []
+    for idx, item in enumerate(items):
+        raw_score = _score_rsmeans_candidate(material_name, item)
+        bounded_score = max(0.0, min(100.0, raw_score))
+        scored.append({
+            "index": idx,
+            "rsmeans_id": item.get("id", "unknown"),
+            "description": str(item.get("description", ""))[:100],
+            "score": round(bounded_score, 2),
+            "raw_score": round(raw_score, 2),
+        })
+
+    scored.sort(key=lambda x: -x["score"])
+    best_raw_score = scored[0].get("raw_score", 0.0)
+    if best_raw_score < 0.0 or best_raw_score > 100.0:
+        fallback_id = _get_default_fallback_rsmeans_id(
+            material_name,
+            (material or {}).get("description", ""),
+        )
+        if fallback_id:
+            return {
+                "id": fallback_id,
+                "description": f"[fallback costline] {material_name}",
+                "is_fallback": True,
+                "fallback_reason": f"raw_score_out_of_bounds:{best_raw_score}",
+            }, scored
+
+    best_idx = scored[0]["index"]
+    best_candidate = items[best_idx]
+    return best_candidate, scored
+
+
+def _normalize_text(value: str) -> str:
+    return re.sub(r"\s+", " ", str(value or "").lower()).strip()
+
+
+def _get_default_fallback_rsmeans_id(material_name: str, material_description: str = "") -> Optional[str]:
+    text = f"{material_name or ''} {material_description or ''}"
+    normalized = _normalize_text(text)
+
+    # Exact phrase matching first.
+    for phrase, rsmeans_id in DOOR_FALLBACK_RSMEANS_IDS.items():
+        if phrase in normalized:
+            return rsmeans_id
+
+    # Keyword-based fallback for near matches.
+    if "garage" in normalized and "door" in normalized:
+        return DOOR_FALLBACK_RSMEANS_IDS["garage door"]
+    if "weatherstrip" in normalized or "weatherstripping" in normalized:
+        if "jamb" in normalized:
+            return DOOR_FALLBACK_RSMEANS_IDS["jamb weatherstrip"]
+        return DOOR_FALLBACK_RSMEANS_IDS["brush weatherstrip"]
+    if "smoke" in normalized and ("gasket" in normalized or "seal" in normalized):
+        return DOOR_FALLBACK_RSMEANS_IDS["silicone adhesive smoke gasket"]
+    if "core" in normalized and "steel" in normalized and "door" in normalized:
+        return DOOR_FALLBACK_RSMEANS_IDS["polystyrene core steel door"]
+    if "door" in normalized:
+        return DOOR_FALLBACK_RSMEANS_IDS["window door system"]
+
+    return None
+
+
+def _lookup_cost_item_by_rsmeans_id(
+    client: "RSMeansAPIClient",
+    rsmeans_id: str,
+    catalog: str,
+    release_id: str,
+    location_id: str,
+    labor_type: str,
+    measurement_system: str,
+) -> Optional[Dict[str, Any]]:
+    cost_line = client.get_unit_costlines(
+        release_id=release_id,
+        catalog=catalog,
+        location_id=location_id,
+        labor_type=labor_type,
+        measurement_system=measurement_system,
+        division_code=rsmeans_id,
+    )
+    if not cost_line or "items" not in cost_line:
+        return None
+
+    for item in cost_line["items"]:
+        if item.get("id") == rsmeans_id:
+            return item
+    return None
 
 
 def generate_search_term_alternatives(material_name: str) -> List[tuple]:
@@ -972,13 +1128,20 @@ def search_materials_across_catalogs(
     all_results = []
     search_log = []
     errors = []
+    warnings = []
     total_cost = 0.0
+    fallback_count = 0
     
     for material in materials:
         material_name = material.get("name", "unknown")
         quantity = material.get("quantity", 1.0)
         unit = material.get("unit", "")
         division_code = material.get("division_code")
+        explicit_rsmeans_id = str(
+            material.get("explicit_rsmeans_id")
+            or material.get("rsmeans_unit_costline_id")
+            or ""
+        ).strip()
 
         print("\n" + "-" * 70)
         print(f"RSMeans lookup for material: {material_name}")
@@ -988,6 +1151,53 @@ def search_materials_across_catalogs(
         best_cost = None
         best_catalog = None
         matched_term = None
+        best_source = "rsmeans_search"
+
+        # Optional exact line-id override path (if user supplied one).
+        if explicit_rsmeans_id:
+            for catalog in catalogs:
+                explicit_item = _lookup_cost_item_by_rsmeans_id(
+                    client=client,
+                    rsmeans_id=explicit_rsmeans_id,
+                    catalog=catalog,
+                    release_id=release_id,
+                    location_id=location_id,
+                    labor_type=labor_type,
+                    measurement_system=measurement_system,
+                )
+                if explicit_item:
+                    unit_cost = float(explicit_item.get("localizedCosts", {}).get("totalOpCost", 0.0))
+                    if unit_cost > 0:
+                        total = unit_cost * quantity
+                        all_results.append({
+                            **material,
+                            "catalog": catalog,
+                            "search_term_used": "user_rsmeans_id",
+                            "unit_cost": unit_cost,
+                            "total_cost": total,
+                            "rsmeans_id": explicit_item.get("id", explicit_rsmeans_id),
+                            "rsmeans_description": explicit_item.get("description", ""),
+                            "source": "rsmeans_user_id",
+                        })
+                        total_cost += total
+                        search_log.append({
+                            "material": material_name,
+                            "status": "explicit_id_match",
+                            "explicit_rsmeans_id": explicit_rsmeans_id,
+                            "catalog": catalog,
+                            "unit_cost": unit_cost,
+                            "quantity": quantity,
+                            "total_cost": total,
+                        })
+                        best_match = explicit_item
+                        break
+
+            if best_match:
+                continue
+
+            warnings.append(
+                f"User-provided RSMeans ID {explicit_rsmeans_id} was not found; falling back to search logic for '{material_name}'"
+            )
         
         # Generate alternative search terms
         search_alternatives = generate_search_term_alternatives(material_name)
@@ -1017,8 +1227,13 @@ def search_materials_across_catalogs(
                     
                     items = _filter_demo_items(_extract_search_items(results))
                     if items:
-                        # Take first match
-                        match = items[0]
+                        match, ranked_candidates = _select_best_rsmeans_candidate(
+                            material_name,
+                            items,
+                            material,
+                        )
+                        if not match:
+                            continue
                         division_id = match.get("id", "")
                         print(f"    ✓ Match: {match.get('description', '')} (id {division_id})")
                         
@@ -1041,7 +1256,12 @@ def search_materials_across_catalogs(
                                         best_match = item
                                         best_cost = unit_cost * quantity
                                         best_catalog = catalog
-                                        matched_term = alt_term
+                                        if match.get("is_fallback"):
+                                            matched_term = "fallback_rsmeans_id"
+                                            best_source = "rsmeans_fallback_id"
+                                        else:
+                                            matched_term = alt_term
+                                            best_source = "rsmeans_search"
                                         
                                         status_msg = f"match_found"
                                         if alt_term != material_name:
@@ -1056,7 +1276,8 @@ def search_materials_across_catalogs(
                                             "status": status_msg,
                                             "unit_cost": unit_cost,
                                             "quantity": quantity,
-                                            "total_cost": best_cost
+                                            "total_cost": best_cost,
+                                            "candidate_scores": ranked_candidates[:5],
                                         })
                                         break
                             
@@ -1080,23 +1301,84 @@ def search_materials_across_catalogs(
                 "unit_cost": best_match.get("localizedCosts", {}).get("totalOpCost", 0.0),
                 "total_cost": best_cost,
                 "rsmeans_id": best_match.get("id", ""),
-                "rsmeans_description": best_match.get("description", "")
+                "rsmeans_description": best_match.get("description", ""),
+                "source": best_source,
             }
             all_results.append(material_result)
             total_cost += best_cost
+            if best_source == "rsmeans_fallback_id":
+                fallback_count += 1
+                warnings.append(
+                    f"Used fallback RSMeans ID {best_match.get('id', '')} for '{material_name}' due to candidate score bounds"
+                )
         else:
-            errors.append(f"No RSMeans match found in any catalog for: {material_name}")
-            search_log.append({
-                "material": material_name,
-                "status": "no_match",
-                "catalogs_searched": catalogs,
-                "alternatives_tried": len(search_alternatives)
-            })
+            fallback_id = _get_default_fallback_rsmeans_id(
+                material_name,
+                material.get("description", ""),
+            )
+            fallback_item = None
+            fallback_catalog = None
+
+            if fallback_id:
+                for catalog in catalogs:
+                    fallback_item = _lookup_cost_item_by_rsmeans_id(
+                        client=client,
+                        rsmeans_id=fallback_id,
+                        catalog=catalog,
+                        release_id=release_id,
+                        location_id=location_id,
+                        labor_type=labor_type,
+                        measurement_system=measurement_system,
+                    )
+                    if fallback_item:
+                        fallback_catalog = catalog
+                        break
+
+            if fallback_item:
+                unit_cost = float(fallback_item.get("localizedCosts", {}).get("totalOpCost", 0.0))
+                total = unit_cost * quantity
+                all_results.append({
+                    **material,
+                    "catalog": fallback_catalog,
+                    "search_term_used": "fallback_rsmeans_id",
+                    "unit_cost": unit_cost,
+                    "total_cost": total,
+                    "rsmeans_id": fallback_item.get("id", fallback_id),
+                    "rsmeans_description": fallback_item.get("description", ""),
+                    "source": "rsmeans_fallback_id",
+                })
+                total_cost += total
+                fallback_count += 1
+                warning_message = (
+                    f"Used fallback RSMeans ID {fallback_id} for '{material_name}' "
+                    f"after no direct search match"
+                )
+                warnings.append(warning_message)
+                search_log.append({
+                    "material": material_name,
+                    "status": "fallback_match",
+                    "fallback_rsmeans_id": fallback_id,
+                    "catalog": fallback_catalog,
+                    "unit_cost": unit_cost,
+                    "quantity": quantity,
+                    "total_cost": total,
+                })
+            else:
+                errors.append(f"No RSMeans match found in any catalog for: {material_name}")
+                search_log.append({
+                    "material": material_name,
+                    "status": "no_match",
+                    "catalogs_searched": catalogs,
+                    "alternatives_tried": len(search_alternatives),
+                    "fallback_rsmeans_id": fallback_id,
+                })
     
     return {
         "total_cost": total_cost,
         "materials": all_results,
         "errors": errors,
+        "warnings": warnings,
+        "fallback_count": fallback_count,
         "search_log": search_log,
         "catalogs_searched": catalogs
     }

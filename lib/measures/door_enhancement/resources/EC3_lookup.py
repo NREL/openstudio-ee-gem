@@ -157,13 +157,13 @@ def fetch_epd_data(url,api_token):
         
         # Log how many records were returned
         if isinstance(result, dict) and 'epds' in result:
-            print(f"  → API returned {len(result['epds'])} EPD records")
+            print(f"  -> API returned {len(result['epds'])} EPD records")
             return result['epds']
         elif isinstance(result, list):
-            print(f"  → API returned {len(result)} EPD records")
+            print(f"  -> API returned {len(result)} EPD records")
             return result
         else:
-            print(f"  → API returned unexpected format: {type(result)}")
+            print(f"  -> API returned unexpected format: {type(result)}")
             return []
     except requests.exceptions.RequestException as e:
         print(f"Error fetching data from {url}: {e}")
