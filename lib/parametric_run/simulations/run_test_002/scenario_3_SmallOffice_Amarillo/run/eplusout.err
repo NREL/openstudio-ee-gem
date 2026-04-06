@@ -1,4 +1,4 @@
-Program Version,EnergyPlus, Version 25.2.0-cf7368216c, YMD=2026.04.03 16:20,
+Program Version,EnergyPlus, Version 25.2.0-cf7368216c, YMD=2026.04.06 10:47,
    ** Warning ** ProcessScheduleInput: Schedule:Day:Interval = ECONOMIZER MAX OA FRACTION 70 PCT DEFAULT
    **   ~~~   ** Schedule Type Limits Name is empty.
    **   ~~~   ** Schedule will not be validated.
@@ -8,7 +8,7 @@ Program Version,EnergyPlus, Version 25.2.0-cf7368216c, YMD=2026.04.03 16:20,
    **   ~~~   ** ..Weather File Location=Amarillo-Husband.Amarillo.Intl.AP TX USA SRC-TMYx WMO#=723630
    **   ~~~   ** ..due to location differences, Latitude difference=[3.46] degrees, Longitude difference=[4.79] degrees.
    **   ~~~   ** ..Time Zone difference=[1.0] hour(s), Elevation difference=[7.67] percent, [91.00] meters.
-   ** Warning ** CheckUsedConstructions: There are 16 nominally unused constructions in input.
+   ** Warning ** CheckUsedConstructions: There are 17 nominally unused constructions in input.
    **   ~~~   ** For explicit details on each unused construction, use Output:Diagnostics,DisplayExtraWarnings;
    ** Warning ** GetDaylightingControls: Fraction of zone or space controlled by the Daylighting reference points is < 1.0.
    **   ~~~   ** ..discovered in Daylighting:Controls="PERIMETER_ZN_1 ZN DAYLIGHTINGCONTROLS", only 0.000 of the zone or space is controlled.
@@ -118,39 +118,39 @@ Program Version,EnergyPlus, Version 25.2.0-cf7368216c, YMD=2026.04.03 16:20,
    ************* Beginning Simulation
    ** Warning ** Processing Monthly Tabular Reports: Variable names not valid for this simulation
    **   ~~~   ** ...use Output:Diagnostics,DisplayExtraWarnings; to show more details on individual variables.
-   ** Warning ** CalcEquipmentFlowRates: "MAIN SERVICE WATER USE 0.064GPM 140F" - Target water temperature is greater than the hot water temperature by (0.59 C)
+   ** Warning ** CalcEquipmentFlowRates: "MAIN SERVICE WATER USE 0.064GPM 140F" - Target water temperature is greater than the hot water temperature by (0.56 C)
    **   ~~~   **  Environment=RUN PERIOD 1, at Simulation time=01/02 07:00 - 07:10
    **   ~~~   ** ...target water temperature     = 60.00 C
-   **   ~~~   ** ...hot water temperature        = 59.41 C
+   **   ~~~   ** ...hot water temperature        = 59.44 C
    **   ~~~   ** ...Target water temperature should be less than or equal to the hot water temperature. Verify temperature setpoints and schedules.
-   ** Warning ** CalcDoe2DXCoil: Coil:Cooling:DX:SingleSpeed "PERIMETER_ZN_1 ZN PSZ-AC-2 1SPD DX HP CLG COIL 35KBTU/HR 13SEER" - Full load outlet air dry-bulb temperature < 2C. This indicates the possibility of coil frost/freeze. Outlet temperature = 1.70 C.
-   **   ~~~   **  ...Occurrence info = RUN PERIOD 1, 01/18 14:20 - 14:30
+   ** Warning ** CalcDoe2DXCoil: Coil:Cooling:DX:SingleSpeed "PERIMETER_ZN_1 ZN PSZ-AC-2 1SPD DX HP CLG COIL 35KBTU/HR 13SEER" - Full load outlet air dry-bulb temperature < 2C. This indicates the possibility of coil frost/freeze. Outlet temperature = 1.68 C.
+   **   ~~~   **  ...Occurrence info = RUN PERIOD 1, 01/18 14:50 - 15:00
    **   ~~~   ** ... Possible reasons for low outlet air dry-bulb temperatures are: This DX coil
-   **   ~~~   **    1) may have a low inlet air dry-bulb temperature. Inlet air temperature = 23.869 C.
+   **   ~~~   **    1) may have a low inlet air dry-bulb temperature. Inlet air temperature = 23.845 C.
    **   ~~~   **    2) may have a low air flow rate per watt of cooling capacity. Check inputs.
    **   ~~~   **    3) is used as part of a HX assisted cooling coil which uses a high sensible effectiveness. Check inputs.
-   ** Warning ** CalcDoe2DXCoil: Coil:Cooling:DX:SingleSpeed "CORE_ZN ZN PSZ-AC-1 1SPD DX HP CLG COIL 32KBTU/HR 13SEER" - Full load outlet air dry-bulb temperature < 2C. This indicates the possibility of coil frost/freeze. Outlet temperature = 1.90 C.
-   **   ~~~   **  ...Occurrence info = RUN PERIOD 1, 01/20 13:30 - 13:40
+   ** Warning ** CalcDoe2DXCoil: Coil:Cooling:DX:SingleSpeed "CORE_ZN ZN PSZ-AC-1 1SPD DX HP CLG COIL 32KBTU/HR 13SEER" - Full load outlet air dry-bulb temperature < 2C. This indicates the possibility of coil frost/freeze. Outlet temperature = 1.93 C.
+   **   ~~~   **  ...Occurrence info = RUN PERIOD 1, 01/20 13:50 - 14:00
    **   ~~~   ** ... Possible reasons for low outlet air dry-bulb temperatures are: This DX coil
-   **   ~~~   **    1) may have a low inlet air dry-bulb temperature. Inlet air temperature = 24.067 C.
+   **   ~~~   **    1) may have a low inlet air dry-bulb temperature. Inlet air temperature = 24.091 C.
    **   ~~~   **    2) may have a low air flow rate per watt of cooling capacity. Check inputs.
    **   ~~~   **    3) is used as part of a HX assisted cooling coil which uses a high sensible effectiveness. Check inputs.
-   ** Warning ** CalcDoe2DXCoil: Coil:Cooling:DX:SingleSpeed "PERIMETER_ZN_2 ZN PSZ-AC-3 1SPD DX HP CLG COIL 24KBTU/HR 13SEER" - Full load outlet air dry-bulb temperature < 2C. This indicates the possibility of coil frost/freeze. Outlet temperature = 1.87 C.
-   **   ~~~   **  ...Occurrence info = RUN PERIOD 1, 03/28 12:00 - 12:10
+   ** Warning ** CalcDoe2DXCoil: Coil:Cooling:DX:SingleSpeed "PERIMETER_ZN_2 ZN PSZ-AC-3 1SPD DX HP CLG COIL 24KBTU/HR 13SEER" - Full load outlet air dry-bulb temperature < 2C. This indicates the possibility of coil frost/freeze. Outlet temperature = 1.92 C.
+   **   ~~~   **  ...Occurrence info = RUN PERIOD 1, 03/28 12:50 - 13:00
    **   ~~~   ** ... Possible reasons for low outlet air dry-bulb temperatures are: This DX coil
-   **   ~~~   **    1) may have a low inlet air dry-bulb temperature. Inlet air temperature = 24.062 C.
+   **   ~~~   **    1) may have a low inlet air dry-bulb temperature. Inlet air temperature = 24.103 C.
    **   ~~~   **    2) may have a low air flow rate per watt of cooling capacity. Check inputs.
    **   ~~~   **    3) is used as part of a HX assisted cooling coil which uses a high sensible effectiveness. Check inputs.
-   ** Warning ** CalcDoe2DXCoil: Coil:Cooling:DX:SingleSpeed "PERIMETER_ZN_4 ZN PSZ-AC-5 1SPD DX HP CLG COIL 29KBTU/HR 13SEER" - Full load outlet air dry-bulb temperature < 2C. This indicates the possibility of coil frost/freeze. Outlet temperature = 1.84 C.
-   **   ~~~   **  ...Occurrence info = RUN PERIOD 1, 04/12 08:40 - 08:50
+   ** Warning ** CalcDoe2DXCoil: Coil:Cooling:DX:SingleSpeed "PERIMETER_ZN_4 ZN PSZ-AC-5 1SPD DX HP CLG COIL 29KBTU/HR 13SEER" - Full load outlet air dry-bulb temperature < 2C. This indicates the possibility of coil frost/freeze. Outlet temperature = 1.83 C.
+   **   ~~~   **  ...Occurrence info = RUN PERIOD 1, 04/12 08:50 - 09:00
    **   ~~~   ** ... Possible reasons for low outlet air dry-bulb temperatures are: This DX coil
-   **   ~~~   **    1) may have a low inlet air dry-bulb temperature. Inlet air temperature = 24.025 C.
+   **   ~~~   **    1) may have a low inlet air dry-bulb temperature. Inlet air temperature = 24.015 C.
    **   ~~~   **    2) may have a low air flow rate per watt of cooling capacity. Check inputs.
    **   ~~~   **    3) is used as part of a HX assisted cooling coil which uses a high sensible effectiveness. Check inputs.
-   ** Warning ** CalcDoe2DXCoil: Coil:Cooling:DX:SingleSpeed "PERIMETER_ZN_3 ZN PSZ-AC-4 1SPD DX HP CLG COIL 35KBTU/HR 13SEER" - Full load outlet air dry-bulb temperature < 2C. This indicates the possibility of coil frost/freeze. Outlet temperature = 1.85 C.
-   **   ~~~   **  ...Occurrence info = RUN PERIOD 1, 04/12 09:27 - 09:30
+   ** Warning ** CalcDoe2DXCoil: Coil:Cooling:DX:SingleSpeed "PERIMETER_ZN_3 ZN PSZ-AC-4 1SPD DX HP CLG COIL 35KBTU/HR 13SEER" - Full load outlet air dry-bulb temperature < 2C. This indicates the possibility of coil frost/freeze. Outlet temperature = 1.93 C.
+   **   ~~~   **  ...Occurrence info = RUN PERIOD 1, 04/12 09:40 - 09:50
    **   ~~~   ** ... Possible reasons for low outlet air dry-bulb temperatures are: This DX coil
-   **   ~~~   **    1) may have a low inlet air dry-bulb temperature. Inlet air temperature = 24.009 C.
+   **   ~~~   **    1) may have a low inlet air dry-bulb temperature. Inlet air temperature = 24.081 C.
    **   ~~~   **    2) may have a low air flow rate per watt of cooling capacity. Check inputs.
    **   ~~~   **    3) is used as part of a HX assisted cooling coil which uses a high sensible effectiveness. Check inputs.
    ** Warning ** The resource referenced by LifeCycleCost:UsePriceEscalation= "U.S. AVG  COMMERCIAL-ELECTRICITY" has no energy cost. 
@@ -172,46 +172,46 @@ Program Version,EnergyPlus, Version 25.2.0-cf7368216c, YMD=2026.04.03 16:20,
    ************* The following recurring error messages occurred.
    *************
    *************  ** Warning ** "MAIN SERVICE WATER USE 0.064GPM 140F" - Target water temperature should be less than or equal to the hot water temperature error continues...
-   *************  **   ~~~   **   This error occurred 402139 total times;
+   *************  **   ~~~   **   This error occurred 219067 total times;
    *************  **   ~~~   **   during Warmup 0 times;
    *************  **   ~~~   **   during Sizing 0 times.
-   *************  **   ~~~   **   Max=1.923000  Min=0.180935
+   *************  **   ~~~   **   Max=1.921244  Min=0.198765
    *************
    *************  ** Warning ** Plant loop falling below lower temperature limit, PlantLoop="MAIN SERVICE WATER LOOP"
-   *************  **   ~~~   **   This error occurred 91629 total times;
+   *************  **   ~~~   **   This error occurred 58862 total times;
    *************  **   ~~~   **   during Warmup 0 times;
    *************  **   ~~~   **   during Sizing 0 times.
    *************  **   ~~~   **   Min=14.913959
    *************
    *************  ** Warning ** CalcDoe2DXCoil: Coil:Cooling:DX:SingleSpeed="PERIMETER_ZN_1 ZN PSZ-AC-2 1SPD DX HP CLG COIL 35KBTU/HR 13SEER" - Full load outlet temperature indicates a possibility of frost/freeze error continues. Outlet air temperature statistics follow:
-   *************  **   ~~~   **   This error occurred 1209 total times;
+   *************  **   ~~~   **   This error occurred 801 total times;
    *************  **   ~~~   **   during Warmup 0 times;
    *************  **   ~~~   **   during Sizing 0 times.
-   *************  **   ~~~   **   Max=1.999799  Min=0.356311
+   *************  **   ~~~   **   Max=1.999743  Min=0.248768
    *************
    *************  ** Warning ** CalcDoe2DXCoil: Coil:Cooling:DX:SingleSpeed="CORE_ZN ZN PSZ-AC-1 1SPD DX HP CLG COIL 32KBTU/HR 13SEER" - Full load outlet temperature indicates a possibility of frost/freeze error continues. Outlet air temperature statistics follow:
-   *************  **   ~~~   **   This error occurred 1850 total times;
+   *************  **   ~~~   **   This error occurred 1311 total times;
    *************  **   ~~~   **   during Warmup 0 times;
    *************  **   ~~~   **   during Sizing 0 times.
-   *************  **   ~~~   **   Max=1.999119  Min=-0.896942
+   *************  **   ~~~   **   Max=1.996580  Min=-1.195074
    *************
    *************  ** Warning ** CalcDoe2DXCoil: Coil:Cooling:DX:SingleSpeed="PERIMETER_ZN_2 ZN PSZ-AC-3 1SPD DX HP CLG COIL 24KBTU/HR 13SEER" - Full load outlet temperature indicates a possibility of frost/freeze error continues. Outlet air temperature statistics follow:
-   *************  **   ~~~   **   This error occurred 667 total times;
+   *************  **   ~~~   **   This error occurred 384 total times;
    *************  **   ~~~   **   during Warmup 0 times;
    *************  **   ~~~   **   during Sizing 0 times.
-   *************  **   ~~~   **   Max=1.998993  Min=0.920922
+   *************  **   ~~~   **   Max=1.997311  Min=0.865681
    *************
    *************  ** Warning ** CalcDoe2DXCoil: Coil:Cooling:DX:SingleSpeed="PERIMETER_ZN_4 ZN PSZ-AC-5 1SPD DX HP CLG COIL 29KBTU/HR 13SEER" - Full load outlet temperature indicates a possibility of frost/freeze error continues. Outlet air temperature statistics follow:
-   *************  **   ~~~   **   This error occurred 223 total times;
+   *************  **   ~~~   **   This error occurred 161 total times;
    *************  **   ~~~   **   during Warmup 0 times;
    *************  **   ~~~   **   during Sizing 0 times.
-   *************  **   ~~~   **   Max=1.995637  Min=1.449481
+   *************  **   ~~~   **   Max=1.998277  Min=1.357594
    *************
    *************  ** Warning ** CalcDoe2DXCoil: Coil:Cooling:DX:SingleSpeed="PERIMETER_ZN_3 ZN PSZ-AC-4 1SPD DX HP CLG COIL 35KBTU/HR 13SEER" - Full load outlet temperature indicates a possibility of frost/freeze error continues. Outlet air temperature statistics follow:
-   *************  **   ~~~   **   This error occurred 204 total times;
+   *************  **   ~~~   **   This error occurred 120 total times;
    *************  **   ~~~   **   during Warmup 0 times;
    *************  **   ~~~   **   during Sizing 0 times.
-   *************  **   ~~~   **   Max=1.998160  Min=1.153831
+   *************  **   ~~~   **   Max=1.999490  Min=1.121698
    *************
    *************
    ************* ===== Final Error Summary =====
@@ -223,4 +223,4 @@ Program Version,EnergyPlus, Version 25.2.0-cf7368216c, YMD=2026.04.03 16:20,
    *************
    ************* EnergyPlus Warmup Error Summary. During Warmup: 0 Warning; 0 Severe Errors.
    ************* EnergyPlus Sizing Error Summary. During Sizing: 22 Warning; 0 Severe Errors.
-   ************* EnergyPlus Completed Successfully-- 497970 Warning; 0 Severe Errors; Elapsed Time=00hr 00min 11.59sec
+   ************* EnergyPlus Completed Successfully-- 280755 Warning; 0 Severe Errors; Elapsed Time=00hr 00min 28.16sec
