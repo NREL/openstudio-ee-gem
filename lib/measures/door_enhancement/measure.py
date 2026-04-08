@@ -5,6 +5,9 @@
 
 import openstudio
 import typing
+import json
+from pathlib import Path
+from resources.call_rsmeans_api import RSMeansAPIClient, run_rsmeans_cost_lookup
 import numpy as np
 import pprint as pp
 from resources.EC3_lookup import *
@@ -299,6 +302,44 @@ class DoorEnhancement(openstudio.measure.ModelMeasure):
         door_thickness.setDefaultValue(0.0)
         args.append(door_thickness)
 
+        # make an argument for use custom costs instead of RSMeans API
+        use_custom_costs = openstudio.measure.OSArgument.makeBoolArgument("use_custom_costs", False)
+        use_custom_costs.setDisplayName("Use Custom Cost Inputs?")
+        use_custom_costs.setDescription("If true, use custom material and labor costs instead of querying the RSMeans API.")
+        use_custom_costs.setDefaultValue(False)
+        args.append(use_custom_costs)
+
+        # make an argument for custom door cost ($/unit area)
+        custom_door_cost_per_unit = openstudio.measure.OSArgument.makeDoubleArgument("custom_door_cost_per_unit", False)
+        custom_door_cost_per_unit.setDisplayName("Custom Door Cost ($/m²)")
+        custom_door_cost_per_unit.setDescription("Custom material and labor cost for door replacement per unit area. Only used if 'Use Custom Cost Inputs?' is true.")
+        custom_door_cost_per_unit.setUnits("$/m²")
+        custom_door_cost_per_unit.setDefaultValue(0.0)
+        args.append(custom_door_cost_per_unit)
+
+        # make an argument for custom bottom seal cost ($/length)
+        custom_bottom_seal_cost = openstudio.measure.OSArgument.makeDoubleArgument("custom_bottom_seal_cost", False)
+        custom_bottom_seal_cost.setDisplayName("Custom Bottom Seal Cost ($/m)")
+        custom_bottom_seal_cost.setDescription("Custom material and labor cost for bottom seal per unit length. Only used if 'Use Custom Cost Inputs?' is true.")
+        custom_bottom_seal_cost.setUnits("$/m")
+        custom_bottom_seal_cost.setDefaultValue(0.0)
+        args.append(custom_bottom_seal_cost)
+
+        # make an argument for custom top/side seal cost ($/length)
+        custom_top_side_seal_cost = openstudio.measure.OSArgument.makeDoubleArgument("custom_top_side_seal_cost", False)
+        custom_top_side_seal_cost.setDisplayName("Custom Top/Side Seal Cost ($/m)")
+        custom_top_side_seal_cost.setDescription("Custom material and labor cost for top and side seal per unit length. Only used if 'Use Custom Cost Inputs?' is true.")
+        custom_top_side_seal_cost.setUnits("$/m")
+        custom_top_side_seal_cost.setDefaultValue(0.0)
+        args.append(custom_top_side_seal_cost)
+
+        # optional exact RSMeans unit cost line ID override
+        rsmeans_unit_costline_id = openstudio.measure.OSArgument.makeStringArgument("rsmeans_unit_costline_id", True)
+        rsmeans_unit_costline_id.setDisplayName("RSMeans Unit Cost Line ID (Optional Override)")
+        rsmeans_unit_costline_id.setDescription("Optional exact RSMeans unit cost line ID. If provided, the measure attempts this ID first before normal search logic.")
+        rsmeans_unit_costline_id.setDefaultValue("")
+        args.append(rsmeans_unit_costline_id)
+
         return args
 
     def run(self, model: openstudio.model.Model, runner: openstudio.measure.OSRunner, user_arguments: openstudio.measure.OSArgumentMap):
@@ -343,7 +384,22 @@ class DoorEnhancement(openstudio.measure.ModelMeasure):
         door_density = runner.getDoubleArgumentValue("door_density", user_arguments)
         door_thickness = runner.getDoubleArgumentValue("door_thickness", user_arguments)
 
-        # Create a dictionary mapping seal options to their default lengths
+        # Retrieve custom cost arguments
+        use_custom_costs = runner.getBoolArgumentValue("use_custom_costs", user_arguments)
+        custom_door_cost_per_unit = runner.getDoubleArgumentValue("custom_door_cost_per_unit", user_arguments)
+        custom_bottom_seal_cost = runner.getDoubleArgumentValue("custom_bottom_seal_cost", user_arguments)
+        custom_top_side_seal_cost = runner.getDoubleArgumentValue("custom_top_side_seal_cost", user_arguments)
+        rsmeans_unit_costline_id = runner.getStringArgumentValue("rsmeans_unit_costline_id", user_arguments).strip()
+
+        if use_custom_costs:
+            runner.registerInfo("Custom cost mode enabled. Using user-provided cost values instead of RSMeans API.")
+            runner.registerInfo(f"  Door cost: ${custom_door_cost_per_unit}/m²")
+            runner.registerInfo(f"  Bottom seal cost: ${custom_bottom_seal_cost}/m")
+            runner.registerInfo(f"  Top/side seal cost: ${custom_top_side_seal_cost}/m")
+            if rsmeans_unit_costline_id:
+                runner.registerInfo("  RSMeans Unit Cost Line ID override ignored because custom cost mode is enabled.")
+        elif rsmeans_unit_costline_id:
+            runner.registerInfo(f"RSMeans Unit Cost Line ID override requested: {rsmeans_unit_costline_id}")
         length_per_unit_dict = {
             "brush weatherstrip": 0.9144,  # 36" = 0.9144 m, source: https://www.pemko.com/en/view-pdf?id=AADSS1046707&page=1
             "silicone adhesive smoke gasket": 5.1816,  # 17' = 5.1816 m, source: https://buildingtransparency.org/ec3/epds/ec327rq0
@@ -919,6 +975,176 @@ class DoorEnhancement(openstudio.measure.ModelMeasure):
                     sealing_side_length = (subsurface_dict[name]['dimension']['perimeter_m'] - 
                                           subsurface_dict[name]['dimension']['width_m'])
                     total_sealing_side_length_m += sealing_side_length
+
+        # -------------------------------------------------------------------
+        # RSMeans lookup: derive search term from door count, materials, size
+        # -------------------------------------------------------------------
+        def _format_ft_in(value_m: float) -> str:
+            inches_total = value_m * 39.37007874
+            feet = int(inches_total // 12)
+            inches = int(round(inches_total - feet * 12))
+            if inches == 12:
+                feet += 1
+                inches = 0
+            return f"{feet} ft {inches} in"
+
+        def _get_default_exterior_door_construction(model):
+            try:
+                building = model.getBuilding()
+                dcs_opt = building.defaultConstructionSet()
+                if not dcs_opt.is_initialized():
+                    return None
+                dcs = dcs_opt.get()
+                ext_subs_opt = dcs.defaultExteriorSubSurfaceConstructions()
+                if not ext_subs_opt.is_initialized():
+                    return None
+                ext_subs = ext_subs_opt.get()
+                door_opt = ext_subs.doorConstruction()
+                if door_opt.is_initialized():
+                    return door_opt.get()
+            except Exception:
+                return None
+            return None
+
+        def _collect_material_keywords_from_construction(construction):
+            keywords = set()
+            try:
+                if construction.to_LayeredConstruction().is_initialized():
+                    lc = construction.to_LayeredConstruction().get()
+                    layers = lc.layers()
+                else:
+                    layers = []
+            except Exception:
+                layers = []
+
+            for layer in layers:
+                try:
+                    name = layer.nameString().lower()
+                except Exception:
+                    name = ""
+                if "metal" in name or "steel" in name:
+                    keywords.add("metal")
+                if "aluminum" in name or "aluminium" in name:
+                    keywords.add("aluminum")
+                if "insulation" in name or "insul" in name:
+                    keywords.add("insulated")
+                if "wood" in name:
+                    keywords.add("wood")
+                if "glass" in name or "glaz" in name:
+                    keywords.add("glass")
+            return keywords
+
+        def _material_phrase_from_keywords(keywords):
+            kws = set(keywords)
+            if "glass" in kws and "metal" in kws:
+                return "metal framed glass"
+            if "glass" in kws:
+                return "glass"
+            if "metal" in kws and "insulated" in kws:
+                return "insulated metal"
+            if "metal" in kws:
+                return "metal"
+            if "wood" in kws:
+                return "wood"
+            if "insulated" in kws:
+                return "insulated"
+            return ""
+
+        rsmeans_lookup = None
+        rsmeans_summary_line = None
+        rsmeans_search_term = None
+        rsmeans_material_keywords = set()
+        rsmeans_size_str = ""
+
+        if len(sub_surfaces_to_change) > 0:
+            default_door_construction = _get_default_exterior_door_construction(model)
+            for name in subsurface_dict.keys():
+                subsurface_obj = subsurface_dict[name]["subsurface object"]
+                construction = None
+                if subsurface_obj.construction().is_initialized():
+                    construction = subsurface_obj.construction().get()
+                elif default_door_construction is not None:
+                    construction = default_door_construction
+                if construction is not None:
+                    rsmeans_material_keywords.update(_collect_material_keywords_from_construction(construction))
+
+            first_name = next(iter(subsurface_dict.keys()))
+            dims = subsurface_dict[first_name].get("dimension", {})
+            width_m = dims.get("width_m", 0.0)
+            height_m = dims.get("length_m", 0.0)
+            if width_m > 0.0 and height_m > 0.0:
+                rsmeans_size_str = f"{_format_ft_in(width_m)} x {_format_ft_in(height_m)}"
+            else:
+                rsmeans_size_str = "approx size unknown"
+
+            material_phrase = _material_phrase_from_keywords(rsmeans_material_keywords)
+            if material_phrase:
+                rsmeans_search_term = f"{material_phrase} door {rsmeans_size_str}"
+            else:
+                rsmeans_search_term = f"door {rsmeans_size_str}"
+
+            rsmeans_materials = [
+                {
+                    "name": rsmeans_search_term.strip(),
+                    "description": f"{len(sub_surfaces_to_change)} door(s); materials: {', '.join(sorted(rsmeans_material_keywords)) or 'unspecified'}; size: {rsmeans_size_str}",
+                    "quantity": float(len(sub_surfaces_to_change)),
+                    "unit": "ea",
+                    "division_code": "08",
+                    "explicit_rsmeans_id": rsmeans_unit_costline_id,
+                }
+            ]
+
+            try:
+                if use_custom_costs:
+                    runner.registerInfo("Using custom cost inputs (RSMeans API lookup skipped).")
+                    # Create a mock RSMeans lookup result using custom costs
+                    total_custom_cost = custom_door_cost_per_unit * float(len(sub_surfaces_to_change))
+                    rsmeans_lookup = {
+                        "status": "ok",
+                        "cost_source": "custom_input",
+                        "summary": {
+                            "materials_count": 1,
+                            "total_material_cost": total_custom_cost,  # Fixed field name
+                            "overhead_profit_percent": 0.0,  # Fixed field name
+                            "total_overhead_profit_cost": 0.0,  # Fixed field name - Custom costs assumed to already include labor/profit
+                            "total_cost_with_overhead_profit": total_custom_cost,
+                            "release_id": "custom",
+                            "location_id": "custom",
+                            "labor_type": "custom",
+                            "measurement_system": "custom",
+                            "catalogs_searched": []
+                        }
+                    }
+                    rsmeans_summary_line = (
+                        "Custom cost summary (cost_source=custom_input): "
+                        f"door_cost=${custom_door_cost_per_unit * float(len(sub_surfaces_to_change)):,.2f} "
+                        f"({len(sub_surfaces_to_change)} doors @ ${custom_door_cost_per_unit}/m²)"
+                    )
+                    runner.registerInfo(rsmeans_summary_line)
+                else:
+                    runner.registerInfo("Starting RSMeans lookup...")
+                    runner.registerInfo(f"RSMeans search term: {rsmeans_search_term}")
+                    rsmeans_lookup = self.pull_rsmeans_cost_from_api(runner, rsmeans_materials)
+                    # Add cost_source identifier to RSMeans API results
+                    if rsmeans_lookup:
+                        rsmeans_lookup["cost_source"] = "rsmeans_api"
+                    runner.registerInfo(f"RSMeans lookup status: {rsmeans_lookup.get('status', 'unknown')}")
+                    if rsmeans_lookup.get("status") == "ok":
+                        summary = rsmeans_lookup.get("summary", {})
+                        rsmeans_summary_line = (
+                            "RSMeans cost summary (cost_source=rsmeans_api): "
+                            f"materials={summary.get('materials_count', 0)}, "
+                            f"total_cost=${summary.get('total_cost_with_overhead_profit', 0.0):,.2f}"
+                        )
+                        runner.registerInfo(rsmeans_summary_line)
+                        rsmeans_results = rsmeans_lookup.get("results", {})
+                        for warning_msg in rsmeans_results.get("warnings", []):
+                            runner.registerWarning(f"RSMeans fallback: {warning_msg}")
+                        fallback_count = int(rsmeans_results.get("fallback_count", 0) or 0)
+                        if fallback_count > 0:
+                            runner.registerInfo(f"RSMeans fallback matches applied: {fallback_count}")
+            except Exception as e:
+                runner.registerWarning(f"Cost lookup failed: {e}")
         
         # Store summary in organized additional properties buckets (same pattern as window enhancement)
         building = model.getBuilding()
@@ -1078,6 +1304,48 @@ class DoorEnhancement(openstudio.measure.ModelMeasure):
             )
 
         return True
+
+    def pull_rsmeans_cost_from_api(self, runner, materials):
+        """
+        Pull RSMeans cost data for door retrofit materials using API credentials
+        from environment variables (client_id, client_secret).
+        """
+        try:
+            from dotenv import load_dotenv
+            import os
+            load_dotenv()
+            client_id = os.getenv("client_id")
+            client_secret = os.getenv("client_secret")
+
+            if not client_id or not client_secret:
+                runner.registerWarning(
+                    "RSMeans API credentials (client_id, client_secret) not found in environment. Skipping RSMeans cost retrieval."
+                )
+                return {}
+
+            runner.registerInfo("Initializing RSMeans API client...")
+            client = RSMeansAPIClient(client_id, client_secret, use_sandbox=False)
+
+            if not client.authenticate():
+                runner.registerWarning("Failed to authenticate with RSMeans API. Skipping cost retrieval.")
+                return {}
+
+            runner.registerInfo(f"Querying RSMeans API for {len(materials)} materials...")
+
+            return run_rsmeans_cost_lookup(
+                materials=materials,
+                release_id="2024-an",
+                catalogs=["bc-mf", "gb-mf", "rp-mf"],
+                location_id="us-us-national",
+                labor_type="std",
+                measurement_system="imp",
+                use_sandbox=False,
+                overhead_profit_percent=10.0,
+            )
+        except Exception as e:
+            runner.registerWarning(f"RSMeans API lookup failed: {str(e)}")
+            return {}
+
 
 # Register the measure
 DoorEnhancement().registerWithApplication()

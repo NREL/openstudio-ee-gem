@@ -1,112 +1,30 @@
+# Door Enhancement Measure
 
+## Summary
+The Door Enhancement measure improves door-related performance in OpenStudio models by:
+- reducing infiltration in spaces containing doors,
+- optionally replacing doors and adding seals,
+- calculating embodied carbon from EC3 EPD data,
+- estimating costs through RSMeans or custom cost inputs.
 
-###### (Automatically generated documentation)
+## Cost Modes
+- RSMeans mode (`use_custom_costs = False`): derives a door search term from model size/material context, runs multi-catalog lookup (`bc-mf`, `gb-mf`, `rp-mf`), applies 10% overhead/profit, and stores summary + hit details in AdditionalProperties.
+- Custom mode (`use_custom_costs = True`): bypasses RSMeans API and uses user-provided cost inputs directly.
 
-# Calculate embodied emissions for window enhancements.
+## RSMeans Fallback Behavior
+When direct RSMeans search has no match, the helper can use door-specific fallback unit cost line IDs for known materials (for example weatherstrips, automatic door bottom, and core steel door variants). The measure logs fallback warnings and fallback counts when this path is used.
 
-## Description
-Calculate embodied emissions for window enhancements to change thermal or lighting performance. 
+## Credentials
+- EC3: API token read from `config.ini` (`[EC3_API_TOKEN] API_TOKEN=...`) or environment.
+- RSMeans: `client_id` and `client_secret` environment variables (or `.env`).
 
-## Modeler Description
-Window enhancements like adding a storm window or film layer on top of the existing window have corresponding embodied carbon emissions associated with the enhancement. Based on what enhancement is being made to the existing window, we perform a lookup of the corresponding EC3 EPD and calculate a sum total embodied carbon emissions for that enhancement.
+## Primary Files
+- `measure.py` - main measure logic
+- `resources/call_rsmeans_api.py` - RSMeans lookup client/helper
+- `resources/EC3_lookup.py` - EC3 data retrieval and processing
+- `apply_measure.py` - local integration harness
 
-## Measure Type
-ModelMeasure
-
-## Taxonomy
-
-
-## Arguments
-
-
-### Pick a Window Construction From the Model to Replace Existing Window Constructions.
-
-**Name:** construction,
-**Type:** Choice,
-**Units:** ,
-**Required:** true,
-**Model Dependent:** false
-
-### Change Fixed Windows?
-
-**Name:** change_fixed_windows,
-**Type:** Boolean,
-**Units:** ,
-**Required:** true,
-**Model Dependent:** false
-
-### Change Operable Windows?
-
-**Name:** change_operable_windows,
-**Type:** Boolean,
-**Units:** ,
-**Required:** true,
-**Model Dependent:** false
-
-### Remove Existing Costs?
-
-**Name:** remove_costs,
-**Type:** Boolean,
-**Units:** ,
-**Required:** true,
-**Model Dependent:** false
-
-### Material and Installation Costs for Construction per Area Used ($/ft^2).
-
-**Name:** material_cost_ip,
-**Type:** Double,
-**Units:** ,
-**Required:** true,
-**Model Dependent:** false
-
-### Demolition Costs for Construction per Area Used ($/ft^2).
-
-**Name:** demolition_cost_ip,
-**Type:** Double,
-**Units:** ,
-**Required:** true,
-**Model Dependent:** false
-
-### Years Until Costs Start (whole years).
-
-**Name:** years_until_costs_start,
-**Type:** Integer,
-**Units:** ,
-**Required:** true,
-**Model Dependent:** false
-
-### Demolition Costs Occur During Initial Construction?
-
-**Name:** demo_cost_initial_const,
-**Type:** Boolean,
-**Units:** ,
-**Required:** true,
-**Model Dependent:** false
-
-### Expected Life (whole years).
-
-**Name:** expected_life,
-**Type:** Integer,
-**Units:** ,
-**Required:** true,
-**Model Dependent:** false
-
-### O & M Costs for Construction per Area Used ($/ft^2).
-
-**Name:** om_cost_ip,
-**Type:** Double,
-**Units:** ,
-**Required:** true,
-**Model Dependent:** false
-
-### O & M Frequency (whole years).
-
-**Name:** om_frequency,
-**Type:** Integer,
-**Units:** ,
-**Required:** true,
-**Model Dependent:** false
-
-
-
-
+## Additional Docs
+- `docs/USAGE_GUIDE.md` - user workflow and examples
+- `docs/QUICK_REFERENCE.md` - concise operational reference
+- `docs/TECHNICAL.md` - architecture, data flow, and algorithms
