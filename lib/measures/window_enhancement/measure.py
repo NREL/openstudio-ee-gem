@@ -556,6 +556,47 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
         args.append(num_vertical_dividers)
 
         # ============================================================================
+        # ENERGY PERFORMANCE GUARD ARGUMENTS - Prevent non-beneficial glazing updates
+        # ============================================================================
+        energy_guard_enabled = openstudio.measure.OSArgument.makeBoolArgument("energy_guard_enabled", True)
+        energy_guard_enabled.setDisplayName("Enable Energy Performance Guard?")
+        energy_guard_enabled.setDescription(
+            "If true, compare original vs updated window constructions using proxy metrics and stop "
+            "when the updated construction appears worse.")
+        energy_guard_enabled.setDefaultValue(False)
+        args.append(energy_guard_enabled)
+
+        energy_guard_strict = openstudio.measure.OSArgument.makeBoolArgument("energy_guard_strict", True)
+        energy_guard_strict.setDisplayName("Energy Guard Strict Mode?")
+        energy_guard_strict.setDescription(
+            "If true and proxy metrics cannot be evaluated for a window, the measure fails. "
+            "If false, unknown cases are skipped with a warning.")
+        energy_guard_strict.setDefaultValue(True)
+        args.append(energy_guard_strict)
+
+        energy_guard_check_shgc = openstudio.measure.OSArgument.makeBoolArgument("energy_guard_check_shgc", True)
+        energy_guard_check_shgc.setDisplayName("Energy Guard Also Check Solar Transmittance Proxy?")
+        energy_guard_check_shgc.setDescription(
+            "If true, enforce non-increasing SHGC proxy (approximated from glazing transmittance product) "
+            "in addition to U-value proxy checks.")
+        energy_guard_check_shgc.setDefaultValue(False)
+        args.append(energy_guard_check_shgc)
+
+        energy_guard_u_tolerance = openstudio.measure.OSArgument.makeDoubleArgument("energy_guard_u_tolerance", True)
+        energy_guard_u_tolerance.setDisplayName("Energy Guard U-Value Tolerance")
+        energy_guard_u_tolerance.setDescription(
+            "Allowed increase in U-value proxy (W/m2-K) before failing. Set to 0 for strict non-increase.")
+        energy_guard_u_tolerance.setDefaultValue(0.0)
+        args.append(energy_guard_u_tolerance)
+
+        energy_guard_shgc_tolerance = openstudio.measure.OSArgument.makeDoubleArgument("energy_guard_shgc_tolerance", True)
+        energy_guard_shgc_tolerance.setDisplayName("Energy Guard SHGC Proxy Tolerance")
+        energy_guard_shgc_tolerance.setDescription(
+            "Allowed increase in SHGC proxy before failing when SHGC checks are enabled.")
+        energy_guard_shgc_tolerance.setDefaultValue(0.0)
+        args.append(energy_guard_shgc_tolerance)
+
+        # ============================================================================
         # COST DATA ARGUMENTS - User-provided fallback costs when RSMeans API fails
         # ============================================================================
         
@@ -745,6 +786,19 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
             runner.registerInfo("Argument 'length_per_unit' set to 0.0, using default value 5.1816 m.")
         num_horizontal_dividers = runner.getIntegerArgumentValue("num_horizontal_dividers", user_arguments)
         num_vertical_dividers = runner.getIntegerArgumentValue("num_vertical_dividers", user_arguments)
+
+        # Energy performance guard arguments
+        energy_guard_enabled = runner.getBoolArgumentValue("energy_guard_enabled", user_arguments)
+        energy_guard_strict = runner.getBoolArgumentValue("energy_guard_strict", user_arguments)
+        energy_guard_check_shgc = runner.getBoolArgumentValue("energy_guard_check_shgc", user_arguments)
+        energy_guard_u_tolerance = runner.getDoubleArgumentValue("energy_guard_u_tolerance", user_arguments)
+        energy_guard_shgc_tolerance = runner.getDoubleArgumentValue("energy_guard_shgc_tolerance", user_arguments)
+        if energy_guard_u_tolerance < 0.0:
+            runner.registerError("Energy guard U-value tolerance must be non-negative.")
+            return False
+        if energy_guard_shgc_tolerance < 0.0:
+            runner.registerError("Energy guard SHGC tolerance must be non-negative.")
+            return False
         
         # Cost-related arguments (user-provided fallback costs)
         calculate_costs = runner.getBoolArgumentValue("calculate_costs", user_arguments)
@@ -771,6 +825,13 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
             runner.registerInfo(f"  Frame cost: ${frame_cost_per_sf}/SF")
             runner.registerInfo(f"  Caulking cost: ${caulking_cost_per_cy}/CY")
             runner.registerInfo(f"  Labor multiplier: {labor_cost_multiplier}")
+
+        if energy_guard_enabled:
+            runner.registerInfo("Energy performance guard enabled.")
+            runner.registerInfo(f"  Strict mode: {energy_guard_strict}")
+            runner.registerInfo(f"  Check SHGC proxy: {energy_guard_check_shgc}")
+            runner.registerInfo(f"  U tolerance: {energy_guard_u_tolerance}")
+            runner.registerInfo(f"  SHGC tolerance: {energy_guard_shgc_tolerance}")
 
         # Check for conflicting renovation options
         if glass_option == "provide user_num_panes" and user_num_panes > 0 and secondary_glazing_option == "install secondary glazing":
@@ -837,6 +898,10 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
             runner.registerInfo(f"\n{'─' * 80}")
             runner.registerInfo(f"Processing: {subsurface_name}")
             runner.registerInfo(f"{'─' * 80}")
+
+            original_construction_for_guard = None
+            if subsurface.construction().is_initialized():
+                original_construction_for_guard = subsurface.construction().get()
             
             # Initialize to None to handle SimpleGlazing case
             layered_construction = None
@@ -940,6 +1005,25 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
                         else:
                             runner.registerWarning(f"Unable to determine glazing layers in {subsurface_name}, skipping secondary glazing installation")
                             subsurface_dict[subsurface_name]["second_glazing"]["renovation_option"] = "none"
+
+            if energy_guard_enabled and original_construction_for_guard is not None and subsurface.construction().is_initialized():
+                updated_construction_for_guard = subsurface.construction().get()
+                guard_ok = self.enforce_energy_performance_guard(
+                    runner,
+                    subsurface_name,
+                    original_construction_for_guard,
+                    updated_construction_for_guard,
+                    check_shgc=energy_guard_check_shgc,
+                    strict=energy_guard_strict,
+                    u_tolerance=energy_guard_u_tolerance,
+                    shgc_tolerance=energy_guard_shgc_tolerance,
+                )
+                if not guard_ok:
+                    runner.registerError(
+                        f"Energy guard failed for {subsurface_name}. "
+                        "Stopping to prevent potential performance degradation."
+                    )
+                    return False
 
             # Fetch EPD URLs for all materials
             epd_urls = self.fetch_epd_urls(runner, subsurface_name, wf_option, glass_option_for_this_window, num_panes,
@@ -2404,6 +2488,142 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
                     runner.registerInfo(f"  ℹ Simple glazing system detected in layer {i+1}")
                     return True
         return False
+
+    def _optional_double_or_default(self, maybe_value, default_value):
+        """Return OptionalDouble value when initialized; otherwise use default."""
+        try:
+            if maybe_value.is_initialized():
+                return float(maybe_value.get())
+        except Exception:
+            pass
+        return float(default_value)
+
+    def _estimate_construction_energy_proxy(self, construction):
+        """Estimate U-value and SHGC proxies from construction layers.
+
+        U proxy is estimated from layer conductance summation, and SHGC proxy uses
+        product of glazing solar transmittance values. This is used as a safety
+        screening metric, not as a replacement for full EnergyPlus simulation.
+        """
+        u_proxy = None
+        shgc_proxy = None
+
+        # Handle SimpleGlazing constructions if possible.
+        if construction.to_LayeredConstruction().is_initialized():
+            layered = construction.to_LayeredConstruction().get()
+            r_terms = []
+            glazing_sol_trans = []
+
+            gas_k_map = {
+                "air": 0.026,
+                "argon": 0.016,
+                "krypton": 0.009,
+                "xenon": 0.005,
+            }
+
+            for i in range(layered.numLayers()):
+                layer = layered.getLayer(i)
+
+                if layer.to_StandardGlazing().is_initialized():
+                    g = layer.to_StandardGlazing().get()
+                    thickness_m = float(g.thickness())
+                    conductivity = self._optional_double_or_default(g.thermalConductivity(), 0.9)
+                    if conductivity > 0 and thickness_m > 0:
+                        r_terms.append(thickness_m / conductivity)
+                    glazing_sol_trans.append(self._optional_double_or_default(g.solarTransmittance(), 0.775))
+                    continue
+
+                if layer.to_Gas().is_initialized():
+                    gas = layer.to_Gas().get()
+                    thickness_m = float(gas.thickness())
+                    gas_type = "air"
+                    try:
+                        gas_type = str(gas.gasType()).strip().lower()
+                    except Exception:
+                        gas_type = "air"
+                    conductivity = gas_k_map.get(gas_type, gas_k_map["air"])
+                    if conductivity > 0 and thickness_m > 0:
+                        r_terms.append(thickness_m / conductivity)
+                    continue
+
+                if layer.to_SimpleGlazing().is_initialized():
+                    sg = layer.to_SimpleGlazing().get()
+                    try:
+                        u_proxy = float(sg.uFactor())
+                    except Exception:
+                        u_proxy = None
+                    try:
+                        shgc_proxy = float(sg.solarHeatGainCoefficient())
+                    except Exception:
+                        shgc_proxy = None
+
+            if u_proxy is None and len(r_terms) > 0:
+                r_total = float(np.sum(r_terms))
+                if r_total > 0:
+                    u_proxy = 1.0 / r_total
+
+            if shgc_proxy is None and len(glazing_sol_trans) > 0:
+                shgc_proxy = float(np.prod(glazing_sol_trans))
+
+        return {"u_proxy": u_proxy, "shgc_proxy": shgc_proxy}
+
+    def enforce_energy_performance_guard(
+        self,
+        runner,
+        subsurface_name,
+        original_construction,
+        updated_construction,
+        check_shgc=False,
+        strict=True,
+        u_tolerance=0.0,
+        shgc_tolerance=0.0,
+    ):
+        """Enforce that updated construction is not worse than original by proxy metrics."""
+        old_proxy = self._estimate_construction_energy_proxy(original_construction)
+        new_proxy = self._estimate_construction_energy_proxy(updated_construction)
+
+        old_u = old_proxy.get("u_proxy")
+        new_u = new_proxy.get("u_proxy")
+        old_shgc = old_proxy.get("shgc_proxy")
+        new_shgc = new_proxy.get("shgc_proxy")
+
+        runner.registerInfo(
+            f"  Energy guard proxies for {subsurface_name}: "
+            f"U(old={old_u}, new={new_u}), SHGC(old={old_shgc}, new={new_shgc})"
+        )
+
+        if old_u is None or new_u is None:
+            msg = f"Could not evaluate U-value proxy for {subsurface_name}."
+            if strict:
+                runner.registerError(msg)
+                return False
+            runner.registerWarning(msg + " Skipping guard check for this window.")
+            return True
+
+        if float(new_u) > float(old_u) + float(u_tolerance):
+            runner.registerError(
+                f"Energy guard violation for {subsurface_name}: "
+                f"new U proxy {new_u:.4f} > old {old_u:.4f} + tol {u_tolerance:.4f}."
+            )
+            return False
+
+        if check_shgc:
+            if old_shgc is None or new_shgc is None:
+                msg = f"Could not evaluate SHGC proxy for {subsurface_name}."
+                if strict:
+                    runner.registerError(msg)
+                    return False
+                runner.registerWarning(msg + " Skipping SHGC guard for this window.")
+                return True
+
+            if float(new_shgc) > float(old_shgc) + float(shgc_tolerance):
+                runner.registerError(
+                    f"Energy guard violation for {subsurface_name}: "
+                    f"new SHGC proxy {new_shgc:.4f} > old {old_shgc:.4f} + tol {shgc_tolerance:.4f}."
+                )
+                return False
+
+        return True
 
     def create_new_window_construction(self, model, runner, subsurface, num_panes, glass_thickness, gap_thickness,
                                        solar_trans, visible_trans, front_emissivity, back_emissivity,
