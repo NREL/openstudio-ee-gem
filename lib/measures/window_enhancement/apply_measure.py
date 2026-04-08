@@ -1,5 +1,5 @@
 """
-Apply WindowEnhancement measure to a test model.
+Apply WindowEnhancement measure to a test model._
 
 This script:
 1. Loads a test OSM file from the tests/ folder
