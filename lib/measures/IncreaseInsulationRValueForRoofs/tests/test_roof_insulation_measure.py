@@ -52,7 +52,7 @@ class TestRoofInsulationMeasureSetup(unittest.TestCase):
         required_args = [
             "calculate_costs",
             "use_custom_costs",
-            "custom_cost_per_sf",
+            "custom_cost_per_cf",
             "labor_cost_multiplier",
             "overhead_profit_percent",
         ]

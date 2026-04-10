@@ -131,7 +131,8 @@ def run_measure(model, args_overrides=None):
     set_arg("use_custom_costs", False)
     set_arg("use_exact_costline_id", True)
     set_arg("exact_costline_id", "072116201320") # Mineral wool batts, 3-1/2 in, R15 (matches default Pure Wool Batts mapping)
-    set_arg("custom_cost_per_sf", 0.73)
+    set_arg("custom_cost_per_cf", 0.73)
+    set_arg("labor_cost_multiplier", 1.0)
     set_arg("overhead_profit_percent", 10.0)
 
     # Apply any caller-supplied overrides
