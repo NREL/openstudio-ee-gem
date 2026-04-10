@@ -1041,12 +1041,18 @@ class DoorEnhancement(openstudio.measure.ModelMeasure):
                 if use_custom_costs:
                     runner.registerInfo("Using custom cost inputs (RSMeans API lookup skipped).")
                     # Create a mock RSMeans lookup result using custom costs
-                    total_custom_cost = custom_door_cost_per_unit * float(len(sub_surfaces_to_change))
+                    num_doors = float(len(sub_surfaces_to_change))
+                    door_cost_total = custom_door_cost_per_unit * num_doors
+                    bottom_seal_cost_total = (custom_bottom_seal_cost * length_per_unit_bottom_side * num_doors
+                                              if door_bottom_seal_option != 'none' else 0.0)
+                    top_side_seal_cost_total = (custom_top_side_seal_cost * length_per_unit_other_sides * num_doors
+                                                if door_top_side_seal_option != 'none' else 0.0)
+                    total_custom_cost = door_cost_total + bottom_seal_cost_total + top_side_seal_cost_total
                     rsmeans_lookup = {
                         "status": "ok",
                         "cost_source": "custom_input",
                         "summary": {
-                            "materials_count": 1,
+                            "materials_count": len(rsmeans_materials),
                             "total_material_cost": total_custom_cost,  # Fixed field name
                             "overhead_profit_percent": 0.0,  # Fixed field name
                             "total_overhead_profit_cost": 0.0,  # Fixed field name - Custom costs assumed to already include labor/profit
@@ -1060,8 +1066,13 @@ class DoorEnhancement(openstudio.measure.ModelMeasure):
                     }
                     rsmeans_summary_line = (
                         "Custom cost summary (cost_source=custom_input): "
-                        f"door_cost=${custom_door_cost_per_unit * float(len(sub_surfaces_to_change)):,.2f} "
-                        f"({len(sub_surfaces_to_change)} doors @ ${custom_door_cost_per_unit}/m²)"
+                        f"door_cost=${door_cost_total:,.2f} "
+                        f"({len(sub_surfaces_to_change)} doors @ ${custom_door_cost_per_unit}/m²), "
+                        f"bottom_seal_cost=${bottom_seal_cost_total:,.2f} "
+                        f"({len(sub_surfaces_to_change)} doors @ ${custom_bottom_seal_cost}/m x {length_per_unit_bottom_side}m), "
+                        f"top_side_seal_cost=${top_side_seal_cost_total:,.2f} "
+                        f"({len(sub_surfaces_to_change)} doors @ ${custom_top_side_seal_cost}/m x {length_per_unit_other_sides}m), "
+                        f"total=${total_custom_cost:,.2f}"
                     )
                     runner.registerInfo(rsmeans_summary_line)
                 else:
