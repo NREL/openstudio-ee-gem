@@ -1093,11 +1093,41 @@ class DoorEnhancement(openstudio.measure.ModelMeasure):
                 }
             ]
 
+            # Add bottom seal material for RSMeans lookup if selected
+            if door_bottom_seal_option != 'none':
+                bottom_seal_length_m = length_per_unit_bottom_side * float(len(sub_surfaces_to_change))
+                bottom_seal_length_lf = bottom_seal_length_m * 3.28084  # Convert m to linear feet
+                rsmeans_materials.append({
+                    "name": f"{door_bottom_seal_option}",
+                    "description": f"Bottom sealing strip for {len(sub_surfaces_to_change)} door(s); product: {door_bottom_seal_option}; total length: {bottom_seal_length_lf:.1f} lf",
+                    "quantity": bottom_seal_length_lf,
+                    "unit": "lf",
+                    "division_code": "08",
+                })
+
+            # Add top/side seal material for RSMeans lookup if selected
+            if door_top_side_seal_option != 'none':
+                top_side_seal_length_m = length_per_unit_other_sides * float(len(sub_surfaces_to_change))
+                top_side_seal_length_lf = top_side_seal_length_m * 3.28084  # Convert m to linear feet
+                rsmeans_materials.append({
+                    "name": f"{door_top_side_seal_option}",
+                    "description": f"Top and side sealing strip for {len(sub_surfaces_to_change)} door(s); product: {door_top_side_seal_option}; total length: {top_side_seal_length_lf:.1f} lf",
+                    "quantity": top_side_seal_length_lf,
+                    "unit": "lf",
+                    "division_code": "08",
+                })
+
             try:
                 if use_custom_costs:
                     runner.registerInfo("Using custom cost inputs (RSMeans API lookup skipped).")
                     # Create a mock RSMeans lookup result using custom costs
-                    total_custom_cost = custom_door_cost_per_unit * float(len(sub_surfaces_to_change))
+                    num_doors = float(len(sub_surfaces_to_change))
+                    door_cost_total = custom_door_cost_per_unit * num_doors
+                    bottom_seal_cost_total = (custom_bottom_seal_cost * length_per_unit_bottom_side * num_doors
+                                              if door_bottom_seal_option != 'none' else 0.0)
+                    top_side_seal_cost_total = (custom_top_side_seal_cost * length_per_unit_other_sides * num_doors
+                                                if door_top_side_seal_option != 'none' else 0.0)
+                    total_custom_cost = door_cost_total + bottom_seal_cost_total + top_side_seal_cost_total
                     rsmeans_lookup = {
                         "status": "ok",
                         "cost_source": "custom_input",
@@ -1116,8 +1146,13 @@ class DoorEnhancement(openstudio.measure.ModelMeasure):
                     }
                     rsmeans_summary_line = (
                         "Custom cost summary (cost_source=custom_input): "
-                        f"door_cost=${custom_door_cost_per_unit * float(len(sub_surfaces_to_change)):,.2f} "
-                        f"({len(sub_surfaces_to_change)} doors @ ${custom_door_cost_per_unit}/m²)"
+                        f"door_cost=${door_cost_total:,.2f} "
+                        f"({len(sub_surfaces_to_change)} doors @ ${custom_door_cost_per_unit}/m²), "
+                        f"bottom_seal_cost=${bottom_seal_cost_total:,.2f} "
+                        f"({len(sub_surfaces_to_change)} doors @ ${custom_bottom_seal_cost}/m x {length_per_unit_bottom_side}m), "
+                        f"top_side_seal_cost=${top_side_seal_cost_total:,.2f} "
+                        f"({len(sub_surfaces_to_change)} doors @ ${custom_top_side_seal_cost}/m x {length_per_unit_other_sides}m), "
+                        f"total=${total_custom_cost:,.2f}"
                     )
                     runner.registerInfo(rsmeans_summary_line)
                 else:
@@ -1210,6 +1245,13 @@ class DoorEnhancement(openstudio.measure.ModelMeasure):
                 rsmeans_overhead_cost = float(summary.get("total_overhead_profit_cost", 0.0))
                 rsmeans_total_cost = float(summary.get("total_cost_with_overhead_profit", 0.0))
 
+                # Calculate cost per door area and per declared unit
+                cost_per_door_area_$/m2 = 0.0
+                cost_per_declared_unit_$ = 0.0
+                if total_door_area_m2 > 0.0:
+                    cost_per_door_area_$/m2 = rsmeans_total_cost / total_door_area_m2
+                    cost_per_declared_unit_$ = cost_per_door_area_$/m2 * door_area_per_unit
+
                 # Store RSMeans aggregate costs in a dedicated AdditionalProperties object
                 rsmeans_summary = openstudio.model.SpaceType(model)
                 rsmeans_summary.setName("RSMeans Summary")
@@ -1218,6 +1260,9 @@ class DoorEnhancement(openstudio.measure.ModelMeasure):
                 rsmeans_summary_props.setFeature("rsmeans_total_material_cost_$", rsmeans_material_cost)
                 rsmeans_summary_props.setFeature("rsmeans_total_overhead_profit_cost_$", rsmeans_overhead_cost)
                 rsmeans_summary_props.setFeature("rsmeans_total_cost_with_overhead_profit_$", rsmeans_total_cost)
+                rsmeans_summary_props.setFeature("rsmeans_total_door_area_m2", total_door_area_m2)
+                rsmeans_summary_props.setFeature("rsmeans_cost_per_door_area_$/m2", cost_per_door_area_$/m2)
+                rsmeans_summary_props.setFeature("rsmeans_cost_per_declared_unit_$", cost_per_declared_unit_$)
                 # Report unit cost line ID used (first hit)
                 first_hit_id = ""
                 materials = rsmeans_lookup.get("results", {}).get("materials", [])
