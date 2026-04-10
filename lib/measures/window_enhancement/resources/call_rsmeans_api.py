@@ -44,6 +44,9 @@ DEFAULT_FEATURE_KEYS = {
     "total_cost": "rsmeans_total_cost",
 }
 
+# Threshold for acceptable RSMeans match score (below this triggers fallback ID lookup)
+MIN_ACCEPTABLE_MATCH_SCORE = 0.0
+
 # Fallback RSMeans IDs for insulation materials when scoring fails
 INSULATION_FALLBACK_IDS = {
     "Blown Cellulose": "072126100020",
@@ -225,9 +228,9 @@ def _select_best_rsmeans_candidate(material_name: str, items: List[Dict[str, Any
 
     scored.sort(key=lambda x: -x["score"])
     
-    # If best score is below 0 (poor match), use fallback ID if available
+    # If best score is below threshold (poor match), use fallback ID if available
     best_score = scored[0]["score"] if scored else -1.0
-    if best_score < 0.0 and material_name in INSULATION_FALLBACK_IDS:
+    if best_score < MIN_ACCEPTABLE_MATCH_SCORE and material_name in INSULATION_FALLBACK_IDS:
         fallback_id = INSULATION_FALLBACK_IDS[material_name]
         # Create a synthetic candidate with fallback ID and score indicator
         return {

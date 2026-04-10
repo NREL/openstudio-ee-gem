@@ -164,7 +164,7 @@ Running `apply_measure.py` generates:
     "insulation_material_type": "Mineral Wool Batts",
     "calculate_costs": true,
     "use_custom_costs": true,
-    "custom_cost_per_sf": 6.50
+    "custom_cost_per_cf": 8.50
   }
 }
 ```
@@ -172,8 +172,9 @@ Running `apply_measure.py` generates:
 **Expected Output:**
 - R-value increased to 25.0
 - Mineral Wool Batts material added
-- Custom cost used: $6.50/SF
-- Overhead applied: 10% = $1,883 (example for 2,886 SF)
+- Custom cost used: $8.50/CF (cubic feet volume basis)
+- Overhead applied: 10% (on material cost)
+- Total cost depends on volume of insulation added
 
 ### Example 3: No Cost Calculation
 
@@ -210,6 +211,34 @@ Edit `apply_measure.py` to modify:
 - Input model path (line 70)
 - Measure arguments (lines 75-85)
 - Output model directory (line 95)
+
+## Cost Calculation Details
+
+### Volume-Based Costing
+
+The measure calculates costs on a **cubic feet (CF) volume basis** rather than area basis. This approach:
+- Aligns with embodied carbon calculations (which are inherently volume-dependent)
+- Accounts for varying insulation thicknesses automatically
+- Provides consistency across measures (window and door enhancements use same basis)
+
+**Volume Calculation:**
+```
+Volume (CF) = Added Thickness (m) × Wall Area (m²) × 35.315 CF/m³
+```
+
+**Cost Calculation:**
+```
+Material Cost = Volume (CF) × Cost per CF ($/CF)
+Total Cost = Material Cost × (1 + Overhead/Profit %/100)
+```
+
+### RSMeans Cost Path
+
+When RSMeans lookup is enabled, the measure searches Division 07 (Thermal and Moisture Protection) using the material name and automatically handles scoring:
+1. Searches across multiple RSMeans catalogs for best match
+2. Scores candidates based on term relevance
+3. If `best_score < MIN_ACCEPTABLE_MATCH_SCORE (0.0)`, uses fallback RSMeans ID
+4. Applies overhead/profit percentage to material cost
 
 ## Measure Flow Diagram
 
@@ -293,6 +322,9 @@ Edit `apply_measure.py` to modify:
 
 **Issue:** RSMeans returns $0 cost
 - **Solution:** Check the `RSMEANS_SEARCH_STRATEGY.md` documentation for search term optimization
+
+**Issue:** "Fallback ID used" warning in output
+- **Solution:** This is normal when RSMeans search yields low-quality matches. The measure uses a pre-mapped fallback ID to ensure cost estimates are always available. No action required unless you want to specify an exact RSMeans ID via `exact_costline_id`
 
 ## Performance Considerations
 

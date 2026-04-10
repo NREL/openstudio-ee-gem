@@ -39,6 +39,8 @@ run_rsmeans_cost_lookup = _shared.run_rsmeans_cost_lookup
 search_materials_across_catalogs = _shared.search_materials_across_catalogs
 extract_materials_from_model = _shared.extract_materials_from_model
 DEFAULT_FEATURE_KEYS = _shared.DEFAULT_FEATURE_KEYS
+MIN_ACCEPTABLE_MATCH_SCORE = _shared.MIN_ACCEPTABLE_MATCH_SCORE
+INSULATION_FALLBACK_IDS = _shared.INSULATION_FALLBACK_IDS
 
 
 def main() -> int:
