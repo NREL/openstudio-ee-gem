@@ -14,9 +14,11 @@ The measure integrates with:
 - **Automatic Wall Upgrade:** Increases R-value of all exterior walls to target value
 - **Material Selection:** Choose from multiple insulation types (Fiberglass, Mineral Wool, XPS, Polyiso)
 - **Embodied Carbon Calculation:** Uses EC3 API to retrieve EPD data and calculate lifecycle carbon impact
-- **Cost Estimation:** Integrates RSMeans API for professional cost estimates or supports custom cost input
-- **Flexible Cost Calculation:** Choose between RSMeans lookup, custom override, or no cost calculation
-- **Overhead & Profit:** Configurable contractor markup percentage
+- **Cost Estimation:** Integrates RSMeans API for professional cost estimates or supports volume-based custom cost input
+- **Flexible Cost Calculation:** Choose between RSMeans lookup, custom override ($/CF volume basis), or no cost calculation
+- **Material Property Extraction:** Automatically extracts density and thermal properties from RSMeans descriptions
+- **Smart Property Fallback:** Material properties sourced from: user input → RSMeans-extracted → hardcoded defaults
+- **Overhead & Profit:** Configurable contractor markup percentage (RSMeans only)
 - **Results Export:** All calculations stored in model AdditionalProperties as JSON
 
 ## Modeler Description
@@ -114,17 +116,17 @@ Envelope.Exterior Walls.Insulation
 **Required:** false  
 **Model Dependent:** false  
 **Default:** false  
-**Description:** If true, use `custom_cost_per_sf` instead of RSMeans API lookup. Useful when RSMeans data is unavailable or you have known costs.
+**Description:** If true, use `custom_cost_per_cf` instead of RSMeans API lookup. Useful when RSMeans data is unavailable or you have known costs.
 
-#### Custom Cost per Square Foot ($/SF)
+#### Custom Cost per Cubic Foot ($/CF)
 
-**Name:** `custom_cost_per_sf`  
+**Name:** `custom_cost_per_cf`  
 **Type:** Double  
-**Units:** $/ft²  
+**Units:** $/CF (cubic feet)  
 **Required:** false  
 **Model Dependent:** false  
 **Default:** 5.0  
-**Description:** Cost per square foot if `use_custom_costs` is enabled. Only used when custom costs are selected.
+**Description:** Cost per cubic foot of insulation volume if `use_custom_costs` is enabled. Volume is calculated as: added thickness (m) × wall area (m²). Only used when custom costs are selected.
 
 #### Overhead & Profit Percentage
 
@@ -167,12 +169,22 @@ A JSON file (`apply_measure_results.json`) containing:
 
 ## Example Outputs
 
-### Cost Breakdown
+### Custom Cost Calculation (Volume Basis)
 ```
-Material Cost:       $3,406.37
-Overhead/Profit:     $340.64 (10%)
-Total Cost:          $3,747.00
-Cost per SF:         $1.30
+Added Insulation Volume: 245.00 CF (cubic feet)
+Custom Cost Rate:        $10.00/CF
+Total Material Cost:     $2,450.00
+Labor Cost (multiplier): $2,450.00 (1x material cost)
+Total Cost:              $4,900.00
+```
+
+### RSMeans Cost Breakdown
+```
+Applied Area:           268.19 m²
+Material Cost:          $3,406.37
+Overhead/Profit:        $340.64 (10%)
+Total Cost:             $3,747.00
+Cost per M²:            $13.97
 ```
 
 ### Embodied Carbon
@@ -191,6 +203,28 @@ For detailed information, see:
 - **[Increase_Insulation_Walls.md](docs/Increase_Insulation_Walls.md)** - Complete measure documentation with usage examples and flow diagram
 - **[ENVIRONMENT_SETUP.md](docs/ENVIRONMENT_SETUP.md)** - API configuration and environment setup guide
 - **[RSMEANS_SEARCH_STRATEGY.md](docs/RSMEANS_SEARCH_STRATEGY.md)** - Cost data lookup customization and search strategy
+
+## Material Property Sourcing
+
+The measure intelligently selects material properties using a priority-based fallback chain:
+
+1. **User-Provided** (highest priority): Custom values for thermal conductivity and density if explicitly provided
+2. **RSMeans-Extracted**: Properties parsed from RSMeans description fields (density in pcf, R-value, etc.)
+3. **Hardcoded Defaults** (lowest priority): Pre-configured values for each insulation type
+
+This approach ensures accuracy when RSMeans data is available while maintaining robustness through fallback values. All property sources are logged during measure execution for transparency.
+
+## Testing
+
+The measure includes unit tests for error handling and message validation:
+
+- `tests/test_rsmeans_error_message_content.py` - Validates error message format, sections, and parameter consistency
+- `tests/test_rsmeans_error_handling.py` - Integration tests for RSMeans lookup failures and retry guidance
+
+Run tests with:
+```bash
+python -m pytest lib/measures/IncreaseInsulationRValueForExteriorWalls/tests/ -v
+```
 
 ## Quick Start
 
