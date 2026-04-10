@@ -110,7 +110,7 @@ Material quantities are calculated based on window dimensions:
 |----------|------|---------|-------------|
 | `calculate_costs` | Boolean | true | Enable capital cost calculation and RSMeans lookup |
 | `use_custom_costs` | Boolean | false | If true, skip RSMeans and use user-provided unit costs |
-| `glass_cost_per_sf` | Double | 0.0 | Custom glass unit cost ($/SF) used when custom costs enabled or RSMeans fails |
+| `glass_cost_per_cf` | Double | 0.0 | Custom glass unit cost ($/CF) used when custom costs enabled or RSMeans fails (glass and secondary glazing use volume basis) |
 | `frame_cost_per_sf` | Double | 0.0 | Custom frame unit cost ($/SF) used when custom costs enabled or RSMeans fails |
 | `caulking_cost_per_cy` | Double | 0.0 | Custom caulking unit cost ($/CY) used when custom costs enabled or RSMeans fails |
 | `labor_cost_multiplier` | Double | 1.0 | Labor multiplier applied to material cost when using custom costs |
