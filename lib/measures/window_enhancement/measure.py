@@ -3,7 +3,6 @@
 # See also https://openstudio.net/license
 # *******************************************************************************
 
-import site
 
 import json
 import importlib.util
@@ -1441,6 +1440,31 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
                     runner.registerInfo(f"  Total cost with O&P: ${total_material_cost:,.2f}")
                     materials_results = rsmeans_lookup.get("results", {}).get("materials", [])
                     if materials_results:
+                        for mat in materials_results:
+                            mat_name = str(mat.get("name", "")).strip().lower()
+                            matched_rsmeans_id = mat.get("rsmeans_id", "")
+                            matched_rsmeans_description = mat.get("rsmeans_description") or mat.get("description", "")
+
+                            feature_prefix = None
+                            if "glazing film" in mat_name:
+                                feature_prefix = "window_film"
+                            elif "window glazing" in mat_name or mat_name == "glazing":
+                                feature_prefix = "window_glass"
+                            elif "window frame" in mat_name:
+                                feature_prefix = "window_frame"
+                            elif "weatherstrip" in mat_name:
+                                feature_prefix = "window_weatherstrip"
+                            elif "secondary glazing" in mat_name:
+                                feature_prefix = "window_secondary_glazing"
+                            elif "sealant" in mat_name or "caulking" in mat_name:
+                                feature_prefix = "window_caulking"
+
+                            if feature_prefix:
+                                if matched_rsmeans_id:
+                                    mtrl_prop.setFeature(f"{feature_prefix}_rsmeans_id", str(matched_rsmeans_id))
+                                if matched_rsmeans_description:
+                                    mtrl_prop.setFeature(f"{feature_prefix}_rsmeans_description", str(matched_rsmeans_description))
+                    if materials_results:
                         runner.registerInfo("  RSMeans materials detail:")
                         for mat in materials_results:
                             mat_name = mat.get("name", "(unknown)")
@@ -1769,8 +1793,6 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
             runner.registerInfo(f"  ℹ Number of panes: {num_panes} (user-specified, applied to all windows)")
         elif user_num_panes > 3:
             num_panes = 3
-            # Reduced verbosity
-            pass
         elif glass_option != "none" and user_num_panes == 0:
             if layered_construction is None:
                 runner.registerError(f"Cannot derive number of panes from SimpleGlazing construction. Please specify num_panes explicitly.")
@@ -1912,9 +1934,6 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
         urls["frame"] = None
         if wf_option != "none":
             urls["frame"] = generate_url_byname(name_like=wf_option, plant_geography='150')
-        else:
-            # Reduced verbosity
-            pass
         
         # Glass pane EPD
         urls["glass"] = None
@@ -1923,9 +1942,6 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
                 category='6daae3d967104f5c8c85199b259f58c8',
                 name_like='monolithic glass'
             )
-        else:
-            # Reduced verbosity
-            pass
         
         # Caulking sealant EPD
         urls["caulking"] = None
@@ -1933,25 +1949,16 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
             urls["caulking"] = generate_url_byname(name_like='sealant', description_like=caulking_option)
         elif caulking_option == "polyurethane":
             urls["caulking"] = generate_url_byname(category='e95e0d13de844101beb364b47af73d45', description_like='window')
-        else:
-            # Reduced verbosity
-            pass
         
         # Glazing film EPD
         urls["film"] = None
         if film_option != "none":
             urls["film"] = generate_url_byname(category='3aa3a34fae9a400fa297339ba88e1fab', name_like=film_option)
-        else:
-            # Reduced verbosity
-            pass
         
         # Weatherstrip EPD
         urls["weatherstrip"] = None
         if weatherstrip_option != "none":
             urls["weatherstrip"] = generate_url_byname(category='ca54e842c0fc4bf2b4f3a8564c3b1a4d', name_like=weatherstrip_option)
-        else:
-            # Reduced verbosity
-            pass
         
         # Secondary glazing EPD
         urls["second_glazing"] = None
@@ -1966,15 +1973,10 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
                     glazing_count = self.count_glazing_layers(current_construction)
                     if glazing_count == 1:
                         urls["second_glazing"] = generate_url_byname(category='6daae3d967104f5c8c85199b259f58c8', name_like='monolithic glass')
-                        # Reduced verbosity
-                        pass
                     elif glazing_count > 1:
                         runner.registerWarning(f"Construction in {subsurface_name} has {glazing_count} glazing layers, skipping secondary glazing EPD fetch.")
                     else:
                         runner.registerWarning(f"Unable to determine glazing layers in {subsurface_name}, skipping secondary glazing EPD fetch.")
-        else:
-            # Reduced verbosity
-            pass
         
         return urls
 
@@ -1988,8 +1990,6 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
         """
         for material_name, epd_data in epd_datalist.items():
             if epd_data is None:
-                # Reduced verbosity
-                pass
                 subsurface_data[material_name]["gwp_per_m2"] = None
                 subsurface_data[material_name]["gwp_per_kg"] = None
                 subsurface_data[material_name]["gwp_per_m3"] = None
@@ -2004,8 +2004,6 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
             user_lifetime = subsurface_data[material_name]["lifetime"]
             if len(lifetime_values) == 0:
                 epd_lifetime = user_lifetime
-                # Reduced verbosity
-                pass
             else:
                 # Apply the same statistic method as GWP values
                 if len(lifetime_values) == 1:
@@ -2020,8 +2018,6 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
                     epd_lifetime = float(np.median(lifetime_values))
                 else:
                     epd_lifetime = float(np.mean(lifetime_values))  # Default to mean
-                # Reduced verbosity
-                pass
             
             subsurface_data[material_name]["lifetime"] = epd_lifetime
             subsurface_data[material_name]["lifetime_source"] = "EPD" if epd_lifetime != user_lifetime else "user_input"
@@ -2030,8 +2026,6 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
             for functional_unit, list in gwp_values.items():
                 if len(list) == 0:
                     gwp = None
-                    # Reduced verbosity
-                    pass
                 elif len(list) == 1:
                     gwp = list[0]
                 elif gwp_statistic == "minimum":

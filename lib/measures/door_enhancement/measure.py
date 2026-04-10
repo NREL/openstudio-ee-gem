@@ -5,11 +5,8 @@
 
 import openstudio
 import typing
-import json
-from pathlib import Path
 from resources.call_rsmeans_api import RSMeansAPIClient, run_rsmeans_cost_lookup
 import numpy as np
-import pprint as pp
 from resources.EC3_lookup import *
 
 # Start the measure
@@ -938,8 +935,6 @@ class DoorEnhancement(openstudio.measure.ModelMeasure):
             #     additional_properties.setFeature("old_r_value_si_m2KperW", subsurface_dict[subsurface_name].get('old_r_value_si', 0.0))
             #     additional_properties.setFeature("new_r_value_si_m2KperW", subsurface_dict[subsurface_name].get('new_r_value_si', 0.0))
    
-        pp.pprint(subsurface_dict)
-
         # Calculate total embodied carbon and count door replacements
         total_embodied_carbon = sum(
             subsurface_dict[name]["door_renovation_embodied_carbon_kg_co2_eq"] 
@@ -977,7 +972,7 @@ class DoorEnhancement(openstudio.measure.ModelMeasure):
                     total_sealing_side_length_m += sealing_side_length
 
         # -------------------------------------------------------------------
-        # RSMeans lookup: derive search term from door count, materials, size
+        # RSMeans lookup: query each retrofit material type separately
         # -------------------------------------------------------------------
         def _format_ft_in(value_m: float) -> str:
             inches_total = value_m * 39.37007874
@@ -988,86 +983,16 @@ class DoorEnhancement(openstudio.measure.ModelMeasure):
                 inches = 0
             return f"{feet} ft {inches} in"
 
-        def _get_default_exterior_door_construction(model):
-            try:
-                building = model.getBuilding()
-                dcs_opt = building.defaultConstructionSet()
-                if not dcs_opt.is_initialized():
-                    return None
-                dcs = dcs_opt.get()
-                ext_subs_opt = dcs.defaultExteriorSubSurfaceConstructions()
-                if not ext_subs_opt.is_initialized():
-                    return None
-                ext_subs = ext_subs_opt.get()
-                door_opt = ext_subs.doorConstruction()
-                if door_opt.is_initialized():
-                    return door_opt.get()
-            except Exception:
-                return None
-            return None
-
-        def _collect_material_keywords_from_construction(construction):
-            keywords = set()
-            try:
-                if construction.to_LayeredConstruction().is_initialized():
-                    lc = construction.to_LayeredConstruction().get()
-                    layers = lc.layers()
-                else:
-                    layers = []
-            except Exception:
-                layers = []
-
-            for layer in layers:
-                try:
-                    name = layer.nameString().lower()
-                except Exception:
-                    name = ""
-                if "metal" in name or "steel" in name:
-                    keywords.add("metal")
-                if "aluminum" in name or "aluminium" in name:
-                    keywords.add("aluminum")
-                if "insulation" in name or "insul" in name:
-                    keywords.add("insulated")
-                if "wood" in name:
-                    keywords.add("wood")
-                if "glass" in name or "glaz" in name:
-                    keywords.add("glass")
-            return keywords
-
-        def _material_phrase_from_keywords(keywords):
-            kws = set(keywords)
-            if "glass" in kws and "metal" in kws:
-                return "metal framed glass"
-            if "glass" in kws:
-                return "glass"
-            if "metal" in kws and "insulated" in kws:
-                return "insulated metal"
-            if "metal" in kws:
-                return "metal"
-            if "wood" in kws:
-                return "wood"
-            if "insulated" in kws:
-                return "insulated"
-            return ""
-
         rsmeans_lookup = None
         rsmeans_summary_line = None
-        rsmeans_search_term = None
-        rsmeans_material_keywords = set()
         rsmeans_size_str = ""
+        matched_rsmeans = {
+            "door_material": {"id": "", "description": ""},
+            "door_bottom_seal": {"id": "", "description": ""},
+            "door_top_side_seal": {"id": "", "description": ""},
+        }
 
         if len(sub_surfaces_to_change) > 0:
-            default_door_construction = _get_default_exterior_door_construction(model)
-            for name in subsurface_dict.keys():
-                subsurface_obj = subsurface_dict[name]["subsurface object"]
-                construction = None
-                if subsurface_obj.construction().is_initialized():
-                    construction = subsurface_obj.construction().get()
-                elif default_door_construction is not None:
-                    construction = default_door_construction
-                if construction is not None:
-                    rsmeans_material_keywords.update(_collect_material_keywords_from_construction(construction))
-
             first_name = next(iter(subsurface_dict.keys()))
             dims = subsurface_dict[first_name].get("dimension", {})
             width_m = dims.get("width_m", 0.0)
@@ -1077,22 +1002,40 @@ class DoorEnhancement(openstudio.measure.ModelMeasure):
             else:
                 rsmeans_size_str = "approx size unknown"
 
-            material_phrase = _material_phrase_from_keywords(rsmeans_material_keywords)
-            if material_phrase:
-                rsmeans_search_term = f"{material_phrase} door {rsmeans_size_str}"
-            else:
-                rsmeans_search_term = f"door {rsmeans_size_str}"
+            rsmeans_materials = []
+            if door_option != 'none':
+                rsmeans_materials.append(
+                    {
+                        "name": f"{door_option} door",
+                        "description": f"{len(sub_surfaces_to_change)} door(s); size: {rsmeans_size_str}",
+                        "quantity": float(len(sub_surfaces_to_change)),
+                        "unit": "EA",
+                        "division_code": "08",
+                        "explicit_rsmeans_id": rsmeans_unit_costline_id,
+                    }
+                )
 
-            rsmeans_materials = [
-                {
-                    "name": rsmeans_search_term.strip(),
-                    "description": f"{len(sub_surfaces_to_change)} door(s); materials: {', '.join(sorted(rsmeans_material_keywords)) or 'unspecified'}; size: {rsmeans_size_str}",
-                    "quantity": float(len(sub_surfaces_to_change)),
-                    "unit": "ea",
-                    "division_code": "08",
-                    "explicit_rsmeans_id": rsmeans_unit_costline_id,
-                }
-            ]
+            if door_bottom_seal_option != 'none' and total_sealing_bottom_length_m > 0.0:
+                rsmeans_materials.append(
+                    {
+                        "name": f"door bottom seal {door_bottom_seal_option}",
+                        "description": f"Bottom seal material ({door_bottom_seal_option})",
+                        "quantity": float(total_sealing_bottom_length_m * 3.28084),
+                        "unit": "LF",
+                        "division_code": "08",
+                    }
+                )
+
+            if door_top_side_seal_option != 'none' and total_sealing_side_length_m > 0.0:
+                rsmeans_materials.append(
+                    {
+                        "name": f"door top side seal {door_top_side_seal_option}",
+                        "description": f"Top/side seal material ({door_top_side_seal_option})",
+                        "quantity": float(total_sealing_side_length_m * 3.28084),
+                        "unit": "LF",
+                        "division_code": "08",
+                    }
+                )
 
             try:
                 if use_custom_costs:
@@ -1123,7 +1066,7 @@ class DoorEnhancement(openstudio.measure.ModelMeasure):
                     runner.registerInfo(rsmeans_summary_line)
                 else:
                     runner.registerInfo("Starting RSMeans lookup...")
-                    runner.registerInfo(f"RSMeans search term: {rsmeans_search_term}")
+                    runner.registerInfo(f"RSMeans materials requested: {len(rsmeans_materials)}")
                     rsmeans_lookup = self.pull_rsmeans_cost_from_api(runner, rsmeans_materials)
                     # Add cost_source identifier to RSMeans API results
                     if rsmeans_lookup:
@@ -1138,6 +1081,29 @@ class DoorEnhancement(openstudio.measure.ModelMeasure):
                         )
                         runner.registerInfo(rsmeans_summary_line)
                         rsmeans_results = rsmeans_lookup.get("results", {})
+                        materials_results = rsmeans_results.get("materials", [])
+                        if materials_results:
+                            for mat in materials_results:
+                                mat_name = str(mat.get("name", "")).lower()
+                                matched_id = mat.get("rsmeans_id", "")
+                                matched_desc = mat.get("rsmeans_description") or mat.get("description", "")
+
+                                target_key = None
+                                if "bottom seal" in mat_name:
+                                    target_key = "door_bottom_seal"
+                                elif "top side seal" in mat_name or "top/side" in mat_name or "jamb" in mat_name:
+                                    target_key = "door_top_side_seal"
+                                elif "door" in mat_name:
+                                    target_key = "door_material"
+
+                                if target_key:
+                                    if matched_id and not matched_rsmeans[target_key]["id"]:
+                                        matched_rsmeans[target_key]["id"] = str(matched_id)
+                                    if matched_desc and not matched_rsmeans[target_key]["description"]:
+                                        matched_rsmeans[target_key]["description"] = str(matched_desc)
+
+                            if rsmeans_unit_costline_id and not matched_rsmeans["door_material"]["id"] and door_option != 'none':
+                                matched_rsmeans["door_material"]["id"] = rsmeans_unit_costline_id
                         for warning_msg in rsmeans_results.get("warnings", []):
                             runner.registerWarning(f"RSMeans fallback: {warning_msg}")
                         fallback_count = int(rsmeans_results.get("fallback_count", 0) or 0)
@@ -1167,6 +1133,18 @@ class DoorEnhancement(openstudio.measure.ModelMeasure):
         # Store construction material lifetimes
         mtrl_prop.setFeature("door_strip_lifetime_years", strip_lifetime)
         mtrl_prop.setFeature("door_lifetime_years", door_lifetime)
+        if matched_rsmeans["door_material"]["id"]:
+            mtrl_prop.setFeature("door_material_rsmeans_id", matched_rsmeans["door_material"]["id"])
+        if matched_rsmeans["door_material"]["description"]:
+            mtrl_prop.setFeature("door_material_rsmeans_description", matched_rsmeans["door_material"]["description"])
+        if matched_rsmeans["door_bottom_seal"]["id"]:
+            mtrl_prop.setFeature("door_bottom_seal_rsmeans_id", matched_rsmeans["door_bottom_seal"]["id"])
+        if matched_rsmeans["door_bottom_seal"]["description"]:
+            mtrl_prop.setFeature("door_bottom_seal_rsmeans_description", matched_rsmeans["door_bottom_seal"]["description"])
+        if matched_rsmeans["door_top_side_seal"]["id"]:
+            mtrl_prop.setFeature("door_top_side_seal_rsmeans_id", matched_rsmeans["door_top_side_seal"]["id"])
+        if matched_rsmeans["door_top_side_seal"]["description"]:
+            mtrl_prop.setFeature("door_top_side_seal_rsmeans_description", matched_rsmeans["door_top_side_seal"]["description"])
 
         # Store infiltration reduction and selected renovation options
         reno_detail.setFeature("door_enhancement_infiltration_reduction_percent", space_infiltration_reduction_percent)
