@@ -65,6 +65,10 @@ DOOR_FALLBACK_RSMEANS_IDS = {
     "stiffened core": "081313130020",
 }
 
+# If top candidate raw score is below this threshold, force fallback ID lookup.
+# Requested behavior: fallback when score < 0.
+MIN_ACCEPTABLE_MATCH_SCORE = 0.0
+
 
 def _get_feature_as_string(props, feature_name: str) -> Optional[str]:
     if not props.hasFeature(feature_name):
@@ -179,7 +183,8 @@ def _select_best_rsmeans_candidate(
 
     scored.sort(key=lambda x: -x["score"])
     best_raw_score = scored[0].get("raw_score", 0.0)
-    if best_raw_score < 0.0 or best_raw_score > 100.0:
+    # Explicit low-score guard: if score is below threshold, use fallback IDs.
+    if best_raw_score < MIN_ACCEPTABLE_MATCH_SCORE or best_raw_score > 100.0:
         fallback_id = _get_default_fallback_rsmeans_id(
             material_name,
             (material or {}).get("description", ""),
@@ -189,7 +194,11 @@ def _select_best_rsmeans_candidate(
                 "id": fallback_id,
                 "description": f"[fallback costline] {material_name}",
                 "is_fallback": True,
-                "fallback_reason": f"raw_score_out_of_bounds:{best_raw_score}",
+                "fallback_reason": (
+                    f"raw_score_below_threshold:{best_raw_score}"
+                    if best_raw_score < MIN_ACCEPTABLE_MATCH_SCORE
+                    else f"raw_score_out_of_bounds:{best_raw_score}"
+                ),
             }, scored
 
     best_idx = scored[0]["index"]

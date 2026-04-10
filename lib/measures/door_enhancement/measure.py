@@ -1246,11 +1246,11 @@ class DoorEnhancement(openstudio.measure.ModelMeasure):
                 rsmeans_total_cost = float(summary.get("total_cost_with_overhead_profit", 0.0))
 
                 # Calculate cost per door area and per declared unit
-                cost_per_door_area_$/m2 = 0.0
-                cost_per_declared_unit_$ = 0.0
+                cost_per_door_area_per_m2 = 0.0
+                cost_per_declared_unit = 0.0
                 if total_door_area_m2 > 0.0:
-                    cost_per_door_area_$/m2 = rsmeans_total_cost / total_door_area_m2
-                    cost_per_declared_unit_$ = cost_per_door_area_$/m2 * door_area_per_unit
+                    cost_per_door_area_per_m2 = rsmeans_total_cost / total_door_area_m2
+                    cost_per_declared_unit = cost_per_door_area_per_m2 * door_area_per_unit
 
                 # Store RSMeans aggregate costs in a dedicated AdditionalProperties object
                 rsmeans_summary = openstudio.model.SpaceType(model)
@@ -1261,8 +1261,8 @@ class DoorEnhancement(openstudio.measure.ModelMeasure):
                 rsmeans_summary_props.setFeature("rsmeans_total_overhead_profit_cost_$", rsmeans_overhead_cost)
                 rsmeans_summary_props.setFeature("rsmeans_total_cost_with_overhead_profit_$", rsmeans_total_cost)
                 rsmeans_summary_props.setFeature("rsmeans_total_door_area_m2", total_door_area_m2)
-                rsmeans_summary_props.setFeature("rsmeans_cost_per_door_area_$/m2", cost_per_door_area_$/m2)
-                rsmeans_summary_props.setFeature("rsmeans_cost_per_declared_unit_$", cost_per_declared_unit_$)
+                rsmeans_summary_props.setFeature("rsmeans_cost_per_door_area_$/m2", cost_per_door_area_per_m2)
+                rsmeans_summary_props.setFeature("rsmeans_cost_per_declared_unit_$", cost_per_declared_unit)
                 # Report unit cost line ID used (first hit)
                 first_hit_id = ""
                 materials = rsmeans_lookup.get("results", {}).get("materials", [])
