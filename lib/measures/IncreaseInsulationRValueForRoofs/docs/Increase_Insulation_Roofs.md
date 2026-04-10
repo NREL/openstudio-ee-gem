@@ -32,7 +32,8 @@ ModelMeasure
 | use_custom_costs | Boolean | - | false | If true, skip RSMeans and use custom cost inputs |
 | use_exact_costline_id | Boolean | - | false | If true, force RSMeans to use exact `exact_costline_id` |
 | exact_costline_id | String | - | "" | Exact RSMeans unit costline ID to use |
-| custom_cost_per_sf | Double | $/SF | 0.0 | Custom insulation material cost per square foot |
+| custom_cost_per_cf | Double | $/CF | 0.0 | Custom insulation material cost per cubic foot |
+| labor_cost_multiplier | Double | - | 1.0 | Multiplier applied to custom material cost to derive labor cost |
 | overhead_profit_percent | Double | % | 10.0 | Overhead + profit applied to RSMeans material cost |
 
 ## Costing (RSMeans or Custom)
@@ -47,8 +48,12 @@ The measure prepares a retrofit material record based on the added roof insulati
 
 ### Custom Costs
 If `use_custom_costs` is true, RSMeans is skipped and:
-- Material cost = `custom_cost_per_sf` × total roof insulation area (SF)
+- Material cost = `custom_cost_per_cf` × total roof insulation volume (CF)
 - Labor cost = material cost × (`labor_cost_multiplier` − 1)
+- Installed cost = material cost + labor cost
+
+Volume basis is derived from the modeled retrofit quantities:
+- `added_volume_cf` = roof area (SF) × added insulation thickness (ft)
 
 Results are recorded in AdditionalProperties and reported in apply_measure.py.
 
