@@ -73,24 +73,22 @@ DEFAULT_FEATURE_KEYS = {
     "total_cost": "rsmeans_total_cost",
 }
 
+# Threshold for acceptable RSMeans match score (below this triggers fallback ID lookup)
+MIN_ACCEPTABLE_MATCH_SCORE = 0.0
 
-# Default fallback RSMeans IDs used when candidate scoring is out-of-bounds.
-# Keep this list window-focused for the window_enhancement measure.
-WINDOW_DEFAULT_FALLBACK_COSTLINES = {
-    "silicone adhesive smoke gasket": "087125105050",
-    "brush weatherstrip": "087125103700",
-    "num pane 1 secondary glazing": "088155100015",
-    "num pane 2": "088130100400",
-    "wood operatble window": "085113204100",
-    "wood operable window": "085113204100",
-    "wood fixed window": "085210550100",
-    "acrylic": "079213200050",
-    "polyurethane": "079213203200",
-    "safety film": "088716100050",
-    "solar control film": "088713101020",
-    "anti graffiti film": "088753100020",
-    "decorative film": "088726100050",
-    "low e film": "088713101020",
+# Fallback RSMeans IDs for insulation materials when scoring fails
+INSULATION_FALLBACK_IDS = {
+    "Blown Cellulose": "072126100020",
+    "Blown Fiberglass": "072126101000",
+    "Blown Mineral Wool": "072123100100",
+    "Polyiso Insulation Foam Board": "072216101700",
+    "polyiso foam board": "072216101700",
+    "Graphite Polystyrene (GPS) Foam Board": "072113130600",
+    "Expanded Polystyrene (EPS) Foam Board": "072113130600",
+    "Extruded Polystyrene (XPS) Foam Board": "072216101910",
+    "Mineral Wool Heavy Density Blanket": "072116201320",
+    "Mineral Wool Light Density Blanket": "072116201320",
+    "Fiberglass Batts": "072116200620",
 }
 
 
@@ -439,17 +437,18 @@ def _select_best_rsmeans_candidate(material_name: str, items: List[Dict[str, Any
         })
 
     scored.sort(key=lambda x: -x["score"])
-    best_raw_score = scored[0].get("raw_score", 0.0)
-    if best_raw_score < 0.0 or best_raw_score > 100.0:
-        fallback_id = _get_default_fallback_rsmeans_id(material_name, material)
-        if fallback_id:
-            return {
-                "id": fallback_id,
-                "description": f"[fallback costline] {material_name}",
-                "is_fallback": True,
-                "fallback_reason": f"raw_score_out_of_bounds:{best_raw_score}",
-            }, scored
-
+    
+    # If best score is below threshold (poor match), use fallback ID if available
+    best_score = scored[0]["score"] if scored else -1.0
+    if best_score < MIN_ACCEPTABLE_MATCH_SCORE and material_name in INSULATION_FALLBACK_IDS:
+        fallback_id = INSULATION_FALLBACK_IDS[material_name]
+        # Create a synthetic candidate with fallback ID and score indicator
+        return {
+            "costlineID": fallback_id,
+            "description": f"[Fallback ID: {fallback_id}]",
+            "is_fallback": True,
+        }, scored
+    
     best_idx = scored[0]["index"]
     best_candidate = eligible_items[best_idx]
     return best_candidate, scored

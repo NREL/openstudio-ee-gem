@@ -24,7 +24,9 @@ The measure integrates with:
 - **Flexible Cost Calculation:** Choose between RSMeans lookup, custom override ($/CF volume basis), or no cost calculation
 - **Material Property Extraction:** Automatically extracts density and thermal properties from RSMeans descriptions
 - **Smart Property Fallback:** Material properties sourced from: user input → RSMeans-extracted → hardcoded defaults
+- **RSMeans Fallback Logic:** When RSMeans match score < MIN_ACCEPTABLE_MATCH_SCORE (0.0), uses pre-mapped fallback RSMeans IDs for all 11 insulation material types
 - **Overhead & Profit:** Configurable contractor markup percentage (RSMeans only)
+- **Volume-Based Costing:** Costs calculated on $/CF (cubic feet) basis for consistency with embodied carbon calculations
 - **Results Export:** All calculations stored in model AdditionalProperties as JSON
 >>>>>>> 5f57a646c6ea1b82b432b6c3586bd1df03fba057
 
@@ -123,7 +125,7 @@ ModelMeasure
 **Required:** false  
 **Model Dependent:** false  
 **Default:** 5.0  
-**Description:** Cost per cubic foot of insulation volume if `use_custom_costs` is enabled. Volume is calculated as: added thickness (m) × wall area (m²). Only used when custom costs are selected.
+**Description:** Cost per cubic foot of insulation volume if `use_custom_costs` is enabled. Volume is calculated as: added thickness (m) × wall area (m²) × 35.315 CF/m³. Only used when custom costs are selected. Note: Volume basis provides consistency with embodied carbon calculations which are inherently volume-dependent.
 
 #### Overhead & Profit Percentage
 
@@ -135,6 +137,24 @@ ModelMeasure
 **Default:** 10.0  
 **Description:** Contractor overhead and profit markup as a percentage of material cost. Typical range: 10-20%.
 
+#### Use Exact RSMeans Costline ID
+
+**Name:** `use_exact_costline_id`  
+**Type:** Boolean  
+**Required:** false  
+**Model Dependent:** false  
+**Default:** false  
+**Description:** If true, use the specified RSMeans costline ID for deterministic cost lookup instead of search-based matching. Bypasses fallback logic.
+
+#### Exact RSMeans Costline ID
+
+**Name:** `exact_costline_id`  
+**Type:** String  
+**Required:** false  
+**Model Dependent:** false  
+**Default:** (empty)  
+**Description:** Optional explicit RSMeans ID (e.g., 072126100020). If provided and `use_exact_costline_id` is true, this replaces the search and fallback mechanism.
+
 ### API Configuration
 
 #### EC3 API Key
@@ -145,6 +165,28 @@ ModelMeasure
 **Model Dependent:** false  
 **Default:** (empty)  
 **Description:** Environmental Product Declaration API token from Building Transparency (https://buildingtransparency.org). Leave empty to skip embodied carbon calculations or read from `config.ini`.
+
+## RSMeans Fallback Logic
+
+When RSMeans API searches yield results with a match score below `MIN_ACCEPTABLE_MATCH_SCORE` (0.0), the measure automatically uses a pre-mapped fallback RSMeans ID for the selected material type. Fallback IDs are defined for all 11 supported insulation materials:
+
+| Material Type | Fallback RSMeans ID | Description |
+|---------------|-------------------|-------------|
+| Blown Cellulose | 072126100020 | Blown cellulose |
+| Blown Fiberglass | 072126101000 | Blown fiberglass |
+| Blown Mineral Wool | 072123100100 | Blown mineral wool |
+| Polyiso Insulation Foam Board | 072216101700 | Polyiso roof insulation board |
+| Graphite Polystyrene (GPS) Foam Board | 072113130600 | Graphite polystyrene insulation |
+| Expanded Polystyrene (EPS) Foam Board | 072113130600 | EPS rigid foam board |
+| Extruded Polystyrene (XPS) Foam Board | 072216101910 | XPS rigid foam board |
+| Mineral Wool Heavy Density Blanket | 072116201320 | Mineral wool heavy density |
+| Mineral Wool Light Density Blanket | 072116201320 | Mineral wool light density |
+| Fiberglass Batts | 072116200620 | Fiberglass batts insulation |
+| Pure Wool Batts | (search-only) | Uses API search without specific fallback |
+
+**Fallback Trigger:** `best_raw_score < MIN_ACCEPTABLE_MATCH_SCORE (0.0)`
+
+This ensures cost estimates are always available, even when exact material matches are not found in RSMeans.
 
 ## Outputs
 
@@ -159,7 +201,8 @@ The measure generates a new OSM file with:
 
 A JSON file (`apply_measure_results.json`) containing:
 - Step values (measure arguments)
-- Material information from RSMeans lookup
+- Material information from RSMeans lookup (or fallback ID used)
+- Fallback status indicator (true if fallback ID was used)
 - Cost calculation breakdown (material, labor, overhead, total)
 - Embodied carbon results from EC3 API
 - Environmental Product Declaration data

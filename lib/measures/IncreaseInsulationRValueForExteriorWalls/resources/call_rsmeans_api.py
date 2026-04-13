@@ -489,47 +489,27 @@ def run_rsmeans_cost_lookup(
         / "resources"
         / "call_rsmeans_api.py"
     )
-    try:
-        spec = importlib.util.spec_from_file_location(
-            "window_enhancement_call_rsmeans_api", helper_path
+    if not helper_path.exists():
+        raise FileNotFoundError(
+            f"Shared RSMeans helper not found at {helper_path}."
         )
-        if spec is None or spec.loader is None:
-            raise ImportError(f"Invalid module spec for {helper_path}")
-        module = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(module)
-        return module.run_rsmeans_cost_lookup(
-            materials=materials,
-            release_id=release_id,
-            catalogs=catalogs,
-            location_id=location_id,
-            labor_type=labor_type,
-            measurement_system=measurement_system,
-            use_sandbox=use_sandbox,
-            overhead_profit_percent=overhead_profit_percent,
-            fallback_costline_ids=fallback_costline_ids,
-        )
-    except Exception as e:
-        return {
-            "status": "error",
-            "message": f"Wall RSMeans helper delegation failed: {e}",
-            "summary": {},
-            "results": {"materials": [], "search_log": []},
-        }
+    spec = importlib.util.spec_from_file_location(
+        "window_enhancement_call_rsmeans_api", helper_path
+    )
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
 
 
-def parse_args() -> argparse.Namespace:
-    """Define and parse CLI arguments for the RSMeans helper script."""
-    parser = argparse.ArgumentParser(description="RSMeans API helper for OpenStudio measures")
-    parser.add_argument("--model", required=True, help="Path to OpenStudio model (.osm)")
-    parser.add_argument("--output", help="Path to save JSON results")
-    parser.add_argument("--release", default="2025-q4", help="RSMeans release ID (e.g., 2025-q4)")
-    parser.add_argument("--catalog", default="gb-mf", help="Catalog code (e.g., gb-mf, bc-mf)")
-    parser.add_argument("--location", default="us-us-national", help="Location ID (e.g., us-us-national)")
-    parser.add_argument("--labor-type", default="std", help="Labor type (std, opn, fmr, fed, he)")
-    parser.add_argument("--measurement-system", default="imp", help="Measurement system (imp, met)")
-    parser.add_argument("--use-sandbox", action="store_true", help="Use RSMeans sandbox API")
-    parser.add_argument("--skip-if-cost-present", action="store_true", help="Skip API if cost exists")
-    return parser.parse_args()
+_shared = _load_shared_helper()
+
+RSMeansAPIClient = _shared.RSMeansAPIClient
+run_rsmeans_cost_lookup = _shared.run_rsmeans_cost_lookup
+search_materials_across_catalogs = _shared.search_materials_across_catalogs
+extract_materials_from_model = _shared.extract_materials_from_model
+DEFAULT_FEATURE_KEYS = _shared.DEFAULT_FEATURE_KEYS
+MIN_ACCEPTABLE_MATCH_SCORE = _shared.MIN_ACCEPTABLE_MATCH_SCORE
+INSULATION_FALLBACK_IDS = _shared.INSULATION_FALLBACK_IDS
 
 
 def main() -> int:
