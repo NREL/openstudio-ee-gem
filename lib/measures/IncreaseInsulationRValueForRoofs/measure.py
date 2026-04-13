@@ -619,8 +619,24 @@ class IncreaseInsulationRValueForRoofs(openstudio.measure.ModelMeasure):
             # Compute delta_R for EC3 added thickness/volume
             delta_R = r_value_si - target_R
 
-            # Make/edit material in the construction
+            # Compute added thickness from the original target layer so reused
+            # materials still get correct added volume/GWP and downstream costing.
             added_thickness_m = 0.0
+            target_massless = target_layer.to_MasslessOpaqueMaterial()
+            target_airgap = target_layer.to_AirGap()
+            target_std_mat = target_layer.to_Material()
+            if delta_R > 0.0:
+                if target_massless.is_initialized() or target_airgap.is_initialized():
+                    added_thickness_m = delta_R * selected_k
+                elif target_std_mat.is_initialized():
+                    t_old_target = target_std_mat.get().thickness()
+                    if (used_R_for_ratio is not None) and (used_R_for_ratio > 0.0):
+                        t_new_target = t_old_target * (r_value_si / used_R_for_ratio)
+                    else:
+                        t_new_target = t_old_target * (r_value_si / max(target_R, 1e-9))
+                    added_thickness_m = max(t_new_target - t_old_target, 0.0)
+
+            # Make/edit material in the construction
             if not reused:
                 cloned_layer = target_layer.clone(model)
                 massless = cloned_layer.to_MasslessOpaqueMaterial()
@@ -748,7 +764,10 @@ class IncreaseInsulationRValueForRoofs(openstudio.measure.ModelMeasure):
         # ===================== EC3 embodied carbon =====================
         # 1) Pull EPDs for the selected insulation material type once
         ec3_url = self._generate_url_by_material_type(insulation_material_type)
-        insulation_product_epd = fetch_epd_data(ec3_url, api_key)
+        insulation_product_epd = fetch_epd_data(ec3_url, api_key) if ec3_url else []
+        if not isinstance(insulation_product_epd, list):
+            runner.registerWarning("EC3 lookup returned invalid data; continuing with empty EPD set.")
+            insulation_product_epd = []
 
         # Create a dict to hold GWP values per functional unit
         gwp_values = {"gwp_per_kg": [], "gwp_per_m3": [], "gwp_per_m2": []}
@@ -761,7 +780,11 @@ class IncreaseInsulationRValueForRoofs(openstudio.measure.ModelMeasure):
 
         # loop through each epd
         for idx, epd in enumerate(insulation_product_epd, start = 1):
-            parsed_data  = parse_product_epd(epd)
+            try:
+                parsed_data  = parse_product_epd(epd)
+            except Exception as e:
+                runner.registerWarning(f"EPD {idx} could not be parsed and was skipped: {str(e)[:120]}")
+                continue
             
             # Extract density if available
             density_str = parsed_data.get("density")
@@ -793,15 +816,15 @@ class IncreaseInsulationRValueForRoofs(openstudio.measure.ModelMeasure):
                 runner.registerInfo(f"EPD {idx}: No lifetime data found")
             
             # per mass
-            gwp_per_kg = parsed_data["gwp_per_kg (kg CO2 eq/kg)"]
+            gwp_per_kg = parsed_data.get("gwp_per_kg (kg CO2 eq/kg)", 0.0)
             if gwp_per_kg != 0.0:
                 gwp_values["gwp_per_kg"].append(float(gwp_per_kg))
             # per volume
-            gwp_per_m3 = parsed_data["gwp_per_m3 (kg CO2 eq/m3)"]
+            gwp_per_m3 = parsed_data.get("gwp_per_m3 (kg CO2 eq/m3)", 0.0)
             if gwp_per_m3 != 0.0:
                 gwp_values["gwp_per_m3"].append(float(gwp_per_m3))
             # per area
-            gwp_per_m2 = parsed_data["gwp_per_m2 (kg CO2 eq/m2)"]
+            gwp_per_m2 = parsed_data.get("gwp_per_m2 (kg CO2 eq/m2)", 0.0)
             if gwp_per_m2 != 0.0:
                 gwp_values["gwp_per_m2"].append(float(gwp_per_m2))
 
@@ -1046,6 +1069,12 @@ class IncreaseInsulationRValueForRoofs(openstudio.measure.ModelMeasure):
             thickness_in = self._unit_convert(thickness_m, "m", "in")
             thickness_ft = max(thickness_in / 12.0, 0.0)
             volume_ft3 = area_ft2 * thickness_ft
+
+            if volume_ft3 <= 0.0:
+                runner.registerInfo(
+                    f"Skipping RSMeans costing entry for '{const_name}' because added insulation volume is 0."
+                )
+                continue
             
             rsmeans_materials.append({
                 "name": f"{insulation_material_type} roof insulation ({const_name})",
