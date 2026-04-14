@@ -5,6 +5,9 @@
 
 import openstudio
 import typing
+import json
+import re
+from pathlib import Path
 from resources.call_rsmeans_api import RSMeansAPIClient, run_rsmeans_cost_lookup
 import numpy as np
 from resources.EC3_lookup import *
@@ -983,16 +986,194 @@ class DoorEnhancement(openstudio.measure.ModelMeasure):
                 inches = 0
             return f"{feet} ft {inches} in"
 
+        def _get_default_exterior_door_construction(model):
+            try:
+                building = model.getBuilding()
+                dcs_opt = building.defaultConstructionSet()
+                if not dcs_opt.is_initialized():
+                    return None
+                dcs = dcs_opt.get()
+                ext_subs_opt = dcs.defaultExteriorSubSurfaceConstructions()
+                if not ext_subs_opt.is_initialized():
+                    return None
+                ext_subs = ext_subs_opt.get()
+                door_opt = ext_subs.doorConstruction()
+                if door_opt.is_initialized():
+                    return door_opt.get()
+            except Exception:
+                return None
+            return None
+
+        def _collect_material_keywords_from_construction(construction):
+            keywords = set()
+            try:
+                if construction.to_LayeredConstruction().is_initialized():
+                    lc = construction.to_LayeredConstruction().get()
+                    layers = lc.layers()
+                else:
+                    layers = []
+            except Exception:
+                layers = []
+
+            for layer in layers:
+                try:
+                    name = layer.nameString().lower()
+                except Exception:
+                    name = ""
+                if "metal" in name or "steel" in name:
+                    keywords.add("metal")
+                if "aluminum" in name or "aluminium" in name:
+                    keywords.add("aluminum")
+                if "insulation" in name or "insul" in name:
+                    keywords.add("insulated")
+                if "wood" in name:
+                    keywords.add("wood")
+                if "glass" in name or "glaz" in name:
+                    keywords.add("glass")
+            return keywords
+
+        def _material_phrase_from_keywords(keywords):
+            kws = set(keywords)
+            if "glass" in kws and "metal" in kws:
+                return "metal framed glass"
+            if "glass" in kws:
+                return "glass"
+            if "metal" in kws and "insulated" in kws:
+                return "insulated metal"
+            if "metal" in kws:
+                return "metal"
+            if "wood" in kws:
+                return "wood"
+            if "insulated" in kws:
+                return "insulated"
+            return ""
+
+        def _mixed_number_to_float(value: str):
+            text = str(value or "").strip()
+            if not text:
+                return None
+            # Supports forms like: 1-3/4, 1 3/4, 3/4, 1.75
+            mixed_match = re.match(r"^(\d+)\s*[- ]\s*(\d+)\s*/\s*(\d+)$", text)
+            if mixed_match:
+                whole = float(mixed_match.group(1))
+                numerator = float(mixed_match.group(2))
+                denominator = float(mixed_match.group(3))
+                if denominator != 0:
+                    return whole + numerator / denominator
+            fraction_match = re.match(r"^(\d+)\s*/\s*(\d+)$", text)
+            if fraction_match:
+                numerator = float(fraction_match.group(1))
+                denominator = float(fraction_match.group(2))
+                if denominator != 0:
+                    return numerator / denominator
+            try:
+                return float(text)
+            except Exception:
+                return None
+
+        def _parse_rsmeans_opening_area_m2(text: str):
+            desc = str(text or "")
+
+            # Pattern: 3'-0" x 7'-0" opening
+            ft_in_match = re.search(
+                r"(\d+)\s*'\s*-?\s*(\d+(?:\.\d+)?)?\s*\"\s*[xX]\s*(\d+)\s*'\s*-?\s*(\d+(?:\.\d+)?)?\s*\"",
+                desc,
+            )
+            if ft_in_match:
+                w_ft = float(ft_in_match.group(1))
+                w_in = float(ft_in_match.group(2) or 0.0)
+                h_ft = float(ft_in_match.group(3))
+                h_in = float(ft_in_match.group(4) or 0.0)
+                width_m = (w_ft * 12.0 + w_in) * 0.0254
+                height_m = (h_ft * 12.0 + h_in) * 0.0254
+                return width_m * height_m
+
+            # Pattern: 3 ft 0 in x 7 ft 0 in
+            ft_word_match = re.search(
+                r"(\d+(?:\.\d+)?)\s*ft\s*(\d+(?:\.\d+)?)?\s*in?\s*[xX]\s*(\d+(?:\.\d+)?)\s*ft\s*(\d+(?:\.\d+)?)?\s*in?",
+                desc,
+                flags=re.IGNORECASE,
+            )
+            if ft_word_match:
+                w_ft = float(ft_word_match.group(1))
+                w_in = float(ft_word_match.group(2) or 0.0)
+                h_ft = float(ft_word_match.group(3))
+                h_in = float(ft_word_match.group(4) or 0.0)
+                width_m = (w_ft * 12.0 + w_in) * 0.0254
+                height_m = (h_ft * 12.0 + h_in) * 0.0254
+                return width_m * height_m
+
+            return None
+
+        def _parse_rsmeans_thickness_m(text: str):
+            desc = str(text or "")
+            lowered = desc.lower()
+
+            # Prioritize explicit thickness context when present.
+            context_match = re.search(
+                r"(?:thick(?:ness)?|door\s+leaf)\D{0,20}(\d+\s*-\s*\d+\s*/\s*\d+|\d+\s+\d+\s*/\s*\d+|\d+\s*/\s*\d+|\d+(?:\.\d+)?)\s*(?:\"|in\b|inch\b|inches\b)",
+                lowered,
+                flags=re.IGNORECASE,
+            )
+            if context_match:
+                inches = _mixed_number_to_float(context_match.group(1))
+                if inches and inches > 0.0:
+                    return inches * 0.0254
+
+            # Fallback: first inch value in description if no explicit context exists.
+            generic_matches = re.findall(
+                r"(\d+\s*-\s*\d+\s*/\s*\d+|\d+\s+\d+\s*/\s*\d+|\d+\s*/\s*\d+|\d+(?:\.\d+)?)\s*(?:\"|in\b|inch\b|inches\b)",
+                lowered,
+                flags=re.IGNORECASE,
+            )
+            for match in generic_matches:
+                inches = _mixed_number_to_float(match)
+                if inches and 0.125 <= inches <= 6.0:
+                    return inches * 0.0254
+
+            return None
+
+        def _infer_door_option_from_rsmeans(text: str):
+            desc = str(text or "").lower()
+            if "polyurethane" in desc and "core" in desc and "steel" in desc:
+                return "polyurethane core steel door"
+            if "polystyrene" in desc and "core" in desc and "steel" in desc:
+                return "polystyrene core steel door"
+            if "honeycomb" in desc and "core" in desc and "steel" in desc:
+                return "honeycomb core steel door"
+            if "stiffened" in desc and "core" in desc and "steel" in desc:
+                return "stiffened core steel door"
+            if "garage" in desc or "overhead" in desc:
+                return "garage door"
+            if "glass" in desc or "glazed" in desc or "glazing" in desc:
+                return "glass door"
+            if "wood" in desc:
+                return "wooden door"
+            return None
+
+        def _select_rsmeans_door_hit(rsmeans_lookup_data):
+            if not rsmeans_lookup_data or rsmeans_lookup_data.get("status") != "ok":
+                return None
+            materials = rsmeans_lookup_data.get("results", {}).get("materials", [])
+            if not materials:
+                return None
+
+            for item in materials:
+                unit = str(item.get("unit", "")).lower()
+                name_text = str(item.get("name", "")).lower()
+                desc_text = str(item.get("rsmeans_description", item.get("description", ""))).lower()
+                if unit in ["ea", "each"] and ("door" in name_text or "door" in desc_text):
+                    return item
+            return materials[0]
+
         rsmeans_lookup = None
         rsmeans_summary_line = None
         rsmeans_size_str = ""
-        matched_rsmeans = {
-            "door_material": {"id": "", "description": ""},
-            "door_bottom_seal": {"id": "", "description": ""},
-            "door_top_side_seal": {"id": "", "description": ""},
-        }
-        rsmeans_search_term = ""
-        rsmeans_material_keywords = []
+        rsmeans_door_hit = None
+        rsmeans_door_area_per_unit_m2 = None
+        rsmeans_door_thickness_m = None
+        rsmeans_door_match_description = ""
+        rsmeans_applied_door_option = None
 
         if len(sub_surfaces_to_change) > 0:
             first_name = next(iter(subsurface_dict.keys()))
@@ -1126,6 +1307,126 @@ class DoorEnhancement(openstudio.measure.ModelMeasure):
                             runner.registerInfo(f"RSMeans fallback matches applied: {fallback_count}")
             except Exception as e:
                 runner.registerWarning(f"Cost lookup failed: {e}")
+
+        # Use closest RSMeans door hit to refine replacement material properties.
+        if (not use_custom_costs) and door_option != 'none' and len(sub_surfaces_to_change) > 0:
+            rsmeans_door_hit = _select_rsmeans_door_hit(rsmeans_lookup)
+            if rsmeans_door_hit is not None:
+                rsmeans_door_match_description = str(
+                    rsmeans_door_hit.get("rsmeans_description")
+                    or rsmeans_door_hit.get("description")
+                    or ""
+                )
+                rsmeans_door_area_per_unit_m2 = _parse_rsmeans_opening_area_m2(rsmeans_door_match_description)
+                rsmeans_door_thickness_m = _parse_rsmeans_thickness_m(rsmeans_door_match_description)
+                rsmeans_inferred_option = _infer_door_option_from_rsmeans(rsmeans_door_match_description)
+
+                if rsmeans_inferred_option in self.door_material_properties():
+                    rsmeans_applied_door_option = rsmeans_inferred_option
+                else:
+                    rsmeans_applied_door_option = door_option
+
+                model_avg_door_area_m2 = 0.0
+                if len(sub_surfaces_to_change) > 0:
+                    model_avg_door_area_m2 = total_door_area_m2 / float(len(sub_surfaces_to_change))
+
+                if rsmeans_door_area_per_unit_m2 is not None and model_avg_door_area_m2 > 0.0:
+                    area_delta = abs(rsmeans_door_area_per_unit_m2 - model_avg_door_area_m2)
+                    rel_area_delta = area_delta / model_avg_door_area_m2
+                    if rel_area_delta > 0.10:
+                        runner.registerWarning(
+                            "RSMeans door opening area differs from model door area by more than 10% "
+                            f"(RSMeans={rsmeans_door_area_per_unit_m2:.3f} m2, "
+                            f"model_avg={model_avg_door_area_m2:.3f} m2)."
+                        )
+                        if abs(door_area_per_unit - 1.95) < 1e-9:
+                            runner.registerError(
+                                "Door area mismatch detected between model geometry and RSMeans match. "
+                                "Please provide an explicit 'door_area_per_unit' argument and re-run the measure."
+                            )
+                            return False
+
+                # Build RSMeans-informed material properties: inferred type defaults + parsed thickness.
+                rsmeans_mat_props = self.door_material_properties().get(rsmeans_applied_door_option, {}).copy()
+                if not rsmeans_mat_props:
+                    rsmeans_mat_props = self.door_material_properties().get(door_option, {}).copy()
+
+                if rsmeans_door_thickness_m is not None and rsmeans_door_thickness_m > 0.0:
+                    rsmeans_mat_props['thickness'] = rsmeans_door_thickness_m
+
+                # Respect explicit user overrides when provided.
+                if door_thermal_conductivity > 0.0:
+                    rsmeans_mat_props['conductivity'] = door_thermal_conductivity
+                if door_density > 0.0:
+                    rsmeans_mat_props['density'] = door_density
+                if door_thickness > 0.0:
+                    rsmeans_mat_props['thickness'] = door_thickness
+
+                if rsmeans_mat_props.get('conductivity', 0.0) <= 0.0 or rsmeans_mat_props.get('thickness', 0.0) <= 0.0:
+                    runner.registerWarning(
+                        "Unable to apply RSMeans-driven door replacement due to incomplete material properties."
+                    )
+                else:
+                    runner.registerInfo(
+                        "Applying RSMeans-driven door replacement using closest match: "
+                        f"{rsmeans_door_hit.get('rsmeans_id', 'unknown')}"
+                    )
+                    for subsurface_name in subsurface_dict.keys():
+                        subsurface = subsurface_dict[subsurface_name]["subsurface object"]
+                        if not subsurface.construction().is_initialized():
+                            runner.registerWarning(f"No construction found for {subsurface_name}, RSMeans replacement skipped.")
+                            continue
+
+                        old_construction = subsurface.construction().get()
+                        old_construction_name = old_construction.nameString()
+                        old_r_value_si = 0.0
+                        if old_construction.to_LayeredConstruction().is_initialized():
+                            lc = old_construction.to_LayeredConstruction().get()
+                            if lc.thermalConductance().is_initialized() and lc.thermalConductance().get() > 0.0:
+                                old_r_value_si = 1.0 / lc.thermalConductance().get()
+
+                        new_r_value_si = rsmeans_mat_props['thickness'] / rsmeans_mat_props['conductivity']
+                        old_r_value_ip = openstudio.convert(old_r_value_si, "m^2*K/W", "ft^2*h*R/Btu").get()
+                        new_r_value_ip = openstudio.convert(new_r_value_si, "m^2*K/W", "ft^2*h*R/Btu").get()
+
+                        new_construction = old_construction.clone(model).to_Construction().get()
+                        new_construction.setName(
+                            f"{old_construction_name} - RSMeans {rsmeans_applied_door_option} R-{new_r_value_si:.2f}"
+                        )
+
+                        new_door_material = openstudio.model.StandardOpaqueMaterial(model)
+                        new_door_material.setName(
+                            f"RSMeans {rsmeans_applied_door_option} {rsmeans_door_hit.get('rsmeans_id', '')}"
+                        )
+                        new_door_material.setThickness(rsmeans_mat_props['thickness'])
+                        new_door_material.setConductivity(rsmeans_mat_props['conductivity'])
+                        new_door_material.setDensity(rsmeans_mat_props['density'])
+                        new_door_material.setSpecificHeat(1000)
+
+                        new_construction.setLayers([new_door_material])
+                        subsurface.setConstruction(new_construction)
+
+                        subsurface_dict[subsurface_name]['old_r_value_si'] = old_r_value_si
+                        subsurface_dict[subsurface_name]['new_r_value_si'] = new_r_value_si
+                        subsurface_dict[subsurface_name]['new_construction_name'] = new_construction.nameString()
+                        subsurface_dict[subsurface_name]['material_thickness_m'] = rsmeans_mat_props['thickness']
+                        subsurface_dict[subsurface_name]['material_conductivity_W_per_mK'] = rsmeans_mat_props['conductivity']
+                        subsurface_dict[subsurface_name]['material_density_kg_per_m3'] = rsmeans_mat_props['density']
+
+                        runner.registerInfo(f"\n  → RSMeans door construction updated for {subsurface_name}:")
+                        runner.registerInfo(f"    RSMeans Match: {rsmeans_door_match_description}")
+                        runner.registerInfo(
+                            f"    R-value: {old_r_value_si:.2f} → {new_r_value_si:.2f} m²·K/W "
+                            f"(R-{old_r_value_ip:.1f} → R-{new_r_value_ip:.1f} IP)"
+                        )
+                        runner.registerInfo(
+                            f"    Thickness: {rsmeans_mat_props['thickness']*1000:.1f} mm | "
+                            f"Conductivity: {rsmeans_mat_props['conductivity']:.3f} W/m·K"
+                        )
+            else:
+                runner.registerWarning(
+                    "No RSMeans door hit available for replacement. Keeping door_option-based material properties."
+                )
         
         # Store summary in organized additional properties buckets (same pattern as window enhancement)
         building = model.getBuilding()
@@ -1199,6 +1500,15 @@ class DoorEnhancement(openstudio.measure.ModelMeasure):
                 mtrl_prop.setFeature("door_density_kg_per_m3", actual_density)
                 mtrl_prop.setFeature("door_thickness_m", actual_thickness)
                 mtrl_prop.setFeature("door_conductivity_W_per_mK", actual_conductivity)
+
+        if rsmeans_door_match_description:
+            mtrl_prop.setFeature("rsmeans_door_match_description", rsmeans_door_match_description)
+        if rsmeans_door_area_per_unit_m2 is not None:
+            mtrl_prop.setFeature("rsmeans_door_area_per_unit_m2", rsmeans_door_area_per_unit_m2)
+        if rsmeans_door_thickness_m is not None:
+            mtrl_prop.setFeature("rsmeans_door_thickness_m", rsmeans_door_thickness_m)
+        if rsmeans_applied_door_option is not None:
+            mtrl_prop.setFeature("rsmeans_applied_door_option", rsmeans_applied_door_option)
         
         # Store length per unit for sealing strips
         if door_bottom_seal_option != 'none':

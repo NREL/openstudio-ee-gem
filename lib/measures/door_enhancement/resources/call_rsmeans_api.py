@@ -56,6 +56,8 @@ DOOR_FALLBACK_RSMEANS_IDS = {
     "wood door leaf": "081416090025",
     "wooden door": "081416090025",
     "garage door": "083613200200",
+    "commercial glass door system": "083213100450",
+    # Compatibility alias for legacy naming.
     "window door system": "083213100450",
     "glass door": "083213100450",
     "polystyrene core steel door": "081313130020",
@@ -231,7 +233,7 @@ def _get_default_fallback_rsmeans_id(material_name: str, material_description: s
     if "core" in normalized and "steel" in normalized and "door" in normalized:
         return DOOR_FALLBACK_RSMEANS_IDS["polystyrene core steel door"]
     if "door" in normalized:
-        return DOOR_FALLBACK_RSMEANS_IDS["window door system"]
+        return DOOR_FALLBACK_RSMEANS_IDS["commercial glass door system"]
 
     return None
 
@@ -268,7 +270,7 @@ def generate_search_term_alternatives(material_name: str) -> List[tuple]:
     Returns list of (search_term, division_code) tuples in priority order.
     
     Args:
-        material_name: Original material name (e.g., "window glazing")
+        material_name: Original material name (e.g., "steel door")
     
     Returns:
         List of (search_term, division_code) tuples to try in order
@@ -286,40 +288,8 @@ def generate_search_term_alternatives(material_name: str) -> List[tuple]:
     if cleaned_name and cleaned_name != name_lower:
         alternatives.append((cleaned_name, get_division_from_material_type(cleaned_name)))
     
-    # Strategy 2: Window-specific alternatives
-    if "window" in name_lower:
-        if "glaz" in name_lower:
-            # Window glazing alternatives
-            alternatives.extend([
-                ("insulated glass unit", "08"),
-                ("double glazed window", "08"),
-                ("glass window", "08"),
-                ("window glass", "08"),
-                ("glazing", "08"),
-                ("IGU", "08"),
-            ])
-        elif "frame" in name_lower:
-            # Window frame alternatives based on common materials
-            alternatives.extend([
-                ("window replacement", "08"),
-                ("window unit", "08"),
-                ("wood window frame", "08"),
-                ("vinyl window frame", "08"),
-                ("aluminum window frame", "08"),
-                ("window sash", "08"),
-                ("window", "08"),
-            ])
-        else:
-            # Generic window alternatives
-            alternatives.extend([
-                ("window replacement", "08"),
-                ("window unit", "08"),
-                ("window assembly", "08"),
-                ("window", "08"),
-            ])
-    
-    # Strategy 3: Door-specific alternatives
-    elif "door" in name_lower:
+    # Strategy 2: Door-specific alternatives
+    if "door" in name_lower:
         if "metal" in name_lower or "steel" in name_lower:
             alternatives.append(("metal door", "08"))
         alternatives.extend([
@@ -329,7 +299,7 @@ def generate_search_term_alternatives(material_name: str) -> List[tuple]:
             ("door", "08"),
         ])
     
-    # Strategy 4: Insulation alternatives
+    # Strategy 3: Insulation alternatives
     elif "insulation" in name_lower or "insul" in name_lower:
         alternatives.extend([
             ("wall insulation", "07"),
@@ -339,7 +309,7 @@ def generate_search_term_alternatives(material_name: str) -> List[tuple]:
             ("insulation", "07"),
         ])
     
-    # Strategy 5: HVAC alternatives
+    # Strategy 4: HVAC alternatives
     elif any(term in name_lower for term in ["hvac", "heat pump", "furnace", "boiler", "chiller"]):
         alternatives.extend([
             (material_name.replace("system", "unit"), "23"),
@@ -347,7 +317,7 @@ def generate_search_term_alternatives(material_name: str) -> List[tuple]:
             ("HVAC equipment", "23"),
         ])
     
-    # Strategy 6: Try simplifying compound terms (remove adjectives/modifiers)
+    # Strategy 5: Try simplifying compound terms (remove adjectives/modifiers)
     words = cleaned_name.split() if cleaned_name else name_lower.split()
     if len(words) > 1:
         # Try just the last word (often the noun)
@@ -363,7 +333,7 @@ def generate_search_term_alternatives(material_name: str) -> List[tuple]:
             if (simplified, simp_div) not in alternatives:
                 alternatives.append((simplified, simp_div))
     
-    # Strategy 7: Try without division constraint (let RSMeans search all divisions)
+    # Strategy 6: Try without division constraint (let RSMeans search all divisions)
     if (material_name, None) not in alternatives:
         alternatives.append((material_name, None))
     
@@ -894,7 +864,7 @@ def extract_paths_from_apply_measure(script_dir: Path) -> tuple:
     else:
         output_dir = script_dir / "tests" / "output"  # fallback
     
-    # Look for: output_model_path = output_dir / "DOE_small_office_window_enhanced.osm"
+    # Look for: output_model_path = output_dir / "<enhanced_model>.osm"
     output_match = re.search(r'output_model_path\s*=\s*output_dir\s*/\s*"([^"]+)"', content)
     if not output_match:
         raise ValueError("Could not find output_model_path in apply_measure.py")
@@ -991,14 +961,18 @@ def main() -> int:
     model_dir = model_path.parent
     
     # Method 1: Pre-saved JSON file
-    materials_file = model_dir / "window_enhancement_retrofit_materials.json"
-    if materials_file.exists():
-        try:
-            with open(materials_file, "r", encoding="utf-8") as f:
-                materials = json.load(f)
-            print(f"Extracted {len(materials)} materials from {materials_file.name}")
-        except Exception as e:
-            print(f"Warning: Could not load materials file: {e}")
+    materials_file_candidates = [
+        model_dir / "door_enhancement_retrofit_materials.json",
+    ]
+    for materials_file in materials_file_candidates:
+        if materials_file.exists():
+            try:
+                with open(materials_file, "r", encoding="utf-8") as f:
+                    materials = json.load(f)
+                print(f"Extracted {len(materials)} materials from {materials_file.name}")
+                break
+            except Exception as e:
+                print(f"Warning: Could not load materials file {materials_file.name}: {e}")
     
     # Method 2: Extract from model's Facility AdditionalProperties
     if not materials:
@@ -1009,16 +983,23 @@ def main() -> int:
             facility = model.facility().get()
             props = facility.additionalProperties()
             
-            # Try window_enhancement specific property first
-            if props.hasFeature("window_enhancement_retrofit_materials_json"):
-                try:
-                    opt_str = props.getFeatureAsString("window_enhancement_retrofit_materials_json")
-                    if opt_str.is_initialized():
-                        json_str = opt_str.get()
-                        materials = json.loads(json_str)
-                        print(f"Extracted {len(materials)} materials from Facility.window_enhancement_retrofit_materials_json")
-                except Exception as e:
-                    print(f"Warning: Could not parse retrofit_materials_json: {e}")
+            # Try door-specific serialized materials property.
+            facility_json_feature_candidates = [
+                "door_enhancement_retrofit_materials_json",
+            ]
+            for feature_name in facility_json_feature_candidates:
+                if materials:
+                    break
+                if props.hasFeature(feature_name):
+                    try:
+                        opt_str = props.getFeatureAsString(feature_name)
+                        if opt_str.is_initialized():
+                            json_str = opt_str.get()
+                            materials = json.loads(json_str)
+                            print(f"Extracted {len(materials)} materials from Facility.{feature_name}")
+                            break
+                    except Exception as e:
+                        print(f"Warning: Could not parse Facility.{feature_name}: {e}")
         
         # Method 3: Fall back to individual property extraction
         if not materials:
