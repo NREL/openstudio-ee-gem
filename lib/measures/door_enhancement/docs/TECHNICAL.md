@@ -132,6 +132,10 @@ Intelligent multi-catalog search with fallbacks:
 5. Retry with alternatives
 6. If still unmatched, attempt door-specific fallback RSMeans IDs for known materials
 
+Notes:
+- The helper is door-measure standalone; it no longer depends on window measure files/properties.
+- Standalone CLI lookup reads door-specific sources (`door_enhancement_retrofit_materials.json` and `door_enhancement_retrofit_materials_json`).
+
 **Returns**:
 ```python
 {
@@ -312,6 +316,32 @@ Total cost: $3,569.50
 | rsmeans_door_size | String | "3'-0" × 6'-8"" | Inferred size |
 | rsmeans_catalog | String | "bc-mf" | Catalog matched |
 
+### SizingParameters (Door Material + RSMeans Match Context)
+
+| Property Name | Type | Example | Notes |
+|---------------|------|---------|-------|
+| door_thickness_m | Double | 0.04445 | Applied thickness used in replacement |
+| door_conductivity_W_per_mK | Double | 0.104 | Applied conductivity |
+| door_density_kg_per_m3 | Double | 472.3 | Applied density |
+| rsmeans_door_match_description | String | "Doors & frames ... 3'-0\" x 7'-0\" opening" | Closest RSMeans door description |
+| rsmeans_door_area_per_unit_m2 | Double | 1.95 | Parsed opening area from RSMeans description |
+| rsmeans_door_thickness_m | Double | 0.04445 | Parsed thickness from RSMeans description |
+| rsmeans_applied_door_option | String | "polystyrene core steel door" | Inferred/selected replacement type |
+
+### RSMeans-Driven Door Replacement Logic
+
+After RSMeans lookup succeeds for door materials:
+1. Select closest door hit (`ea`/`each` + door name/description).
+2. Parse opening area and thickness from the RSMeans description when present.
+3. Infer door option keywords (garage, glass, wood, core steel variants).
+4. Build replacement material properties from inferred defaults + parsed thickness.
+5. Apply explicit user overrides (`door_thickness`, `door_density`, `door_thermal_conductivity`) when provided.
+6. Replace subsurface door construction using the resulting properties.
+
+Area mismatch guard:
+- If parsed RSMeans opening area differs from model average door area by >10%, a warning is emitted.
+- If that mismatch occurs while `door_area_per_unit` remains default, the measure errors and requests explicit `door_area_per_unit` input.
+
 ---
 
 ## Error Handling
@@ -363,6 +393,7 @@ Deterministic helper tests:
 
 Deterministic lookup behavior tests:
 - Door search term alternatives include door-specific terms
+- Door helper does not inject window-specific search boilerplate terms
 - Door fallback ID mapping is pinned to expected ids
 - Direct search match path vs fallback id path
 - Different material applications produce different RSMeans ids and costs

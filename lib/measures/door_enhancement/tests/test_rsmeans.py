@@ -42,10 +42,21 @@ def test_generate_search_term_alternatives_contains_door_terms():
     assert "door" in terms
 
 
+def test_generate_search_term_alternatives_no_window_specific_boilerplate():
+    alternatives = generate_search_term_alternatives("window glazing")
+    terms = [term for term, _ in alternatives]
+
+    # Door helper should not inject window-measure-specific boilerplate terms.
+    assert "window replacement" not in terms
+    assert "window unit" not in terms
+    assert "window assembly" not in terms
+
+
 def test_get_default_fallback_rsmeans_id_uses_door_specific_mapping():
     assert _get_default_fallback_rsmeans_id("garage door") == DOOR_FALLBACK_RSMEANS_IDS["garage door"]
     assert _get_default_fallback_rsmeans_id("jamb weatherstripping") == DOOR_FALLBACK_RSMEANS_IDS["jamb weatherstrip"]
     assert _get_default_fallback_rsmeans_id("silicone smoke gasket") == DOOR_FALLBACK_RSMEANS_IDS["silicone adhesive smoke gasket"]
+    assert _get_default_fallback_rsmeans_id("generic door") == DOOR_FALLBACK_RSMEANS_IDS["commercial glass door system"]
 
 
 def test_excel_fallback_ids_are_pinned():
@@ -55,6 +66,8 @@ def test_excel_fallback_ids_are_pinned():
     assert DOOR_FALLBACK_RSMEANS_IDS["jamb weatherstrip"] == "083323104000"
     assert DOOR_FALLBACK_RSMEANS_IDS["wood door leaf"] == "081416090025"
     assert DOOR_FALLBACK_RSMEANS_IDS["garage door"] == "083613200200"
+    assert DOOR_FALLBACK_RSMEANS_IDS["commercial glass door system"] == "083213100450"
+    # Legacy alias retained for compatibility.
     assert DOOR_FALLBACK_RSMEANS_IDS["window door system"] == "083213100450"
     assert DOOR_FALLBACK_RSMEANS_IDS["polystyrene core steel door"] == "081313130020"
 
@@ -119,7 +132,7 @@ def test_search_materials_prefers_direct_search_match_over_fallback():
         },
     )
 
-    materials = [{"name": "window door system", "quantity": 1.0, "unit": "ea", "division_code": "08"}]
+    materials = [{"name": "commercial glass door system", "quantity": 1.0, "unit": "ea", "division_code": "08"}]
 
     results = search_materials_across_catalogs(
         materials=materials,
@@ -405,7 +418,7 @@ def test_measure_no_warning_for_direct_search_match():
     )
 
     results = search_materials_across_catalogs(
-        materials=[{"name": "window door system", "quantity": 1.0, "unit": "ea", "division_code": "08"}],
+        materials=[{"name": "commercial glass door system", "quantity": 1.0, "unit": "ea", "division_code": "08"}],
         client=client,
         catalogs=["bc-mf"],
         release_id="2024-an",

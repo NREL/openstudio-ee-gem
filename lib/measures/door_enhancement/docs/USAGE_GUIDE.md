@@ -84,10 +84,10 @@ client_secret=your_client_secret
 |----------|------|---------|-------------|
 | `door_option` | Choice | wooden door | Door type to install (none, wooden, garage, glass, polystyrene/polyurethane/honeycomb/stiffened core steel) |
 | `door_lifetime` | Integer (years) | 30 | Product lifetime of door (default varies by type: wood=20, garage=15, glass=25, steel=30) |
-| `door_area_per_unit` | Double (m²) | 1.95 | Declared unit area per EPD (typically 21 sq ft / 1.95 m²) |
+| `door_area_per_unit` | Double (m²) | 1.95 | Declared unit area per EPD (typically 21 sq ft / 1.95 m²). If RSMeans parsed opening area differs from model geometry by >10%, set this explicitly. |
 | `door_thermal_conductivity` | Double (W/m·K) | 0.0 | Door material conductivity (0 = use typical value) |
 | `door_density` | Double (kg/m³) | 0.0 | Door material density (0 = use typical value) |
-| `door_thickness` | Double (m) | 0.0 | Door thickness (0 = use typical value) |
+| `door_thickness` | Double (m) | 0.0 | Door thickness override (0 = infer from RSMeans match when available, otherwise use selected door-type default) |
 
 ### Sealing Options
 
@@ -135,6 +135,13 @@ Using the OpenStudio GUI or Parametric Analysis Tool (PAT):
 **Result**: Measure applies door replacement + sealing, calculates embodied carbon (GWP in kg CO2 eq), estimates costs via RSMeans with 10% overhead profit.
 
 If no direct RSMeans match is found, door-specific fallback unit cost line IDs may be applied for known materials; these are reported in measure warnings.
+
+When RSMeans returns a door hit, the measure uses the closest matched door description to infer replacement details:
+- parses opening size (if present) for area cross-checking
+- parses thickness (if present) for door construction replacement
+- infers door type keywords (garage/glass/wood/core steel variants)
+
+If parsed RSMeans opening area differs from model average door area by more than 10%, the measure warns. If `door_area_per_unit` is still left at default in that case, the measure exits with an error and asks for explicit user input.
 
 ---
 
@@ -255,6 +262,18 @@ The measure creates several AdditionalProperties objects on model entities:
   rsmeans_door_size: 3'-0" x 6'-8"
 ```
 
+#### **SizingParameters** (Door Material + RSMeans Match Context)
+```
+[SizingParameters]
+  door_thickness_m: 0.04445
+  door_conductivity_W_per_mK: 0.104
+  door_density_kg_per_m3: 472.3
+  rsmeans_door_match_description: "Doors & frames, ... 3'-0\" x 7'-0\" opening ..."
+  rsmeans_door_area_per_unit_m2: 1.95
+  rsmeans_door_thickness_m: 0.04445
+  rsmeans_applied_door_option: "polystyrene core steel door"
+```
+
 ### Infiltration Adjustment
 
 Spaces in the selected space type containing doors have their infiltration rates reduced by the specified percentage:
@@ -329,6 +348,15 @@ API_TOKEN = your_token_here
 1. Check terminal output for "RSMeans search term" — verify spelling
 2. Try custom costs with estimated values
 3. Use simplified search term (e.g., "steel door" instead of "polystyrene core steel door")
+
+### Issue: "Door area mismatch detected between model geometry and RSMeans match"
+
+**Cause**: RSMeans parsed opening area and modeled door area differ by >10%, and `door_area_per_unit` was not explicitly provided.
+
+**Solutions**:
+1. Set `door_area_per_unit` explicitly to your intended declared-unit area.
+2. Re-run and confirm the mismatch warning is expected for your model/RSMeans line item.
+3. Optionally provide explicit `door_thickness` if RSMeans text does not include thickness.
 
 ### Issue: "No doors found in model"
 
