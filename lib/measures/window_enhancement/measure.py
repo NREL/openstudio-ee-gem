@@ -600,14 +600,14 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
         # ============================================================================
         
         # Glass/Glazing cost
-        glass_cost_per_sf = openstudio.measure.OSArgument.makeDoubleArgument("glass_cost_per_sf", True)
-        glass_cost_per_sf.setDisplayName("Glass Replacement Cost ($/SF)")
-        glass_cost_per_sf.setDescription(
-            "User-provided unit cost for glass replacement in dollars per square foot. "
+        glass_cost_per_cf = openstudio.measure.OSArgument.makeDoubleArgument("glass_cost_per_cf", True)
+        glass_cost_per_cf.setDisplayName("Glass Replacement Cost ($/CF)")
+        glass_cost_per_cf.setDescription(
+            "User-provided unit cost for glass replacement in dollars per cubic foot. "
             "This is used as a fallback when RSMeans API lookup fails or returns no results. "
-            "Typical range: $15-30/SF. Set to 0 to skip cost calculation for glass.")
-        glass_cost_per_sf.setDefaultValue(0.0)
-        args.append(glass_cost_per_sf)
+            "Typical range: $500-1200/CF depending on glass type. Set to 0 to skip cost calculation for glass.")
+        glass_cost_per_cf.setDefaultValue(0.0)
+        args.append(glass_cost_per_cf)
 
         # Frame cost
         frame_cost_per_sf = openstudio.measure.OSArgument.makeDoubleArgument("frame_cost_per_sf", True)
@@ -813,14 +813,14 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
         rsmeans_id_secondary_glazing = runner.getStringArgumentValue(
             "rsmeans_id_secondary_glazing", user_arguments
         ).strip()
-        glass_cost_per_sf = runner.getDoubleArgumentValue("glass_cost_per_sf", user_arguments)
+        glass_cost_per_cf = runner.getDoubleArgumentValue("glass_cost_per_cf", user_arguments)
         frame_cost_per_sf = runner.getDoubleArgumentValue("frame_cost_per_sf", user_arguments)
         caulking_cost_per_cy = runner.getDoubleArgumentValue("caulking_cost_per_cy", user_arguments)
         labor_cost_multiplier = runner.getDoubleArgumentValue("labor_cost_multiplier", user_arguments)
 
         if use_custom_costs:
             runner.registerInfo("Custom cost mode enabled. Will use user-provided cost values instead of RSMeans API.")
-            runner.registerInfo(f"  Glass cost: ${glass_cost_per_sf}/SF")
+            runner.registerInfo(f"  Glass cost: ${glass_cost_per_cf}/CF")
             runner.registerInfo(f"  Frame cost: ${frame_cost_per_sf}/SF")
             runner.registerInfo(f"  Caulking cost: ${caulking_cost_per_cy}/CY")
             runner.registerInfo(f"  Labor multiplier: {labor_cost_multiplier}")
@@ -850,6 +850,93 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
                                                      glass_back_solar_reflectance, glass_front_visible_reflectance, 
                                                      glass_back_visible_reflectance):
             return False
+
+        # Effective defaults that may be overridden by RSMeans description parsing.
+        effective_glass_pane_thickness = float(glass_pane_thickness)
+        effective_gap_thickness = float(gap_thickness)
+        effective_length_per_unit = float(length_per_unit)
+
+        default_glass_pane_thickness = 0.003
+        default_gap_thickness = 0.013
+        default_length_per_unit = 5.1816
+
+        # Early RSMeans lookup to infer preferred defaults from matched descriptions.
+        if calculate_costs and not use_custom_costs:
+            seed_materials = []
+            if glass_option != "none" and user_num_panes > 0:
+                glazing_seed = {
+                    "name": "window glazing",
+                    "description": f"{user_num_panes}-pane glass replacement",
+                    "quantity": 100.0,
+                    "unit": "SF",
+                    "division_code": "08",
+                }
+                if use_specific_rsmeans_line_item_ids and rsmeans_id_glazing:
+                    glazing_seed["rsmeans_id"] = rsmeans_id_glazing
+                seed_materials.append(glazing_seed)
+
+            if secondary_glazing_option != "none":
+                second_seed = {
+                    "name": "secondary glazing",
+                    "description": "secondary glazing installation",
+                    "quantity": 100.0,
+                    "unit": "SF",
+                    "division_code": "08",
+                }
+                if use_specific_rsmeans_line_item_ids and rsmeans_id_secondary_glazing:
+                    second_seed["rsmeans_id"] = rsmeans_id_secondary_glazing
+                seed_materials.append(second_seed)
+
+            if weatherstrip_option != "none":
+                weather_seed = {
+                    "name": "weatherstrip",
+                    "description": weatherstrip_option,
+                    "quantity": 100.0,
+                    "unit": "LF",
+                    "division_code": "08",
+                }
+                if use_specific_rsmeans_line_item_ids and rsmeans_id_weatherstrip:
+                    weather_seed["rsmeans_id"] = rsmeans_id_weatherstrip
+                seed_materials.append(weather_seed)
+
+            if seed_materials:
+                early_rsmeans = self.pull_rsmeans_cost_from_api(
+                    runner,
+                    seed_materials,
+                    use_custom_costs=False,
+                    overhead_profit_percent=overhead_profit_percent,
+                )
+                if early_rsmeans and early_rsmeans.get("status") == "ok":
+                    inferred = self._infer_defaults_from_rsmeans_descriptions(
+                        runner,
+                        early_rsmeans.get("results", {}).get("materials", []),
+                        glass_option,
+                        secondary_glazing_option,
+                        weatherstrip_option,
+                    )
+
+                    if (
+                        abs(effective_glass_pane_thickness - default_glass_pane_thickness) < 1e-9
+                        and "glass_thickness_m" in inferred
+                    ):
+                        effective_glass_pane_thickness = inferred["glass_thickness_m"]
+                    if (
+                        abs(effective_gap_thickness - default_gap_thickness) < 1e-9
+                        and "gap_thickness_m" in inferred
+                    ):
+                        effective_gap_thickness = inferred["gap_thickness_m"]
+                    if (
+                        abs(effective_length_per_unit - default_length_per_unit) < 1e-9
+                        and "length_per_unit_m" in inferred
+                    ):
+                        effective_length_per_unit = inferred["length_per_unit_m"]
+
+        runner.registerInfo(
+            "Effective geometric values: "
+            f"glass_thickness={effective_glass_pane_thickness:.6f} m, "
+            f"gap_thickness={effective_gap_thickness:.6f} m, "
+            f"weatherstrip_length_per_unit={effective_length_per_unit:.4f} m"
+        )
 
         ###################### Change model's space infiltration################
         # Process infiltration reduction
@@ -950,7 +1037,7 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
             # Create new window construction if glass_option is not none
             if glass_option_for_this_window != "none" and num_panes > 0:
                 runner.registerInfo(f"\n  → Creating new {num_panes}-pane window construction for {subsurface_name}")
-                new_construction = self.create_new_window_construction(model, runner, subsurface, num_panes, glass_pane_thickness, gap_thickness,
+                new_construction = self.create_new_window_construction(model, runner, subsurface, num_panes, effective_glass_pane_thickness, effective_gap_thickness,
                                                                        glass_solar_transmittance, glass_visible_transmittance,
                                                                        glass_front_emissivity, glass_back_emissivity,
                                                                        glass_front_solar_reflectance, glass_back_solar_reflectance,
@@ -991,7 +1078,7 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
                         if glazing_count == 1:
                             runner.registerInfo(f"\n  → Single-pane construction detected in {subsurface_name}, installing secondary glazing")
                             new_construction = self.add_secondary_glazing(model, runner, subsurface, current_construction, 
-                                                                            glass_pane_thickness, gap_thickness,
+                                                                            effective_glass_pane_thickness, effective_gap_thickness,
                                                                             glass_solar_transmittance, glass_visible_transmittance,
                                                                             glass_front_emissivity, glass_back_emissivity,
                                                                             glass_front_solar_reflectance, glass_back_solar_reflectance,
@@ -1042,7 +1129,7 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
             # Process EPD data and calculate embodied carbon
             self.process_epd_for_subsurface(runner, subsurface_name, subsurface_dict[subsurface_name], 
                                            epd_datalist, gwp_statistic, analysis_period, 
-                                           glass_pane_thickness, length_per_unit)
+                                           effective_glass_pane_thickness, effective_length_per_unit)
 
             runner.registerValue(f"{subsurface_name}_total_embodied_carbon_kg_co2_eq", subsurface_dict[subsurface_name]['window_renovation_embodied_carbon_kg_co2_eq'], "kg CO2 eq")
             runner.registerInfo(f"\n{'─' * 80}")
@@ -1205,8 +1292,8 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
         # Store glass properties if glass replacement was selected
         if glass_option != "none" and user_num_panes > 0:
             mtrl_prop.setFeature("glass_replacement_num_panes", user_num_panes)
-            mtrl_prop.setFeature("glass_replacement_pane_thickness_m", glass_pane_thickness)
-            mtrl_prop.setFeature("glass_replacement_gap_thickness_m", gap_thickness)
+            mtrl_prop.setFeature("glass_replacement_pane_thickness_m", effective_glass_pane_thickness)
+            mtrl_prop.setFeature("glass_replacement_gap_thickness_m", effective_gap_thickness)
             
             # # Store glass optical properties if non-default
             # if glass_solar_transmittance > 0.0:
@@ -1243,7 +1330,7 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
         
         # Store weatherstrip properties if weatherstrip was selected
         if weatherstrip_option != "none":
-            mtrl_prop.setFeature("window_weatherstrip_length_per_unit_m", length_per_unit)
+            mtrl_prop.setFeature("window_weatherstrip_length_per_unit_m", effective_length_per_unit)
         
         # # Store divider information
         # if num_horizontal_dividers >= 0:
@@ -1285,11 +1372,15 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
 
         if glass_option != "none" and user_num_panes > 0 and total_glazing_area_m2 > 0:
             pane_count = max(1, int(user_num_panes))
-            glass_thickness_ft = _m_to_ft(float(glass_pane_thickness)) if glass_pane_thickness > 0 else 0.0
+            glass_thickness_ft = _m_to_ft(float(effective_glass_pane_thickness)) if effective_glass_pane_thickness > 0 else 0.0
             glazing_qty_sf = _m2_to_sf(total_glazing_area_m2)
             glazing_material = {
                 "name": "window glazing",
-                "description": f"{user_num_panes}-pane glass replacement",
+                "description": (
+                    f"{user_num_panes}-pane glass replacement; "
+                    f"single-pane thickness {effective_glass_pane_thickness*1000:.1f} mm; "
+                    f"gap {effective_gap_thickness*1000:.1f} mm"
+                ),
                 "quantity": glazing_qty_sf,
                 "unit": "SF",
                 "quantity_volume": float(glazing_qty_sf * glass_thickness_ft * pane_count),
@@ -1362,10 +1453,14 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
 
         if secondary_glazing_option != "none" and total_glazing_area_m2 > 0:
             secondary_glazing_qty_sf = _m2_to_sf(total_glazing_area_m2)
-            secondary_glass_thickness_ft = _m_to_ft(float(glass_pane_thickness)) if glass_pane_thickness > 0 else 0.0
+            secondary_glass_thickness_ft = _m_to_ft(float(effective_glass_pane_thickness)) if effective_glass_pane_thickness > 0 else 0.0
             secondary_glazing_material = {
                 "name": "secondary glazing",
-                "description": "secondary glazing installation",
+                "description": (
+                    "secondary glazing installation; "
+                    f"single-pane thickness {effective_glass_pane_thickness*1000:.1f} mm; "
+                    f"gap {effective_gap_thickness*1000:.1f} mm"
+                ),
                 "quantity": secondary_glazing_qty_sf,
                 "unit": "SF",
                 "quantity_volume": float(secondary_glazing_qty_sf * secondary_glass_thickness_ft),
@@ -1406,8 +1501,9 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
                 # Calculate costs from user-provided unit rates
                 total_material_cost = self.calculate_costs_from_user_rates(
                     runner, total_glazing_area_m2, total_frame_area_m2, total_caulking_volume_m3,
-                    glass_cost_per_sf, frame_cost_per_sf, caulking_cost_per_cy,
-                    glass_option, wf_option, caulking_option
+                    glass_cost_per_cf, frame_cost_per_sf, caulking_cost_per_cy,
+                    glass_option, wf_option, caulking_option,
+                    user_num_panes, effective_glass_pane_thickness, secondary_glazing_option
                 )
                 total_labour_cost = total_material_cost * (labor_cost_multiplier - 1.0)
                 cost_source = "custom_input"
@@ -1484,8 +1580,8 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
                         runner,
                         subsurface_dict,
                         rsmeans_lookup,
-                        glass_pane_thickness,
-                        gap_thickness,
+                        effective_glass_pane_thickness,
+                        effective_gap_thickness,
                     )
                     
                     try:
@@ -1503,8 +1599,9 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
                     # Calculate costs from user-provided unit rates
                     total_material_cost = self.calculate_costs_from_user_rates(
                         runner, total_glazing_area_m2, total_frame_area_m2, total_caulking_volume_m3,
-                        glass_cost_per_sf, frame_cost_per_sf, caulking_cost_per_cy,
-                        glass_option, wf_option, caulking_option
+                        glass_cost_per_cf, frame_cost_per_sf, caulking_cost_per_cy,
+                        glass_option, wf_option, caulking_option,
+                        user_num_panes, effective_glass_pane_thickness, secondary_glazing_option
                     )
                     total_labour_cost = total_material_cost * (labor_cost_multiplier - 1.0)
                     cost_source = "user_provided_fallback" if total_material_cost > 0 else "none"
@@ -1513,7 +1610,7 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
                         runner.registerInfo(f"✓ Using user-provided costs: ${total_material_cost:,.2f} materials + ${total_labour_cost:,.2f} labor")
                     else:
                         runner.registerInfo("✗ No user-provided costs specified. Skipping cost calculation.")
-                        runner.registerInfo("  Tip: Provide values for 'Glass Cost ($/SF)', 'Frame Cost ($/SF)', etc.")
+                        runner.registerInfo("  Tip: Provide values for 'Glass Cost ($/CF)', 'Frame Cost ($/SF)', etc.")
 
         if calculate_costs:
             total_overhead_profit_cost = (total_material_cost + total_labour_cost) * (overhead_profit_percent / 100.0)
@@ -1661,9 +1758,10 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
         pp.pprint(subsurface_dict)
         return True
 
-    def calculate_costs_from_user_rates(self, runner, total_glazing_area_m2, total_frame_area_m2, 
-                                       total_caulking_volume_m3, glass_cost_per_sf, frame_cost_per_sf,
-                                       caulking_cost_per_cy, glass_option, wf_option, caulking_option):
+    def calculate_costs_from_user_rates(self, runner, total_glazing_area_m2, total_frame_area_m2,
+                                       total_caulking_volume_m3, glass_cost_per_cf, frame_cost_per_sf,
+                                       caulking_cost_per_cy, glass_option, wf_option, caulking_option,
+                                       user_num_panes, glass_pane_thickness, secondary_glazing_option):
         """
         Calculate material costs using user-provided unit rates.
         Serves as fallback when RSMeans API fails or is disabled.
@@ -1672,12 +1770,15 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
             total_glazing_area_m2: Total glass area in m²
             total_frame_area_m2: Total frame area in m²
             total_caulking_volume_m3: Total caulking volume in m³
-            glass_cost_per_sf: User-provided glass cost ($/SF)
+            glass_cost_per_cf: User-provided glass cost ($/CF)
             frame_cost_per_sf: User-provided frame cost ($/SF)
             caulking_cost_per_cy: User-provided caulking cost ($/CY)
             glass_option: Whether glass replacement is selected
             wf_option: Whether frame replacement is selected
             caulking_option: Whether caulking is selected
+            user_num_panes: Number of panes used for glass replacement
+            glass_pane_thickness: Glass thickness in meters
+            secondary_glazing_option: Whether secondary glazing is selected
         
         Returns:
             Total material cost in dollars
@@ -1688,29 +1789,50 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
         
         def _m3_to_cy(value_m3: float) -> float:
             return value_m3 * 1.30795
+
+        def _m_to_ft(value_m: float) -> float:
+            return value_m * 3.28084
         
         total_cost = 0.0
         
-        # Glass cost
-        if glass_option != "none" and glass_cost_per_sf > 0 and total_glazing_area_m2 > 0:
+        # Glass replacement cost (volume basis)
+        if glass_option != "none" and glass_cost_per_cf > 0 and total_glazing_area_m2 > 0:
+            pane_count = max(1, int(user_num_panes)) if user_num_panes and user_num_panes > 0 else 1
             glass_qty_sf = _m2_to_sf(total_glazing_area_m2)
-            glass_cost = glass_qty_sf * glass_cost_per_sf
+            glass_thickness_ft = _m_to_ft(float(glass_pane_thickness)) if glass_pane_thickness > 0 else 0.0
+            glass_qty_cf = glass_qty_sf * glass_thickness_ft * pane_count
+            glass_cost = glass_qty_cf * glass_cost_per_cf
             total_cost += glass_cost
-            runner.registerInfo(f"  Glass: {glass_qty_sf:.2f} SF × ${glass_cost_per_sf:.2f}/SF = ${glass_cost:,.2f}")
+            runner.registerInfo(
+                f"  Glass: {glass_qty_cf:.2f} CF * ${glass_cost_per_cf:.2f}/CF "
+                f"(area={glass_qty_sf:.2f} SF, thickness={glass_thickness_ft:.4f} ft, panes={pane_count}) = ${glass_cost:,.2f}"
+            )
+
+        # Secondary glazing cost (volume basis)
+        if secondary_glazing_option != "none" and glass_cost_per_cf > 0 and total_glazing_area_m2 > 0:
+            secondary_qty_sf = _m2_to_sf(total_glazing_area_m2)
+            secondary_thickness_ft = _m_to_ft(float(glass_pane_thickness)) if glass_pane_thickness > 0 else 0.0
+            secondary_qty_cf = secondary_qty_sf * secondary_thickness_ft
+            secondary_cost = secondary_qty_cf * glass_cost_per_cf
+            total_cost += secondary_cost
+            runner.registerInfo(
+                f"  Secondary glazing: {secondary_qty_cf:.2f} CF * ${glass_cost_per_cf:.2f}/CF "
+                f"(area={secondary_qty_sf:.2f} SF, thickness={secondary_thickness_ft:.4f} ft) = ${secondary_cost:,.2f}"
+            )
         
         # Frame cost
         if wf_option != "none" and frame_cost_per_sf > 0 and total_frame_area_m2 > 0:
             frame_qty_sf = _m2_to_sf(total_frame_area_m2)
             frame_cost = frame_qty_sf * frame_cost_per_sf
             total_cost += frame_cost
-            runner.registerInfo(f"  Frame: {frame_qty_sf:.2f} SF × ${frame_cost_per_sf:.2f}/SF = ${frame_cost:,.2f}")
+            runner.registerInfo(f"  Frame: {frame_qty_sf:.2f} SF * ${frame_cost_per_sf:.2f}/SF = ${frame_cost:,.2f}")
         
         # Caulking cost
         if caulking_option != "none" and caulking_cost_per_cy > 0 and total_caulking_volume_m3 > 0:
             caulking_qty_cy = _m3_to_cy(total_caulking_volume_m3)
             caulking_cost = caulking_qty_cy * caulking_cost_per_cy
             total_cost += caulking_cost
-            runner.registerInfo(f"  Caulking: {caulking_qty_cy:.2f} CY × ${caulking_cost_per_cy:.2f}/CY = ${caulking_cost:,.2f}")
+            runner.registerInfo(f"  Caulking: {caulking_qty_cy:.2f} CY * ${caulking_cost_per_cy:.2f}/CY = ${caulking_cost:,.2f}")
         
         return total_cost
 
@@ -2051,7 +2173,7 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
                     embodied_carbon = float(subsurface_data[material_name]["gwp_per_m3"] * 
                                            subsurface_data[material_name]["area_m2"] * 
                                            glass_pane_thickness * num_panes_installed * multiplier)
-                    runner.registerInfo(f"    • Glass: {num_panes_installed} pane(s) × {glass_pane_thickness*1000:.1f}mm thickness")
+                    runner.registerInfo(f"    • Glass: {num_panes_installed} pane(s) * {glass_pane_thickness*1000:.1f}mm thickness")
             elif material_name == "second_glazing":
                 if subsurface_data[material_name]["gwp_per_m3"] is None:
                     embodied_carbon = 0.0
@@ -2355,6 +2477,99 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
         filtered_data = [x for x in data if lower_bound <= x <= upper_bound]
         
         return filtered_data
+
+    @staticmethod
+    def _extract_rsmeans_lengths_from_description(description):
+        """Extract likely thickness/gap/length hints from an RSMeans description string.
+
+        Returns a dict with optional keys:
+          - glass_thickness_m
+          - gap_thickness_m
+          - length_per_unit_m
+        """
+        if not description:
+            return {}
+
+        desc = str(description).lower()
+        parsed = {}
+
+        def _to_m(value, unit):
+            if unit in ["mm", "millimeter", "millimeters"]:
+                return value / 1000.0
+            if unit in ["in", "inch", "inches", '"']:
+                return value * 0.0254
+            if unit in ["ft", "foot", "feet", "lf"]:
+                return value * 0.3048
+            return None
+
+        # Parse explicit gap/air-space first.
+        gap_patterns = [
+            r'(?:air\s*(?:gap|space)|gap)\s*[:=]?\s*([\d.]+)\s*(mm|millimeters?|in|inch|inches|"|ft|feet|foot)',
+            r'([\d.]+)\s*(mm|millimeters?|in|inch|inches|")\s*(?:air\s*(?:gap|space)|gap)',
+        ]
+        for pattern in gap_patterns:
+            m = re.search(pattern, desc)
+            if m:
+                gap_val = _to_m(float(m.group(1)), m.group(2))
+                if gap_val and 0.003 <= gap_val <= 0.05:
+                    parsed["gap_thickness_m"] = gap_val
+                    break
+
+        # Generic thickness candidates.
+        thickness_candidates = []
+        for m in re.finditer(r'([\d.]+)\s*(mm|millimeters?|in|inch|inches|")', desc):
+            val_m = _to_m(float(m.group(1)), m.group(2))
+            if val_m and 0.001 <= val_m <= 0.03:
+                thickness_candidates.append(val_m)
+        if thickness_candidates:
+            parsed["glass_thickness_m"] = min(thickness_candidates)
+
+        # Length-per-unit candidates (weatherstrip): ft/lf tokens in plausible range.
+        length_candidates_m = []
+        for m in re.finditer(r'([\d.]+)\s*(ft|foot|feet|lf)', desc):
+            length_m = _to_m(float(m.group(1)), m.group(2))
+            if length_m and 0.3 <= length_m <= 50.0:
+                length_candidates_m.append(length_m)
+        if length_candidates_m:
+            parsed["length_per_unit_m"] = max(length_candidates_m)
+
+        return parsed
+
+    def _infer_defaults_from_rsmeans_descriptions(
+        self,
+        runner,
+        materials_results,
+        glass_option,
+        secondary_glazing_option,
+        weatherstrip_option,
+    ):
+        """Infer geometric defaults from RSMeans matched material descriptions."""
+        inferred = {}
+        if not materials_results:
+            return inferred
+
+        for mat in materials_results:
+            name = str(mat.get("name", "")).lower()
+            desc = mat.get("description", "")
+            parsed = self._extract_rsmeans_lengths_from_description(desc)
+            if not parsed:
+                continue
+
+            if ("glaz" in name or "window" in name) and (
+                glass_option != "none" or secondary_glazing_option != "none"
+            ):
+                if "glass_thickness_m" in parsed and "glass_thickness_m" not in inferred:
+                    inferred["glass_thickness_m"] = parsed["glass_thickness_m"]
+                if "gap_thickness_m" in parsed and "gap_thickness_m" not in inferred:
+                    inferred["gap_thickness_m"] = parsed["gap_thickness_m"]
+
+            if ("weather" in name or "gasket" in name or "strip" in name) and weatherstrip_option != "none":
+                if "length_per_unit_m" in parsed and "length_per_unit_m" not in inferred:
+                    inferred["length_per_unit_m"] = parsed["length_per_unit_m"]
+
+        if inferred:
+            runner.registerInfo(f"Inferred defaults from RSMeans descriptions: {inferred}")
+        return inferred
 
     def extract_gwp_and_thickness_from_epd(self, length_per_unit, epd_data):
         """Extract global warming potential (GWP) values and lifetime from EPD product data.
