@@ -26,7 +26,7 @@
     "rsmeans_unit_costline_id": ""
   },
   "doors_in_model": 1,
-  "additional_properties_count": 15,
+  "additional_properties_count": 18,
   "additional_properties_sample": [
     {
       "subsurface": "Facility",
@@ -60,6 +60,16 @@
     },
     {
       "subsurface": "RSMeans Summary",
+      "property": "rsmeans_cost_per_declared_unit_$",
+      "value": 16459.96005114547
+    },
+    {
+      "subsurface": "RSMeans Summary",
+      "property": "rsmeans_cost_per_door_area_$/m2",
+      "value": 8441.005154433575
+    },
+    {
+      "subsurface": "RSMeans Summary",
       "property": "rsmeans_labor_type",
       "value": "std"
     },
@@ -67,16 +77,6 @@
       "subsurface": "RSMeans Summary",
       "property": "rsmeans_location_id",
       "value": "us-us-national"
-    },
-    {
-      "subsurface": "RSMeans Summary",
-      "property": "rsmeans_measurement_system",
-      "value": "imp"
-    },
-    {
-      "subsurface": "RSMeans Summary",
-      "property": "rsmeans_overhead_profit_percent",
-      "value": 10.0
     }
   ]
 }

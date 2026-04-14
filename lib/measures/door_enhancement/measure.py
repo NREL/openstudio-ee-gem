@@ -1195,6 +1195,81 @@ class DoorEnhancement(openstudio.measure.ModelMeasure):
         results.setFeature("door_enhancement_total_additional_labour_cost_$", 0.0)  # Placeholder
         results.setFeature("door_enhancement_total_embodied_carbon_kgCO2eq", total_embodied_carbon)
 
+        if rsmeans_lookup is not None:
+            if rsmeans_lookup.get("status") == "ok":
+                summary = rsmeans_lookup.get("summary", {})
+                rsmeans_material_cost = float(summary.get("total_material_cost", 0.0))
+                rsmeans_overhead_percent = float(summary.get("overhead_profit_percent", 0.0))
+                rsmeans_overhead_cost = float(summary.get("total_overhead_profit_cost", 0.0))
+                rsmeans_total_cost = float(summary.get("total_cost_with_overhead_profit", 0.0))
+
+                # Calculate cost per door area and per declared unit
+                cost_per_door_area_per_m2 = 0.0
+                cost_per_declared_unit = 0.0
+                if total_door_area_m2 > 0.0:
+                    cost_per_door_area_per_m2 = rsmeans_total_cost / total_door_area_m2
+                    cost_per_declared_unit = cost_per_door_area_per_m2 * door_area_per_unit
+
+                # Store RSMeans aggregate costs in a dedicated AdditionalProperties object
+                rsmeans_summary = openstudio.model.SpaceType(model)
+                rsmeans_summary.setName("RSMeans Summary")
+                rsmeans_summary_props = rsmeans_summary.additionalProperties()
+                rsmeans_summary_props.setFeature("cost_source", rsmeans_lookup.get("cost_source", "unknown"))
+                rsmeans_summary_props.setFeature("rsmeans_total_material_cost_$", rsmeans_material_cost)
+                rsmeans_summary_props.setFeature("rsmeans_total_overhead_profit_cost_$", rsmeans_overhead_cost)
+                rsmeans_summary_props.setFeature("rsmeans_total_cost_with_overhead_profit_$", rsmeans_total_cost)
+                rsmeans_summary_props.setFeature("rsmeans_total_door_area_m2", total_door_area_m2)
+                rsmeans_summary_props.setFeature("rsmeans_cost_per_door_area_$/m2", cost_per_door_area_per_m2)
+                rsmeans_summary_props.setFeature("rsmeans_cost_per_declared_unit_$", cost_per_declared_unit)
+                # Report unit cost line ID used (first hit)
+                first_hit_id = ""
+                materials = rsmeans_lookup.get("results", {}).get("materials", [])
+                if materials:
+                    first_hit_id = materials[0].get("rsmeans_id", "")
+                rsmeans_summary_props.setFeature("rsmeans_unit_cost_line_id", first_hit_id)
+                rsmeans_summary_props.setFeature("rsmeans_overhead_profit_percent", rsmeans_overhead_percent)
+                rsmeans_summary_props.setFeature("rsmeans_release_id", summary.get("release_id", ""))
+                rsmeans_summary_props.setFeature("rsmeans_location_id", summary.get("location_id", ""))
+                rsmeans_summary_props.setFeature("rsmeans_labor_type", summary.get("labor_type", ""))
+                rsmeans_summary_props.setFeature("rsmeans_measurement_system", summary.get("measurement_system", ""))
+                catalogs_used = summary.get("catalogs_searched", []) or []
+                rsmeans_summary_props.setFeature("rsmeans_catalogs", ", ".join(catalogs_used))
+
+                # Create dedicated AdditionalProperties objects per RSMeans hit
+                materials = rsmeans_lookup.get("results", {}).get("materials", [])
+                for idx, hit in enumerate(materials, start=1):
+                    hit_obj = openstudio.model.SpaceType(model)
+                    hit_obj.setName(f"RSMeans Hit {idx} - {hit.get('rsmeans_id', 'unknown')}")
+                    hit_props = hit_obj.additionalProperties()
+
+                    hit_props.setFeature("rsmeans_lookup_status", rsmeans_lookup.get("status", "unknown"))
+                    hit_props.setFeature("rsmeans_release_id", summary.get("release_id", ""))
+                    hit_props.setFeature("rsmeans_location_id", summary.get("location_id", ""))
+                    hit_props.setFeature("rsmeans_labor_type", summary.get("labor_type", ""))
+                    hit_props.setFeature("rsmeans_measurement_system", summary.get("measurement_system", ""))
+                    catalogs_used = summary.get("catalogs_searched", []) or []
+                    hit_props.setFeature("rsmeans_catalogs", ", ".join(catalogs_used))
+                    hit_props.setFeature("rsmeans_overhead_profit_percent", rsmeans_overhead_percent)
+
+                    hit_props.setFeature("rsmeans_material_name", hit.get("name", ""))
+                    hit_props.setFeature("rsmeans_material_description", hit.get("description", ""))
+                    hit_props.setFeature("rsmeans_quantity", float(hit.get("quantity", 0.0)))
+                    hit_props.setFeature("rsmeans_unit", hit.get("unit", ""))
+                    hit_props.setFeature("rsmeans_division_code", hit.get("division_code", ""))
+                    hit_props.setFeature("rsmeans_catalog", hit.get("catalog", ""))
+                    hit_props.setFeature("rsmeans_search_term_requested", rsmeans_search_term or "")
+                    hit_props.setFeature("rsmeans_search_term_used", hit.get("search_term_used", ""))
+                    hit_props.setFeature("rsmeans_id", hit.get("rsmeans_id", ""))
+                    hit_props.setFeature("rsmeans_description", hit.get("rsmeans_description", ""))
+                    hit_props.setFeature("rsmeans_unit_cost_$", float(hit.get("unit_cost", 0.0)))
+                    hit_props.setFeature("rsmeans_total_cost_$", float(hit.get("total_cost", 0.0)))
+                    if rsmeans_size_str:
+                        hit_props.setFeature("rsmeans_door_size", rsmeans_size_str)
+                    hit_props.setFeature(
+                        "rsmeans_door_materials",
+                        ", ".join(sorted(rsmeans_material_keywords)) if rsmeans_material_keywords else "unspecified",
+                    )
+
         # Store aggregate renovation quantities
         reno_detail.setFeature("total_renovated_door_area_m2", total_door_area_m2)
         reno_detail.setFeature("total_renovated_sealing_bottom_length_m", total_sealing_bottom_length_m)
