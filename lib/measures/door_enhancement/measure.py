@@ -991,6 +991,8 @@ class DoorEnhancement(openstudio.measure.ModelMeasure):
             "door_bottom_seal": {"id": "", "description": ""},
             "door_top_side_seal": {"id": "", "description": ""},
         }
+        rsmeans_search_term = ""
+        rsmeans_material_keywords = []
 
         if len(sub_surfaces_to_change) > 0:
             first_name = next(iter(subsurface_dict.keys()))
@@ -1014,6 +1016,8 @@ class DoorEnhancement(openstudio.measure.ModelMeasure):
                         "explicit_rsmeans_id": rsmeans_unit_costline_id,
                     }
                 )
+                rsmeans_material_keywords.append(door_option)
+                rsmeans_search_term = f"{door_option} door"
 
             if door_bottom_seal_option != 'none' and total_sealing_bottom_length_m > 0.0:
                 rsmeans_materials.append(
@@ -1135,6 +1139,19 @@ class DoorEnhancement(openstudio.measure.ModelMeasure):
         sizingpara = model.getSizingParameters()
         mtrl_prop = sizingpara.additionalProperties()
 
+        # Resolve a primary RSMeans unit cost ID/description for reporting in material properties.
+        rsmeans_unit_cost_line_id_value = ""
+        rsmeans_unit_cost_description_value = ""
+        if matched_rsmeans["door_material"]["id"]:
+            rsmeans_unit_cost_line_id_value = matched_rsmeans["door_material"]["id"]
+            rsmeans_unit_cost_description_value = matched_rsmeans["door_material"]["description"]
+        elif rsmeans_lookup and rsmeans_lookup.get("status") == "ok":
+            first_hit = (rsmeans_lookup.get("results", {}).get("materials", []) or [{}])[0]
+            rsmeans_unit_cost_line_id_value = str(first_hit.get("rsmeans_id", "") or "")
+            rsmeans_unit_cost_description_value = str(
+                first_hit.get("rsmeans_description", "") or first_hit.get("description", "") or ""
+            )
+
         # Store basic measure parameters
         basic_input.setFeature("measure_name", "Door Enhancement")
         basic_input.setFeature("analysis_period_years", analysis_period)
@@ -1156,6 +1173,10 @@ class DoorEnhancement(openstudio.measure.ModelMeasure):
             mtrl_prop.setFeature("door_top_side_seal_rsmeans_id", matched_rsmeans["door_top_side_seal"]["id"])
         if matched_rsmeans["door_top_side_seal"]["description"]:
             mtrl_prop.setFeature("door_top_side_seal_rsmeans_description", matched_rsmeans["door_top_side_seal"]["description"])
+        if rsmeans_unit_cost_line_id_value:
+            mtrl_prop.setFeature("rsmeans_unit_cost_line_id", rsmeans_unit_cost_line_id_value)
+        if rsmeans_unit_cost_description_value:
+            mtrl_prop.setFeature("rsmeans_unit_cost_description", rsmeans_unit_cost_description_value)
 
         # Store infiltration reduction and selected renovation options
         reno_detail.setFeature("door_enhancement_infiltration_reduction_percent", space_infiltration_reduction_percent)
@@ -1190,9 +1211,6 @@ class DoorEnhancement(openstudio.measure.ModelMeasure):
         
         # Store standardized result fields and compatibility output fields
         results.setFeature("door_enhancement_total_additional_embodied_carbon_kg", total_embodied_carbon)
-        results.setFeature("door_enhancement_total_additional_material_cost_$", 0.0)  # Placeholder
-        results.setFeature("door_enhancement_total_additional_overhead_profit_cost_$", 0.0)  # Placeholder
-        results.setFeature("door_enhancement_total_additional_labour_cost_$", 0.0)  # Placeholder
         results.setFeature("door_enhancement_total_embodied_carbon_kgCO2eq", total_embodied_carbon)
 
         if rsmeans_lookup is not None:
@@ -1209,6 +1227,15 @@ class DoorEnhancement(openstudio.measure.ModelMeasure):
                 if total_door_area_m2 > 0.0:
                     cost_per_door_area_per_m2 = rsmeans_total_cost / total_door_area_m2
                     cost_per_declared_unit = cost_per_door_area_per_m2 * door_area_per_unit
+
+                # Store RSMeans cost outputs directly in the standardized results and factors buckets.
+                results.setFeature("door_enhancement_cost_source", rsmeans_lookup.get("cost_source", "rsmeans_api"))
+                results.setFeature("door_enhancement_renovation_material_cost_$", rsmeans_material_cost)
+                results.setFeature("door_enhancement_renovation_overhead_profit_cost_$", rsmeans_overhead_cost)
+                results.setFeature("door_enhancement_renovation_cost_with_overhead_profit_$", rsmeans_total_cost)
+                results.setFeature("door_enhancement_renovation_cost_per_door_area_$/m2", cost_per_door_area_per_m2)
+                results.setFeature("door_enhancement_renovation_cost_per_declared_unit_$", cost_per_declared_unit)
+                factors.setFeature("door_enhancement_renovation_overhead_profit_percent", rsmeans_overhead_percent)
 
                 # Store RSMeans aggregate costs in a dedicated AdditionalProperties object
                 rsmeans_summary = openstudio.model.SpaceType(model)
