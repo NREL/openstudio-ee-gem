@@ -4,16 +4,6 @@ Simple validation that the enhanced RSMeans code works correctly.
 Tests the scoring function and search alternatives directly.
 """
 import sys
-from pathlib import Path
-
-# Add the shared window_enhancement resources path to Python
-# From IncreaseInsulationRValueForRoofs/resources/ -> up 3 levels -> window_enhancement/resources
-resources_path = (
-    Path(__file__).parent.parent.parent / "window_enhancement" / "resources"
-)
-sys.path.insert(0, str(resources_path))
-
-# Now we can test without OpenStudio
 
 
 def test_scoring_function():

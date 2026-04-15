@@ -387,6 +387,48 @@ class IncreaseInsulationRValueForRoofs(openstudio.measure.ModelMeasure):
             extracted = {}
             desc_lower = description.lower()
 
+            def _parse_inches_token(token: str):
+                token = str(token).strip()
+                if not token:
+                    return None
+                if "-" in token:
+                    whole, frac = token.split("-", 1)
+                    try:
+                        whole_val = float(whole)
+                    except ValueError:
+                        return None
+                    if "/" in frac:
+                        num, den = frac.split("/", 1)
+                        try:
+                            return whole_val + (float(num) / float(den))
+                        except (ValueError, ZeroDivisionError):
+                            return None
+                    return None
+                if "/" in token:
+                    num, den = token.split("/", 1)
+                    try:
+                        return float(num) / float(den)
+                    except (ValueError, ZeroDivisionError):
+                        return None
+                try:
+                    return float(token)
+                except ValueError:
+                    return None
+
+            def _extract_thickness_m_from_description(desc: str):
+                thickness_patterns = [
+                    r'(\d+(?:-\d+/\d+|/\d+|\.\d+)?)\s*"',
+                    r'(\d+(?:-\d+/\d+|/\d+|\.\d+)?)\s*(?:in|inch|inches)\b',
+                ]
+                for pattern in thickness_patterns:
+                    match = re.search(pattern, desc, flags=re.IGNORECASE)
+                    if not match:
+                        continue
+                    thickness_in = _parse_inches_token(match.group(1))
+                    if thickness_in and thickness_in > 0:
+                        return self._unit_convert(thickness_in, "in", "m")
+                return None
+
             # Try to find density in description (e.g., "density 1.5 pcf" or "1.5 lb/ft³")
             import re
             density_patterns = [
@@ -413,6 +455,23 @@ class IncreaseInsulationRValueForRoofs(openstudio.measure.ModelMeasure):
                     if r_value_ip_parsed > 0:
                         extracted['rsmeans_rvalue_ip_in_description'] = r_value_ip_parsed
                     break
+
+            # Derive thermal conductivity from parsed thickness and R-value when available.
+            # R = t / k  =>  k = t / R
+            if 'rsmeans_rvalue_ip_in_description' in extracted:
+                thickness_m = _extract_thickness_m_from_description(desc_lower)
+                if thickness_m and thickness_m > 0:
+                    r_value_si_parsed = self._unit_convert(
+                        extracted['rsmeans_rvalue_ip_in_description'],
+                        "ft^2*h*R/Btu",
+                        "m^2*K/W",
+                    )
+                    if r_value_si_parsed > 0:
+                        parsed_k = thickness_m / r_value_si_parsed
+                        # Keep only physically plausible insulation conductivity values.
+                        if 0.005 <= parsed_k <= 1.5:
+                            extracted['conductivity_W_mK'] = parsed_k
+                            extracted['rsmeans_thickness_m_in_description'] = thickness_m
 
             return extracted
 
@@ -466,6 +525,11 @@ class IncreaseInsulationRValueForRoofs(openstudio.measure.ModelMeasure):
                                 if "density_kg_m3" in extracted_props:
                                     runner.registerInfo(
                                         f"Extracted density from RSMeans: {extracted_props['density_kg_m3']:.2f} kg/m³"
+                                    )
+                                if "conductivity_W_mK" in extracted_props:
+                                    runner.registerInfo(
+                                        "Extracted conductivity from RSMeans: "
+                                        f"{extracted_props['conductivity_W_mK']:.4f} W/m·K"
                                     )
                     else:
                         runner.registerInfo("Early RSMeans property extraction: no match found (will use defaults)")
@@ -953,18 +1017,9 @@ class IncreaseInsulationRValueForRoofs(openstudio.measure.ModelMeasure):
 
             # Tag onto construction as additionalProperties
             c = item["construction"]
-            props = c.additionalProperties()
             
-            # Convert R-values to IP units for storage
-            original_r_value_ip = self._unit_convert(item["original_r_value_si"], "m^2*K/W", "ft^2*h*R/Btu")
-            target_r_value_ip = self._unit_convert(item["target_r_value_si"], "m^2*K/W", "ft^2*h*R/Btu")
-            
-            # Get construction handle
-            construction_handle = str(c.handle())
-            
-            # Get number of layers in construction
-            lc = c.to_LayeredConstruction()
-            construction_layers_count = len(lc.get().layers()) if lc.is_initialized() else 0
+            # Legacy per-construction AdditionalProperties writes were intentionally
+            # retired; reporting is now stored only in the model-level placeholder buckets.
             
             # # Store all properties matching exterior wall measure format
             # props.setFeature("construction_handle", construction_handle)
@@ -1066,7 +1121,7 @@ class IncreaseInsulationRValueForRoofs(openstudio.measure.ModelMeasure):
             try:
                 materials_json = json.dumps(rsmeans_materials)
                 results.setFeature("roof_insulation_retrofit_materials_json", materials_json)
-                facility.additionalProperties().setFeature("roof_insulation_retrofit_materials_json", materials_json)
+                factors.setFeature("roof_insulation_retrofit_materials_json", materials_json)
             except Exception:
                 runner.registerWarning("Could not serialize RSMeans retrofit materials to JSON.")
 
@@ -1249,7 +1304,7 @@ class IncreaseInsulationRValueForRoofs(openstudio.measure.ModelMeasure):
                                 results.setFeature(
                                     feature_name, diagnostics_json
                                 )
-                                facility.additionalProperties().setFeature(
+                                factors.setFeature(
                                     feature_name, diagnostics_json
                                 )
                                 sim_ap = model.getSimulationControl(
@@ -1316,18 +1371,18 @@ class IncreaseInsulationRValueForRoofs(openstudio.measure.ModelMeasure):
         results.setFeature("roof_insulation_total_embodied_carbon_kgCO2eq", total_embodied_carbon)
 
         # Mirror key cost outputs on Facility AdditionalProperties for persistence/visibility
-        facility.additionalProperties().setFeature("roof_insulation_total_additional_installed_cost_$", total_installed_cost)
-        facility.additionalProperties().setFeature("roof_insulation_total_additional_material_cost_$", total_material_cost)
-        facility.additionalProperties().setFeature("roof_insulation_total_additional_labour_cost_$", total_labour_cost)
-        facility.additionalProperties().setFeature("roof_insulation_total_additional_overhead_profit_cost_$", total_overhead_profit_cost)
-        facility.additionalProperties().setFeature("roof_insulation_total_cost_with_overhead_and_profit_$", total_installed_cost + total_overhead_profit_cost)
-        facility.additionalProperties().setFeature("roof_insulation_cost_source", cost_source)
-        facility.additionalProperties().setFeature(
+        factors.setFeature("roof_insulation_total_additional_installed_cost_$", total_installed_cost)
+        factors.setFeature("roof_insulation_total_additional_material_cost_$", total_material_cost)
+        factors.setFeature("roof_insulation_total_additional_labour_cost_$", total_labour_cost)
+        factors.setFeature("roof_insulation_total_additional_overhead_profit_cost_$", total_overhead_profit_cost)
+        factors.setFeature("roof_insulation_total_cost_with_overhead_and_profit_$", total_installed_cost + total_overhead_profit_cost)
+        factors.setFeature("roof_insulation_cost_source", cost_source)
+        factors.setFeature(
             "roof_insulation_rsmeans_selection_mode",
             "exact_id" if use_exact_costline_id else ("custom_input" if use_custom_costs else "closest_match")
         )
         if use_exact_costline_id and exact_costline_id:
-            facility.additionalProperties().setFeature("roof_insulation_rsmeans_requested_costline_id", exact_costline_id)
+            factors.setFeature("roof_insulation_rsmeans_requested_costline_id", exact_costline_id)
 
         # Emission factors aggregated from selected statistic lists
         if gwp_values["gwp_per_kg"]:
@@ -1340,7 +1395,7 @@ class IncreaseInsulationRValueForRoofs(openstudio.measure.ModelMeasure):
         if rsmeans_extracted_properties:
             try:
                 extracted_json = json.dumps(rsmeans_extracted_properties)
-                facility.additionalProperties().setFeature(
+                factors.setFeature(
                     "roof_insulation_rsmeans_extracted_properties_json",
                     extracted_json,
                 )
