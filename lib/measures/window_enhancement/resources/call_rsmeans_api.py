@@ -1,23 +1,21 @@
 #!/usr/bin/env python
 """
-Modular RSMeans API helper for OpenStudio measures.
+RSMeans API helper for the window_enhancement measure.
 
 This script can be used in two ways:
-1. As a library imported by measures (via measure.py)
+1. As a library imported by the measure (via measure.py)
 2. As a standalone CLI tool to query RSMeans costs from saved OSM files
 
-When run as a script, it automatically discovers model paths from the parent
-directory's apply_measure.py and searches across multiple RSMeans catalogs.
+Search behavior summary:
+1. If a specific RSMeans costline ID is provided for a material, exact ID
+    lookup is attempted first.
+2. Otherwise, multi-catalog closest-match search is used with scored
+    candidates and a minimum accepted score threshold.
+3. If the best score is below threshold, a material-specific fallback
+    costline ID is used when available.
 
-Required AdditionalProperties keys (defaults):
-  - retrofit_material_name
-  - retrofit_material_quantity
-  - retrofit_material_unit
-Optional keys:
-  - retrofit_material_description
-  - rsmeans_division_code
-  - rsmeans_unit_cost
-  - rsmeans_total_cost
+When run as a script, it discovers model paths from apply_measure.py and
+searches across configured RSMeans catalogs.
 """
 
 import argparse
@@ -45,7 +43,7 @@ DEFAULT_FEATURE_KEYS = {
 }
 
 
-# Default fallback RSMeans IDs used when candidate scoring is out-of-bounds.
+# Default fallback RSMeans IDs used for low-confidence matches.
 # Keep this list window-focused for the window_enhancement measure.
 WINDOW_DEFAULT_FALLBACK_COSTLINES = {
     "silicone adhesive smoke gasket": "087125105050",
@@ -63,6 +61,10 @@ WINDOW_DEFAULT_FALLBACK_COSTLINES = {
     "decorative film": "088726100050",
     "low e film": "088713101020",
 }
+
+# Minimum clamped candidate score [0-100] required to accept a closest match.
+# Below this threshold, helper falls back to material-specific fallback IDs.
+MIN_ACCEPTABLE_MATCH_SCORE = 50.0
 
 
 def _get_double_pane_fallback_rsmeans_id(area_sf: float) -> str:
@@ -327,6 +329,17 @@ def _tokenize_search_text(text: str) -> set:
 
 
 def _score_rsmeans_candidate(material_name: str, item: Dict[str, Any]) -> float:
+    """Score an RSMeans candidate against a material name.
+
+    Score components:
+    - +60 if normalized material name appears in description
+    - +12 per overlapping token between material and description
+    - +10 if both contain the token "window"
+    - -20 if description looks like non-installation accessory line
+    - +0..1 for description length bonus
+
+    Returns a raw score; caller clamps it to [0, 100].
+    """
     description = str(item.get("description", ""))
     if not description:
         return -1.0
@@ -356,6 +369,11 @@ def _score_rsmeans_candidate(material_name: str, item: Dict[str, Any]) -> float:
 
 
 def _is_disallowed_candidate(item: Dict[str, Any]) -> bool:
+    """Return True if candidate line should be excluded from ranking.
+
+    Excludes fasteners/hangers/anchors and board-foot line items that are
+    usually not direct retrofit scope lines for this measure.
+    """
     desc = _normalize_search_text(item.get("description", ""))
     if not desc:
         return False
@@ -389,7 +407,19 @@ def _is_disallowed_candidate(item: Dict[str, Any]) -> bool:
     return False
 
 
-def _select_best_rsmeans_candidate(material_name: str, items: List[Dict[str, Any]], material: Optional[Dict[str, Any]] = None) -> tuple:
+def _select_best_rsmeans_candidate(
+    material_name: str,
+    items: List[Dict[str, Any]],
+    material: Optional[Dict[str, Any]] = None,
+) -> tuple:
+    """Return best candidate and ranked score list for diagnostics.
+
+    Behavior:
+    - Filters disallowed candidates where possible.
+    - Scores candidates and clamps to [0, 100].
+    - If best clamped score is below MIN_ACCEPTABLE_MATCH_SCORE, returns a
+      fallback pseudo-candidate when fallback mapping exists.
+    """
     if not items:
         return None, []
 
@@ -401,24 +431,29 @@ def _select_best_rsmeans_candidate(material_name: str, items: List[Dict[str, Any
     for idx, item in enumerate(eligible_items):
         raw_score = _score_rsmeans_candidate(material_name, item)
         bounded_score = max(0.0, min(100.0, raw_score))
-        scored.append({
-            "index": idx,
-            "rsmeans_id": item.get("id", "unknown"),
-            "description": str(item.get("description", ""))[:100],
-            "score": round(bounded_score, 2),
-            "raw_score": round(raw_score, 2),
-        })
+        scored.append(
+            {
+                "index": idx,
+                "rsmeans_id": item.get("id", "unknown"),
+                "description": str(item.get("description", ""))[:100],
+                "score": round(bounded_score, 2),
+                "raw_score": round(raw_score, 2),
+            }
+        )
 
     scored.sort(key=lambda x: -x["score"])
-    best_raw_score = scored[0].get("raw_score", 0.0)
-    if best_raw_score < 0.0 or best_raw_score > 100.0:
+    top_score = scored[0].get("score", 0.0)
+    if top_score < MIN_ACCEPTABLE_MATCH_SCORE:
         fallback_id = _get_default_fallback_rsmeans_id(material_name, material)
         if fallback_id:
             return {
                 "id": fallback_id,
                 "description": f"[fallback costline] {material_name}",
                 "is_fallback": True,
-                "fallback_reason": f"raw_score_out_of_bounds:{best_raw_score}",
+                "fallback_reason": (
+                    f"poor_match_score_fallback:{top_score:.1f}<"
+                    f"{MIN_ACCEPTABLE_MATCH_SCORE}"
+                ),
             }, scored
 
     best_idx = scored[0]["index"]
@@ -513,15 +548,10 @@ def _compute_total_cost_for_material(material: Dict[str, Any], unit_cost: float,
 
 
 def generate_search_term_alternatives(material_name: str) -> List[tuple]:
-    """
-    Generate alternative search terms and divisions for a material.
-    Returns list of (search_term, division_code) tuples in priority order.
-    
-    Args:
-        material_name: Original material name (e.g., "window glazing")
-    
-    Returns:
-        List of (search_term, division_code) tuples to try in order
+    """Generate ordered (search_term, division_code) alternatives.
+
+    Uses material-specific heuristics and progressive simplification so
+    searches can recover when the exact source term is absent in RSMeans.
     """
     alternatives = []
     name_lower = material_name.lower().strip()

@@ -5,6 +5,10 @@ The `call_rsmeans_api.py` tool supports two lookup modes:
 1) **Exact line item ID lookup** (if user supplies RSMeans IDs), and
 2) **Closest-match search** (default), which tries multiple search terms and catalogs.
 
+Closest-match candidate acceptance uses a minimum clamped score threshold of `50.0`.
+If the best candidate score is below `50.0`, the helper attempts a material-specific
+fallback RSMeans line item ID when available.
+
 ## Search Strategy
 
 ### 1. **Priority Order**
@@ -89,6 +93,9 @@ python resources/call_rsmeans_api.py --overhead-profit-percent 25
 Each matched material includes a `match_type` field:
 - `exact_id_match`: Found via user-provided RSMeans line item ID
 - `closest_match`: Found via alternative-term search
+
+Low-confidence closest matches that do not meet the threshold are not used directly;
+they are replaced by fallback IDs if fallback mappings exist.
 
 ## Alternative Solutions
 

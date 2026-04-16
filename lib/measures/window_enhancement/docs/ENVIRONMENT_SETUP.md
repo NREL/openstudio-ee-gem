@@ -11,6 +11,17 @@ The Window Enhancement measure requires Python 3.8 and OpenStudio 3.11.0 to run 
 
 ## Quick Setup
 
+### 0. Automated Setup (Recommended on Windows)
+
+From the measure directory, run:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\setup_environment.ps1
+```
+
+The script checks for OpenStudio Python paths, verifies `openstudio` import,
+installs `python-dotenv` if missing, and prints the interpreter/version in use.
+
 ### 1. Create the Environment from environment.yml
 
 From the repository root, run:
@@ -49,6 +60,9 @@ Once the environment is activated, you can run the measure test script from the 
 cd lib/measures/window_enhancement
 python apply_measure.py
 ```
+
+If you used the setup script, keep using the same shell session so any temporary
+environment updates remain active.
 
 ## Environment Contents
 
