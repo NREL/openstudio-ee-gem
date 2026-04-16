@@ -12,7 +12,7 @@ user_arguments:  igu_component_name (IGU Component Name)
 String, Required
 Value: 
 
-user_arguments:  frame_cross_section_area (Frame Cross Section Area (m²))
+user_arguments:  frame_cross_section_area (Frame Cross Section Area (mï¿½))
 Double, Required
 Value: 
 
@@ -34,6 +34,6 @@ user_argument: frame_perimeter_length = 10
 user_argument: gwp = 0
 user_argument: igu_component_name = TestIGU
 Measure result: Success
-Modified model saved to: C:\All_repos\openstudio-ee-gem\lib\measures\window_enhancement\tests\output\example_model_with_enhancements.osm
+Modified model saved to: C:\All_repos\openstudio-ee-gem\lib\measures\door_enhancement\tests\output\example_model_with_enhancements.osm
 Running test_measure_changes_building()...
 Measure success: Fail

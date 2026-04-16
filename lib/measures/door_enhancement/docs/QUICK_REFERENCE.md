@@ -1,200 +1,64 @@
-# Door Enhancement Measure – Quick Reference
+# Door Enhancement – Quick Reference
 
-## 30-Second Overview
+## Run Locally
 
-The Door Enhancement measure improves building doors by:
-- ✓ Adding weatherstripping seals (reduces air infiltration)
-- ✓ Optionally replacing doors with efficient models
-- ✓ Calculating embodied carbon (GWP) via EC3 database
-- ✓ Estimating costs via RSMeans API or custom inputs
-
----
-
-## Running the Measure
-
-### Via OpenStudio GUI (Fastest)
-1. Load model → Measures → Add → door_enhancement
-2. Set door option: "polystyrene core steel door"
-3. Set seals: "automatic door bottom" + "jamb weatherstrip"
-4. Enter EC3 API key
-5. Click "Run"
-
-### Via Python Script
-```bash
+```powershell
 cd lib/measures/door_enhancement
+./setup_environment.ps1
 python apply_measure.py
 ```
 
-### Via Parametric Analysis (Sensitivity Analysis)
-Use PAT with multiple cost values to compare scenarios.
+## Core Inputs
 
----
+| Purpose | Argument | Typical Value |
+|---|---|---|
+| Target scope | `space_type` | `*Entire Building*` |
+| Infiltration reduction | `space_infiltration_reduction_percent` | `30.0` |
+| Door replacement type | `door_option` | `polystyrene core steel door` |
+| Bottom seal | `door_bottom_seal_option` | `automatic door bottom` |
+| Top/side seal | `door_top_side_seal_option` | `jamb weatherstrip` |
+| Carbon stat | `gwp_statistic` | `median` |
+| Cost mode | `use_custom_costs` | `false` |
 
-## Essential Arguments
+## Cost Behavior
 
-| What | Argument | Example |
-|------|----------|---------|
-| **Which door?** | `door_option` | polystyrene core steel door |
-| **Bottom seal?** | `door_bottom_seal_option` | automatic door bottom |
-| **Top/side seal?** | `door_top_side_seal_option` | jamb weatherstrip |
-| **Costs from?** | `use_custom_costs` | False (use RSMeans API) |
-| **Exact RSMeans ID?** | `rsmeans_unit_costline_id` | 081116100020 |
-| **Custom costs?** | `custom_door_cost_per_unit` | 3500 ($/m²) |
-| **Carbon data?** | `api_key` | Your EC3 token |
-| **Time period?** | `analysis_period` | 30 (years) |
+- `use_custom_costs = false`: RSMeans lookup across `bc-mf`, `gb-mf`, `rp-mf`
+- `use_custom_costs = true`: custom cost inputs only
+- Minimum acceptable RSMeans match score: **50.0**
+- Lower scores trigger fallback ID lookup
 
----
+## Cost Metadata Written
 
-## What Gets Modified
+The measure always writes:
 
-- **Infiltration rates**: Reduced by 30% (configurable)
-- **Door constructions**: Replaced with selected type
-- **Model properties**: EC3 carbon + RSMeans costs added
-- **Infiltration objects**: Updated on all door-containing spaces
+- `door_enhancement_cost_source`
+- `door_enhancement_cost_factor_basis`
+- `door_enhancement_cost_unit_basis`
 
----
+Examples:
 
-## Outputs
+- `cost_source = rsmeans_api`
+- `cost_factor_basis = cost_per_unit` / `cost_per_length` / `mixed`
+- `cost_unit_basis = EA` / `LF` / `EA, LF`
 
-### Terminal Shows
-```
-RSMeans cost summary (cost_source=rsmeans_api): 
-materials=1, total_cost=$3,569.50
-```
+## AdditionalProperties Buckets
 
-### Model Contains
-- **Facility AdditionalProperties**: EC3 embodied carbon results
-- **RSMeans Summary SpaceType**: Total costs + cost_source identifier
-- **RSMeans Hit N SpaceTypes**: Per-material details (optional)
+- Building (`basic_input`)
+- Site (`reno_detail`)
+- Facility (`factors`)
+- SimulationControl (`results`)
+- SizingParameters (`mtrl_prop`)
 
----
+## RSMeans Diagnostic JSON Fields
 
-## Cost Options
+Stored on SimulationControl:
 
-### Option A: RSMeans API (Automatic)
-```python
-use_custom_costs = False
-# Measure queries RSMeans, calculates costs automatically
-# Needs: client_id, client_secret env vars
-```
+- `door_enhancement_rsmeans_matches_json`
+- `door_enhancement_rsmeans_search_results_json`
+- `door_enhancement_rsmeans_summary_json`
+- `door_enhancement_retrofit_materials_json`
 
-### Option B: Custom Costs (Manual)
-```python
-use_custom_costs = True
-custom_door_cost_per_unit = 3500.0          # $/m²
-custom_bottom_seal_cost = 45.50             # $/m
-custom_top_side_seal_cost = 22.75           # $/m
-```
+## Output Files
 
-**Identify costs with** `cost_source` in output:
-- `"rsmeans_api"` → Automatically looked up
-- `"custom_input"` → User-provided values
-
----
-
-## Embodied Carbon Formula
-
-```
-Total GWP = (GWP per unit × Quantity) × ⌈Analysis Period ÷ Material Lifetime⌉
-```
-
-Example: 12 kg CO₂/m² × 2 m² × 1 replacement = **24 kg CO₂ eq**
-
----
-
-## Troubleshooting
-
-| Problem | Solution |
-|---------|----------|
-| "API token not found" | Set `EC3_API_TOKEN` env var or add to `config.ini` |
-| "RSMeans lookup failed" | Use `use_custom_costs = True` instead |
-| "No doors found" | Model must contain Door/GlassDoor subsurfaces |
-| "Zero cost" | Check RSMeans search term in terminal output |
-
----
-
-## File Locations
-
-```
-measure.py                      Main logic
-resources/call_rsmeans_api.py   RSMeans API client
-apply_measure.py                Test script
-docs/USAGE_GUIDE.md            Full user documentation
-docs/TECHNICAL.md              Architecture & algorithms
-```
-
----
-
-## API Requirements
-
-### EC3 (Embodied Carbon)
-- **Account**: https://www.buildingtransparency.org/ec3/
-- **Env var**: `EC3_API_TOKEN`
-- **Cost**: Free (registration required)
-
-### RSMeans (Construction Costs)
-- **Account**: Gordian (https://www.gordian.com/)
-- **Env vars**: `client_id`, `client_secret`
-- **Cost**: Subscription required
-
----
-
-## Key Properties (Model Output)
-
-```json
-{
-  "Facility": {
-    "ec3_total_gwp_kg_co2eq": 45.23
-  },
-  "RSMeans Summary": {
-    "cost_source": "rsmeans_api",
-    "rsmeans_total_cost_with_overhead_profit_$": 3569.50,
-    "rsmeans_unit_cost_line_id": "081116100020"
-  }
-}
-```
-
----
-
-## Door Options & Lifetimes
-
-| Door Type | Default Lifetime |
-|-----------|------------------|
-| Wooden door | 20 years |
-| Garage door | 15 years |
-| Glass door | 25 years |
-| Steel core doors | 30 years |
-
----
-
-## Sealing Lengths (Per Unit)
-
-| Seal Type | Length |
-|-----------|--------|
-| Bottom seal | ~0.9 m (36 in) |
-| Top/side seal | ~5.2 m (204 in) |
-
----
-
-## Version Info
-
-**Current**: 1.1.0 (March 2026)
-
-**Recent Changes**:
-- Added custom cost inputs
-- Added `cost_source` identifier
-- Improved RSMeans search fallbacks
-
----
-
-## Next Steps
-
-1. **Read**: Full USAGE_GUIDE.md for all arguments
-2. **Test**: Run `apply_measure.py` on sample model
-3. **Configure**: Set up EC3/RSMeans credentials
-4. **Run**: Apply measure to your building model
-5. **Analyze**: Review output costs & embodied carbon
-
----
-
-**Need help?** See USAGE_GUIDE.md → Troubleshooting section
+- `tests/output/EnvelopeAndLoadTestModel_01_door_enhanced.osm`
+- `tests/output/apply_measure_results.json`

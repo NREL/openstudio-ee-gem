@@ -7127,7 +7127,7 @@ OS:Curve:Cubic,
   1;                                      !- Maximum Value of x
 
 OS:AdditionalProperties,
-  {fff96aae-c0e5-4c87-b916-8811a250a9cd}, !- Handle
+  {727590fa-4d95-41a2-9d3e-ffb59246c4f9}, !- Handle
   {272d9a4d-ec25-4bbb-b083-822aef42268c}, !- Object Name
   door_area_per_unit_m2,                  !- Feature Name 1
   Double,                                 !- Feature Data Type 1
@@ -7143,7 +7143,7 @@ OS:AdditionalProperties,
   jamb weatherstrip,                      !- Feature Value 4
   door_option,                            !- Feature Name 5
   String,                                 !- Feature Data Type 5
-  none,                                   !- Feature Value 5
+  polystyrene core steel door,            !- Feature Value 5
   total_renovated_door_area_m2,           !- Feature Name 6
   Integer,                                !- Feature Data Type 6
   0,                                      !- Feature Value 6
@@ -7161,30 +7161,33 @@ OS:AdditionalProperties,
   0;                                      !- Feature Value 10
 
 OS:AdditionalProperties,
-  {654aff27-1dd8-47da-ac2b-3f1def2cbef0}, !- Handle
-  {fabc41a8-018f-4730-a73a-b7ae2e5ab091}; !- Object Name
+  {da1ff693-8e11-45b2-a419-12ac508835a6}, !- Handle
+  {fabc41a8-018f-4730-a73a-b7ae2e5ab091}, !- Object Name
+  door_enhancement_cost_source,           !- Feature Name 1
+  String,                                 !- Feature Data Type 1
+  none,                                   !- Feature Value 1
+  door_enhancement_cost_factor_basis,     !- Feature Name 2
+  String,                                 !- Feature Data Type 2
+  not_calculated;                         !- Feature Value 2
 
 OS:AdditionalProperties,
-  {86b3fab8-42be-48f8-b30f-9e974558a757}, !- Handle
+  {db7b6401-25f9-4577-a601-e2d4ea9f621b}, !- Handle
   {c0b51378-f9a5-4264-951f-3845cfc487fd}, !- Object Name
   door_enhancement_total_additional_embodied_carbon_kg, !- Feature Name 1
   Integer,                                !- Feature Data Type 1
   0,                                      !- Feature Value 1
-  door_enhancement_total_additional_material_cost_$, !- Feature Name 2
-  Double,                                 !- Feature Data Type 2
+  door_enhancement_total_embodied_carbon_kgCO2eq, !- Feature Name 2
+  Integer,                                !- Feature Data Type 2
   0,                                      !- Feature Value 2
-  door_enhancement_total_additional_overhead_profit_cost_$, !- Feature Name 3
-  Double,                                 !- Feature Data Type 3
-  0,                                      !- Feature Value 3
-  door_enhancement_total_additional_labour_cost_$, !- Feature Name 4
-  Double,                                 !- Feature Data Type 4
-  0,                                      !- Feature Value 4
-  door_enhancement_total_embodied_carbon_kgCO2eq, !- Feature Name 5
-  Integer,                                !- Feature Data Type 5
-  0;                                      !- Feature Value 5
+  door_enhancement_cost_source,           !- Feature Name 3
+  String,                                 !- Feature Data Type 3
+  none,                                   !- Feature Value 3
+  door_enhancement_cost_factor_basis,     !- Feature Name 4
+  String,                                 !- Feature Data Type 4
+  not_calculated;                         !- Feature Value 4
 
 OS:AdditionalProperties,
-  {65888464-ad94-4a74-8fd5-b2265aff99e7}, !- Handle
+  {386b4e5f-af27-4594-acdf-0e5e945ad439}, !- Handle
   {1caa628a-3341-4dc5-9562-7eeadd446702}, !- Object Name
   door_strip_lifetime_years,              !- Feature Name 1
   Integer,                                !- Feature Data Type 1
@@ -7192,10 +7195,22 @@ OS:AdditionalProperties,
   door_lifetime_years,                    !- Feature Name 2
   Integer,                                !- Feature Data Type 2
   30,                                     !- Feature Value 2
-  door_bottom_seal_length_per_unit_m,     !- Feature Name 3
+  door_r_value_m2KperW,                   !- Feature Name 3
   Double,                                 !- Feature Data Type 3
-  0.91439999999999999,                    !- Feature Value 3
-  door_top_side_seal_length_per_unit_m,   !- Feature Name 4
+  0.42740384615384619,                    !- Feature Value 3
+  door_density_kg_per_m3,                 !- Feature Name 4
   Double,                                 !- Feature Data Type 4
-  5.181;                                  !- Feature Value 4
+  472.30000000000001,                     !- Feature Value 4
+  door_thickness_m,                       !- Feature Name 5
+  Double,                                 !- Feature Data Type 5
+  0.044450000000000003,                   !- Feature Value 5
+  door_conductivity_W_per_mK,             !- Feature Name 6
+  Double,                                 !- Feature Data Type 6
+  0.104,                                  !- Feature Value 6
+  door_bottom_seal_length_per_unit_m,     !- Feature Name 7
+  Double,                                 !- Feature Data Type 7
+  0.91439999999999999,                    !- Feature Value 7
+  door_top_side_seal_length_per_unit_m,   !- Feature Name 8
+  Double,                                 !- Feature Data Type 8
+  5.181;                                  !- Feature Value 8
 

@@ -2,222 +2,85 @@
 
 ## Overview
 
-The **Door Enhancement** measure improves building door performance by:
-1. **Adding weatherstripping seals** (bottom, top, and side) to reduce air infiltration
-2. **Optionally replacing doors** with more thermally efficient options
-3. **Calculating embodied carbon impact** using Environmental Product Declaration (EPD) data from the EC3 database
-4. **Estimating construction costs** via RSMeans API or custom cost inputs
+The Door Enhancement measure does four things in one pass:
 
-The measure adjusts space infiltration rates and generates a life-cycle embodied carbon assessment over a user-specified analysis period.
+1. Reduces infiltration rates in target spaces
+2. Adds/updates door sealing products (bottom + top/side)
+3. Optionally replaces door constructions with new thermal properties
+4. Calculates embodied carbon (EC3) and cost (RSMeans or custom)
 
----
+## Fast Setup
 
-## Getting Started
+From the measure directory:
 
-### Prerequisites
-
-- **OpenStudio SDK v3.11.0** or compatible
-- **Python 3.7+** with libraries: `numpy`, `pandas`, `urllib3`, `requests`, `python-dotenv`
-- **EC3 API credentials** (for embodied carbon lookups)
-- **RSMeans API credentials** (optional; for construction cost lookups)
-- **Configuration file** at repo root: `config.ini` with EC3 API token
-
-#### Python Environment Setup (Optional)
-
-You can create a Python environment with the required dependencies using the repo’s environment.yml:
-
-```bash
-conda env create -f environment.yml
-conda activate openstudio-3.11
-```
-
-**Important**: This installs Python packages only. You still need to install the OpenStudio SDK separately and ensure its Python bindings are discoverable (e.g., update your `OPENSTUDIO_VERSION` path in apply_measure.py).
-
-### Configuration
-
-#### EC3 API Setup
-
-Create `config.ini` in the repository root:
-
-```ini
-[EC3_API_TOKEN]
-API_TOKEN = your_ec3_api_token_here
-```
-
-Or set environment variables:
-```bash
-export EC3_API_TOKEN=your_token_here
-```
-
-#### RSMeans API Setup (Optional)
-
-Set environment variables for RSMeans authentication:
-```bash
-export client_id=your_client_id
-export client_secret=your_client_secret
-```
-
-Or add to a `.env` file:
-
-```
-client_id=your_client_id
-client_secret=your_client_secret
-```
-
-**Security Note**: Never commit `.env` files or credentials to the repository. The `.gitignore` file prevents `config.ini`, `.env`, and `*.env` from being committed.
-
----
-
-## Measure Arguments
-
-### Core Arguments
-
-| Argument | Type | Default | Description |
-|----------|------|---------|-------------|
-| `space_type` | Choice | *Entire Building* | Apply to specific space type or entire building |
-| `space_infiltration_reduction_percent` | Double (%) | 30.0 | Percent reduction in space infiltration rates |
-| `alter_coef` | Boolean | False | Modify infiltration coefficients (disabled; always preserves) |
-
-### Door Enhancement Options
-
-| Argument | Type | Default | Description |
-|----------|------|---------|-------------|
-| `door_option` | Choice | wooden door | Door type to install (none, wooden, garage, glass, polystyrene/polyurethane/honeycomb/stiffened core steel) |
-| `door_lifetime` | Integer (years) | 30 | Product lifetime of door (default varies by type: wood=20, garage=15, glass=25, steel=30) |
-| `door_area_per_unit` | Double (m²) | 1.95 | Declared unit area per EPD (typically 21 sq ft / 1.95 m²). If RSMeans parsed opening area differs from model geometry by >10%, set this explicitly. |
-| `door_thermal_conductivity` | Double (W/m·K) | 0.0 | Door material conductivity (0 = use typical value) |
-| `door_density` | Double (kg/m³) | 0.0 | Door material density (0 = use typical value) |
-| `door_thickness` | Double (m) | 0.0 | Door thickness override (0 = infer from RSMeans match when available, otherwise use selected door-type default) |
-
-### Sealing Options
-
-| Argument | Type | Default | Description |
-|----------|------|---------|-------------|
-| `door_bottom_seal_option` | Choice | automatic door bottom | Bottom seal type (none, brush weatherstrip, automatic door bottom, silicone smoke gasket) |
-| `door_top_side_seal_option` | Choice | jamb weatherstrip | Top/side seal type (none, silicone smoke gasket, jamb weatherstrip) |
-| `strip_lifetime` | Integer (years) | 15 | Product lifetime of sealing strips |
-| `length_per_unit_bottom_side` | Double (m) | 0.9144 | Length of bottom seal per unit door (~36 in) |
-| `length_per_unit_other_sides` | Double (m) | 5.1816 | Length of top/side seal per unit door (~204 in) |
-
-### Embodied Carbon (EC3)
-
-| Argument | Type | Default | Description |
-|----------|------|---------|-------------|
-| `gwp_statistic` | Choice | median | Statistic for GWP values (minimum, maximum, mean, median) |
-| `api_key` | String | — | EC3 API token for EPD database access |
-| `analysis_period` | Integer (years) | 30 | Life-cycle analysis period (impacts embodied carbon calculations) |
-
-### Cost Options
-
-| Argument | Type | Default | Description |
-|----------|------|---------|-------------|
-| `use_custom_costs` | Boolean | False | Use custom cost inputs instead of RSMeans API |
-| `rsmeans_unit_costline_id` | String | "" | Optional exact RSMeans unit cost line ID override (tried before normal search) |
-| `custom_door_cost_per_unit` | Double ($/m²) | 0.0 | Custom material + labor cost for door replacement |
-| `custom_bottom_seal_cost` | Double ($/m) | 0.0 | Custom material + labor cost for bottom seal |
-| `custom_top_side_seal_cost` | Double ($/m) | 0.0 | Custom material + labor cost for top/side seal |
-
----
-
-## Usage Examples
-
-### Example 1: Basic Setup (RSMeans Costs, EC3 Embodied Carbon)
-
-Using the OpenStudio GUI or Parametric Analysis Tool (PAT):
-
-1. Select door option: **polystyrene core steel door**
-2. Select bottom seal: **automatic door bottom**
-3. Select top/side seal: **jamb weatherstrip**
-4. GWP statistic: **median**
-5. API key: *(enter your EC3 token)*
-6. Use custom costs: **False** (uses RSMeans API)
-
-**Result**: Measure applies door replacement + sealing, calculates embodied carbon (GWP in kg CO2 eq), estimates costs via RSMeans with 10% overhead profit.
-
-If no direct RSMeans match is found, door-specific fallback unit cost line IDs may be applied for known materials; these are reported in measure warnings.
-
-When RSMeans returns a door hit, the measure uses the closest matched door description to infer replacement details:
-- parses opening size (if present) for area cross-checking
-- parses thickness (if present) for door construction replacement
-- infers door type keywords (garage/glass/wood/core steel variants)
-
-If parsed RSMeans opening area differs from model average door area by more than 10%, the measure warns. If `door_area_per_unit` is still left at default in that case, the measure exits with an error and asks for explicit user input.
-
----
-
-### Example 2: Custom Costs (Avoid API Calls)
-
-Using `apply_measure.py` script:
-
-```python
-set_arg("use_custom_costs", True)
-set_arg("custom_door_cost_per_unit", 3500.0)          # $/m²
-set_arg("custom_bottom_seal_cost", 45.50)             # $/m
-set_arg("custom_top_side_seal_cost", 22.75)           # $/m
-```
-
-**Result**: Same door enhancement applied, but uses your provided costs instead of RSMeans API. Useful when:
-- You have quotes from contractors
-- RSMeans API is unavailable
-- You want to test cost sensitivity without API delays
-
----
-
-### Example 3: Sensitivity Analysis (Multiple Cost Scenarios)
-
-Using PAT with custom costs:
-
-| Run | use_custom_costs | door_cost | seal_cost | Purpose |
-|-----|------------------|-----------|-----------|---------|
-| 1 | True | 2500 | 30 | Low-cost scenario |
-| 2 | True | 3500 | 45 | Mid-cost scenario |
-| 3 | True | 4500 | 60 | High-cost scenario |
-
-**Result**: Compare life-cycle economics across cost assumptions.
-
----
-
-## Running the Measure
-
-### Method 1: OpenStudio Application GUI
-
-1. Load building model (OSM file)
-2. Measures → Add Measure → Locate door_enhancement measure
-3. Fill in arguments via dialog form
-4. Click "Run"
-5. View results in measure output terminal
-
-### Method 2: Test Script (apply_measure.py)
-
-```bash
+```powershell
 cd lib/measures/door_enhancement
+./setup_environment.ps1
 python apply_measure.py
 ```
 
-**Output**:
-- Modified model saved to: `tests/output/EnvelopeAndLoadTestModel_01_door_enhanced.osm`
-- Results JSON: `tests/output/apply_measure_results.json`
-- Terminal output shows measure progress, RSMeans/custom cost summary, and AdditionalProperties verification
+The setup script validates `openstudio`, `python-dotenv`, and `numpy` imports.
 
-### Method 3: Parametric Analysis Tool (PAT)
+## Credentials
 
-1. Create new project in PAT
-2. Import measure (measure.xml)
-3. Set argument values and ranges
-4. Run batch simulations
-5. Export results to CSV/analysis
+- EC3 API token: `config.ini` under `[EC3_API_TOKEN]` as `API_TOKEN`
+- RSMeans API credentials: `client_id` and `client_secret` (environment or `.env`)
 
----
+## Key Arguments
 
-## Understanding the Outputs
+| Argument | Type | Default | Purpose |
+|---|---|---|---|
+| `space_type` | Choice | *Entire Building* | Scope for infiltration reduction |
+| `space_infiltration_reduction_percent` | Double | 30.0 | Infiltration reduction (%) |
+| `door_bottom_seal_option` | Choice | automatic door bottom | Bottom seal type |
+| `door_top_side_seal_option` | Choice | jamb weatherstrip | Top/side seal type |
+| `door_option` | Choice | wooden door | Door replacement type (`none` = no replacement) |
+| `analysis_period` | Integer | 30 | Embodied-carbon analysis period |
+| `gwp_statistic` | Choice | median | Statistic for EPD GWP values |
+| `use_custom_costs` | Boolean | false | If true, bypass RSMeans lookup |
+| `rsmeans_unit_costline_id` | String | "" | Optional exact RSMeans ID override |
 
-### Terminal Output – Measure Summary
+## Cost Modes
 
-**Using RSMeans API:**
-```
-RSMeans cost summary (cost_source=rsmeans_api): 
-materials=1, total_cost=$3,569.50
-```
+### RSMeans mode (`use_custom_costs = false`)
+
+- Searches catalogs: `bc-mf`, `gb-mf`, `rp-mf`
+- Applies minimum acceptable match score of **50.0**
+- If score is too low, uses fallback IDs for known door materials
+
+### Custom mode (`use_custom_costs = true`)
+
+- Uses `custom_door_cost_per_unit`, `custom_bottom_seal_cost`, `custom_top_side_seal_cost`
+- Skips API lookups
+
+## AdditionalProperties Buckets
+
+The measure writes structured outputs to these five objects:
+
+- Building (`basic_input`): measure metadata, analysis period
+- Site (`reno_detail`): options + renovated quantities
+- Facility (`factors`): cost totals + cost basis + GWP factors
+- SimulationControl (`results`): mirrored costs + RSMeans JSON diagnostics
+- SizingParameters (`mtrl_prop`): material properties + RSMeans extracted hints
+
+## RSMeans Diagnostic Fields
+
+When cost lookup succeeds, `SimulationControl.additionalProperties` includes:
+
+- `door_enhancement_rsmeans_matches_json`
+- `door_enhancement_rsmeans_search_results_json`
+- `door_enhancement_rsmeans_summary_json`
+- `door_enhancement_retrofit_materials_json`
+
+It also includes cost basis fields:
+
+- `door_enhancement_cost_factor_basis` (`cost_per_unit`, `cost_per_length`, `mixed`, etc.)
+- `door_enhancement_cost_unit_basis` (`EA`, `LF`, `EA, LF`)
+
+## Typical Output Files
+
+- `tests/output/EnvelopeAndLoadTestModel_01_door_enhanced.osm`
+- `tests/output/apply_measure_results.json`
 
 **Using Custom Costs:**
 ```
