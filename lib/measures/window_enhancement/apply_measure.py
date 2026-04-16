@@ -1,5 +1,5 @@
 """
-Apply WindowEnhancement measure to a test model._
+Apply WindowEnhancement measure to a test model.
 
 This script:
 1. Loads a test OSM file from the tests/ folder
@@ -11,6 +11,7 @@ This script:
 from pathlib import Path
 import sys
 import json
+import os
 import configparser
 
 # ---------------------------------------------------------------------------
@@ -26,14 +27,25 @@ try:
 except ImportError:
     # Fall back to system installations
     OPENSTUDIO_VERSION = "3.9.0"
-    WINDOWS_OPENSTUDIO_PATH = r"C:\openstudio-3.9.0\Python"
+    WINDOWS_OPENSTUDIO_PATHS = [
+        r"C:\openstudio-3.9.0\Python",
+        r"C:\openstudio-3.11.0\Python",
+        r"C:\openstudio-3.10.0\Python",
+    ]
     MAC_OPENSTUDIO_VERSION = "3.11.0"
     mac_openstudio_path = f"/Applications/OpenStudio-{MAC_OPENSTUDIO_VERSION}/Python"
 
     openstudio_path = None
     if platform.system() == "Windows":
-        if Path(WINDOWS_OPENSTUDIO_PATH).exists():
-            openstudio_path = WINDOWS_OPENSTUDIO_PATH
+        env_openstudio_path = Path(os.environ.get("OPENSTUDIO_PYTHON_PATH", ""))
+        if str(env_openstudio_path) and env_openstudio_path.exists():
+            openstudio_path = str(env_openstudio_path)
+        else:
+            for candidate in WINDOWS_OPENSTUDIO_PATHS:
+                if Path(candidate).exists():
+                    openstudio_path = candidate
+                    break
+        if openstudio_path:
             sys.path.insert(0, openstudio_path)
             print(f"Using OpenStudio from: {openstudio_path}")
     else:
@@ -46,28 +58,56 @@ except ImportError:
         print("Warning: OpenStudio path not found")
 
 import openstudio
+import measure as window_measure_module
 from measure import WindowEnhancement
 
 print(f"OpenStudio version: {openstudio.openStudioVersion()}")
 
+# Optional offline verification mode for deterministic local checks.
+# Set WINDOW_ENHANCEMENT_OFFLINE_VERIFY=1 to bypass EC3 HTTP fetches.
+if os.environ.get("WINDOW_ENHANCEMENT_OFFLINE_VERIFY", "").strip() == "1":
+    def _offline_fetch_epd_data(url, api_token):
+        return []
+
+    window_measure_module.fetch_epd_data = _offline_fetch_epd_data
+    print("Offline verify mode enabled: EC3 fetches are stubbed.")
+
 # ---------------------------------------------------------------------------
-# Read API token from repo-level config.ini
+# Read API token from config.ini or environment variables
+# Priority order:
+#   1. Environment variable EC3_API_TOKEN
+#   2. config.ini file (if exists and valid)
+#   3. Placeholder (will cause measure to fail with clear message)
 # ---------------------------------------------------------------------------
+import os
+
 SCRIPT_DIR = Path(__file__).parent.absolute()
 REPO_ROOT = SCRIPT_DIR.parent.parent.parent
 CONFIG_PATH = REPO_ROOT / "config.ini"
 
-API_TOKEN = "PLACEHOLDER"
-if CONFIG_PATH.exists():
+# Try environment variable first (production/CI-CD preferred)
+API_TOKEN = os.environ.get("EC3_API_TOKEN")
+
+if API_TOKEN:
+    print(f"API token loaded from environment variable EC3_API_TOKEN")
+elif CONFIG_PATH.exists():
     config = configparser.ConfigParser()
     config.read(CONFIG_PATH)
     try:
         API_TOKEN = config["EC3_API_TOKEN"]["API_TOKEN"]
-        print(f"API token loaded from: {CONFIG_PATH}")
+        if API_TOKEN and API_TOKEN != "your_ec3_api_token_here":
+            print(f"API token loaded from: {CONFIG_PATH}")
+        else:
+            API_TOKEN = None
+            print(f"Warning: config.ini contains placeholder value, not a real token")
     except KeyError:
         print(f"Warning: could not read API_TOKEN from {CONFIG_PATH}")
 else:
     print(f"Warning: config.ini not found at {CONFIG_PATH}")
+
+if not API_TOKEN:
+    API_TOKEN = "PLACEHOLDER"
+    print("ERROR: No valid EC3 API token found. Please set EC3_API_TOKEN environment variable or update config.ini")
 
 
 def load_model(model_path):
@@ -198,21 +238,25 @@ def run_measure(model, args_overrides=None):
     set_arg("api_key", API_TOKEN)
     
     # --- Cost calculation ---
-    set_arg("calculate_costs", False)  # Disable EC3 for faster testing
-    
-    # --- Custom cost mode (set to False to use RSMeans API, True to use custom costs below) ---
-    set_arg("use_custom_costs", False)
+    # Keep this enabled so local runs validate custom/fallback cost pathways.
+    set_arg("calculate_costs", True)
+
+    # --- Custom cost mode ---
+    # Use custom rates here to avoid RSMeans dependency in quick harness runs.
+    set_arg("use_custom_costs", True)
 
     # --- RSMeans exact line item ID mode ---
     set_arg("use_specific_rsmeans_line_item_ids", False)
     set_arg("rsmeans_id_glazing", "084126100020")
     set_arg("rsmeans_id_frame", "084113200050")
     
-    # --- Custom cost inputs (only used when use_custom_costs = True) ---
-    # set_arg("glass_cost_per_cf", 900.0)       # $/CF (volume basis for glass/secondary glazing)
-    # set_arg("frame_cost_per_sf", 15.0)        # $/SF (e.g., $15/SF for wood frame)
-    # set_arg("caulking_cost_per_cy", 800.0)    # $/CY (e.g., $800/CY for silicone sealant)
-    # set_arg("labor_cost_multiplier", 2.0)     # Multiplier (e.g., 2.0 = 100% labor markup)
+    # --- Custom cost inputs (used when use_custom_costs = True) ---
+    set_arg("glass_cost_per_cf", 900.0)          # $/CF (glass + secondary glazing)
+    set_arg("frame_cost_per_sf", 15.0)           # $/SF
+    set_arg("caulking_cost_per_cy", 800.0)       # $/CY
+    set_arg("film_cost_per_sf", 6.0)             # $/SF
+    set_arg("weatherstrip_cost_per_lf", 2.5)     # $/LF
+    set_arg("labor_cost_multiplier", 2.0)        # 100% labor markup
 
     # Apply any caller-supplied overrides
     if args_overrides:
@@ -245,23 +289,70 @@ def print_runner_output(runner):
             print(f"  [ERR ] {msg.logMessage()}")
 
 
+def _collect_features(ap_obj):
+    """Collect all string/double/integer/bool features from AdditionalProperties."""
+    features = []
+    for feature_name in ap_obj.featureNames():
+        val = ap_obj.getFeatureAsDouble(feature_name)
+        if val.is_initialized():
+            features.append((feature_name, val.get()))
+            continue
+        val = ap_obj.getFeatureAsInteger(feature_name)
+        if val.is_initialized():
+            features.append((feature_name, val.get()))
+            continue
+        val = ap_obj.getFeatureAsBoolean(feature_name)
+        if val.is_initialized():
+            features.append((feature_name, val.get()))
+            continue
+        val = ap_obj.getFeatureAsString(feature_name)
+        if val.is_initialized():
+            features.append((feature_name, val.get()))
+    return features
+
+
 def verify_additional_properties(model):
     """
     Check that AdditionalProperties were attached to the Building object.
     Returns a list of (object_name, prop_name, value) tuples.
     """
+    buckets = {
+        "Building": model.getBuilding().additionalProperties(),
+        "Site": model.getSite().additionalProperties(),
+        "Facility": model.getFacility().additionalProperties(),
+        "SimulationControl": model.getSimulationControl().additionalProperties(),
+        "SizingParameters": model.getSizingParameters().additionalProperties(),
+    }
+
     found = []
-    facility = model.getFacility()
-    ap = facility.additionalProperties()
-    for feature_name in ap.featureNames():
-        val_opt = ap.getFeatureAsDouble(feature_name)
-        if val_opt.is_initialized():
-            found.append(("Facility", feature_name, val_opt.get()))
-        else:
-            val_str = ap.getFeatureAsString(feature_name)
-            if val_str.is_initialized():
-                found.append(("Facility", feature_name, val_str.get()))
+    for bucket_name, ap_obj in buckets.items():
+        for feature_name, value in _collect_features(ap_obj):
+            found.append((bucket_name, feature_name, value))
     return found
+
+
+def _get_feature_from_ap_data(ap_data, feature_name, preferred_buckets=None):
+    """Get a feature value from collected AdditionalProperties tuples.
+
+    Args:
+        ap_data: list of (bucket_name, feature_name, value)
+        feature_name: feature key to retrieve
+        preferred_buckets: optional ordered list of buckets to check first
+
+    Returns:
+        Feature value if found, else None
+    """
+    preferred_buckets = preferred_buckets or []
+
+    for bucket in preferred_buckets:
+        for bucket_name, prop_name, value in ap_data:
+            if bucket_name == bucket and prop_name == feature_name:
+                return value
+
+    for _, prop_name, value in ap_data:
+        if prop_name == feature_name:
+            return value
+    return None
 
 
 def main():
@@ -341,12 +432,12 @@ def main():
 
     # Verify AdditionalProperties on Building
     print("\n" + "=" * 80)
-    print("VERIFYING SEPARATE FACILITY ADDITIONAL PROPERTIES")
+    print("VERIFYING MEASURE ADDITIONAL PROPERTIES BUCKETS")
     print("=" * 80)
 
     ap_data = verify_additional_properties(model)
     if ap_data:
-        print(f"Found {len(ap_data)} properties in separate Facility AdditionalProperties:")
+        print(f"Found {len(ap_data)} properties across Building/Site/Facility/SimulationControl/SizingParameters:")
         for obj_name, prop_name, value in ap_data:
             print(f"  [{obj_name}] {prop_name}: {value}")
     else:
@@ -363,6 +454,9 @@ def main():
     # Extract and save retrofit materials if present in step values
     materials_data = None
     rsmeans_results_data = None
+    rsmeans_matches_data = None
+    rsmeans_search_results_data = None
+    rsmeans_summary_data = None
     if "window_enhancement_retrofit_materials_json" in step_values:
         try:
             materials_json_str = step_values["window_enhancement_retrofit_materials_json"]
@@ -387,6 +481,59 @@ def main():
         except Exception as e:
             print(f"  Warning: Could not extract RSMeans results: {e}")
 
+    if "window_enhancement_rsmeans_matches_json" in step_values:
+        try:
+            rsmeans_matches_str = step_values["window_enhancement_rsmeans_matches_json"]
+            if isinstance(rsmeans_matches_str, str):
+                rsmeans_matches_data = json.loads(rsmeans_matches_str)
+                rsmeans_matches_path = output_dir / "window_enhancement_rsmeans_matches.json"
+                with open(rsmeans_matches_path, "w") as f:
+                    json.dump(rsmeans_matches_data, f, indent=2)
+                print(f"  RSMeans matches saved to: {rsmeans_matches_path}")
+        except Exception as e:
+            print(f"  Warning: Could not extract RSMeans matches: {e}")
+
+    if "window_enhancement_rsmeans_search_results_json" in step_values:
+        try:
+            rsmeans_search_str = step_values["window_enhancement_rsmeans_search_results_json"]
+            if isinstance(rsmeans_search_str, str):
+                rsmeans_search_results_data = json.loads(rsmeans_search_str)
+                rsmeans_search_path = output_dir / "window_enhancement_rsmeans_search_results.json"
+                with open(rsmeans_search_path, "w") as f:
+                    json.dump(rsmeans_search_results_data, f, indent=2)
+                print(f"  RSMeans search diagnostics saved to: {rsmeans_search_path}")
+        except Exception as e:
+            print(f"  Warning: Could not extract RSMeans search diagnostics: {e}")
+
+    if "window_enhancement_rsmeans_summary_json" in step_values:
+        try:
+            rsmeans_summary_str = step_values["window_enhancement_rsmeans_summary_json"]
+            if isinstance(rsmeans_summary_str, str):
+                rsmeans_summary_data = json.loads(rsmeans_summary_str)
+                rsmeans_summary_path = output_dir / "window_enhancement_rsmeans_summary.json"
+                with open(rsmeans_summary_path, "w") as f:
+                    json.dump(rsmeans_summary_data, f, indent=2)
+                print(f"  RSMeans summary saved to: {rsmeans_summary_path}")
+        except Exception as e:
+            print(f"  Warning: Could not extract RSMeans summary: {e}")
+
+    # Read persisted cost metadata from AdditionalProperties (source of truth).
+    cost_source_ap = _get_feature_from_ap_data(
+        ap_data,
+        "window_enhancement_cost_source",
+        preferred_buckets=["SimulationControl", "Facility"],
+    )
+    cost_factor_basis_ap = _get_feature_from_ap_data(
+        ap_data,
+        "window_enhancement_cost_factor_basis",
+        preferred_buckets=["SimulationControl", "Facility"],
+    )
+    cost_unit_basis_ap = _get_feature_from_ap_data(
+        ap_data,
+        "window_enhancement_cost_unit_basis",
+        preferred_buckets=["SimulationControl", "Facility"],
+    )
+
     # Save JSON summary
     results = {
         "measure": "WindowEnhancement",
@@ -394,10 +541,36 @@ def main():
         "step_values": step_values,
         "windows_in_model": len(windows),
         "additional_properties_count": len(ap_data),
+        "cost_source": (
+            cost_source_ap
+            if cost_source_ap is not None
+            else step_values.get("window_enhancement_cost_source", "none")
+        ),
+        "cost_factor_basis": (
+            cost_factor_basis_ap
+            if cost_factor_basis_ap is not None
+            else step_values.get(
+                "window_enhancement_cost_factor_basis",
+                "not_calculated",
+            )
+        ),
+        "cost_unit_basis": (
+            cost_unit_basis_ap
+            if cost_unit_basis_ap is not None
+            else step_values.get(
+                "window_enhancement_cost_unit_basis",
+                "not_calculated",
+            )
+        ),
         "additional_properties_sample": [
             {"subsurface": s, "property": p, "value": v}
             for s, p, v in ap_data[:10]
-        ]
+        ],
+        "retrofit_materials_json_found": materials_data is not None,
+        "rsmeans_results_json_found": rsmeans_results_data is not None,
+        "rsmeans_matches_json_found": rsmeans_matches_data is not None,
+        "rsmeans_search_results_json_found": rsmeans_search_results_data is not None,
+        "rsmeans_summary_json_found": rsmeans_summary_data is not None,
     }
     with open(results_json_path, "w") as f:
         json.dump(results, f, indent=2)

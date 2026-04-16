@@ -138,7 +138,7 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
         space_type.setDefaultValue("*Entire Building*")  # if no selection, apply to entire building
         args.append(space_type)
 
-        # make an argument for air infiltration reduction percentage
+        # Create argument for air infiltration reduction percentage.
         space_infiltration_reduction_percent = openstudio.measure.OSArgument.makeDoubleArgument(
             "space_infiltration_reduction_percent", True)
         space_infiltration_reduction_percent.setDisplayName("Space Infiltration Power Reduction")
@@ -146,31 +146,10 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
         space_infiltration_reduction_percent.setUnits("%")
         args.append(space_infiltration_reduction_percent)
 
-        # DISABLED: make an argument for constant_coefficient
-        # constant_coefficient = openstudio.measure.OSArgument.makeDoubleArgument('constant_coefficient', False)
-        # constant_coefficient.setDisplayName('Constant Coefficient')
-        # constant_coefficient.setDefaultValue(1.0)
-        # args.append(constant_coefficient)
+        # Infiltration coefficients are intentionally not exposed as arguments;
+        # this measure preserves existing model coefficients and scales rates.
 
-        # DISABLED: make an argument for temperature_coefficient
-        # temperature_coefficient = openstudio.measure.OSArgument.makeDoubleArgument('temperature_coefficient', False)
-        # temperature_coefficient.setDisplayName('Temperature Coefficient')
-        # temperature_coefficient.setDefaultValue(0.0)
-        # args.append(temperature_coefficient)
-
-        # DISABLED: make an argument for wind_speed_coefficient
-        # wind_speed_coefficient = openstudio.measure.OSArgument.makeDoubleArgument('wind_speed_coefficient', False)
-        # wind_speed_coefficient.setDisplayName('Wind Speed Coefficient')
-        # wind_speed_coefficient.setDefaultValue(0.0)
-        # args.append(wind_speed_coefficient)
-
-        # DISABLED: make an argument for wind_speed_squared_coefficient
-        # wind_speed_squared_coefficient = openstudio.measure.OSArgument.makeDoubleArgument('wind_speed_squared_coefficient', False)
-        # wind_speed_squared_coefficient.setDisplayName('Wind Speed Squared Coefficient')
-        # wind_speed_squared_coefficient.setDefaultValue(0.0)
-        # args.append(wind_speed_squared_coefficient)
-
-        #make an argument for analysis period
+        # Create argument for analysis period.
         analysis_period = openstudio.measure.OSArgument.makeIntegerArgument("analysis_period",True)
         analysis_period.setDisplayName("Analysis Period")
         analysis_period.setDescription(
@@ -179,7 +158,7 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
         analysis_period.setDefaultValue(30)
         args.append(analysis_period)
 
-        # make an argument for product life time of glass pane
+        # Create argument for glass pane product lifetime.
         glass_lifetime = openstudio.measure.OSArgument.makeIntegerArgument("glass_lifetime",True)
         glass_lifetime.setDisplayName("Product Lifetime of Glass pane")
         glass_lifetime.setDescription(
@@ -188,7 +167,7 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
         glass_lifetime.setDefaultValue(15)
         args.append(glass_lifetime)
 
-        # make an argument for product life time of window frame
+        # Create argument for window frame product lifetime.
         wf_lifetime = openstudio.measure.OSArgument.makeIntegerArgument("wf_lifetime",True)
         wf_lifetime.setDisplayName("Product Lifetime of Window Frame")
         wf_lifetime.setDescription(
@@ -197,7 +176,7 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
         wf_lifetime.setDefaultValue(15)
         args.append(wf_lifetime)
 
-        # make an argument for product life time of caulking sealant
+        # Create argument for caulking sealant product lifetime.
         caulking_lifetime = openstudio.measure.OSArgument.makeIntegerArgument("caulking_lifetime",True)
         caulking_lifetime.setDisplayName("Product Lifetime of Caulking Sealant")
         caulking_lifetime.setDescription(
@@ -206,7 +185,7 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
         caulking_lifetime.setDefaultValue(10)
         args.append(caulking_lifetime)
 
-        # make an argument for product life time of glazing film
+        # Create argument for glazing film product lifetime.
         film_lifetime = openstudio.measure.OSArgument.makeIntegerArgument("film_lifetime",True)
         film_lifetime.setDisplayName("Product Lifetime of Glazing Film")
         film_lifetime.setDescription(
@@ -215,7 +194,7 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
         film_lifetime.setDefaultValue(10)
         args.append(film_lifetime)
 
-        #make an argument for product life time of weatherstrip
+        # Create argument for weatherstrip product lifetime.
         weatherstrip_lifetime = openstudio.measure.OSArgument.makeIntegerArgument("weatherstrip_lifetime",True)
         weatherstrip_lifetime.setDisplayName("Product Lifetime of Weatherstrip")
         weatherstrip_lifetime.setDescription(
@@ -224,7 +203,7 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
         weatherstrip_lifetime.setDefaultValue(10)
         args.append(weatherstrip_lifetime)
 
-        # make an argument for overhead + profit percent applied to total material cost
+        # Create argument for overhead and profit percent on material cost.
         overhead_profit_percent = openstudio.measure.OSArgument.makeDoubleArgument("overhead_profit_percent", True)
         overhead_profit_percent.setDisplayName("Overhead + Profit Percent")
         overhead_profit_percent.setDescription(
@@ -232,7 +211,7 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
         overhead_profit_percent.setDefaultValue(0.0)
         args.append(overhead_profit_percent)
 
-        # make an argument for window frame options for filtering EPDs 
+        # Create argument for window frame options used to filter EPDs.
         wf_options_chs = openstudio.StringVector()
         for option in self.wf_options():
             wf_options_chs.append(option)
@@ -245,7 +224,7 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
         wf_option.setDefaultValue("none")
         args.append(wf_option)
 
-        # make an argument for caulking material options for filtering EPDs
+        # Create argument for caulking options used to filter EPDs.
         caulking_options_chs = openstudio.StringVector()
         for option in self.caulking_options():
             caulking_options_chs.append(option)
@@ -258,7 +237,7 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
         caulking_option.setDefaultValue("none")
         args.append(caulking_option)
 
-        # make an argument for film options for filtering EPDs
+        # Create argument for glazing film options used to filter EPDs.
         film_options_chs = openstudio.StringVector()
         for option in self.film_options():
             film_options_chs.append(option)
@@ -314,7 +293,7 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
         film_thermal_resistance.setDefaultValue(0.0)
         args.append(film_thermal_resistance)
 
-        # make an argument for glass option for filtering EPDs and decide whether to renovate
+        # Create argument for glass replacement option and EPD filtering.
         glass_options_chs = openstudio.StringVector()
         for option in self.glass_options():
             glass_options_chs.append(option)
@@ -327,7 +306,7 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
         glass_option.setDefaultValue("none")
         args.append(glass_option)
 
-        # make an argument for weatherstrip options for filtering EPDs
+        # Create argument for weatherstrip options used to filter EPDs.
         weatherstrip_options_chs = openstudio.StringVector()
         for option in self.weatherstrip_options():
             weatherstrip_options_chs.append(option)
@@ -340,7 +319,7 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
         weatherstrip_option.setDefaultValue("none")
         args.append(weatherstrip_option)
 
-        # make an argument for secondary glazing options
+        # Create argument for secondary glazing options.
         secondary_glazing_options_chs = openstudio.StringVector()
         for option in self.secondary_glazing_options():
             secondary_glazing_options_chs.append(option)
@@ -354,7 +333,7 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
         secondary_glazing_option.setDefaultValue("none")
         args.append(secondary_glazing_option)
 
-        # make an argument for caulking material thickness applied
+        # Create argument for applied caulking thickness.
         caulking_thickness = openstudio.measure.OSArgument.makeDoubleArgument("caulking_thickness", True)
         caulking_thickness.setDisplayName("Caulking Material Thickness (m)")
         caulking_thickness.setDescription(
@@ -363,7 +342,7 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
         caulking_thickness.setDefaultValue(0.008) # 8 mm thickness
         args.append(caulking_thickness)
 
-        # make an argument for number of panes to be replaced
+        # Create argument for user-specified pane count.
         user_num_panes = openstudio.measure.OSArgument.makeIntegerArgument("user_num_panes", True)
         user_num_panes.setDisplayName("Number of Glass Panes Provided by User")
         user_num_panes.setDescription(
@@ -375,7 +354,7 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
         user_num_panes.setDefaultValue(0) # 0 means do not install any new glass panes
         args.append(user_num_panes)
 
-        # make an argument for glass pane thickness
+        # Create argument for glass pane thickness.
         glass_pane_thickness = openstudio.measure.OSArgument.makeDoubleArgument("glass_pane_thickness", True)
         glass_pane_thickness.setDisplayName("Individual Glass Pane Thickness (m)")
         glass_pane_thickness.setDescription(
@@ -388,7 +367,7 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
         glass_pane_thickness.setDefaultValue(0.003) # 3 mm typical glass thickness
         args.append(glass_pane_thickness)
 
-        # make an argument for gap thickness between glass panes
+        # Create argument for gap thickness between glass panes.
         gap_thickness = openstudio.measure.OSArgument.makeDoubleArgument("gap_thickness", True)
         gap_thickness.setDisplayName("Gap Thickness Between Glass Panes (m)")
         gap_thickness.setDescription(
@@ -508,7 +487,7 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
         glass_back_visible_reflectance.setDefaultValue(0.081)
         args.append(glass_back_visible_reflectance)
 
-        # make an argument for selecting which gwp statistic to use for embodied carbon calculation
+        # Create argument for GWP statistic selection.
         gwp_statistics_chs = openstudio.StringVector()
         for gwp_statistic in self.gwp_statistics():
             gwp_statistics_chs.append(gwp_statistic)
@@ -517,14 +496,17 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
         gwp_statistic.setDescription("Statistic type (minimum or maximum or mean or median) of returned GWP value")
         args.append(gwp_statistic)
 
-        # make an argument for api_token
+        # Create argument for EC3 API token.
         api_key = openstudio.measure.OSArgument.makeStringArgument("api_key",True)
         api_key.setDisplayName("API Token")
-        api_key.setDescription("API Token for sending API call to EC3 EPD Database")
+        api_key.setDescription("API Token for sending API call to EC3 EPD Database. "
+                              "Get token from https://buildingtransparency.org. "
+                              "SECURITY: Do not share this token; keep it private. "
+                              "For CI/CD, use EC3_API_TOKEN environment variable instead.")
         api_key.setDefaultValue("Obtain the API key from EC3 website")
         args.append(api_key)
 
-        # make an argument for mass per length of strip
+        # Create argument for weatherstrip length per declared unit.
         # 17' = 5.1816 m for silicone adhesive smoke gasket, source: https://buildingtransparency.org/ec3/epds/ec327rq0
         length_per_unit = openstudio.measure.OSArgument.makeDoubleArgument("length_per_unit", True)
         length_per_unit.setDisplayName("Length per Unit of Strip")
@@ -535,7 +517,7 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
         length_per_unit.setDefaultValue(5.1816)
         args.append(length_per_unit)
 
-        # make an argument for number of horizontal dividers
+        # Create argument for number of horizontal dividers.
         num_horizontal_dividers = openstudio.measure.OSArgument.makeIntegerArgument("num_horizontal_dividers", True)
         num_horizontal_dividers.setDisplayName("Number of Horizontal Dividers (Muntins)")
         num_horizontal_dividers.setDescription(
@@ -545,7 +527,7 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
         num_horizontal_dividers.setDefaultValue(-1)
         args.append(num_horizontal_dividers)
 
-        # make an argument for number of vertical dividers
+        # Create argument for number of vertical dividers.
         num_vertical_dividers = openstudio.measure.OSArgument.makeIntegerArgument("num_vertical_dividers", True)
         num_vertical_dividers.setDisplayName("Number of Vertical Dividers (Muntins)")
         num_vertical_dividers.setDescription(
@@ -587,6 +569,30 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
             "Typical range: $100-200/CY. Set to 0 to skip cost calculation for caulking.")
         caulking_cost_per_cy.setDefaultValue(0.0)
         args.append(caulking_cost_per_cy)
+
+        # Film cost
+        film_cost_per_sf = openstudio.measure.OSArgument.makeDoubleArgument("film_cost_per_sf", True)
+        film_cost_per_sf.setDisplayName("Glazing Film Cost ($/SF)")
+        film_cost_per_sf.setDescription(
+            "User-provided unit cost for glazing film in dollars per square foot. "
+            "Used when custom costs are enabled or RSMeans lookup fails. "
+            "Set to 0 to skip cost calculation for film."
+        )
+        film_cost_per_sf.setDefaultValue(0.0)
+        args.append(film_cost_per_sf)
+
+        # Weatherstrip cost
+        weatherstrip_cost_per_lf = openstudio.measure.OSArgument.makeDoubleArgument(
+            "weatherstrip_cost_per_lf", True
+        )
+        weatherstrip_cost_per_lf.setDisplayName("Weatherstrip Cost ($/LF)")
+        weatherstrip_cost_per_lf.setDescription(
+            "User-provided unit cost for weatherstrip in dollars per linear foot. "
+            "Used when custom costs are enabled or RSMeans lookup fails. "
+            "Set to 0 to skip cost calculation for weatherstrip."
+        )
+        weatherstrip_cost_per_lf.setDefaultValue(0.0)
+        args.append(weatherstrip_cost_per_lf)
 
         # Labor cost
         labor_cost_multiplier = openstudio.measure.OSArgument.makeDoubleArgument("labor_cost_multiplier", True)
@@ -674,6 +680,7 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
 
     def run(self, model: openstudio.model.Model, runner: openstudio.measure.OSRunner,
             user_arguments: openstudio.measure.OSArgumentMap):
+        # Phase 1: Validate arguments and load user inputs.
         if not runner.validateUserArguments(self.arguments(model), user_arguments):
             return False
 
@@ -682,11 +689,7 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
         object = runner.getOptionalWorkspaceObjectChoiceValue('space_type', user_arguments, model)
         space_infiltration_reduction_percent = runner.getDoubleArgumentValue(
             "space_infiltration_reduction_percent", user_arguments)
-        # DISABLED: coefficient arguments - using existing values from infiltration objects
-        # constant_coefficient = runner.getDoubleArgumentValue('constant_coefficient', user_arguments)
-        # temperature_coefficient = runner.getDoubleArgumentValue('temperature_coefficient', user_arguments)
-        # wind_speed_coefficient = runner.getDoubleArgumentValue('wind_speed_coefficient', user_arguments)
-        # wind_speed_squared_coefficient = runner.getDoubleArgumentValue('wind_speed_squared_coefficient', user_arguments)
+        # Coefficients are read from existing infiltration objects.
         # for EC calculation
         caulking_thickness = runner.getDoubleArgumentValue("caulking_thickness", user_arguments)
         gwp_statistic = runner.getStringArgumentValue("gwp_statistic", user_arguments)
@@ -751,6 +754,8 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
         glass_cost_per_cf = runner.getDoubleArgumentValue("glass_cost_per_cf", user_arguments)
         frame_cost_per_sf = runner.getDoubleArgumentValue("frame_cost_per_sf", user_arguments)
         caulking_cost_per_cy = runner.getDoubleArgumentValue("caulking_cost_per_cy", user_arguments)
+        film_cost_per_sf = runner.getDoubleArgumentValue("film_cost_per_sf", user_arguments)
+        weatherstrip_cost_per_lf = runner.getDoubleArgumentValue("weatherstrip_cost_per_lf", user_arguments)
         labor_cost_multiplier = runner.getDoubleArgumentValue("labor_cost_multiplier", user_arguments)
 
         if use_custom_costs:
@@ -758,6 +763,8 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
             runner.registerInfo(f"  Glass cost: ${glass_cost_per_cf}/CF")
             runner.registerInfo(f"  Frame cost: ${frame_cost_per_sf}/SF")
             runner.registerInfo(f"  Caulking cost: ${caulking_cost_per_cy}/CY")
+            runner.registerInfo(f"  Film cost: ${film_cost_per_sf}/SF")
+            runner.registerInfo(f"  Weatherstrip cost: ${weatherstrip_cost_per_lf}/LF")
             runner.registerInfo(f"  Labor multiplier: {labor_cost_multiplier}")
 
         # Check for conflicting renovation options
@@ -1038,11 +1045,6 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
             runner.registerInfo(f"  {subsurface_dict[subsurface_name]['window_renovation_embodied_carbon_kg_co2_eq']:.2f} kg CO2 eq")
             runner.registerInfo(f"{'─' * 80}")
 
-            # # attach additional properties to openstudio material
-            # additional_properties = subsurface_dict[subsurface_name]["subsurface_object"].additionalProperties()
-            # additional_properties.setFeature("subsurface_name", subsurface_name)
-            # additional_properties.setFeature("embodied_carbon_kg_co2_eq", subsurface_dict[subsurface_name]["window_renovation_embodied_carbon_kg_co2_eq"])
-
         # Calculate total embodied carbon
         total_embodied_carbon = sum(
             subsurface_dict[name]["window_renovation_embodied_carbon_kg_co2_eq"] 
@@ -1152,35 +1154,6 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
             mtrl_prop.setFeature("glass_replacement_num_panes", user_num_panes)
             mtrl_prop.setFeature("glass_replacement_pane_thickness_m", effective_glass_pane_thickness)
             mtrl_prop.setFeature("glass_replacement_gap_thickness_m", effective_gap_thickness)
-            
-            # # Store glass optical properties if non-default
-            # if glass_solar_transmittance > 0.0:
-            #     building_props.setFeature("window_enhancement_glass_solar_transmittance", glass_solar_transmittance)
-            # if glass_visible_transmittance > 0.0:
-            #     building_props.setFeature("window_enhancement_glass_visible_transmittance", glass_visible_transmittance)
-            # if glass_front_emissivity > 0.0:
-            #     building_props.setFeature("window_enhancement_glass_front_emissivity", glass_front_emissivity)
-            # if glass_back_emissivity > 0.0:
-            #     building_props.setFeature("window_enhancement_glass_back_emissivity", glass_back_emissivity)
-            # if glass_front_solar_reflectance > 0.0:
-            #     building_props.setFeature("window_enhancement_glass_front_solar_reflectance", glass_front_solar_reflectance)
-            # if glass_back_solar_reflectance > 0.0:
-            #     building_props.setFeature("window_enhancement_glass_back_solar_reflectance", glass_back_solar_reflectance)
-            # if glass_front_visible_reflectance > 0.0:
-            #     building_props.setFeature("window_enhancement_glass_front_visible_reflectance", glass_front_visible_reflectance)
-            # if glass_back_visible_reflectance > 0.0:
-            #     building_props.setFeature("window_enhancement_glass_back_visible_reflectance", glass_back_visible_reflectance)
-        
-        # Store film properties if film was selected
-        # if film_option != "none":
-        #     if film_visible_transmittance > 0.0:
-        #         building_props.setFeature("window_enhancement_film_visible_transmittance", film_visible_transmittance)
-        #     if film_solar_transmittance > 0.0:
-        #         building_props.setFeature("window_enhancement_film_solar_transmittance", film_solar_transmittance)
-        #     if film_thermal_emissivity > 0.0:
-        #         building_props.setFeature("window_enhancement_film_thermal_emissivity", film_thermal_emissivity)
-        #     if film_thermal_resistance > 0.0:
-        #         building_props.setFeature("window_enhancement_film_thermal_resistance_m2KperW", film_thermal_resistance)
         
         # Store caulking properties if caulking was selected
         if caulking_option != "none":
@@ -1189,12 +1162,6 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
         # Store weatherstrip properties if weatherstrip was selected
         if weatherstrip_option != "none":
             mtrl_prop.setFeature("window_weatherstrip_length_per_unit_m", effective_length_per_unit)
-        
-        # # Store divider information
-        # if num_horizontal_dividers >= 0:
-        #     building_props.setFeature("window_enhancement_num_horizontal_dividers", num_horizontal_dividers)
-        # if num_vertical_dividers >= 0:
-        #     building_props.setFeature("window_enhancement_num_vertical_dividers", num_vertical_dividers)
         
         # Store aggregate results (including standardized fields for all measures)
         results.setFeature("window_enhancement_total_additional_embodied_carbon_kg", total_embodied_carbon)
@@ -1213,7 +1180,7 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
         # reno_detail.setFeature("total_renovated_windows_with_weatherstrip_count", windows_with_weatherstrip)
         # reno_detail.setFeature("total_renovated_windows_with_secondary_glazing_count", windows_with_secondary_glazing)
         
-        # Build RSMeans materials list from renovation selections
+        # Phase 2: Build normalized material payload for RSMeans lookup.
         materials = []
 
         def _m2_to_sf(value_m2: float) -> float:
@@ -1336,18 +1303,20 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
         if materials:
             try:
                 results.setFeature("window_enhancement_retrofit_materials_json", json.dumps(materials))
-                # Also write to model's Facility AdditionalProperties so it persists in the saved OSM
-                if model.facility().is_initialized():
-                    facility = model.facility().get()
-                    facility.additionalProperties().setFeature("window_enhancement_retrofit_materials_json", json.dumps(materials))
             except Exception:
                 runner.registerWarning("Could not serialize retrofit materials to JSON for AdditionalProperties.")
 
-        # Pull RSMeans cost data OR use user-provided fallback costs
+        # Phase 3: Calculate capital cost using RSMeans or custom fallback inputs.
         total_material_cost = 0.0
         total_overhead_profit_cost = 0.0
         total_labour_cost = 0.0
         cost_source = "none"  # Track where costs came from
+        cost_factor_basis = "not_calculated"
+        cost_unit_basis = "not_calculated"
+        rsmeans_lookup = None
+        rsmeans_matches = []
+        rsmeans_search_results = {}
+        rsmeans_summary = {}
 
         if calculate_costs and materials:
             if use_custom_costs:
@@ -1359,12 +1328,15 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
                 # Calculate costs from user-provided unit rates
                 total_material_cost = self.calculate_costs_from_user_rates(
                     runner, total_glazing_area_m2, total_frame_area_m2, total_caulking_volume_m3,
-                    glass_cost_per_cf, frame_cost_per_sf, caulking_cost_per_cy,
-                    glass_option, wf_option, caulking_option,
+                    total_weatherstrip_length_m, glass_cost_per_cf, frame_cost_per_sf,
+                    caulking_cost_per_cy, film_cost_per_sf, weatherstrip_cost_per_lf,
+                    glass_option, wf_option, caulking_option, film_option, weatherstrip_option,
                     user_num_panes, effective_glass_pane_thickness, secondary_glazing_option
                 )
                 total_labour_cost = total_material_cost * (labor_cost_multiplier - 1.0)
                 cost_source = "custom_input"
+                cost_factor_basis = "custom_user_inputs"
+                cost_unit_basis = "CF, SF, CY, LF"
                 
                 runner.registerInfo(f"✓ Custom costs calculated: ${total_material_cost:,.2f} (material) + ${total_labour_cost:,.2f} (labor)")
             else:
@@ -1386,6 +1358,8 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
                     total_material_cost = float(summary.get("total_cost_with_overhead_profit", 0.0))
                     total_labour_cost = 0.0  # Labor included in RSMeans cost
                     cost_source = "rsmeans_api"
+                    cost_factor_basis = "rsmeans_api"
+                    rsmeans_summary = summary
                     
                     runner.registerInfo(f"✓ RSMeans API successful:")
                     runner.registerInfo(f"  Materials found: {summary.get('materials_count', 0)}")
@@ -1393,6 +1367,21 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
                     runner.registerInfo(f"  Overhead + Profit: ${summary.get('total_overhead_profit_cost', 0):,.2f}")
                     runner.registerInfo(f"  Total cost with O&P: ${total_material_cost:,.2f}")
                     materials_results = rsmeans_lookup.get("results", {}).get("materials", [])
+                    rsmeans_matches = materials_results
+                    rsmeans_search_results = {
+                        "search_log": rsmeans_lookup.get("results", {}).get("search_log", []),
+                        "errors": rsmeans_lookup.get("results", {}).get("errors", []),
+                        "catalogs_searched": rsmeans_lookup.get("results", {}).get("catalogs_searched", []),
+                    }
+                    unit_basis_values = sorted({
+                        str(mat.get("unit_cost_basis") or mat.get("unit") or "").strip()
+                        for mat in materials_results
+                        if str(mat.get("unit_cost_basis") or mat.get("unit") or "").strip()
+                    })
+                    if unit_basis_values:
+                        cost_unit_basis = ", ".join(unit_basis_values)
+                    else:
+                        cost_unit_basis = "unknown"
                     if materials_results:
                         runner.registerInfo("  RSMeans materials detail:")
                         for mat in materials_results:
@@ -1419,9 +1408,6 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
                     
                     try:
                         results.setFeature("window_enhancement_rsmeans_results_json", json.dumps(rsmeans_lookup))
-                        if model.facility().is_initialized():
-                            facility = model.facility().get()
-                            facility.additionalProperties().setFeature("window_enhancement_rsmeans_results_json", json.dumps(rsmeans_lookup))
                     except Exception:
                         runner.registerWarning("Could not serialize RSMeans results to JSON for AdditionalProperties.")
                 else:
@@ -1432,12 +1418,16 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
                     # Calculate costs from user-provided unit rates
                     total_material_cost = self.calculate_costs_from_user_rates(
                         runner, total_glazing_area_m2, total_frame_area_m2, total_caulking_volume_m3,
-                        glass_cost_per_cf, frame_cost_per_sf, caulking_cost_per_cy,
-                        glass_option, wf_option, caulking_option,
+                        total_weatherstrip_length_m, glass_cost_per_cf, frame_cost_per_sf,
+                        caulking_cost_per_cy, film_cost_per_sf, weatherstrip_cost_per_lf,
+                        glass_option, wf_option, caulking_option, film_option, weatherstrip_option,
                         user_num_panes, effective_glass_pane_thickness, secondary_glazing_option
                     )
                     total_labour_cost = total_material_cost * (labor_cost_multiplier - 1.0)
                     cost_source = "user_provided_fallback" if total_material_cost > 0 else "none"
+                    if total_material_cost > 0:
+                        cost_factor_basis = "custom_user_inputs"
+                        cost_unit_basis = "CF, SF, CY, LF"
                     
                     if total_material_cost > 0:
                         runner.registerInfo(f"✓ Using user-provided costs: ${total_material_cost:,.2f} materials + ${total_labour_cost:,.2f} labor")
@@ -1448,10 +1438,25 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
         if calculate_costs:
             total_overhead_profit_cost = (total_material_cost + total_labour_cost) * (overhead_profit_percent / 100.0)
 
+        total_project_cost = total_material_cost + total_labour_cost + total_overhead_profit_cost
+
+        # Phase 4: Persist normalized cost and RSMeans diagnostics into measure buckets.
         results.setFeature("window_enhancement_total_additional_material_cost_$", total_material_cost)
         results.setFeature("window_enhancement_total_additional_labour_cost_$", total_labour_cost)
         results.setFeature("window_enhancement_total_additional_overhead_profit_cost_$", total_overhead_profit_cost)
+        results.setFeature("window_enhancement_total_additional_cost_$", total_project_cost)
         results.setFeature("window_enhancement_cost_calculation_source", cost_source)
+        results.setFeature("window_enhancement_cost_source", cost_source)
+        results.setFeature("window_enhancement_cost_factor_basis", cost_factor_basis)
+        results.setFeature("window_enhancement_cost_unit_basis", cost_unit_basis)
+        results.setFeature("window_enhancement_rsmeans_matches_json", json.dumps(rsmeans_matches))
+        results.setFeature("window_enhancement_rsmeans_search_results_json", json.dumps(rsmeans_search_results))
+        results.setFeature("window_enhancement_rsmeans_summary_json", json.dumps(rsmeans_summary))
+
+        factors.setFeature("window_enhancement_cost_source", cost_source)
+        factors.setFeature("window_enhancement_cost_factor_basis", cost_factor_basis)
+        factors.setFeature("window_enhancement_cost_unit_basis", cost_unit_basis)
+        factors.setFeature("window_enhancement_overhead_profit_percent", overhead_profit_percent)
 
         # Calculate and store average GWP values per functional unit (aggregate from all processed windows)
         # Collect GWP values from all windows
@@ -1536,11 +1541,6 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
         if construction_names:
             basic_input.setFeature("window_enhancement_construction_names", ', '.join(construction_names))
             # basic_input.setFeature("window_enhancement_construction_handles", ', '.join(construction_handles))
-
-        # # Separate summary AdditionalProperties on Facility for standardized cross-measure extraction
-        # facility_props = model.getFacility().additionalProperties()
-        # facility_props.setFeature("name", "Window_Enhancement")
-        # facility_props.setFeature("total_additional_embodied_carbon_kgCO2", total_embodied_carbon)
         
         runner.registerInfo(f"\n✓ Window enhancement summary stored in building additional properties")
         
@@ -1591,10 +1591,27 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
         pp.pprint(subsurface_dict)
         return True
 
-    def calculate_costs_from_user_rates(self, runner, total_glazing_area_m2, total_frame_area_m2,
-                                       total_caulking_volume_m3, glass_cost_per_cf, frame_cost_per_sf,
-                                       caulking_cost_per_cy, glass_option, wf_option, caulking_option,
-                                       user_num_panes, glass_pane_thickness, secondary_glazing_option):
+    def calculate_costs_from_user_rates(
+        self,
+        runner,
+        total_glazing_area_m2,
+        total_frame_area_m2,
+        total_caulking_volume_m3,
+        total_weatherstrip_length_m,
+        glass_cost_per_cf,
+        frame_cost_per_sf,
+        caulking_cost_per_cy,
+        film_cost_per_sf,
+        weatherstrip_cost_per_lf,
+        glass_option,
+        wf_option,
+        caulking_option,
+        film_option,
+        weatherstrip_option,
+        user_num_panes,
+        glass_pane_thickness,
+        secondary_glazing_option,
+    ):
         """
         Calculate material costs using user-provided unit rates.
         Serves as fallback when RSMeans API fails or is disabled.
@@ -1603,12 +1620,17 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
             total_glazing_area_m2: Total glass area in m²
             total_frame_area_m2: Total frame area in m²
             total_caulking_volume_m3: Total caulking volume in m³
+            total_weatherstrip_length_m: Total weatherstrip length in m
             glass_cost_per_cf: User-provided glass cost ($/CF)
             frame_cost_per_sf: User-provided frame cost ($/SF)
             caulking_cost_per_cy: User-provided caulking cost ($/CY)
+            film_cost_per_sf: User-provided film cost ($/SF)
+            weatherstrip_cost_per_lf: User-provided weatherstrip cost ($/LF)
             glass_option: Whether glass replacement is selected
             wf_option: Whether frame replacement is selected
             caulking_option: Whether caulking is selected
+            film_option: Whether glazing film is selected
+            weatherstrip_option: Whether weatherstrip is selected
             user_num_panes: Number of panes used for glass replacement
             glass_pane_thickness: Glass thickness in meters
             secondary_glazing_option: Whether secondary glazing is selected
@@ -1624,6 +1646,9 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
             return value_m3 * 1.30795
 
         def _m_to_ft(value_m: float) -> float:
+            return value_m * 3.28084
+
+        def _m_to_lf(value_m: float) -> float:
             return value_m * 3.28084
         
         total_cost = 0.0
@@ -1666,6 +1691,30 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
             caulking_cost = caulking_qty_cy * caulking_cost_per_cy
             total_cost += caulking_cost
             runner.registerInfo(f"  Caulking: {caulking_qty_cy:.2f} CY * ${caulking_cost_per_cy:.2f}/CY = ${caulking_cost:,.2f}")
+
+        # Film cost
+        if film_option != "none" and film_cost_per_sf > 0 and total_glazing_area_m2 > 0:
+            film_qty_sf = _m2_to_sf(total_glazing_area_m2)
+            film_cost = film_qty_sf * film_cost_per_sf
+            total_cost += film_cost
+            runner.registerInfo(
+                f"  Film: {film_qty_sf:.2f} SF * ${film_cost_per_sf:.2f}/SF = ${film_cost:,.2f}"
+            )
+
+        # Weatherstrip cost
+        if (
+            weatherstrip_option != "none"
+            and weatherstrip_cost_per_lf > 0
+            and total_weatherstrip_length_m > 0
+        ):
+            weatherstrip_qty_lf = _m_to_lf(total_weatherstrip_length_m)
+            weatherstrip_cost = weatherstrip_qty_lf * weatherstrip_cost_per_lf
+            total_cost += weatherstrip_cost
+            runner.registerInfo(
+                "  Weatherstrip: "
+                f"{weatherstrip_qty_lf:.2f} LF * ${weatherstrip_cost_per_lf:.2f}/LF "
+                f"= ${weatherstrip_cost:,.2f}"
+            )
         
         return total_cost
 
