@@ -2,369 +2,130 @@
 
 ## Description
 
-This OpenStudio measure automates the process of adding insulation to exterior walls in building energy models. It increases the thermal resistance (R-value) of all exterior walls to a specified target value, calculates embodied carbon impacts using Environmental Product Declaration (EPD) data, and estimates construction costs using the RSMeans API.
+This OpenStudio measure increases the effective insulation level of exterior walls to a target R-value by adding a supplemental insulation layer where needed.
 
-The measure integrates with:
-- **EC3 (Building Transparency)** for Environmental Product Declaration data and embodied carbon calculations
-- **RSMeans API (Gordian)** for accurate construction cost estimation
-- **OpenStudio** for thermal and construction model modifications
+It also:
+- retrieves EPD data from EC3 to estimate embodied carbon,
+- estimates cost via RSMeans (or optional custom cost input), and
+- writes structured outputs to model AdditionalProperties for downstream reporting.
 
-## Features
+This measure is standalone and does not depend on the window enhancement measure.
 
-- **Automatic Wall Upgrade:** Increases R-value of all exterior walls to target value
-- **Material Selection:** Choose from multiple insulation types (Fiberglass, Mineral Wool, XPS, Polyiso)
-- **Embodied Carbon Calculation:** Uses EC3 API to retrieve EPD data and calculate lifecycle carbon impact
-- **Cost Estimation:** Integrates RSMeans API for professional cost estimates or supports volume-based custom cost input
-- **Flexible Cost Calculation:** Choose between RSMeans lookup, custom override ($/CF volume basis), or no cost calculation
-- **Material Property Extraction:** Automatically extracts density and thermal properties from RSMeans descriptions
-- **Smart Property Fallback:** Material properties sourced from: user input → RSMeans-extracted → hardcoded defaults
-- **RSMeans Fallback Logic:** When RSMeans match score < MIN_ACCEPTABLE_MATCH_SCORE (0.0), uses pre-mapped fallback RSMeans IDs for all 11 insulation material types
-- **Overhead & Profit:** Configurable contractor markup percentage (RSMeans only)
-- **Volume-Based Costing:** Costs calculated on $/CF (cubic feet) basis for consistency with embodied carbon calculations
-- **Results Export:** All calculations stored in model AdditionalProperties as JSON
+## Key Features
 
-## Modeler Description
+- Exterior wall-only scope (surface type `Wall`, boundary `Outdoors`)
+- Automatic added thickness calculation from target delta-R and selected thermal conductivity
+- EC3-based embodied carbon estimates with outlier filtering (IQR)
+- RSMeans multi-catalog lookup (`bc-mf`, `gb-mf`, `rp-mf`) with fallback ID support
+- Optional exact RSMeans ID override (`use_exact_costline_id` + `exact_costline_id`)
+- Optional custom cost path (`custom_cost_per_cf`)
+- Structured AdditionalProperties write-out across 5 model objects
 
-This measure modifies the construction assemblies of all exterior walls in the model by adding an insulation layer with the specified material type. The thermal properties of the new layer are calculated to achieve the target R-value. The measure also:
+## Measure Arguments
 
-1. Looks up material embodied carbon data from EC3 API based on material type and installation area
-2. Searches RSMeans database for construction cost data (Division 07 - Thermal and Moisture Protection)
-3. Stores all results (costs, embodied carbon, material data) in the output model's AdditionalProperties
-4. Provides a JSON results file with complete calculation details
+| Name | Type | Default | Notes |
+|---|---|---|---|
+| `r_value` | Double | `13.0` | Target wall insulation R-value in `ft^2*h*R/Btu` |
+| `analysis_period` | Integer | `30` | Embodied-carbon analysis horizon (years) |
+| `gwp_statistic` | Choice | required | One of: `minimum`, `maximum`, `mean`, `median` |
+| `api_key` | String | `Obtain the key from EC3 website` | EC3 token |
+| `insulation_material_type` | Choice | `Fiberglass Batts` | One of 11 supported insulation material types |
+| `insulation_material_lifetime` | Integer | `30` | Product lifetime in years |
+| `insulation_thermal_conductivity` | Double | `0.0` | If `0.0`, the measure chooses a value from RSMeans extraction or defaults |
+| `insulation_material_density` | Double | `0.0` | If `0.0`, the measure chooses a value from RSMeans extraction or defaults |
+| `calculate_costs` | Bool | `true` | Enables cost path |
+| `use_custom_costs` | Bool | `false` | If true, bypass RSMeans and use custom volume cost |
+| `custom_cost_per_cf` | Double | `0.0` | Custom cost in `$/CF` |
+| `labor_cost_multiplier` | Double | `1.0` | Applies only on custom cost path |
+| `overhead_profit_percent` | Double | `10.0` | Applies to RSMeans-derived material cost |
+| `use_exact_costline_id` | Bool | `false` | Deterministic RSMeans selection |
+| `exact_costline_id` | String | `` | Used only when exact-ID mode is enabled |
 
-## Measure Type
-ModelMeasure
+## RSMeans Matching and Fallback
 
-## Taxonomy
-Envelope.Exterior Walls.Insulation
+- Candidate descriptions are scored in range `0..100`.
+- Fallback ID logic triggers when best score is below:
+  - `MIN_ACCEPTABLE_MATCH_SCORE = 50.0`
+- Fallback IDs are defined for most insulation types in `resources/call_rsmeans_api.py`.
 
-## Arguments
+Notes:
+- `Pure Wool Batts` currently has no hardcoded fallback ID and stays search-based.
+- RSMeans cost uses `localizedCosts.totalOpCost` (installed unit cost including labor + O&P at the line-item level).
 
-### Core Insulation Parameters
+## Cost Basis Tracking
 
-#### Insulation R-value (IP units: Btu·h·ft²/°F)
+The measure writes a cost-basis flag to AdditionalProperties:
+- `wall_insulation_cost_factor_basis`
 
-**Name:** `r_value`  
-**Type:** Double  
-**Units:** Btu·h·ft²/°F  
-**Required:** true  
-**Model Dependent:** false  
-**Default:** 20.0  
-**Description:** Target R-value for exterior walls after insulation is added. Higher values provide better thermal resistance.
+Possible values:
+- `cost_per_area`
+- `cost_per_volume`
+- `custom_cost_per_volume`
+- `mixed`
+- `other`
+- `not_calculated`
 
-#### Insulation Material Type
+## AdditionalProperties Organization
 
-**Name:** `insulation_material_type`  
-**Type:** Choice  
-**Required:** true  
-**Model Dependent:** false  
-**Default:** Fiberglass Batts  
-**Options:**
-- Fiberglass Batts (most cost-effective, ~$1.18/SF)
-- Mineral Wool Batts (better fire/moisture resistance, ~$1.40/SF)
-- Extruded Polystyrene Foam (high performance, ~$1.60/SF)
-- Polyiso Foam (balanced performance, ~$1.45/SF)
+The measure writes outputs into five buckets:
 
-#### Apply to Existing Walls
+- Building (`basic_input`)
+  - `measure_name`
+  - `analysis_period_years`
+  - `gwp_statistic`
+  - `wall_insulation_construction_names`
 
-**Name:** `apply_to_existing_walls`  
-**Type:** Boolean  
-**Required:** false  
-**Model Dependent:** true  
-**Default:** true  
-**Description:** If true, add insulation to all exterior walls including those with existing insulation. If false, only upgrade walls without existing insulation.
+- Site (`reno_detail`)
+  - `wall_target_insulation_r_value_ip`
+  - `wall_insulation_material_type`
+  - `wall_insulation_renovated_area_m2`
 
-### Analysis Parameters
+- Facility (`factors` + mirrored cost visibility)
+  - Emission factors:
+    - `wall_insulation_material_gwp_per_kg`
+    - `wall_insulation_material_gwp_per_m2`
+    - `wall_insulation_material_gwp_per_m3`
+  - Mirrored cost fields:
+    - `wall_insulation_total_additional_material_cost_$`
+    - `wall_insulation_total_additional_overhead_profit_cost_$`
+    - `wall_insulation_total_additional_labour_cost_$`
+    - `wall_insulation_total_cost_with_overhead_and_profit_$`
+    - `wall_insulation_cost_source`
+    - `wall_insulation_cost_factor_basis`
 
-#### Analysis Period (years)
+- SimulationControl (`results`)
+  - `wall_insulation_retrofit_materials_json`
+  - `wall_insulation_rsmeans_materials_detail_json`
+  - `wall_insulation_total_additional_embodied_carbon_kg`
+  - `wall_insulation_total_additional_material_cost_$`
+  - `wall_insulation_total_additional_overhead_profit_cost_$`
+  - `wall_insulation_total_additional_labour_cost_$`
+  - `wall_insulation_total_cost_with_overhead_and_profit_$`
+  - `wall_insulation_cost_source`
+  - `wall_insulation_cost_factor_basis`
+  - `wall_insulation_total_embodied_carbon_kgCO2eq`
 
-**Name:** `analysis_period`  
-**Type:** Integer  
-**Units:** years  
-**Required:** false  
-**Model Dependent:** false  
-**Default:** 30  
-**Description:** Lifetime period for embodied carbon analysis. Typical values: 30-60 years.
+- SizingParameters (`mtrl_prop`)
+  - `wall_insulation_material_lifetime_years`
+  - `wall_insulation_material_density_kg_per_m3`
+  - `wall_insulation_material_thermal_conductivity_W_per_mK`
+  - `wall_insulation_rsmeans_extracted_properties_json`
 
-#### GWP Statistic
-
-**Name:** `gwp_statistic`  
-**Type:** Choice  
-**Required:** false  
-**Model Dependent:** false  
-**Default:** median  
-**Options:**
-- average (arithmetic mean of EPD data)
-- median (middle value, most representative)
-- conservative (highest value, worst-case scenario)
-
-**Description:** Which statistic to use from the Environmental Product Declaration data.
-
-### Cost Calculation Parameters
-
-#### Calculate Costs
-
-**Name:** `calculate_costs`  
-**Type:** Boolean  
-**Required:** false  
-**Model Dependent:** false  
-**Default:** true  
-**Description:** If true, enable cost calculation via RSMeans API or custom values. If false, no cost estimation is performed.
-
-#### Use Custom Costs
-
-**Name:** `use_custom_costs`  
-**Type:** Boolean  
-**Required:** false  
-**Model Dependent:** false  
-**Default:** false  
-**Description:** If true, use `custom_cost_per_cf` instead of RSMeans API lookup. Useful when RSMeans data is unavailable or you have known costs.
-
-#### Custom Cost per Cubic Foot ($/CF)
-
-**Name:** `custom_cost_per_cf`  
-**Type:** Double  
-**Units:** $/CF (cubic feet)  
-**Required:** false  
-**Model Dependent:** false  
-**Default:** 5.0  
-**Description:** Cost per cubic foot of insulation volume if `use_custom_costs` is enabled. Volume is calculated as: added thickness (m) × wall area (m²) × 35.315 CF/m³. Only used when custom costs are selected. Note: Volume basis provides consistency with embodied carbon calculations which are inherently volume-dependent.
-
-#### Overhead & Profit Percentage
-
-**Name:** `overhead_profit_percent`  
-**Type:** Double  
-**Units:** % (percentage)  
-**Required:** false  
-**Model Dependent:** false  
-**Default:** 10.0  
-**Description:** Contractor overhead and profit markup as a percentage of material cost. Typical range: 10-20%.
-
-#### Use Exact RSMeans Costline ID
-
-**Name:** `use_exact_costline_id`  
-**Type:** Boolean  
-**Required:** false  
-**Model Dependent:** false  
-**Default:** false  
-**Description:** If true, use the specified RSMeans costline ID for deterministic cost lookup instead of search-based matching. Bypasses fallback logic.
-
-#### Exact RSMeans Costline ID
-
-**Name:** `exact_costline_id`  
-**Type:** String  
-**Required:** false  
-**Model Dependent:** false  
-**Default:** (empty)  
-**Description:** Optional explicit RSMeans ID (e.g., 072126100020). If provided and `use_exact_costline_id` is true, this replaces the search and fallback mechanism.
-
-### API Configuration
-
-#### EC3 API Key
-
-**Name:** `api_key`  
-**Type:** String  
-**Required:** false  
-**Model Dependent:** false  
-**Default:** (empty)  
-**Description:** Environmental Product Declaration API token from Building Transparency (https://buildingtransparency.org). Leave empty to skip embodied carbon calculations or read from `config.ini`.
-
-## RSMeans Fallback Logic
-
-When RSMeans API searches yield results with a match score below `MIN_ACCEPTABLE_MATCH_SCORE` (0.0), the measure automatically uses a pre-mapped fallback RSMeans ID for the selected material type. Fallback IDs are defined for all 11 supported insulation materials:
-
-| Material Type | Fallback RSMeans ID | Description |
-|---------------|-------------------|-------------|
-| Blown Cellulose | 072126100020 | Blown cellulose |
-| Blown Fiberglass | 072126101000 | Blown fiberglass |
-| Blown Mineral Wool | 072123100100 | Blown mineral wool |
-| Polyiso Insulation Foam Board | 072216101700 | Polyiso roof insulation board |
-| Graphite Polystyrene (GPS) Foam Board | 072113130600 | Graphite polystyrene insulation |
-| Expanded Polystyrene (EPS) Foam Board | 072113130600 | EPS rigid foam board |
-| Extruded Polystyrene (XPS) Foam Board | 072216101910 | XPS rigid foam board |
-| Mineral Wool Heavy Density Blanket | 072116201320 | Mineral wool heavy density |
-| Mineral Wool Light Density Blanket | 072116201320 | Mineral wool light density |
-| Fiberglass Batts | 072116200620 | Fiberglass batts insulation |
-| Pure Wool Batts | (search-only) | Uses API search without specific fallback |
-
-**Fallback Trigger:** `best_raw_score < MIN_ACCEPTABLE_MATCH_SCORE (0.0)`
-
-This ensures cost estimates are always available, even when exact material matches are not found in RSMeans.
-
-## Outputs
-
-### Modified OpenStudio Model
-
-The measure generates a new OSM file with:
-- Updated exterior wall constructions with added insulation layer
-- Modified material assignments to achieve target R-value
-- All calculation results stored in AdditionalProperties
-
-### Results File
-
-A JSON file (`apply_measure_results.json`) containing:
-- Step values (measure arguments)
-- Material information from RSMeans lookup (or fallback ID used)
-- Fallback status indicator (true if fallback ID was used)
-- Cost calculation breakdown (material, labor, overhead, total)
-- Embodied carbon results from EC3 API
-- Environmental Product Declaration data
-
-## Example Outputs
-
-### Custom Cost Calculation (Volume Basis)
-```
-Added Insulation Volume: 245.00 CF (cubic feet)
-Custom Cost Rate:        $10.00/CF
-Total Material Cost:     $2,450.00
-Labor Cost (multiplier): $2,450.00 (1x material cost)
-Total Cost:              $4,900.00
-```
-
-### RSMeans Cost Breakdown
-```
-Applied Area:           268.19 m²
-Material Cost:          $3,406.37
-Overhead/Profit:        $340.64 (10%)
-Total Cost:             $3,747.00
-Cost per M²:            $13.97
-```
-
-### Embodied Carbon
-```
-Applied Area:        268.19 m²
-Material:            Fiberglass Batts insulation
-Embodied Carbon:     98.11 kg CO2 eq
-Analysis Period:     30 years
-GWP Statistic:       Median
-```
-
-## Documentation
-
-For detailed information, see:
-
-- **[Increase_Insulation_Walls.md](docs/Increase_Insulation_Walls.md)** - Complete measure documentation with usage examples and flow diagram
-- **[ENVIRONMENT_SETUP.md](docs/ENVIRONMENT_SETUP.md)** - API configuration and environment setup guide
-- **[RSMEANS_SEARCH_STRATEGY.md](docs/RSMEANS_SEARCH_STRATEGY.md)** - Cost data lookup customization and search strategy
-
-## Material Property Sourcing
-
-The measure intelligently selects material properties using a priority-based fallback chain:
-
-1. **User-Provided** (highest priority): Custom values for thermal conductivity and density if explicitly provided
-2. **RSMeans-Extracted**: Properties parsed from RSMeans description fields (density in pcf, R-value, etc.)
-3. **Hardcoded Defaults** (lowest priority): Pre-configured values for each insulation type
-
-This approach ensures accuracy when RSMeans data is available while maintaining robustness through fallback values. All property sources are logged during measure execution for transparency.
-
-## Testing
-
-The measure includes unit tests for error handling and message validation:
-
-- `tests/test_rsmeans_error_message_content.py` - Validates error message format, sections, and parameter consistency
-- `tests/test_rsmeans_error_handling.py` - Integration tests for RSMeans lookup failures and retry guidance
-
-Run tests with:
-```bash
-python -m pytest lib/measures/IncreaseInsulationRValueForExteriorWalls/tests/ -v
-```
+Per-construction compatibility keys are also written on each modified construction:
+- `renovated_exterior_wall_area_m2`
+- `total_embodied_carbon_kgCO2eq`
+- `insutlation_material_type` (typo preserved intentionally for reporting compatibility)
 
 ## Quick Start
 
-### 1. Setup Environment
-
-```bash
-# Install required packages
-pip install openstudio requests python-dotenv
-
-# Configure APIs
-# Add EC3 token to config.ini
-# Add RSMeans credentials to .env
-```
-
-### 2. Run the Measure
-
 ```bash
 cd lib/measures/IncreaseInsulationRValueForExteriorWalls
+./setup_environment.ps1   # Windows PowerShell
 python apply_measure.py
 ```
 
-### 3. Check Results
+## Related Docs
 
-- Model: `DOE_small_office_wall_insulation_upgraded.osm`
-- Results: `apply_measure_results.json`
-- Logs: Console output shows all calculations and API responses
-
-## Requirements
-
-- OpenStudio 3.9.0 or higher
-- Python 3.8 or higher
-- EC3 API token (for embodied carbon calculations)
-- RSMeans API credentials (for cost estimation)
-
-## API Credentials
-
-### EC3 (Building Transparency)
-- Create account: https://buildingtransparency.org
-- Store token in `config.ini` at repository root
-- Required for embodied carbon calculations
-
-### RSMeans (Gordian)
-- Obtain credentials from your organization
-- Store in `.env` file at repository root
-- Required for cost estimation via RSMeans API
-
-## Troubleshooting
-
-| Issue | Solution |
-|-------|----------|
-| "EC3 API token not found" | Verify `config.ini` contains valid token |
-| "RSMeans API credentials not found" | Check `.env` file has `client_id` and `client_secret` |
-| "No walls modified" | Ensure input model has defined exterior walls |
-| "Costs showing as $0" | Verify RSMeans API is accessible; check search terms |
-| "Wall areas are zero" | Check that exterior walls have valid surface geometry |
-
-See [ENVIRONMENT_SETUP.md](docs/ENVIRONMENT_SETUP.md) for detailed troubleshooting.
-
-## Advanced Customization
-
-### Change Search Material
-
-Edit [measure.py](measure.py) around line 625:
-
-```python
-search_term = "Extruded Polystyrene insulation"  # Change material
-division_code = "07"                             # Change division
-catalog_ids = ["bc-mf", "gb-mf", "rp-mf"]      # Change catalogs
-```
-
-### Adjust Cost Calculation
-
-Use measure arguments:
-- `use_custom_costs`: Override with known cost
-- `overhead_profit_percent`: Adjust contractor markup
-
-### Use Different Insulation Material
-
-Select from available options in `insulation_material_type` argument, or add new materials by editing the measure argument choices.
-
-## Related Measures
-
-- **IncreaseInsulationRValueForRoofs** - Similar measure for roof insulation
-- **WindowEnhancementwithRSMeans** - Window upgrades with cost estimation
-- **ReduceTransmissionFromVinylWindows** - Window replacement
-
-## License
-
-See LICENSE.md in repository root.
-
-## Support
-
-For issues or questions:
-1. Check the documentation in the `docs/` folder
-2. Review the [RSMEANS_SEARCH_STRATEGY.md](docs/RSMEANS_SEARCH_STRATEGY.md) for cost-related issues
-3. Consult OpenStudio and API documentation references
-
-
-
-
+- `docs/Increase_Insulation_Walls.md`
+- `docs/RSMEANS_SEARCH_STRATEGY.md`
+- `docs/ENVIRONMENT_SETUP.md`

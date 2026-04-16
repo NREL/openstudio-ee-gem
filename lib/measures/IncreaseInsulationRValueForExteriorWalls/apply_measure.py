@@ -18,14 +18,60 @@ import configparser
 # OpenStudio path setup
 # ---------------------------------------------------------------------------
 OPENSTUDIO_VERSION = "3.11.0"
-openstudio_path = f"/Applications/OpenStudio-{OPENSTUDIO_VERSION}/Python"
 
-if Path(openstudio_path).exists():
-    sys.path.insert(0, openstudio_path)
-    print(f"Using OpenStudio from: {openstudio_path}")
-else:
-    print(f"Warning: OpenStudio path not found at {openstudio_path}")
-    print("Will attempt to use system OpenStudio installation")
+
+def configure_openstudio_python_path():
+    """
+    Add OpenStudio Python bindings to sys.path when available.
+
+    Resolution order:
+    1) OPENSTUDIO_PYTHON_PATH env var
+    2) platform-specific common install locations
+    3) fallback to current Python environment
+    """
+    candidates = []
+
+    # Explicit override wins.
+    env_path = os.getenv("OPENSTUDIO_PYTHON_PATH", "").strip()
+    if env_path:
+        candidates.append(Path(env_path))
+
+    # Common installation folders.
+    if os.name == "nt":
+        candidates.extend([
+            Path(f"C:/openstudio-{OPENSTUDIO_VERSION}/Python"),
+            Path("C:/openstudio-3.9.0/Python"),
+            Path("C:/openstudio-3.8.0/Python"),
+        ])
+    else:
+        candidates.extend([
+            Path(f"/Applications/OpenStudio-{OPENSTUDIO_VERSION}/Python"),
+            Path("/Applications/OpenStudio-3.9.0/Python"),
+            Path("/Applications/OpenStudio-3.8.0/Python"),
+        ])
+
+    for candidate in candidates:
+        if not candidate.exists():
+            continue
+
+        # Ensure OpenStudio dll/so resolution works on Windows/macOS/Linux.
+        openstudio_root = candidate.parent
+        extra_paths = [openstudio_root / "bin", openstudio_root / "Ruby"]
+        existing_path = os.environ.get("PATH", "")
+        os.environ["PATH"] = os.pathsep.join(
+            [str(p) for p in extra_paths if p.exists()] + [existing_path]
+        )
+
+        sys.path.insert(0, str(candidate))
+        print(f"Using OpenStudio from: {candidate}")
+        return
+
+    print("Warning: Could not locate OpenStudio Python bindings in common locations.")
+    print("Will attempt to use system/active Python installation.")
+    print("Tip: set OPENSTUDIO_PYTHON_PATH to your OpenStudio .../Python directory.")
+
+
+configure_openstudio_python_path()
 
 import openstudio
 from measure import IncreaseInsulationRValueForExteriorWalls

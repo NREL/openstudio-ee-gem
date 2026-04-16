@@ -1,5 +1,17 @@
 # Environment Setup
 
+## Is Setup Easy Today?
+
+Mostly, but there are two common friction points for new users:
+- OpenStudio Python bindings are installed outside the active Python environment.
+- RSMeans credentials (`client_id`, `client_secret`) and EC3 token setup are easy to miss.
+
+To reduce that friction, this measure now includes an automation script:
+- `setup_environment.ps1` (Windows PowerShell)
+
+It auto-detects common OpenStudio installs, sets `PYTHONPATH`/`PATH` for the current shell,
+installs required Python packages, and verifies imports.
+
 ## Prerequisites
 
 This measure requires the following to be installed and configured:
@@ -12,6 +24,32 @@ This measure requires the following to be installed and configured:
 ### Required Python Packages
 ```bash
 pip install openstudio requests python-dotenv
+```
+
+Note:
+- `openstudio` often comes from the OpenStudio install folder, not `pip`.
+- The setup script configures import paths automatically for common Windows installs.
+
+## Automated Setup (Recommended)
+
+From the measure directory:
+
+```powershell
+cd lib/measures/IncreaseInsulationRValueForExteriorWalls
+./setup_environment.ps1
+```
+
+Optional overrides:
+
+```powershell
+./setup_environment.ps1 -PythonExe "<path-to-python-exe>"
+./setup_environment.ps1 -OpenStudioRoot "<path-to-openstudio-root>"
+```
+
+Then run:
+
+```powershell
+python apply_measure.py
 ```
 
 ### API Credentials
@@ -49,7 +87,7 @@ Two API credentials are required for this measure to function fully:
 Located at repository root. Contains EC3 API token:
 ```ini
 [api_keys]
-ec3_api_token = cibHn9cLcZAD7MyzBTLamVfSNyQHKD
+ec3_api_token = your_EC3_api_token
 ```
 
 #### .env
@@ -66,6 +104,10 @@ client_secret = your_gordian_client_secret
 cd lib/measures/IncreaseInsulationRValueForExteriorWalls
 python apply_measure.py
 ```
+
+`apply_measure.py` now also attempts OpenStudio path auto-detection via:
+- `OPENSTUDIO_PYTHON_PATH` (if set), then
+- common install directories.
 
 ### Via OpenStudio Workflow
 The measure can be included in OpenStudio `.osw` workflow files:
@@ -96,6 +138,15 @@ The measure can be included in OpenStudio `.osw` workflow files:
 - Verify `.env` file exists and contains `client_id` and `client_secret`
 - Check environment variables are set if using those instead
 - Verify credentials are valid with your Gordian account
+
+### "No module named openstudio"
+- Run `./setup_environment.ps1` from this measure directory.
+- If needed, pass `-OpenStudioRoot` explicitly.
+- Or set `OPENSTUDIO_PYTHON_PATH` to your OpenStudio `.../Python` folder.
+
+### "No module named dotenv"
+- Install package in the same interpreter used to run the measure:
+  `python -m pip install python-dotenv`
 
 ### "Model not found"
 - Verify OSM file path is correct in `apply_measure.py`

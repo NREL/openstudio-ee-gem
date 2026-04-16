@@ -2,182 +2,102 @@
 
 ## Overview
 
-This measure uses the RSMeans API (Gordian) to automatically lookup cost data for wall insulation materials. The search strategy is designed to find the most relevant material from the RSMeans database and extract reliable cost estimates.
+This measure uses `resources/call_rsmeans_api.py` to find insulation cost lines in Gordian RSMeans and compute project cost.
 
-## Search Configuration
+Per material, the lookup is two-step:
 
-### Default Material Search
-- **Material:** Fiberglass Batts
-- **Search Term:** "Fiberglass Batts insulation"
-- **Division Code:** 07 (Thermal and Moisture Protection)
-- **Catalogs:** bc-mf, gb-mf, rp-mf (Building Construction Materials, Green Building, Residential Products)
+1. Search endpoint (`.../costlines/_search`) to find candidate IDs.
+2. Costline endpoint (`.../costlines?divisionCode=<id>`) to fetch localized cost values.
 
-### Why This Approach?
+The measure extracts `localizedCosts.totalOpCost` as installed unit cost.
 
-1. **Specific Material Name:** "Fiberglass Batts insulation" is more specific than just "Fiberglass" to reduce ambiguous matches
-2. **Division Code 07:** Thermal and Moisture Protection is the standard division for insulation materials in RSMeans
-3. **Multiple Catalogs:** Searching across three catalogs ensures broader coverage of material availability
-4. **Standard Product:** Fiberglass batts are the most commonly used and cost-effective exterior wall insulation
+## Catalog and Scope
 
-## Material Lookup Logic
+Default lookup settings used by the measure:
+- Release: `2024-an`
+- Catalogs: `bc-mf`, `gb-mf`, `rp-mf`
+- Location: `us-us-national`
+- Labor type: `std`
+- Measurement system: `imp`
 
-### Step 1: Materials List Creation
-The measure creates a list of materials to lookup based on the insulation being added:
+Insulation lookups are typically constrained to Division `07`.
 
-```python
-materials = [{
-    "quantity": total_added_volume_m3,
-    "description": insulation_material_type,
-    "catalogIds": ["bc-mf", "gb-mf", "rp-mf"]
-}]
-```
+## Candidate Scoring
 
-### Step 2: RSMeans API Call
-```python
-rsmeans_lookup = search_materials_across_catalogs(
-    materials=materials,
-    search_term="Fiberglass Batts insulation",
-    division_code="07",
-    client_id=os.getenv('client_id'),
-    client_secret=os.getenv('client_secret')
-)
-```
+Candidates are scored by `_score_rsmeans_candidate()` on a `0..100` scale.
 
-### Step 3: Result Processing
-Results are extracted from the nested response structure:
+Signal examples:
+- strong reward for exact/near-exact name matches,
+- token overlap reward,
+- penalties for context mismatch (for example roof vs wall),
+- penalties for overly generic or disallowed entries.
+
+The score is clamped:
 
 ```python
-# RSMeans returns: {status, summary, results{materials}}
-materials_list = rsmeans_lookup.get("results", {}).get("materials", [])
-
-# For each material, extract key data:
-for material in materials_list:
-    item_id = material.get("itemId")
-    description = material.get("description")
-    unit_cost = material.get("localizedCosts", {}).get("totalOpCost", 0.0)
+return max(0.0, min(100.0, score))
 ```
 
-### Step 4: Cost Calculation
-```
-Material Cost = unit_cost × total_area_sf
-Total Cost = Material Cost × (1 + overhead_profit_percent/100)
-```
+## Fallback ID Threshold
 
-## Key RSMeans Data Fields
-
-### Material Properties
-| Field | Description | Example |
-|-------|-------------|---------|
-| `itemId` | RSMeans item identifier | 072113100040 |
-| `description` | Full material description | Unfaced fiberglass insulation, rigid, for walls, 1" thick, R4.1, 1.5#/CF |
-| `localizedCosts.totalOpCost` | Total operating cost (material + labor) | 1.18 $/SF |
-| `priceAs` | Unit of measurement | $/SF |
-
-### Response Structure
-```json
-{
-  "status": "success",
-  "summary": {
-    "jobName": "string",
-    "currency": "USD",
-    "catalogsSearched": ["bc-mf", "gb-mf", "rp-mf"]
-  },
-  "results": {
-    "materials": [
-      {
-        "itemId": "072113100040",
-        "description": "Unfaced fiberglass insulation...",
-        "localizedCosts": {
-          "totalOpCost": 1.18
-        },
-        "priceAs": "$/SF"
-      }
-    ]
-  }
-}
-```
-
-## Customization Options
-
-### Using a Different Material
-Edit the search term in `measure.py` around line 625:
+If best candidate score is below the threshold, a hardcoded fallback ID is used when available:
 
 ```python
-# Current (default):
-search_term = "Fiberglass Batts insulation"
-
-# Alternative examples:
-# For rigid foam: "Extruded Polystyrene insulation"
-# For mineral wool: "Mineral Wool insulation"
-# For spray foam: "Spray Polyurethane Foam insulation"
+MIN_ACCEPTABLE_MATCH_SCORE = 50.0
 ```
 
-### Adding Division Codes
-If searching outside Division 07, modify:
+Trigger rule:
 
 ```python
-division_code = "07"  # Current: Thermal and Moisture Protection
-
-# Common alternatives:
-# "06" - Wood, Plastics, and Composites
-# "15" - Fire Suppression (if applicable)
+best_score < MIN_ACCEPTABLE_MATCH_SCORE
 ```
 
-### Expanding Catalogs
-Additional RSMeans catalogs can be searched:
+Fallback ID mapping is in `INSULATION_FALLBACK_IDS` inside `call_rsmeans_api.py`.
 
-```python
-catalog_ids = ["bc-mf", "gb-mf", "rp-mf"]  # Current: 3 catalogs
+## Disallowed Candidate Filter
 
-# Available catalogs (examples):
-# "cc-mf" - Commercial Construction
-# "fm-mf" - Facilities Management
-# "hp-mf" - Highway and Bridge
-```
+`_is_disallowed_candidate()` removes common non-material or misleading line items such as:
+- fasteners,
+- clips/hangers/anchors,
+- board-foot priced entries.
 
-## Cost Data Interpretation
+This avoids selecting accessory lines with unusable unit economics.
 
-### What Does "totalOpCost" Include?
+## Costing Modes
 
-The RSMeans `totalOpCost` field includes **both material and labor costs**. This is the industry-standard approach for construction cost estimation.
+The helper supports two costing modes:
 
-**Breakdown (typical):**
-- Material cost: ~60-70%
-- Labor cost: ~30-40%
+- `area`
+  - standard path: `total_cost = unit_cost * quantity`
 
-### Example Calculation
-```
-Material Description: Unfaced fiberglass insulation, rigid, for walls, 1" thick
-Unit Cost (totalOpCost): $1.18/SF
-Applied Area: 2,886.75 SF
+- `volume_from_area`
+  - parses thickness from RSMeans description,
+  - converts RSMeans area-rate to a volume-rate,
+  - computes cost from added insulation volume.
 
-Material Cost = $1.18/SF × 2,886.75 SF = $3,406.37
-Overhead/Profit (10%) = $3,406.37 × 0.10 = $340.64
-Total Cost = $3,406.37 + $340.64 = $3,747.00
-```
+For this wall-insulation measure, materials are passed with `costing_mode = volume_from_area`, so costs can scale with actual retrofit thickness.
 
-## Troubleshooting Search Issues
+## Exact ID Override
 
-### No Results Found
-1. Check RSMeans API credentials are valid
-2. Verify division code exists (07 is most common for insulation)
-3. Try broader search term: "insulation" instead of "Fiberglass Batts insulation"
-4. Check that catalogs are available in your RSMeans account
+If `use_exact_costline_id` is enabled, the measure attempts the provided `exact_costline_id` first. If found in any catalog, that exact line is used (`match_type = exact_id_match`).
 
-### Unexpected Material Matched
-1. RSMeans performs keyword matching - results depend on search term precision
-2. Review `description` field in results to verify it's appropriate
-3. Adjust search term to be more specific (add "wall" or "exterior")
-4. Check that the unit cost (`totalOpCost`) is reasonable
+## AdditionalProperties Outputs Tied to RSMeans
 
-### Unit Cost Mismatch
-1. Verify the material matched is appropriate for your use case
-2. Check `priceAs` field to confirm it's per square foot ($/SF)
-3. RSMeans costs include labor - factor this into comparisons with other data sources
-4. Regional variation may affect costs - verify your location setting in RSMeans
+The measure writes RSMeans-related outputs to:
 
-## API Documentation References
+- SimulationControl (`results` bucket)
+  - `wall_insulation_rsmeans_materials_detail_json`
+  - `wall_insulation_cost_source`
+  - `wall_insulation_cost_factor_basis`
+  - aggregate cost fields
 
-- **RSMeans Search API:** https://api.gordian.com/docs/search-api
-- **Measure Implementation:** [measure.py](../measure.py) lines 612-710
-- **Shared Helper:** [../resources/call_rsmeans_api.py](../resources/call_rsmeans_api.py)
+- SizingParameters (`mtrl_prop` bucket)
+  - `wall_insulation_rsmeans_extracted_properties_json`
+
+The `wall_insulation_cost_factor_basis` field communicates how cost was calculated:
+- `cost_per_area`
+- `cost_per_volume`
+- `custom_cost_per_volume`
+- `mixed`
+- `other`
+- `not_calculated`
