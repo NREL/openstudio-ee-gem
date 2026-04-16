@@ -14,11 +14,14 @@
     "use_custom_costs": false,
     "use_exact_costline_id": true,
     "exact_costline_id": "072116201320",
-    "custom_cost_per_sf": 0.73,
+    "custom_cost_per_cf": 0.73,
+    "labor_cost_multiplier": 1.0,
     "overhead_profit_percent": 10.0
   },
   "cost_response": {
     "cost_source": "rsmeans_api",
+    "cost_factor_basis": "cost_per_volume",
+    "cost_unit_basis": "CF",
     "selection_mode": "exact_id",
     "material_cost": {
       "value": 13468.61995215097,
@@ -55,12 +58,22 @@
       }
     ]
   },
-  "additional_properties_count": 22,
+  "additional_properties_count": 28,
   "additional_properties_sample": [
+    {
+      "construction": "Facility",
+      "property": "roof_insulation_cost_factor_basis",
+      "value": "cost_per_volume"
+    },
     {
       "construction": "Facility",
       "property": "roof_insulation_cost_source",
       "value": "rsmeans_api"
+    },
+    {
+      "construction": "Facility",
+      "property": "roof_insulation_cost_unit_basis",
+      "value": "CF"
     },
     {
       "construction": "Facility",
@@ -71,16 +84,6 @@
       "construction": "Facility",
       "property": "roof_insulation_material_gwp_per_m2",
       "value": 2.63
-    },
-    {
-      "construction": "Facility",
-      "property": "roof_insulation_retrofit_materials_json",
-      "value": "[{\"name\": \"Pure Wool Batts roof insulation (Typical IEAD Roof R-15.87)\", \"description\": \"Added insulation to reach R-30.0; actual added thickness 4.23 in\", \"quantity\": 4999.999999999987, \"unit\": \"SF\", \"quantity_volume\": 1761.590800916607, \"unit_volume\": \"CF\", \"rsmeans_thickness_ft\": 0.3523181601833223, \"costing_mode\": \"volume_from_area\", \"quantity_si\": 464.5151999999988, \"unit_si\": \"m2\", \"division_code\": \"07\", \"rsmeans_id\": \"072116201320\"}]"
-    },
-    {
-      "construction": "Facility",
-      "property": "roof_insulation_rsmeans_matches_json",
-      "value": "{\"materials\": [{\"name\": \"Pure Wool Batts roof insulation (Typical IEAD Roof R-15.87)\", \"description\": \"Added insulation to reach R-30.0; actual added thickness 4.23 in\", \"quantity\": 4999.999999999987, \"unit\": \"SF\", \"quantity_volume\": 1761.590800916607, \"unit_volume\": \"CF\", \"rsmeans_thickness_ft\": 0.3523181601833223, \"costing_mode\": \"volume_from_area\", \"quantity_si\": 464.5151999999988, \"unit_si\": \"m2\", \"division_code\": \"07\", \"rsmeans_id\": \"072116201320\", \"catalog\": \"bc-mf\", \"search_term_used\": \"rsmeans_id:072116201320\", \"unit_cost\": 7.645714285714285, \"total_cost\": 13468.61995215097, \"rsmeans_description\": \"Blanket insulation, for walls or ceilings, mineral wool batts, 3-1/2\\\" thick, R15\", \"match_type\": \"exact_id_match\", \"unit_cost_basis\": \"CF\"}], \"search_log\": [{\"material\": \"Pure Wool Batts roof insulation (Typical IEAD Roof R-15.87)\", \"search_term\": \"072116201320\", \"catalog\": \"bc-mf\", \"division\": \"07\", \"status\": \"exact_id_match\", \"unit_cost\": 7.645714285714285, \"unit_cost_basis\": \"CF\", \"costing_mode\": \"volume_from_area\", \"quantity\": 4999.999999999987, \"total_cost\": 13468.61995215097}], \"summary\": {\"release_id\": \"2024-an\", \"location_id\": \"us-us-national\", \"labor_type\": \"std\", \"measurement_system\": \"imp\", \"catalogs_searched\": [\"bc-mf\", \"gb-mf\", \"rp-mf\"]}}"
     },
     {
       "construction": "Facility",
@@ -99,13 +102,13 @@
     },
     {
       "construction": "Facility",
-      "property": "roof_insulation_total_additional_material_cost_$",
-      "value": 13468.61995215097
+      "property": "roof_insulation_total_additional_labour_cost_$",
+      "value": 0.0
     },
     {
       "construction": "Facility",
-      "property": "roof_insulation_total_additional_overhead_profit_cost_$",
-      "value": 1346.861995215097
+      "property": "roof_insulation_total_additional_material_cost_$",
+      "value": 13468.61995215097
     }
   ]
 }

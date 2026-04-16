@@ -4,6 +4,11 @@ Standalone RSMeans API helper for IncreaseInsulationRValueForRoofs.
 
 This helper is intentionally local to the roof measure so RSMeans lookup
 behavior does not depend on other measure directories.
+
+Search behavior summary:
+1) Prefer exact costline ID when one is supplied.
+2) Otherwise run closest-match scoring over candidate search results.
+3) Reject weak closest matches and fall back to configured fallback IDs.
 """
 
 import argparse
@@ -29,6 +34,10 @@ DEFAULT_FEATURE_KEYS = {
     "unit_cost": "rsmeans_unit_cost",
     "total_cost": "rsmeans_total_cost",
 }
+
+# Closest-match results below this score are treated as unresolved and
+# redirected to fallback IDs when available.
+MIN_ACCEPTABLE_MATCH_SCORE = 50.0
 
 
 def _get_feature_as_string(props, feature_name: str) -> Optional[str]:
@@ -145,6 +154,30 @@ def _compute_total_cost_for_material(
     unit_cost: float,
     matched_description: str,
 ) -> Dict[str, Any]:
+    """Convert a RSMeans unit cost into a total cost for the given material quantity.
+
+    RSMeans often prices insulation per SF at a specific thickness (e.g. '$/SF for
+    3-1/2" thick batts').  When the measure needs a different thickness, the unit
+    cost must be re-expressed as $/CF so it can be multiplied against the actual
+    installed volume rather than a fixed-thickness area.
+
+    Two costing modes:
+      - 'area'            : total = unit_cost * area_SF  (no conversion needed)
+      - 'volume_from_area': total = (unit_cost / line_thickness_ft) * volume_CF
+                            The thickness is parsed from the matched RSMeans
+                            description string or falls back to the value stored
+                            in the material dict.
+
+    Args:
+        material:            The retrofit material dict (name, quantity, unit, etc.).
+        unit_cost:           RSMeans localizedCosts.totalOpCost for the matched line.
+        matched_description: Description text of the matched RSMeans cost line,
+                             used to extract the reference thickness.
+
+    Returns:
+        Dict with keys: unit_cost, total_cost, costing_mode, effective_unit,
+        and (for volume mode) source_unit_cost_per_sf, source_line_thickness_ft.
+    """
     quantity = float(material.get("quantity", 1.0) or 1.0)
     default = {
         "unit_cost": float(unit_cost),
@@ -187,6 +220,28 @@ def _score_rsmeans_candidate(
     material_name: str,
     item: Dict[str, Any],
 ) -> tuple:
+    """Score a single RSMeans search-result candidate against the requested material.
+
+    The score reflects how well the RSMeans line item description matches the
+    material we are looking for.  Higher is better.
+
+    Scoring rules (additive):
+      +100  exact string match (normalised)
+      +60   material name is a substring of description
+      +15   per shared token (word-level overlap)
+      -20   description mentions 'insulation' but shares fewer than 2 tokens
+              (catches unrelated insulation types)
+      -10   material name mentions 'roof' but description does not
+      -25   material is for roofs but description mentions walls only
+      +/-30/40  polyiso/polyisocyanurate specificity bonus/penalty
+      +0..1 slight length tiebreaker (longer descriptions are slightly preferred)
+
+    Returns:
+        (raw_score, clamped_score) where raw_score may exceed [0, 100] and
+        clamped_score is max(0, min(100, raw_score)).  The clamped value is
+        compared against MIN_ACCEPTABLE_MATCH_SCORE to decide whether to fall
+        back to a pre-configured costline ID.
+    """
     description = str(item.get("description", ""))
     if not description:
         return -1.0
@@ -227,6 +282,7 @@ def _score_rsmeans_candidate(
             score -= 30.0
 
     score += min(len(description_norm), 120) / 120.0
+    # Keep both scores: raw helps diagnostics, clamped is used for thresholding.
     clamped_score = max(0.0, min(100.0, score))
     return score, clamped_score
 
@@ -235,6 +291,21 @@ def _resolve_fallback_costline_id(
     material_name: str,
     fallback_costline_ids: Dict[str, str],
 ) -> Optional[str]:
+    """Return a pre-configured fallback RSMeans costline ID for a material name.
+
+    The fallback dict supports three kinds of keys:
+      - Exact name match:  key == material_name  (highest priority)
+      - Keyword match:     key starts with 'keyword:'  and the keyword
+                           appears anywhere in the normalised material name
+      - Default:           key == '__default__'  (lowest priority, always matches)
+
+    This is used when the scored closest-match search returns a weak result
+    (score < MIN_ACCEPTABLE_MATCH_SCORE) or finds nothing at all, ensuring the
+    measure still produces a cost estimate rather than failing silently.
+
+    Returns:
+        A costline ID string, or None if the dict is empty or has no match.
+    """
     if not fallback_costline_ids:
         return None
 
@@ -254,6 +325,21 @@ def _resolve_fallback_costline_id(
 
 
 def _is_disallowed_candidate(item: Dict[str, Any]) -> bool:
+    """Return True if a RSMeans search result should be excluded from scoring.
+
+    Some search results share a division code with insulation but are not
+    insulation materials themselves (fasteners, hangers, board-foot priced items,
+    tapered drainage boards, etc.).  Including them in scoring would pollute
+    the best-match selection with irrelevant or misleading line items.
+
+    Excluded categories:
+      - Fasteners, clips, hangers, anchors (accessories, not insulation)
+      - Board-foot (BF) unit items  (pricing basis incompatible with SF/CF)
+      - Tapered-for-drainage items  (specialty slope boards, not flat insulation)
+
+    Returns:
+        True if the item should be skipped; False if it is eligible for scoring.
+    """
     desc = _normalize_search_text(item.get("description", ""))
     if not desc:
         return False
@@ -297,6 +383,26 @@ def _select_best_rsmeans_candidate(
     material_name: str,
     items: List[Dict[str, Any]],
 ) -> tuple:
+    """Choose the best-matching RSMeans candidate from a list of search results.
+
+    Steps:
+      1. Filter out disallowed items (accessories, BF-priced lines, drainage boards).
+      2. Score every eligible item with _score_rsmeans_candidate.
+      3. Sort descending by clamped score and return the top item.
+
+    The full scored list is also returned so the measure can:
+      a) detect ties (ambiguous matches) and warn the user, and
+      b) record candidate scores in the diagnostics JSON for traceability.
+
+    Args:
+        material_name: The insulation material string we are searching for.
+        items:         Raw search-result items from the RSMeans API response.
+
+    Returns:
+        (best_item, scored_list) where best_item is the winning RSMeans dict
+        and scored_list is a list of dicts with rsmeans_id, description,
+        raw_score, and score for every candidate considered.
+    """
     if not items:
         return None, []
 
@@ -325,6 +431,28 @@ def _select_best_rsmeans_candidate(
 
 
 def generate_search_term_alternatives(material_name: str) -> List[tuple]:
+    """Generate an ordered list of (search_term, division_code) pairs to try.
+
+    RSMeans search can be narrow (specific term + division) or broad (generic
+    term, any division).  This function produces a progressive fallback list
+    so the caller can try the most specific query first and broaden if nothing
+    is found.
+
+    Examples of generated alternatives for 'Blown Cellulose':
+      ('Blown Cellulose', '07')
+      ('blown cellulose', '07')
+      ('cellulose insulation', '07')
+      ('roof insulation', '07')
+      ('insulation', '07')
+      ('cellulose', '07')  <- last-word fallback
+
+    The division code '07' is used for all thermal/moisture protection items
+    (roofing, insulation, waterproofing).
+
+    Returns:
+        List of (term, division_code) 2-tuples.  division_code may be None
+        for the broadest fallback terms.
+    """
     alternatives = []
     name_lower = material_name.lower().strip()
     cleaned_name = re.sub(r"\b\d+(?:\.\d+)?\b", "", name_lower)
@@ -1096,15 +1224,16 @@ def search_materials_across_catalogs(
                                     )
 
                                     if cost_calc["total_cost"] > 0:
-                                        top_raw_score = candidate_details[0].get("raw_score", 0.0)
-                                        if top_raw_score < 0.0 and material_fallback_id:
+                                        top_score = candidate_details[0].get("score", 0.0)
+                                        if top_score < MIN_ACCEPTABLE_MATCH_SCORE and material_fallback_id:
                                             force_fallback_due_to_score = True
                                             search_log.append({
                                                 "material": material_name,
                                                 "search_term": alt_term,
                                                 "catalog": catalog,
-                                                "status": "poor_match_raw_score_fallback",
-                                                "raw_score": top_raw_score,
+                                                "status": "poor_match_score_fallback",
+                                                "score": top_score,
+                                                "min_acceptable_score": MIN_ACCEPTABLE_MATCH_SCORE,
                                                 "fallback_costline_id": material_fallback_id,
                                                 "candidates_considered": len(items),
                                                 "candidate_scores": candidate_details,

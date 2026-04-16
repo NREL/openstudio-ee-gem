@@ -14,35 +14,39 @@ import sys
 import json
 import os
 import configparser
-import platform
 
 # ---------------------------------------------------------------------------
 # OpenStudio path setup
 # ---------------------------------------------------------------------------
-# Try to use installed openstudio package first (via pip/conda)
-# Fall back to system installations if needed
+def configure_openstudio_python_path():
+    """Add OpenStudio Python bindings directory to sys.path when needed."""
+    env_path = os.getenv("OPENSTUDIO_PYTHON_PATH")
+    candidates = []
+    if env_path:
+        candidates.append(Path(env_path))
+
+    candidates.extend([
+        Path(r"C:\openstudio-3.11.0\Python"),
+        Path(r"C:\openstudio-3.10.0\Python"),
+        Path(r"C:\openstudio-3.9.0\Python"),
+        Path("/Applications/OpenStudio-3.11.0/Python"),
+        Path("/Applications/OpenStudio-3.10.0/Python"),
+        Path("/Applications/OpenStudio-3.9.0/Python"),
+    ])
+
+    for candidate in candidates:
+        if candidate.exists() and str(candidate) not in sys.path:
+            sys.path.insert(0, str(candidate))
+            os.environ["OPENSTUDIO_PYTHON_PATH"] = str(candidate)
+            print(f"Using OpenStudio Python path: {candidate}")
+            return
+
+
 try:
     import openstudio
     print("Using OpenStudio from installed package")
 except ImportError:
-    OPENSTUDIO_VERSION = "3.9.0"
-    WINDOWS_OPENSTUDIO_PATH = rf"C:\openstudio-{OPENSTUDIO_VERSION}\Python"
-    mac_openstudio_path = f"/Applications/OpenStudio-{OPENSTUDIO_VERSION}/Python"
-
-    openstudio_path = None
-    if platform.system() == "Windows":
-        if Path(WINDOWS_OPENSTUDIO_PATH).exists():
-            openstudio_path = WINDOWS_OPENSTUDIO_PATH
-            sys.path.insert(0, openstudio_path)
-            print(f"Using OpenStudio from: {openstudio_path}")
-    else:
-        if Path(mac_openstudio_path).exists():
-            openstudio_path = mac_openstudio_path
-            sys.path.insert(0, openstudio_path)
-            print(f"Using OpenStudio from: {openstudio_path}")
-
-    if openstudio_path is None:
-        print("Warning: OpenStudio path not found")
+    configure_openstudio_python_path()
 
 import openstudio
 from measure import IncreaseInsulationRValueForRoofs
@@ -210,6 +214,8 @@ def build_cost_response(ap_data):
 
     cost_response = {
         "cost_source": props.get("roof_insulation_cost_source"),
+        "cost_factor_basis": props.get("roof_insulation_cost_factor_basis"),
+        "cost_unit_basis": props.get("roof_insulation_cost_unit_basis"),
         "selection_mode": props.get("roof_insulation_rsmeans_selection_mode"),
         "material_cost": {
             "value": props.get(

@@ -1,100 +1,91 @@
-# Increase Insulation R-Value for Roofs
+# IncreaseInsulationRValueForRoofs
 
-## Overview
+## Purpose
 
-This measure increases roof/ceiling insulation to a target R-value and computes embodied carbon using EC3 EPD data. It also performs RSMeans cost lookup for the added insulation quantity and stores results in AdditionalProperties for downstream reporting.
+Increase roof insulation to a target R-value, then record both embodied-carbon and cost outputs in standardized AdditionalProperties buckets for downstream reporting.
 
-## Measure Type
+## Execution Phases
 
-ModelMeasure
+1. Parse and validate user arguments.
+2. Optionally extract RSMeans-based density/conductivity hints.
+3. Modify roof constructions to reach target R-value.
+4. Query EC3 EPD data and calculate embodied carbon.
+5. Run RSMeans or custom cost path and persist outputs.
 
-## Description
+## Arguments
 
-- Identifies the insulation layer in roof constructions (prefers massless layers or highest R/thickness ratio)
-- Adjusts insulation properties or thickness to hit a target R-value
-- Calculates added insulation volume and embodied carbon (GWP) using EC3 EPDs
-- Stores summarized results in AdditionalProperties on Facility and SimulationControl
-- Calls RSMeans API to estimate material costs for the added insulation
+Core:
 
-## Inputs and Arguments
+- `r_value`
+- `analysis_period`
+- `gwp_statistic`
+- `api_key`
+- `insulation_material_type`
+- `insulation_material_lifetime`
+- `insulation_thermal_conductivity`
+- `insulation_material_density`
 
-| Argument | Type | Units | Default | Description |
-|----------|------|-------|---------|-------------|
-| r_value | Double | ft²·h·°F/Btu | 30.0 | Target insulation R-value for roof constructions |
-| analysis_period | Integer | years | 30 | Analysis period for embodied carbon calculation |
-| gwp_statistic | Choice | - | median | Statistic for EPD GWP values (min/max/mean/median) |
-| api_key | String | - | - | EC3 API token |
-| insulation_material_type | Choice | - | Fiberglass Batts | Material type used for EPD lookup |
-| insulation_material_lifetime | Integer | years | 30 | Default lifetime if EPD doesn’t provide one |
-| insulation_thermal_conductivity | Double | W/m·K | 0.0 | 0 = use typical value for selected material |
-| insulation_material_density | Double | kg/m³ | 0.0 | 0 = use typical or EPD-derived value |
-| calculate_costs | Boolean | - | true | Enable cost calculation (RSMeans or custom) |
-| use_custom_costs | Boolean | - | false | If true, skip RSMeans and use custom cost inputs |
-| use_exact_costline_id | Boolean | - | false | If true, force RSMeans to use exact `exact_costline_id` |
-| exact_costline_id | String | - | "" | Exact RSMeans unit costline ID to use |
-| custom_cost_per_cf | Double | $/CF | 0.0 | Custom insulation material cost per cubic foot |
-| labor_cost_multiplier | Double | - | 1.0 | Multiplier applied to custom material cost to derive labor cost |
-| overhead_profit_percent | Double | % | 10.0 | Overhead + profit applied to RSMeans material cost |
+Costing:
 
-## Costing (RSMeans or Custom)
+- `calculate_costs`
+- `use_custom_costs`
+- `use_exact_costline_id`
+- `exact_costline_id`
+- `custom_cost_per_cf`
+- `labor_cost_multiplier`
+- `overhead_profit_percent`
 
-If `calculate_costs` is enabled, the measure uses one of two paths:
+## Costing Paths
 
-### RSMeans (default)
-The measure prepares a retrofit material record based on the added roof insulation area and average added thickness. The RSMeans helper then:
-- Searches for a closest-match line item (division 07)
-- Returns unit and total cost
-- Applies overhead/profit (`overhead_profit_percent`)
+### RSMeans path (`calculate_costs=True`, `use_custom_costs=False`)
 
-### Custom Costs
-If `use_custom_costs` is true, RSMeans is skipped and:
-- Material cost = `custom_cost_per_cf` × total roof insulation volume (CF)
-- Labor cost = material cost × (`labor_cost_multiplier` − 1)
-- Installed cost = material cost + labor cost
+- Generates retrofit material records (area, thickness, volume).
+- Searches RSMeans catalogs and captures detailed result/search logs.
+- Applies overhead and profit percentage.
+- Persists both summary fields and raw diagnostics JSON.
 
-Volume basis is derived from the modeled retrofit quantities:
-- `added_volume_cf` = roof area (SF) × added insulation thickness (ft)
+### Custom path (`use_custom_costs=True`)
 
-Results are recorded in AdditionalProperties and reported in apply_measure.py.
+- Uses total added insulation volume.
+- Computes:
+	- material = `custom_cost_per_cf * total_volume_cf`
+	- labor = `material * (labor_cost_multiplier - 1)`
+	- installed = `material + labor`
 
-## Outputs
+## AdditionalProperties Organization
 
-### AdditionalProperties (Facility)
-- roof_insulation_retrofit_materials_json
-- roof_insulation_total_additional_material_cost_$
-- roof_insulation_total_additional_overhead_profit_cost_$
-- roof_insulation_total_additional_labour_cost_$
-- roof_insulation_cost_source
-- roof_insulation_material_gwp_per_kg
-- roof_insulation_material_gwp_per_m2
-- roof_insulation_material_gwp_per_m3
+Building (`basic_input`):
 
-### AdditionalProperties (SimulationControl)
-- roof_insulation_retrofit_materials_json
-- roof_insulation_total_additional_embodied_carbon_kg
-- roof_insulation_total_additional_material_cost_$
-- roof_insulation_total_additional_overhead_profit_cost_$
-- roof_insulation_total_additional_labour_cost_$
-- roof_insulation_cost_source
-- roof_insulation_total_embodied_carbon_kgCO2eq
+- measure-level identity and high-level inputs.
 
-### AdditionalProperties (Building/Site/Sizing)
-- roof_target_insulation_r_value_ip
-- roof_insulation_material_type
-- roof_insulation_renovated_area_m2
-- roof_insulation_material_lifetime_years
-- roof_insulation_material_density_kg_per_m3
-- roof_insulation_material_thermal_conductivity_W_per_mK
-- roof_insulation_construction_names
+Site (`reno_detail`):
 
-## Running the Measure
+- renovation target and aggregate roof area quantities.
 
-```bash
+Facility (`factors`):
+
+- mirrored high-level cost totals, source, and cost basis metadata.
+
+SimulationControl (`results`):
+
+- aggregate results and RSMeans diagnostics payloads.
+- includes: `roof_insulation_rsmeans_matches_json`, `roof_insulation_rsmeans_search_results_json`, `roof_insulation_rsmeans_summary_json`.
+
+SizingParameters (`mtrl_prop`):
+
+- selected material properties and extracted RSMeans material hints.
+
+## Cost Basis Metadata
+
+The measure stores:
+
+- `roof_insulation_cost_factor_basis` (for example `cost_per_area`, `cost_per_volume`, `cost_per_unit`, `mixed`, `custom_cost_per_volume`)
+- `roof_insulation_cost_unit_basis` (for example `SF`, `CF`, or multiple values)
+
+## Run Locally
+
+```powershell
 cd lib/measures/IncreaseInsulationRValueForRoofs
+./setup_environment.ps1
 python apply_measure.py
 ```
-
-## Related Docs
-
-- [Environment Setup](ENVIRONMENT_SETUP.md)
-- [RSMeans Search Strategy](RSMEANS_SEARCH_STRATEGY.md)

@@ -1,60 +1,78 @@
-# Environment Setup for Increase Insulation R-Value for Roofs
+# Environment Setup for IncreaseInsulationRValueForRoofs
 
 ## Overview
 
-This measure requires Python 3.8+ and OpenStudio 3.11.0. Use the repository's environment.yml to keep dependencies consistent.
+The roof insulation measure depends on:
 
-## Prerequisites
+- A Python environment where this repository runs.
+- OpenStudio Python bindings.
+- `python-dotenv` (used by RSMeans helper credential loading).
 
-- Conda (Anaconda or Miniconda)
-- Git with the openstudio-ee-gem repository cloned
+## Fastest Setup (PowerShell)
 
-## Quick Setup
+From the measure directory:
 
-### 1. Create the Environment
+```powershell
+cd lib/measures/IncreaseInsulationRValueForRoofs
+./setup_environment.ps1
+```
 
-From the repository root:
+What this script does:
 
-```bash
+- Detects `OPENSTUDIO_PYTHON_PATH` or common local OpenStudio Python install paths.
+- Installs/updates `python-dotenv` in the active Python environment.
+- Runs a quick import validation for `openstudio` and `dotenv`.
+
+## Manual Setup
+
+1. Create and activate environment from repository root:
+
+```powershell
 conda env create -f environment.yml
+conda activate openstudio312
 ```
 
-### 2. Activate the Environment
+2. Ensure OpenStudio bindings are reachable:
 
-```bash
-conda activate openstudio-3.11
+- Preferred: set `OPENSTUDIO_PYTHON_PATH` to your OpenStudio `Python` folder.
+- Or ensure `openstudio` is importable directly in your environment.
+
+3. Install required package:
+
+```powershell
+python -m pip install python-dotenv
 ```
 
-### 3. Verify Installation
+4. Validate imports:
 
-```bash
-python -c "import openstudio; print(openstudio.openStudioVersion())"
+```powershell
+python -c "import openstudio, dotenv; print(openstudio.openStudioVersion())"
 ```
 
 ## Running the Measure
 
-```bash
+```powershell
 cd lib/measures/IncreaseInsulationRValueForRoofs
 python apply_measure.py
 ```
 
 ## Troubleshooting
 
-### "ModuleNotFoundError: No module named 'openstudio'"
+### `ModuleNotFoundError: No module named 'openstudio'`
 
-Ensure the environment is activated and has the openstudio package:
+- Set `OPENSTUDIO_PYTHON_PATH` to the OpenStudio `Python` directory.
+- Re-run `setup_environment.ps1` in the same shell session.
 
-```bash
-conda activate openstudio-3.11
-python -c "import openstudio; print(openstudio.openStudioVersion())"
+### `ModuleNotFoundError: No module named 'dotenv'`
+
+- Run `python -m pip install python-dotenv` in the active environment.
+
+### Mixed Python installations
+
+- Confirm interpreter path with:
+
+```powershell
+python -c "import sys; print(sys.executable)"
 ```
 
-### DLL or Version Errors
-
-Use the conda environment from environment.yml and avoid mixing system Python with OpenStudio packages.
-
-## Additional Resources
-
-- [Conda Environments](https://conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html)
-- [Measure Documentation](Increase_Insulation_Roofs.md)
-- [RSMeans Search Strategy](RSMEANS_SEARCH_STRATEGY.md)
+- Ensure that is the same interpreter you used for package install.
