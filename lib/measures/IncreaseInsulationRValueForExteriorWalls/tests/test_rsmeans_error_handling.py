@@ -65,10 +65,9 @@ class TestRSMeansErrorHandling(unittest.TestCase):
         # - Calculate costs enabled
         vals = {
             "r_value": 30.0,
-            "allow_reduction": False,
             "calculate_costs": True,
             "use_custom_costs": False,  # Force RSMeans lookup
-            "custom_cost_per_sf": 0.0,
+            "custom_cost_per_cf": 0.0,
             "insulation_material_type": "Pure Wool Batts",
             "insulation_material_lifetime": 60,
             "analysis_period": 60,
@@ -104,10 +103,9 @@ class TestRSMeansErrorHandling(unittest.TestCase):
         # - Reasonable cost estimate for wool batts
         vals = {
             "r_value": 30.0,
-            "allow_reduction": False,
             "calculate_costs": True,
             "use_custom_costs": True,  # Use custom cost, skip RSMeans
-            "custom_cost_per_sf": 2.50,  # Typical Pure Wool Batts cost
+            "custom_cost_per_cf": 2.50,  # Example Pure Wool Batts custom volume cost
             "insulation_material_type": "Pure Wool Batts",
             "insulation_material_lifetime": 60,
             "analysis_period": 60,
@@ -138,7 +136,6 @@ class TestRSMeansErrorHandling(unittest.TestCase):
         
         vals = {
             "r_value": 25.0,
-            "allow_reduction": False,
             "calculate_costs": True,
             "use_custom_costs": False,
             "insulation_material_type": "Pure Wool Batts",
