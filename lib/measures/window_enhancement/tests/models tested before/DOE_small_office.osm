@@ -7128,143 +7128,91 @@ OS:Curve:Cubic,
   0.7,                                    !- Minimum Value of x
   1;                                      !- Maximum Value of x
 
-OS:StandardsInformation:Construction,
-  {41c49e15-f2f4-43b1-a7a6-db3f78dc4c4f}, !- Handle
-  {ef95a29b-5658-4d45-bf9e-b8bd43a75011}; !- Construction Name
+OS:AdditionalProperties,
+  {727590fa-4d95-41a2-9d3e-ffb59246c4f9}, !- Handle
+  {272d9a4d-ec25-4bbb-b083-822aef42268c}, !- Object Name
+  door_area_per_unit_m2,                  !- Feature Name 1
+  Double,                                 !- Feature Data Type 1
+  1.95,                                   !- Feature Value 1
+  door_enhancement_infiltration_reduction_percent, !- Feature Name 2
+  Double,                                 !- Feature Data Type 2
+  30,                                     !- Feature Value 2
+  door_bottom_seal_option,                !- Feature Name 3
+  String,                                 !- Feature Data Type 3
+  automatic door bottom,                  !- Feature Value 3
+  door_top_side_seal_option,              !- Feature Name 4
+  String,                                 !- Feature Data Type 4
+  jamb weatherstrip,                      !- Feature Value 4
+  door_option,                            !- Feature Name 5
+  String,                                 !- Feature Data Type 5
+  polystyrene core steel door,            !- Feature Value 5
+  total_renovated_door_area_m2,           !- Feature Name 6
+  Integer,                                !- Feature Data Type 6
+  0,                                      !- Feature Value 6
+  total_renovated_sealing_bottom_length_m, !- Feature Name 7
+  Double,                                 !- Feature Data Type 7
+  0,                                      !- Feature Value 7
+  total_renovated_sealing_side_length_m,  !- Feature Name 8
+  Double,                                 !- Feature Data Type 8
+  0,                                      !- Feature Value 8
+  total_doors_processed_count,            !- Feature Name 9
+  Integer,                                !- Feature Data Type 9
+  0,                                      !- Feature Value 9
+  total_doors_with_r_value_change_count,  !- Feature Name 10
+  Integer,                                !- Feature Data Type 10
+  0;                                      !- Feature Value 10
 
-OS:StandardsInformation:Construction,
-  {5485da64-ea1f-4c57-9cf8-c973b6492642}, !- Handle
-  {62d8ba66-b619-4e18-b044-15a4692ffeab}; !- Construction Name
+OS:AdditionalProperties,
+  {da1ff693-8e11-45b2-a419-12ac508835a6}, !- Handle
+  {fabc41a8-018f-4730-a73a-b7ae2e5ab091}, !- Object Name
+  door_enhancement_cost_source,           !- Feature Name 1
+  String,                                 !- Feature Data Type 1
+  none,                                   !- Feature Value 1
+  door_enhancement_cost_factor_basis,     !- Feature Name 2
+  String,                                 !- Feature Data Type 2
+  not_calculated;                         !- Feature Value 2
 
-OS:StandardsInformation:Construction,
-  {43dae210-c4d0-49c8-9d7d-54986befdae7}, !- Handle
-  {821355a3-3be5-4c0d-bd2a-701c5802f12a}; !- Construction Name
+OS:AdditionalProperties,
+  {db7b6401-25f9-4577-a601-e2d4ea9f621b}, !- Handle
+  {c0b51378-f9a5-4264-951f-3845cfc487fd}, !- Object Name
+  door_enhancement_total_additional_embodied_carbon_kg, !- Feature Name 1
+  Integer,                                !- Feature Data Type 1
+  0,                                      !- Feature Value 1
+  door_enhancement_total_embodied_carbon_kgCO2eq, !- Feature Name 2
+  Integer,                                !- Feature Data Type 2
+  0,                                      !- Feature Value 2
+  door_enhancement_cost_source,           !- Feature Name 3
+  String,                                 !- Feature Data Type 3
+  none,                                   !- Feature Value 3
+  door_enhancement_cost_factor_basis,     !- Feature Name 4
+  String,                                 !- Feature Data Type 4
+  not_calculated;                         !- Feature Value 4
 
-OS:StandardsInformation:Material,
-  {d95ef889-ba8d-4f28-b1ac-8ab6571f06d2}, !- Handle
-  {7fdf1418-da70-4f17-80d7-dae036b345a9}; !- Material Name
-
-OS:StandardsInformation:Material,
-  {5848e941-3541-47d8-a27d-1f0a73ddbd04}, !- Handle
-  {e9cd93cd-3735-4388-a49b-aded5ff9c7b4}; !- Material Name
-
-OS:StandardsInformation:Material,
-  {1677c984-0158-433a-ac2f-2503de3b3c0c}, !- Handle
-  {834e83b3-fa94-4aca-b3ba-452d3727c24b}; !- Material Name
-
-OS:StandardsInformation:Material,
-  {4f3c196c-dd3e-43f5-bafd-623d914aefa0}, !- Handle
-  {873875b6-4903-4fc2-af93-ad8d747cc28d}; !- Material Name
-
-OS:StandardsInformation:Material,
-  {4e1cabab-14df-4281-bd6d-0779c22d6807}, !- Handle
-  {0df260ed-f9ae-42ec-a707-aa5b3e6b24a2}; !- Material Name
-
-OS:StandardsInformation:Material,
-  {31083bcb-9b21-423a-8f4d-46b33351d0c9}, !- Handle
-  {b7e70aec-48d8-40e8-9042-cde8c45eec78}; !- Material Name
-
-OS:StandardsInformation:Material,
-  {35bfcbb1-26b9-44c9-98ee-65fc3c22ff21}, !- Handle
-  {0b854bf9-23fe-4fb5-852a-dbb94ecc6978}; !- Material Name
-
-OS:StandardsInformation:Material,
-  {be534e2a-3618-4801-bc20-7fd159e9e62c}, !- Handle
-  {72454668-6251-46de-93d0-6b6855fe3e3f}; !- Material Name
-
-OS:StandardsInformation:Material,
-  {13a095e9-3db7-4c5d-bc44-d7d4eafb9b47}, !- Handle
-  {e619f9c1-0ee7-4aae-94ae-8b0d51f3ec62}; !- Material Name
-
-OS:StandardsInformation:Material,
-  {391d1d51-90eb-4e20-971e-c78d1e932391}, !- Handle
-  {8287a39d-10ab-4ef2-a655-e7c5e4656897}; !- Material Name
-
-OS:StandardsInformation:Material,
-  {5f5fa8d4-2049-483f-b742-13797fc17159}, !- Handle
-  {bcb971f9-2731-4e6b-b275-830e4c6caa30}; !- Material Name
-
-OS:StandardsInformation:Material,
-  {856d0bd9-888f-429e-94e8-36c0f80df2fe}, !- Handle
-  {d14b12f0-2ed3-47ac-8c0d-65d3e7df8d34}; !- Material Name
-
-OS:StandardsInformation:Material,
-  {843a1fe0-1cc6-45c2-908b-b42569054192}, !- Handle
-  {3732bf2e-f237-4dd4-baa3-0c5c6afaf122}; !- Material Name
-
-OS:StandardsInformation:Material,
-  {1dcdd13e-76f6-4e56-9930-d71d79e8241a}, !- Handle
-  {12f95f94-fa46-4f1f-a4da-8c27d695ed6a}; !- Material Name
-
-OS:StandardsInformation:Material,
-  {7d354c42-88db-4c5a-aec2-dd6ae217100a}, !- Handle
-  {4adaeba1-50e3-4c48-bd6a-b9dda655aa2c}; !- Material Name
-
-OS:StandardsInformation:Material,
-  {57c302df-c103-4039-8a45-5d78f4a18566}, !- Handle
-  {9475b6cb-c819-4c4b-a9f9-8183c96d129f}; !- Material Name
-
-OS:StandardsInformation:Material,
-  {3da6b339-459e-49ce-baf9-e73bdd21bbc0}, !- Handle
-  {67d7ba8f-3d89-4498-bd98-936142cabf95}; !- Material Name
-
-OS:StandardsInformation:Material,
-  {1c306738-46a4-4569-8263-1147b0dcd676}, !- Handle
-  {7f0891c8-112c-4767-ab55-1d87649d5f23}; !- Material Name
-
-OS:StandardsInformation:Material,
-  {d9cbf95a-bb1e-445e-88bd-55f63feb10e0}, !- Handle
-  {2d5c7b17-acaa-48b5-be37-70655ab34a47}; !- Material Name
-
-OS:StandardsInformation:Material,
-  {33b3c908-2fd4-4642-a379-c769a7ef2486}, !- Handle
-  {af16923f-d051-418f-92b0-c9b416572c94}; !- Material Name
-
-OS:StandardsInformation:Material,
-  {51397e52-e23e-40d7-ba16-964e1a4a1e54}, !- Handle
-  {15e9044a-bbe6-4b92-893d-da9a3c7866c6}; !- Material Name
-
-OS:StandardsInformation:Material,
-  {c31a0787-2c02-4b27-9074-431f2a2950ec}, !- Handle
-  {44de7485-248e-4050-89c0-deef1bde542f}; !- Material Name
-
-OS:StandardsInformation:Material,
-  {747eea81-63f3-4369-8bd3-1251f17eb628}, !- Handle
-  {da15f817-1dd7-4616-a0fe-8210773c1d2f}; !- Material Name
-
-OS:StandardsInformation:Material,
-  {6e4f51db-029f-4602-ae36-08ef841778d2}, !- Handle
-  {23534e8c-f649-43ff-8a2b-780f31868169}; !- Material Name
-
-OS:StandardsInformation:Construction,
-  {02692ff4-546f-4e09-9103-80519476fbc4}, !- Handle
-  {a5c3b9a4-9880-404d-9a27-fa10fb558a4c}; !- Construction Name
-
-OS:StandardsInformation:Material,
-  {54630cc0-e27a-4650-9c76-1c3d1dff8a8a}, !- Handle
-  {03981049-983e-4fe5-a0c4-2c6134f8a138}; !- Material Name
-
-OS:StandardsInformation:Material,
-  {3ca46dfe-cca7-470a-8297-891973e9b074}, !- Handle
-  {0cf3de34-5104-4954-9e10-4236f1cfd6b5}; !- Material Name
-
-OS:StandardsInformation:Construction,
-  {d5500937-8c88-465f-8416-ede2f5b82396}, !- Handle
-  {2dc48553-2cc9-4d42-8392-6684462920ec}; !- Construction Name
-
-OS:WeatherFile,
-  {13103613-5f5f-49c0-9fe3-30f92a8f616f}, !- Handle
-  Denver-Aurora-Buckley AFB,              !- City
-  CO,                                     !- State Province Region
-  USA,                                    !- Country
-  TMY3,                                   !- Data Source
-  724695,                                 !- WMO Number
-  39.72,                                  !- Latitude {deg}
-  -104.75,                                !- Longitude {deg}
-  -7,                                     !- Time Zone {hr}
-  1726,                                   !- Elevation {m}
-  USA_CO_Denver-Aurora-Buckley.AFB_.724695_TMY3.epw, !- Url
-  A0C64037,                               !- Checksum
-  ,                                       !- Start Date Actual Year
-  Sunday;                                 !- Start Day of Week
+OS:AdditionalProperties,
+  {386b4e5f-af27-4594-acdf-0e5e945ad439}, !- Handle
+  {1caa628a-3341-4dc5-9562-7eeadd446702}, !- Object Name
+  door_strip_lifetime_years,              !- Feature Name 1
+  Integer,                                !- Feature Data Type 1
+  15,                                     !- Feature Value 1
+  door_lifetime_years,                    !- Feature Name 2
+  Integer,                                !- Feature Data Type 2
+  30,                                     !- Feature Value 2
+  door_r_value_m2KperW,                   !- Feature Name 3
+  Double,                                 !- Feature Data Type 3
+  0.42740384615384619,                    !- Feature Value 3
+  door_density_kg_per_m3,                 !- Feature Name 4
+  Double,                                 !- Feature Data Type 4
+  472.30000000000001,                     !- Feature Value 4
+  door_thickness_m,                       !- Feature Name 5
+  Double,                                 !- Feature Data Type 5
+  0.044450000000000003,                   !- Feature Value 5
+  door_conductivity_W_per_mK,             !- Feature Name 6
+  Double,                                 !- Feature Data Type 6
+  0.104,                                  !- Feature Value 6
+  door_bottom_seal_length_per_unit_m,     !- Feature Name 7
+  Double,                                 !- Feature Data Type 7
+  0.91439999999999999,                    !- Feature Value 7
+  door_top_side_seal_length_per_unit_m,   !- Feature Name 8
+  Double,                                 !- Feature Data Type 8
+  5.181;                                  !- Feature Value 8
 

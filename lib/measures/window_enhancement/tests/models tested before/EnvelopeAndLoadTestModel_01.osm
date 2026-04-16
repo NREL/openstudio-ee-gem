@@ -1,16 +1,16 @@
 
 OS:Version,
-  {50c5fded-c8ca-41ec-a6de-6db0dd5b0ecf}, !- Handle
-  3.11.0;                                 !- Version Identifier
+  {f199db04-3e4a-4715-8037-2a7d2f3b0901}, !- Handle
+  3.9.0;                                  !- Version Identifier
 
 OS:Schedule:Constant,
-  {e6f76b5b-9a35-43f2-9874-1e3e3fc34d01}, !- Handle
+  {68a594aa-588a-4829-b9cf-2ce50d50a47c}, !- Handle
   Always On Discrete,                     !- Name
-  {3cb83d80-644c-433e-9f61-56ce48121468}, !- Schedule Type Limits Name
+  {68062d36-841e-4efc-82ee-653e657aa781}, !- Schedule Type Limits Name
   1;                                      !- Value
 
 OS:ScheduleTypeLimits,
-  {3cb83d80-644c-433e-9f61-56ce48121468}, !- Handle
+  {68062d36-841e-4efc-82ee-653e657aa781}, !- Handle
   Always On Discrete Limits,              !- Name
   0,                                      !- Lower Limit Value
   1,                                      !- Upper Limit Value
@@ -7522,48 +7522,28 @@ OS:Output:Variable,
   hourly;                                 ! Reporting Frequency
 
 OS:People,
-  {b912ebe5-9036-4a1b-9943-43b405401312}, !- Handle
-  ASHRAE_189.1-2009_ClimateZone 1-3_LargeHotel_Banquet_PeopInst, !- Name
-  {69b3529f-6a0a-4fdc-94e4-7690a6ca4767}, !- People Definition Name
-  {a884fab3-af47-4b65-a74c-6bae35abf749}, !- Space or SpaceType Name
-  ,                                       !- Number of People Schedule Name
-  ,                                       !- Activity Level Schedule Name
-  ,                                       !- Surface Name/Angle Factor List Name
-  ,                                       !- Work Efficiency Schedule Name
-  ClothingInsulationSchedule;             !- Clothing Insulation Calculation Method
+  {b912ebe5-9036-4a1b-9943-43b405401312}, ! Handle
+  ASHRAE_189.1-2009_ClimateZone 1-3_LargeHotel_Banquet_PeopInst, ! Name
+  {69b3529f-6a0a-4fdc-94e4-7690a6ca4767}, ! People Definition Name
+  {a884fab3-af47-4b65-a74c-6bae35abf749}; ! Space or SpaceType Name
 
 OS:People,
-  {f077a84b-5e42-479b-96a5-62e46debcdbe}, !- Handle
-  ASHRAE_189.1-2009_ClimateZone 1-3_LargeHotel_Cafe_PeopInst, !- Name
-  {909c2897-04f1-4ad4-9841-e7a213abff2f}, !- People Definition Name
-  {0144628a-269a-47cd-920f-d481c9b1fcec}, !- Space or SpaceType Name
-  ,                                       !- Number of People Schedule Name
-  ,                                       !- Activity Level Schedule Name
-  ,                                       !- Surface Name/Angle Factor List Name
-  ,                                       !- Work Efficiency Schedule Name
-  ClothingInsulationSchedule;             !- Clothing Insulation Calculation Method
+  {f077a84b-5e42-479b-96a5-62e46debcdbe}, ! Handle
+  ASHRAE_189.1-2009_ClimateZone 1-3_LargeHotel_Cafe_PeopInst, ! Name
+  {909c2897-04f1-4ad4-9841-e7a213abff2f}, ! People Definition Name
+  {0144628a-269a-47cd-920f-d481c9b1fcec}; ! Space or SpaceType Name
 
 OS:People,
-  {3f16cb09-213f-4b09-b9c9-35a49dff38b3}, !- Handle
-  ASHRAE_189.1-2009_ClimateZone 1-3_LargeHotel_Lobby_PeopInst, !- Name
-  {670f9220-6d46-46c4-9ad7-47b23c0ac56c}, !- People Definition Name
-  {1de0b449-d869-41e7-823d-e00e41262f0e}, !- Space or SpaceType Name
-  ,                                       !- Number of People Schedule Name
-  ,                                       !- Activity Level Schedule Name
-  ,                                       !- Surface Name/Angle Factor List Name
-  ,                                       !- Work Efficiency Schedule Name
-  ClothingInsulationSchedule;             !- Clothing Insulation Calculation Method
+  {3f16cb09-213f-4b09-b9c9-35a49dff38b3}, ! Handle
+  ASHRAE_189.1-2009_ClimateZone 1-3_LargeHotel_Lobby_PeopInst, ! Name
+  {670f9220-6d46-46c4-9ad7-47b23c0ac56c}, ! People Definition Name
+  {1de0b449-d869-41e7-823d-e00e41262f0e}; ! Space or SpaceType Name
 
 OS:People,
-  {998c420e-ac83-4af5-b94c-f9acbed345cd}, !- Handle
-  ASHRAE_189.1-2009_ClimateZone 4-8_LargeHotel_GuestRoom_PeopInst, !- Name
-  {63edc983-19d4-4687-8b32-d40bd0c2ea69}, !- People Definition Name
-  {fdc1ec39-4cdf-4a87-a904-9f065ff19427}, !- Space or SpaceType Name
-  ,                                       !- Number of People Schedule Name
-  ,                                       !- Activity Level Schedule Name
-  ,                                       !- Surface Name/Angle Factor List Name
-  ,                                       !- Work Efficiency Schedule Name
-  ClothingInsulationSchedule;             !- Clothing Insulation Calculation Method
+  {998c420e-ac83-4af5-b94c-f9acbed345cd}, ! Handle
+  ASHRAE_189.1-2009_ClimateZone 4-8_LargeHotel_GuestRoom_PeopInst, ! Name
+  {63edc983-19d4-4687-8b32-d40bd0c2ea69}, ! People Definition Name
+  {fdc1ec39-4cdf-4a87-a904-9f065ff19427}; ! Space or SpaceType Name
 
 OS:People:Definition,
   {69b3529f-6a0a-4fdc-94e4-7690a6ca4767}, !- Handle
@@ -10101,68 +10081,64 @@ OS:SimulationControl,
   25;                                     ! Maximum Number of Warmup Days
 
 OS:SpaceInfiltration:DesignFlowRate,
-  {777d8163-60da-4c06-8b4e-ae1035a1774e}, !- Handle
-  ASHRAE_189.1-2009_ClimateZone 1-3_LargeHotel_Banquet_Infil 30.0 percent reduction, !- Name
-  {a884fab3-af47-4b65-a74c-6bae35abf749}, !- Space or SpaceType Name
-  ,                                       !- Schedule Name
-  AirChanges/Hour,                        !- Design Flow Rate Calculation Method
-  ,                                       !- Design Flow Rate {m3/s}
-  ,                                       !- Flow per Space Floor Area {m3/s-m2}
-  ,                                       !- Flow per Exterior Surface Area {m3/s-m2}
-  0.112,                                  !- Air Changes per Hour {1/hr}
-  ,                                       !- Constant Term Coefficient
-  ,                                       !- Temperature Term Coefficient
-  ,                                       !- Velocity Term Coefficient
-  ,                                       !- Velocity Squared Term Coefficient
-  Outdoor;                                !- Density Basis
+  {777d8163-60da-4c06-8b4e-ae1035a1774e}, ! Handle
+  ASHRAE_189.1-2009_ClimateZone 1-3_LargeHotel_Banquet_Infil 30.0 percent reduction, ! Name
+  {a884fab3-af47-4b65-a74c-6bae35abf749}, ! Space or SpaceType Name
+  ,                                       ! Schedule Name
+  AirChanges/Hour,                        ! Design Flow Rate Calculation Method
+  ,                                       ! Design Flow Rate
+  ,                                       ! Flow per Space Floor Area
+  ,                                       ! Flow per Exterior Surface Area
+  0.112,                                  ! Air Changes per Hour
+  ,                                       ! Constant Term Coefficient
+  ,                                       ! Temperature Term Coefficient
+  ,                                       ! Velocity Term Coefficient
+  ;                                       ! Velocity Squared Term Coefficient
 
 OS:SpaceInfiltration:DesignFlowRate,
-  {0d44c037-9b76-4fc6-bcda-d635ca1a7078}, !- Handle
-  ASHRAE_189.1-2009_ClimateZone 1-3_LargeHotel_Cafe_Infil 30.0 percent reduction, !- Name
-  {0144628a-269a-47cd-920f-d481c9b1fcec}, !- Space or SpaceType Name
-  ,                                       !- Schedule Name
-  AirChanges/Hour,                        !- Design Flow Rate Calculation Method
-  ,                                       !- Design Flow Rate {m3/s}
-  ,                                       !- Flow per Space Floor Area {m3/s-m2}
-  ,                                       !- Flow per Exterior Surface Area {m3/s-m2}
-  0.112,                                  !- Air Changes per Hour {1/hr}
-  ,                                       !- Constant Term Coefficient
-  ,                                       !- Temperature Term Coefficient
-  ,                                       !- Velocity Term Coefficient
-  ,                                       !- Velocity Squared Term Coefficient
-  Outdoor;                                !- Density Basis
+  {0d44c037-9b76-4fc6-bcda-d635ca1a7078}, ! Handle
+  ASHRAE_189.1-2009_ClimateZone 1-3_LargeHotel_Cafe_Infil 30.0 percent reduction, ! Name
+  {0144628a-269a-47cd-920f-d481c9b1fcec}, ! Space or SpaceType Name
+  ,                                       ! Schedule Name
+  AirChanges/Hour,                        ! Design Flow Rate Calculation Method
+  ,                                       ! Design Flow Rate
+  ,                                       ! Flow per Space Floor Area
+  ,                                       ! Flow per Exterior Surface Area
+  0.112,                                  ! Air Changes per Hour
+  ,                                       ! Constant Term Coefficient
+  ,                                       ! Temperature Term Coefficient
+  ,                                       ! Velocity Term Coefficient
+  ;                                       ! Velocity Squared Term Coefficient
 
 OS:SpaceInfiltration:DesignFlowRate,
-  {21aa7a9b-1c58-4905-8e54-42e0ae7c043c}, !- Handle
-  ASHRAE_189.1-2009_ClimateZone 1-3_LargeHotel_Lobby_Infil 30.0 percent reduction, !- Name
-  {1de0b449-d869-41e7-823d-e00e41262f0e}, !- Space or SpaceType Name
-  ,                                       !- Schedule Name
-  AirChanges/Hour,                        !- Design Flow Rate Calculation Method
-  ,                                       !- Design Flow Rate {m3/s}
-  ,                                       !- Flow per Space Floor Area {m3/s-m2}
-  ,                                       !- Flow per Exterior Surface Area {m3/s-m2}
-  0.112,                                  !- Air Changes per Hour {1/hr}
-  ,                                       !- Constant Term Coefficient
-  ,                                       !- Temperature Term Coefficient
-  ,                                       !- Velocity Term Coefficient
-  ,                                       !- Velocity Squared Term Coefficient
-  Outdoor;                                !- Density Basis
+  {21aa7a9b-1c58-4905-8e54-42e0ae7c043c}, ! Handle
+  ASHRAE_189.1-2009_ClimateZone 1-3_LargeHotel_Lobby_Infil 30.0 percent reduction, ! Name
+  {1de0b449-d869-41e7-823d-e00e41262f0e}, ! Space or SpaceType Name
+  ,                                       ! Schedule Name
+  AirChanges/Hour,                        ! Design Flow Rate Calculation Method
+  ,                                       ! Design Flow Rate
+  ,                                       ! Flow per Space Floor Area
+  ,                                       ! Flow per Exterior Surface Area
+  0.112,                                  ! Air Changes per Hour
+  ,                                       ! Constant Term Coefficient
+  ,                                       ! Temperature Term Coefficient
+  ,                                       ! Velocity Term Coefficient
+  ;                                       ! Velocity Squared Term Coefficient
 
 OS:SpaceInfiltration:DesignFlowRate,
-  {4674214a-884c-4ad5-8fb7-ef456b154652}, !- Handle
-  ASHRAE_189.1-2009_ClimateZone 4-8_LargeHotel_GuestRoom_Infil, !- Name
-  {fdc1ec39-4cdf-4a87-a904-9f065ff19427}, !- Space or SpaceType Name
-  ,                                       !- Schedule Name
-  AirChanges/Hour,                        !- Design Flow Rate Calculation Method
-  0,                                      !- Design Flow Rate {m3/s}
-  ,                                       !- Flow per Space Floor Area {m3/s-m2}
-  ,                                       !- Flow per Exterior Surface Area {m3/s-m2}
-  0.12,                                   !- Air Changes per Hour {1/hr}
-  ,                                       !- Constant Term Coefficient
-  ,                                       !- Temperature Term Coefficient
-  ,                                       !- Velocity Term Coefficient
-  ,                                       !- Velocity Squared Term Coefficient
-  Outdoor;                                !- Density Basis
+  {4674214a-884c-4ad5-8fb7-ef456b154652}, ! Handle
+  ASHRAE_189.1-2009_ClimateZone 4-8_LargeHotel_GuestRoom_Infil, ! Name
+  {fdc1ec39-4cdf-4a87-a904-9f065ff19427}, ! Space or SpaceType Name
+  ,                                       ! Schedule Name
+  AirChanges/Hour,                        ! Design Flow Rate Calculation Method
+  0,                                      ! Design Flow Rate
+  ,                                       ! Flow per Space Floor Area
+  ,                                       ! Flow per Exterior Surface Area
+  0.12,                                   ! Air Changes per Hour
+  ,                                       ! Constant Term Coefficient
+  ,                                       ! Temperature Term Coefficient
+  ,                                       ! Velocity Term Coefficient
+  ;                                       ! Velocity Squared Term Coefficient
 
 OS:SpaceType,
   {a884fab3-af47-4b65-a74c-6bae35abf749}, !- Handle
@@ -13808,7 +13784,7 @@ OS:ThermalZone,
   {f67692ec-98c9-4fcb-aa14-c24925ca9c37}, !- Zone Air Inlet Port List
   {da31c779-989a-432e-bc0e-d2e2c8490488}, !- Zone Air Exhaust Port List
   {75964a60-ddb2-4909-9546-3231bc7afc73}, !- Zone Air Node Name
-  {796090ea-2935-4a31-9d1d-8c3d55f34364}, !- Zone Return Air Port List
+  {151b3317-05fe-4653-8812-c2d7037e3c81}, !- Zone Return Air Port List
   ,                                       !- Primary Daylighting Control Name
   ,                                       !- Fraction of Zone Controlled by Primary Daylighting Control
   ,                                       !- Secondary Daylighting Control Name
@@ -13819,7 +13795,7 @@ OS:ThermalZone,
   No;                                     !- Use Ideal Air Loads
 
 OS:PortList,
-  {796090ea-2935-4a31-9d1d-8c3d55f34364}, !- Handle
+  {151b3317-05fe-4653-8812-c2d7037e3c81}, !- Handle
   {730a0d5f-2a84-49f2-8aca-3aa856964442}, !- HVAC Component
   ;                                       !- Port 1
 
@@ -13876,9 +13852,7 @@ OS:Sizing:Zone,
   ,                                       !- Design Zone Air Distribution Effectiveness in Heating Mode
   ,                                       !- Design Zone Secondary Recirculation Fraction {dimensionless}
   ,                                       !- Design Minimum Zone Ventilation Efficiency {dimensionless}
-  Coincident,                             !- Sizing Option
-  None,                                   !- Heating Coil Sizing Method
-  1;                                      !- Maximum Heating Capacity To Cooling Load Sizing Ratio {W/W}
+  Coincident;                             !- Sizing Option
 
 OS:ZoneHVAC:EquipmentList,
   {0995ae80-e138-4527-b0fb-3b510a82d5d1}, !- Handle
@@ -13906,7 +13880,7 @@ OS:ThermalZone,
   {0baf9e23-8e6e-4631-b4c7-9dc1ea95c281}, !- Zone Air Inlet Port List
   {218dfde9-9163-467a-b9ab-1828bae7e981}, !- Zone Air Exhaust Port List
   {4b843015-8d89-444c-8faa-01aad37f85b8}, !- Zone Air Node Name
-  {37ea1a7d-9f62-461b-bf8a-8a7a2aaad4ed}, !- Zone Return Air Port List
+  {a0cbdd54-bb7c-412f-bc8d-c1ca790532c7}, !- Zone Return Air Port List
   ,                                       !- Primary Daylighting Control Name
   ,                                       !- Fraction of Zone Controlled by Primary Daylighting Control
   ,                                       !- Secondary Daylighting Control Name
@@ -13917,7 +13891,7 @@ OS:ThermalZone,
   No;                                     !- Use Ideal Air Loads
 
 OS:PortList,
-  {37ea1a7d-9f62-461b-bf8a-8a7a2aaad4ed}, !- Handle
+  {a0cbdd54-bb7c-412f-bc8d-c1ca790532c7}, !- Handle
   {fb8e6946-ac33-400c-87e2-cb484f18fa42}, !- HVAC Component
   ;                                       !- Port 1
 
@@ -13974,9 +13948,7 @@ OS:Sizing:Zone,
   ,                                       !- Design Zone Air Distribution Effectiveness in Heating Mode
   ,                                       !- Design Zone Secondary Recirculation Fraction {dimensionless}
   ,                                       !- Design Minimum Zone Ventilation Efficiency {dimensionless}
-  Coincident,                             !- Sizing Option
-  None,                                   !- Heating Coil Sizing Method
-  1;                                      !- Maximum Heating Capacity To Cooling Load Sizing Ratio {W/W}
+  Coincident;                             !- Sizing Option
 
 OS:ZoneHVAC:EquipmentList,
   {0facef9e-3404-4a0a-ad50-b07c8088a044}, !- Handle
@@ -14004,7 +13976,7 @@ OS:ThermalZone,
   {2441c4f1-1d52-4c02-8b12-a5403bf334d3}, !- Zone Air Inlet Port List
   {d283501c-30c3-423d-bdc3-4640e4a118b7}, !- Zone Air Exhaust Port List
   {a616a7c3-6301-4809-aac2-13fe321f1fb1}, !- Zone Air Node Name
-  {4551e672-3324-44ba-bd9c-9b565d04fc3f}, !- Zone Return Air Port List
+  {8dfd1f80-ecf3-4852-a6b7-5965cf2ccc41}, !- Zone Return Air Port List
   ,                                       !- Primary Daylighting Control Name
   ,                                       !- Fraction of Zone Controlled by Primary Daylighting Control
   ,                                       !- Secondary Daylighting Control Name
@@ -14015,7 +13987,7 @@ OS:ThermalZone,
   No;                                     !- Use Ideal Air Loads
 
 OS:PortList,
-  {4551e672-3324-44ba-bd9c-9b565d04fc3f}, !- Handle
+  {8dfd1f80-ecf3-4852-a6b7-5965cf2ccc41}, !- Handle
   {05a7f872-0045-4ee5-8de5-d543bb2c7746}, !- HVAC Component
   ;                                       !- Port 1
 
@@ -14072,9 +14044,7 @@ OS:Sizing:Zone,
   ,                                       !- Design Zone Air Distribution Effectiveness in Heating Mode
   ,                                       !- Design Zone Secondary Recirculation Fraction {dimensionless}
   ,                                       !- Design Minimum Zone Ventilation Efficiency {dimensionless}
-  Coincident,                             !- Sizing Option
-  None,                                   !- Heating Coil Sizing Method
-  1;                                      !- Maximum Heating Capacity To Cooling Load Sizing Ratio {W/W}
+  Coincident;                             !- Sizing Option
 
 OS:ZoneHVAC:EquipmentList,
   {2e30fe7d-8176-4d43-bab9-ef1cbc09dcd4}, !- Handle
@@ -14102,7 +14072,7 @@ OS:ThermalZone,
   {316d17a6-9a04-492e-9c42-15b9ebccff06}, !- Zone Air Inlet Port List
   {b0f98a70-e8ce-49a0-9ead-5605d51176f1}, !- Zone Air Exhaust Port List
   {d2599b0f-612e-4f18-a46e-93b0276198aa}, !- Zone Air Node Name
-  {f4139223-c6b3-4533-b09d-7c12c8ecae55}, !- Zone Return Air Port List
+  {34717610-2d8f-4130-8022-dd7e9ffbaba5}, !- Zone Return Air Port List
   ,                                       !- Primary Daylighting Control Name
   ,                                       !- Fraction of Zone Controlled by Primary Daylighting Control
   ,                                       !- Secondary Daylighting Control Name
@@ -14113,7 +14083,7 @@ OS:ThermalZone,
   No;                                     !- Use Ideal Air Loads
 
 OS:PortList,
-  {f4139223-c6b3-4533-b09d-7c12c8ecae55}, !- Handle
+  {34717610-2d8f-4130-8022-dd7e9ffbaba5}, !- Handle
   {e9fb6424-8bb6-415d-8d63-04d1ad8d70d1}, !- HVAC Component
   ;                                       !- Port 1
 
@@ -14170,9 +14140,7 @@ OS:Sizing:Zone,
   ,                                       !- Design Zone Air Distribution Effectiveness in Heating Mode
   ,                                       !- Design Zone Secondary Recirculation Fraction {dimensionless}
   ,                                       !- Design Minimum Zone Ventilation Efficiency {dimensionless}
-  Coincident,                             !- Sizing Option
-  None,                                   !- Heating Coil Sizing Method
-  1;                                      !- Maximum Heating Capacity To Cooling Load Sizing Ratio {W/W}
+  Coincident;                             !- Sizing Option
 
 OS:ZoneHVAC:EquipmentList,
   {75d200a3-3564-4c8d-bf3e-f5f8db217152}, !- Handle
@@ -14408,7 +14376,7 @@ OS:SubSurface,
   {5ea6d469-5a95-4b07-b80f-9487863aff7d}, !- Handle
   Sub Surface 2,                          !- Name
   Door,                                   !- Sub Surface Type
-  {937d2737-11ed-4a18-ae15-7e0dd4c60a67}, !- Construction Name
+  {5b8a151b-fea9-4099-acea-af33e95ec30b}, !- Construction Name
   {93f57866-ae75-4a92-b768-292e81d968b3}, !- Surface Name
   ,                                       !- Outside Boundary Condition Object
   ,                                       !- View Factor to Ground
@@ -14517,13 +14485,13 @@ OS:Building,
   ;                                       !- Default Schedule Set Name
 
 OS:Construction,
-  {937d2737-11ed-4a18-ae15-7e0dd4c60a67}, ! Handle
+  {1c05bde0-c6e3-460e-bd48-96e2490c5946}, ! Handle
   000_Exterior Door - polystyrene core steel door R-0.43, ! Name
   {5a66d4b6-907e-49fb-a958-11262e4c09a5}, ! Surface Rendering Name
-  {e73a3b8f-a0b0-4bb4-9581-bd11fff5eb68}; !- Layer 1
+  {988fb976-eaac-495c-a96a-2e718636c1c1}; !- Layer 1
 
 OS:Material,
-  {e73a3b8f-a0b0-4bb4-9581-bd11fff5eb68}, !- Handle
+  {988fb976-eaac-495c-a96a-2e718636c1c1}, !- Handle
   polystyrene core steel door R-0.43,     !- Name
   Smooth,                                 !- Roughness
   0.04445,                                !- Thickness {m}
@@ -14531,8 +14499,23 @@ OS:Material,
   472.3,                                  !- Density {kg/m3}
   1000;                                   !- Specific Heat {J/kg-K}
 
+OS:Construction,
+  {5b8a151b-fea9-4099-acea-af33e95ec30b}, ! Handle
+  000_Exterior Door - polystyrene core steel door R-0.43 - RSMeans glass door R-0.16, ! Name
+  {5a66d4b6-907e-49fb-a958-11262e4c09a5}, ! Surface Rendering Name
+  {8dd491e4-422d-4ac3-b8f6-338505999240}; !- Layer 1
+
+OS:Material,
+  {8dd491e4-422d-4ac3-b8f6-338505999240}, !- Handle
+  RSMeans glass door 083213100450,        !- Name
+  Smooth,                                 !- Roughness
+  0.015875,                               !- Thickness {m}
+  0.1,                                    !- Conductivity {W/m-K}
+  2500,                                   !- Density {kg/m3}
+  1000;                                   !- Specific Heat {J/kg-K}
+
 OS:AdditionalProperties,
-  {3e364070-dd50-44f4-8d2e-743ba73cbd29}, !- Handle
+  {1ce46afb-7041-4bd3-8a37-220ec201ef4e}, !- Handle
   {a3a51906-9a84-471c-8162-778785896008}, !- Object Name
   measure_name,                           !- Feature Name 1
   String,                                 !- Feature Data Type 1
@@ -14545,10 +14528,10 @@ OS:AdditionalProperties,
   median,                                 !- Feature Value 3
   door_enhancement_construction_names,    !- Feature Name 4
   String,                                 !- Feature Data Type 4
-  000_Exterior Door - polystyrene core steel door R-0.43; !- Feature Value 4
+  000_Exterior Door - polystyrene core steel door R-0.43 - RSMeans glass door R-0.16; !- Feature Value 4
 
 OS:Site,
-  {28502d97-7d6d-47fd-bab2-09eddd1df28f}, !- Handle
+  {e422da03-f628-42ec-bc5b-03c22dd963ab}, !- Handle
   Site 1,                                 !- Name
   ,                                       !- Latitude {deg}
   ,                                       !- Longitude {deg}
@@ -14557,8 +14540,8 @@ OS:Site,
   ;                                       !- Terrain
 
 OS:AdditionalProperties,
-  {67dfd40d-84ce-4a1e-a369-29d4229019ef}, !- Handle
-  {28502d97-7d6d-47fd-bab2-09eddd1df28f}, !- Object Name
+  {762e936f-9ee2-4fd4-b653-8956c3a7c57e}, !- Handle
+  {e422da03-f628-42ec-bc5b-03c22dd963ab}, !- Object Name
   door_area_per_unit_m2,                  !- Feature Name 1
   Double,                                 !- Feature Data Type 1
   1.95,                                   !- Feature Value 1
@@ -14591,33 +14574,81 @@ OS:AdditionalProperties,
   1;                                      !- Feature Value 10
 
 OS:AdditionalProperties,
-  {2cbf10b0-693b-42dd-94ac-bc9305439bc2}, !- Handle
+  {a7739ea5-2ea6-4f0c-8e6a-e5d5d41350ca}, !- Handle
   {15eb8824-a9d4-470a-ae72-e2de57af7224}, !- Object Name
-  door_gwp_per_m2_kgCO2eq,                !- Feature Name 1
-  Double,                                 !- Feature Data Type 1
-  58.46153846153846,                      !- Feature Value 1
-  door_gwp_per_unit_kgCO2eq,              !- Feature Name 2
-  Double,                                 !- Feature Data Type 2
-  114,                                    !- Feature Value 2
-  door_bottom_seal_gwp_per_m_kgCO2eq,     !- Feature Name 3
-  Double,                                 !- Feature Data Type 3
-  5.7961504811898514,                     !- Feature Value 3
-  door_side_seal_gwp_per_m_kgCO2eq,       !- Feature Name 4
+  door_enhancement_cost_source,           !- Feature Name 1
+  String,                                 !- Feature Data Type 1
+  rsmeans_api,                            !- Feature Value 1
+  door_enhancement_cost_factor_basis,     !- Feature Name 2
+  String,                                 !- Feature Data Type 2
+  mixed,                                  !- Feature Value 2
+  door_enhancement_cost_unit_basis,       !- Feature Name 3
+  String,                                 !- Feature Data Type 3
+  EA&#44 LF,                              !- Feature Value 3
+  door_enhancement_total_material_cost_$, !- Feature Name 4
   Double,                                 !- Feature Data Type 4
-  1.0306890561667632;                     !- Feature Value 4
+  1772.8000092095999,                     !- Feature Value 4
+  door_enhancement_total_overhead_profit_cost_$, !- Feature Name 5
+  Double,                                 !- Feature Data Type 5
+  177.28000092095999,                     !- Feature Value 5
+  door_enhancement_total_cost_with_overhead_profit_$, !- Feature Name 6
+  Double,                                 !- Feature Data Type 6
+  1950.0800101305599,                     !- Feature Value 6
+  door_gwp_per_m2_kgCO2eq,                !- Feature Name 7
+  Double,                                 !- Feature Data Type 7
+  58.46153846153846,                      !- Feature Value 7
+  door_gwp_per_unit_kgCO2eq,              !- Feature Name 8
+  Double,                                 !- Feature Data Type 8
+  114,                                    !- Feature Value 8
+  door_bottom_seal_gwp_per_m_kgCO2eq,     !- Feature Name 9
+  Double,                                 !- Feature Data Type 9
+  5.7961504811898514,                     !- Feature Value 9
+  door_side_seal_gwp_per_m_kgCO2eq,       !- Feature Name 10
+  Double,                                 !- Feature Data Type 10
+  1.0306890561667632;                     !- Feature Value 10
 
 OS:AdditionalProperties,
-  {fb5e06d8-6e93-43f4-a0b1-47181b8a92f2}, !- Handle
+  {fd9e3839-d911-4ccd-a8de-752478cdc584}, !- Handle
   {66abed62-fb16-459b-8977-92e5a456d780}, !- Object Name
   door_enhancement_total_additional_embodied_carbon_kg, !- Feature Name 1
   Double,                                 !- Feature Data Type 1
   246.81948434681809,                     !- Feature Value 1
   door_enhancement_total_embodied_carbon_kgCO2eq, !- Feature Name 2
   Double,                                 !- Feature Data Type 2
-  246.81948434681809;                     !- Feature Value 2
+  246.81948434681809,                     !- Feature Value 2
+  door_enhancement_cost_source,           !- Feature Name 3
+  String,                                 !- Feature Data Type 3
+  rsmeans_api,                            !- Feature Value 3
+  door_enhancement_cost_factor_basis,     !- Feature Name 4
+  String,                                 !- Feature Data Type 4
+  mixed,                                  !- Feature Value 4
+  door_enhancement_cost_unit_basis,       !- Feature Name 5
+  String,                                 !- Feature Data Type 5
+  EA&#44 LF,                              !- Feature Value 5
+  door_enhancement_total_material_cost_$, !- Feature Name 6
+  Double,                                 !- Feature Data Type 6
+  1772.8000092095999,                     !- Feature Value 6
+  door_enhancement_total_overhead_profit_cost_$, !- Feature Name 7
+  Double,                                 !- Feature Data Type 7
+  177.28000092095999,                     !- Feature Value 7
+  door_enhancement_total_cost_with_overhead_profit_$, !- Feature Name 8
+  Double,                                 !- Feature Data Type 8
+  1950.0800101305599,                     !- Feature Value 8
+  door_enhancement_rsmeans_matches_json,  !- Feature Name 9
+  String,                                 !- Feature Data Type 9
+  {"materials": [{"name": "metal door 5 ft 3 in x 7 ft 7 in"&#44 "description": "1 door(s)&#59 materials: metal&#59 size: 5 ft 3 in x 7 ft 7 in"&#44 "quantity": 1.0&#44 "unit": "ea"&#44 "division_code": "08"&#44 "explicit_rsmeans_id": ""&#44 "catalog": "bc-mf"&#44 "search_term_used": "fallback_rsmeans_id"&#44 "unit_cost": 1485.0&#44 "total_cost": 1485.0&#44 "rsmeans_id": "083213100450"&#44 "rsmeans_description": "Doors&#44 glass&#44 sliding&#44 aluminum&#44 economy&#44 5/8\" tempered insulated glass&#44 6'-0\" x 6'-8\""&#44 "source": "rsmeans_fallback_id"}&#44 {"name": "automatic door bottom"&#44 "description": "Bottom sealing strip for 1 door(s)&#59 product: automatic door bottom&#59 total length: 3.0 lf"&#44 "quantity": 3.000000096&#44 "unit": "lf"&#44 "division_code": "08"&#44 "catalog": "bc-mf"&#44 "search_term_used": "fallback_rsmeans_id"&#44 "unit_cost": 79.5&#44 "total_cost": 238.500007632&#44 "rsmeans_id": "087125103650"&#44 "rsmeans_description": "Weatherstripping&#44 for thresholds&#44 door sweep&#44 flush mounted&#44 aluminum"&#44 "source": "rsmeans_fallback_id"}&#44 {"name": "jamb weatherstrip"&#44 "description": "Top and side sealing strip for 1 door(s)&#59 product: jamb weatherstrip&#59 total length: 17.0 lf"&#44 "quantity": 17.000000544000002&#44 "unit": "lf"&#44 "division_code": "08"&#44 "catalog": "bc-mf"&#44 "search_term_used": "fallback_rsmeans_id"&#44 "unit_cost": 2.9&#44 "total_cost": 49.30000157760001&#44 "rsmeans_id": "083323104000"&#44 "rsmeans_description": "Doors&#44 rolling service&#44 steel&#44 manual&#44 for weatherstripping&#44 extruded rubber&#44 jambs&#44 add"&#44 "source": "rsmeans_fallback_id"}]&#44 "search_log": [{"material": "metal door 5 ft 3 in x 7 ft 7 in"&#44 "search_term": "metal door"&#44 "catalog": "bc-mf"&#44 "division": "08"&#44 "status": "match_found (using 'metal door')"&#44 "unit_cost": 1485.0&#44 "quantity": 1.0&#44 "total_cost": 1485.0&#44 "candidate_scores": [{"index": 3&#44 "rsmeans_id": "081116100100"&#44 "description": "Doors & frames&#44 aluminum&#44 entrance&#44 narrow stile&#44 clear finish&#44 3'-0\" x 10'-0\" opening&#44 3' high tran"&#44 "score": 11.0&#44 "raw_score": 11.0}&#44 {"index": 4&#44 "rsmeans_id": "081116100200"&#44 "description": "Doors & frames&#44 aluminum&#44 entrance&#44 narrow stile&#44 clear finish&#44 3'-6\" x 10'-0\" opening&#44 3' high tran"&#44 "score": 11.0&#44 "raw_score": 11.0}&#44 {"index": 7&#44 "rsmeans_id": "081116100400"&#44 "description": "Doors & frames&#44 aluminum&#44 entrance&#44 narrow stile&#44 clear finish&#44 6'-0\" x 10'-0\" opening&#44 3' high tran"&#44 "score": 11.0&#44 "raw_score": 11.0}&#44 {"index": 0&#44 "rsmeans_id": "081116100020"&#44 "description": "Doors & frames&#44 aluminum&#44 entrance&#44 narrow stile&#44 clear finish&#44 3'-0\" x 7'-0\" opening&#44 incl. standar"&#44 "score": 10.9&#44 "raw_score": 10.9}&#44 {"index": 2&#44 "rsmeans_id": "081116100030"&#44 "description": "Doors & frames&#44 aluminum&#44 entrance&#44 narrow stile&#44 clear finish&#44 3'-6\" x 7'-0\" opening&#44 incl. standar"&#44 "score": 10.9&#44 "raw_score": 10.9}]}&#44 {"material": "automatic door bottom"&#44 "search_term": "automatic door bottom"&#44 "catalog": "bc-mf"&#44 "division": "08"&#44 "status": "match_found"&#44 "unit_cost": 79.5&#44 "quantity": 3.000000096&#44 "total_cost": 238.500007632&#44 "candidate_scores": [{"index": 5&#44 "rsmeans_id": "087113100050"&#44 "description": "Door hardware&#44 automatic openers&#44 commercial&#44 pneumatic&#44 for single swing door&#44 per opening&#44 incl. o"&#44 "score": 35.0&#44 "raw_score": 35.0}&#44 {"index": 6&#44 "rsmeans_id": "087113100100"&#44 "description": "Door hardware&#44 automatic openers&#44 commercial&#44 pneumatic&#44 for single swing doors&#44 pair&#44 per opening&#44 "&#44 "score": 35.0&#44 "raw_score": 35.0}&#44 {"index": 7&#44 "rsmeans_id": "087113101000"&#44 "description": "Door hardware&#44 automatic openers&#44 commercial&#44 pneumatic&#44 for single sliding door&#44 per opening&#44 incl."&#44 "score": 35.0&#44 "raw_score": 35.0}&#44 {"index": 8&#44 "rsmeans_id": "087113101300"&#44 "description": "Door hardware&#44 automatic openers&#44 commercial&#44 pneumatic&#44 for sliding doors&#44 bi-parting pair&#44 per ope"&#44 "score": 35.0&#44 "raw_score": 35.0}&#44 {"index": 9&#44 "rsmeans_id": "087113101450"&#44 "description": "Door hardware&#44 automatic openers&#44 commercial&#44 electronic door opener&#44 for single swing door&#44 per ope"&#44 "score": 35.0&#44 "raw_score": 35.0}]}&#44 {"material": "jamb weatherstrip"&#44 "search_term": "jamb weatherstrip"&#44 "catalog": "bc-mf"&#44 "division": "08"&#44 "status": "match_found"&#44 "unit_cost": 2.9&#44 "quantity": 17.000000544000002&#44 "total_cost": 49.30000157760001&#44 "candidate_scores": [{"index": 0&#44 "rsmeans_id": "083323104000"&#44 "description": "Doors&#44 rolling service&#44 steel&#44 manual&#44 for weatherstripping&#44 extruded rubber&#44 jambs&#44 add"&#44 "score": 0.68&#44 "raw_score": 0.68}]}]&#44 "summary": {"release_id": "2024-an"&#44 "location_id": "us-us-national"&#44 "labor_type": "std"&#44 "measurement_system": "imp"&#44 "catalogs_searched": ["bc-mf"&#44 "gb-mf"&#44 "rp-mf"]}}, !- Feature Value 9
+  door_enhancement_rsmeans_search_results_json, !- Feature Name 10
+  String,                                 !- Feature Data Type 10
+  {"total_cost": 1772.8000092096&#44 "materials": [{"name": "metal door 5 ft 3 in x 7 ft 7 in"&#44 "description": "1 door(s)&#59 materials: metal&#59 size: 5 ft 3 in x 7 ft 7 in"&#44 "quantity": 1.0&#44 "unit": "ea"&#44 "division_code": "08"&#44 "explicit_rsmeans_id": ""&#44 "catalog": "bc-mf"&#44 "search_term_used": "fallback_rsmeans_id"&#44 "unit_cost": 1485.0&#44 "total_cost": 1485.0&#44 "rsmeans_id": "083213100450"&#44 "rsmeans_description": "Doors&#44 glass&#44 sliding&#44 aluminum&#44 economy&#44 5/8\" tempered insulated glass&#44 6'-0\" x 6'-8\""&#44 "source": "rsmeans_fallback_id"}&#44 {"name": "automatic door bottom"&#44 "description": "Bottom sealing strip for 1 door(s)&#59 product: automatic door bottom&#59 total length: 3.0 lf"&#44 "quantity": 3.000000096&#44 "unit": "lf"&#44 "division_code": "08"&#44 "catalog": "bc-mf"&#44 "search_term_used": "fallback_rsmeans_id"&#44 "unit_cost": 79.5&#44 "total_cost": 238.500007632&#44 "rsmeans_id": "087125103650"&#44 "rsmeans_description": "Weatherstripping&#44 for thresholds&#44 door sweep&#44 flush mounted&#44 aluminum"&#44 "source": "rsmeans_fallback_id"}&#44 {"name": "jamb weatherstrip"&#44 "description": "Top and side sealing strip for 1 door(s)&#59 product: jamb weatherstrip&#59 total length: 17.0 lf"&#44 "quantity": 17.000000544000002&#44 "unit": "lf"&#44 "division_code": "08"&#44 "catalog": "bc-mf"&#44 "search_term_used": "fallback_rsmeans_id"&#44 "unit_cost": 2.9&#44 "total_cost": 49.30000157760001&#44 "rsmeans_id": "083323104000"&#44 "rsmeans_description": "Doors&#44 rolling service&#44 steel&#44 manual&#44 for weatherstripping&#44 extruded rubber&#44 jambs&#44 add"&#44 "source": "rsmeans_fallback_id"}]&#44 "errors": []&#44 "warnings": ["Used fallback RSMeans ID 083213100450 for 'metal door 5 ft 3 in x 7 ft 7 in' due to candidate score bounds"&#44 "Used fallback RSMeans ID 087125103650 for 'automatic door bottom' due to candidate score bounds"&#44 "Used fallback RSMeans ID 083323104000 for 'jamb weatherstrip' due to candidate score bounds"]&#44 "fallback_count": 3&#44 "search_log": [{"material": "metal door 5 ft 3 in x 7 ft 7 in"&#44 "search_term": "metal door"&#44 "catalog": "bc-mf"&#44 "division": "08"&#44 "status": "match_found (using 'metal door')"&#44 "unit_cost": 1485.0&#44 "quantity": 1.0&#44 "total_cost": 1485.0&#44 "candidate_scores": [{"index": 3&#44 "rsmeans_id": "081116100100"&#44 "description": "Doors & frames&#44 aluminum&#44 entrance&#44 narrow stile&#44 clear finish&#44 3'-0\" x 10'-0\" opening&#44 3' high tran"&#44 "score": 11.0&#44 "raw_score": 11.0}&#44 {"index": 4&#44 "rsmeans_id": "081116100200"&#44 "description": "Doors & frames&#44 aluminum&#44 entrance&#44 narrow stile&#44 clear finish&#44 3'-6\" x 10'-0\" opening&#44 3' high tran"&#44 "score": 11.0&#44 "raw_score": 11.0}&#44 {"index": 7&#44 "rsmeans_id": "081116100400"&#44 "description": "Doors & frames&#44 aluminum&#44 entrance&#44 narrow stile&#44 clear finish&#44 6'-0\" x 10'-0\" opening&#44 3' high tran"&#44 "score": 11.0&#44 "raw_score": 11.0}&#44 {"index": 0&#44 "rsmeans_id": "081116100020"&#44 "description": "Doors & frames&#44 aluminum&#44 entrance&#44 narrow stile&#44 clear finish&#44 3'-0\" x 7'-0\" opening&#44 incl. standar"&#44 "score": 10.9&#44 "raw_score": 10.9}&#44 {"index": 2&#44 "rsmeans_id": "081116100030"&#44 "description": "Doors & frames&#44 aluminum&#44 entrance&#44 narrow stile&#44 clear finish&#44 3'-6\" x 7'-0\" opening&#44 incl. standar"&#44 "score": 10.9&#44 "raw_score": 10.9}]}&#44 {"material": "automatic door bottom"&#44 "search_term": "automatic door bottom"&#44 "catalog": "bc-mf"&#44 "division": "08"&#44 "status": "match_found"&#44 "unit_cost": 79.5&#44 "quantity": 3.000000096&#44 "total_cost": 238.500007632&#44 "candidate_scores": [{"index": 5&#44 "rsmeans_id": "087113100050"&#44 "description": "Door hardware&#44 automatic openers&#44 commercial&#44 pneumatic&#44 for single swing door&#44 per opening&#44 incl. o"&#44 "score": 35.0&#44 "raw_score": 35.0}&#44 {"index": 6&#44 "rsmeans_id": "087113100100"&#44 "description": "Door hardware&#44 automatic openers&#44 commercial&#44 pneumatic&#44 for single swing doors&#44 pair&#44 per opening&#44 "&#44 "score": 35.0&#44 "raw_score": 35.0}&#44 {"index": 7&#44 "rsmeans_id": "087113101000"&#44 "description": "Door hardware&#44 automatic openers&#44 commercial&#44 pneumatic&#44 for single sliding door&#44 per opening&#44 incl."&#44 "score": 35.0&#44 "raw_score": 35.0}&#44 {"index": 8&#44 "rsmeans_id": "087113101300"&#44 "description": "Door hardware&#44 automatic openers&#44 commercial&#44 pneumatic&#44 for sliding doors&#44 bi-parting pair&#44 per ope"&#44 "score": 35.0&#44 "raw_score": 35.0}&#44 {"index": 9&#44 "rsmeans_id": "087113101450"&#44 "description": "Door hardware&#44 automatic openers&#44 commercial&#44 electronic door opener&#44 for single swing door&#44 per ope"&#44 "score": 35.0&#44 "raw_score": 35.0}]}&#44 {"material": "jamb weatherstrip"&#44 "search_term": "jamb weatherstrip"&#44 "catalog": "bc-mf"&#44 "division": "08"&#44 "status": "match_found"&#44 "unit_cost": 2.9&#44 "quantity": 17.000000544000002&#44 "total_cost": 49.30000157760001&#44 "candidate_scores": [{"index": 0&#44 "rsmeans_id": "083323104000"&#44 "description": "Doors&#44 rolling service&#44 steel&#44 manual&#44 for weatherstripping&#44 extruded rubber&#44 jambs&#44 add"&#44 "score": 0.68&#44 "raw_score": 0.68}]}]&#44 "catalogs_searched": ["bc-mf"&#44 "gb-mf"&#44 "rp-mf"]}, !- Feature Value 10
+  door_enhancement_rsmeans_summary_json,  !- Feature Name 11
+  String,                                 !- Feature Data Type 11
+  {"total_material_cost": 1772.8000092096&#44 "overhead_profit_percent": 10.0&#44 "total_overhead_profit_cost": 177.28000092096&#44 "total_cost_with_overhead_profit": 1950.08001013056&#44 "materials_count": 3&#44 "materials_searched": 3&#44 "catalogs_searched": ["bc-mf"&#44 "gb-mf"&#44 "rp-mf"]&#44 "release_id": "2024-an"&#44 "location_id": "us-us-national"&#44 "labor_type": "std"&#44 "measurement_system": "imp"&#44 "use_sandbox": false}, !- Feature Value 11
+  door_enhancement_retrofit_materials_json, !- Feature Name 12
+  String,                                 !- Feature Data Type 12
+  [{"name": "metal door 5 ft 3 in x 7 ft 7 in"&#44 "description": "1 door(s)&#59 materials: metal&#59 size: 5 ft 3 in x 7 ft 7 in"&#44 "quantity": 1.0&#44 "unit": "ea"&#44 "division_code": "08"&#44 "explicit_rsmeans_id": ""}&#44 {"name": "automatic door bottom"&#44 "description": "Bottom sealing strip for 1 door(s)&#59 product: automatic door bottom&#59 total length: 3.0 lf"&#44 "quantity": 3.000000096&#44 "unit": "lf"&#44 "division_code": "08"}&#44 {"name": "jamb weatherstrip"&#44 "description": "Top and side sealing strip for 1 door(s)&#59 product: jamb weatherstrip&#59 total length: 17.0 lf"&#44 "quantity": 17.000000544000002&#44 "unit": "lf"&#44 "division_code": "08"}]; !- Feature Value 12
 
 OS:AdditionalProperties,
-  {12ee806f-ec89-4ea5-8a92-2374a952adbc}, !- Handle
+  {c74cdb58-7fbb-456a-91af-ed918b4c333b}, !- Handle
   {2b98a315-74ad-44f0-9095-4e4346d5f882}, !- Object Name
   door_strip_lifetime_years,              !- Feature Name 1
   Integer,                                !- Feature Data Type 1
@@ -14637,273 +14668,22 @@ OS:AdditionalProperties,
   door_conductivity_W_per_mK,             !- Feature Name 6
   Double,                                 !- Feature Data Type 6
   0.104,                                  !- Feature Value 6
-  door_bottom_seal_length_per_unit_m,     !- Feature Name 7
-  Double,                                 !- Feature Data Type 7
-  0.91439999999999999,                    !- Feature Value 7
-  door_top_side_seal_length_per_unit_m,   !- Feature Name 8
+  rsmeans_door_match_description,         !- Feature Name 7
+  String,                                 !- Feature Data Type 7
+  Doors&#44 glass&#44 sliding&#44 aluminum&#44 economy&#44 5/8" tempered insulated glass&#44 6'-0" x 6'-8", !- Feature Value 7
+  rsmeans_door_area_per_unit_m2,          !- Feature Name 8
   Double,                                 !- Feature Data Type 8
-  5.181;                                  !- Feature Value 8
-
-OS:SpaceType,
-  {c0148743-ace5-4b35-9814-25642e31a5aa}, !- Handle
-  RSMeans Summary;                        !- Name
-
-OS:AdditionalProperties,
-  {1f5f3c7b-af88-4385-857d-b14f1730e647}, !- Handle
-  {c0148743-ace5-4b35-9814-25642e31a5aa}, !- Object Name
-  cost_source,                            !- Feature Name 1
-  String,                                 !- Feature Data Type 1
-  rsmeans_api,                            !- Feature Value 1
-  rsmeans_total_material_cost_$,          !- Feature Name 2
-  Double,                                 !- Feature Data Type 2
-  28289.300752777603,                     !- Feature Value 2
-  rsmeans_total_overhead_profit_cost_$,   !- Feature Name 3
-  Double,                                 !- Feature Data Type 3
-  2828.9300752777604,                     !- Feature Value 3
-  rsmeans_total_cost_with_overhead_profit_$, !- Feature Name 4
-  Double,                                 !- Feature Data Type 4
-  31118.230828055363,                     !- Feature Value 4
-  rsmeans_total_door_area_m2,             !- Feature Name 5
-  Double,                                 !- Feature Data Type 5
-  3.6865551268749956,                     !- Feature Value 5
-  rsmeans_cost_per_door_area_$/m2,        !- Feature Name 6
-  Double,                                 !- Feature Data Type 6
-  8441.0051544335747,                     !- Feature Value 6
-  rsmeans_cost_per_declared_unit_$,       !- Feature Name 7
-  Double,                                 !- Feature Data Type 7
-  16459.96005114547,                      !- Feature Value 7
-  rsmeans_unit_cost_line_id,              !- Feature Name 8
-  String,                                 !- Feature Data Type 8
-  081116100100,                           !- Feature Value 8
-  rsmeans_overhead_profit_percent,        !- Feature Name 9
+  3.7161216000000001,                     !- Feature Value 8
+  rsmeans_door_thickness_m,               !- Feature Name 9
   Double,                                 !- Feature Data Type 9
-  10,                                     !- Feature Value 9
-  rsmeans_release_id,                     !- Feature Name 10
+  0.015875,                               !- Feature Value 9
+  rsmeans_applied_door_option,            !- Feature Name 10
   String,                                 !- Feature Data Type 10
-  2024-an,                                !- Feature Value 10
-  rsmeans_location_id,                    !- Feature Name 11
-  String,                                 !- Feature Data Type 11
-  us-us-national,                         !- Feature Value 11
-  rsmeans_labor_type,                     !- Feature Name 12
-  String,                                 !- Feature Data Type 12
-  std,                                    !- Feature Value 12
-  rsmeans_measurement_system,             !- Feature Name 13
-  String,                                 !- Feature Data Type 13
-  imp,                                    !- Feature Value 13
-  rsmeans_catalogs,                       !- Feature Name 14
-  String,                                 !- Feature Data Type 14
-  bc-mf&#44 gb-mf&#44 rp-mf;              !- Feature Value 14
-
-OS:SpaceType,
-  {5fd98e33-3378-4315-9723-ec467c9ab559}, !- Handle
-  RSMeans Hit 1 - 081116100100;           !- Name
-
-OS:AdditionalProperties,
-  {3817c29c-e04d-4b88-9c36-2850037e4d71}, !- Handle
-  {5fd98e33-3378-4315-9723-ec467c9ab559}, !- Object Name
-  rsmeans_lookup_status,                  !- Feature Name 1
-  String,                                 !- Feature Data Type 1
-  ok,                                     !- Feature Value 1
-  rsmeans_release_id,                     !- Feature Name 2
-  String,                                 !- Feature Data Type 2
-  2024-an,                                !- Feature Value 2
-  rsmeans_location_id,                    !- Feature Name 3
-  String,                                 !- Feature Data Type 3
-  us-us-national,                         !- Feature Value 3
-  rsmeans_labor_type,                     !- Feature Name 4
-  String,                                 !- Feature Data Type 4
-  std,                                    !- Feature Value 4
-  rsmeans_measurement_system,             !- Feature Name 5
-  String,                                 !- Feature Data Type 5
-  imp,                                    !- Feature Value 5
-  rsmeans_catalogs,                       !- Feature Name 6
-  String,                                 !- Feature Data Type 6
-  bc-mf&#44 gb-mf&#44 rp-mf,              !- Feature Value 6
-  rsmeans_overhead_profit_percent,        !- Feature Name 7
-  Double,                                 !- Feature Data Type 7
-  10,                                     !- Feature Value 7
-  rsmeans_material_name,                  !- Feature Name 8
-  String,                                 !- Feature Data Type 8
-  metal door 5 ft 3 in x 7 ft 7 in,       !- Feature Value 8
-  rsmeans_material_description,           !- Feature Name 9
-  String,                                 !- Feature Data Type 9
-  1 door(s)&#59 materials: metal&#59 size: 5 ft 3 in x 7 ft 7 in, !- Feature Value 9
-  rsmeans_quantity,                       !- Feature Name 10
-  Double,                                 !- Feature Data Type 10
-  1,                                      !- Feature Value 10
-  rsmeans_unit,                           !- Feature Name 11
-  String,                                 !- Feature Data Type 11
-  ea,                                     !- Feature Value 11
-  rsmeans_division_code,                  !- Feature Name 12
-  String,                                 !- Feature Data Type 12
-  08,                                     !- Feature Value 12
-  rsmeans_catalog,                        !- Feature Name 13
-  String,                                 !- Feature Data Type 13
-  bc-mf,                                  !- Feature Value 13
-  rsmeans_search_term_requested,          !- Feature Name 14
-  String,                                 !- Feature Data Type 14
-  metal door 5 ft 3 in x 7 ft 7 in,       !- Feature Value 14
-  rsmeans_search_term_used,               !- Feature Name 15
-  String,                                 !- Feature Data Type 15
-  metal door,                             !- Feature Value 15
-  rsmeans_id,                             !- Feature Name 16
-  String,                                 !- Feature Data Type 16
-  081116100100,                           !- Feature Value 16
-  rsmeans_description,                    !- Feature Name 17
-  String,                                 !- Feature Data Type 17
-  Doors & frames&#44 aluminum&#44 entrance&#44 narrow stile&#44 clear finish&#44 3'-0" x 10'-0" opening&#44 3' high transom&#44 incl. standard hardware&#44 excl. glass, !- Feature Value 17
-  rsmeans_unit_cost_$,                    !- Feature Name 18
-  Double,                                 !- Feature Data Type 18
-  4765,                                   !- Feature Value 18
-  rsmeans_total_cost_$,                   !- Feature Name 19
-  Double,                                 !- Feature Data Type 19
-  4765,                                   !- Feature Value 19
-  rsmeans_door_size,                      !- Feature Name 20
-  String,                                 !- Feature Data Type 20
-  5 ft 3 in x 7 ft 7 in,                  !- Feature Value 20
-  rsmeans_door_materials,                 !- Feature Name 21
-  String,                                 !- Feature Data Type 21
-  metal;                                  !- Feature Value 21
-
-OS:SpaceType,
-  {81d502fd-4b02-4b71-9aa5-2a710ead85df}, !- Handle
-  RSMeans Hit 2 - 087113100050;           !- Name
-
-OS:AdditionalProperties,
-  {f2dd9a19-7c46-4759-aa08-45b9728e2143}, !- Handle
-  {81d502fd-4b02-4b71-9aa5-2a710ead85df}, !- Object Name
-  rsmeans_lookup_status,                  !- Feature Name 1
-  String,                                 !- Feature Data Type 1
-  ok,                                     !- Feature Value 1
-  rsmeans_release_id,                     !- Feature Name 2
-  String,                                 !- Feature Data Type 2
-  2024-an,                                !- Feature Value 2
-  rsmeans_location_id,                    !- Feature Name 3
-  String,                                 !- Feature Data Type 3
-  us-us-national,                         !- Feature Value 3
-  rsmeans_labor_type,                     !- Feature Name 4
-  String,                                 !- Feature Data Type 4
-  std,                                    !- Feature Value 4
-  rsmeans_measurement_system,             !- Feature Name 5
-  String,                                 !- Feature Data Type 5
-  imp,                                    !- Feature Value 5
-  rsmeans_catalogs,                       !- Feature Name 6
-  String,                                 !- Feature Data Type 6
-  bc-mf&#44 gb-mf&#44 rp-mf,              !- Feature Value 6
-  rsmeans_overhead_profit_percent,        !- Feature Name 7
-  Double,                                 !- Feature Data Type 7
-  10,                                     !- Feature Value 7
-  rsmeans_material_name,                  !- Feature Name 8
-  String,                                 !- Feature Data Type 8
-  automatic door bottom,                  !- Feature Value 8
-  rsmeans_material_description,           !- Feature Name 9
-  String,                                 !- Feature Data Type 9
-  Bottom sealing strip for 1 door(s)&#59 product: automatic door bottom&#59 total length: 3.0 lf, !- Feature Value 9
-  rsmeans_quantity,                       !- Feature Name 10
-  Double,                                 !- Feature Data Type 10
-  3.0000000959999999,                     !- Feature Value 10
-  rsmeans_unit,                           !- Feature Name 11
-  String,                                 !- Feature Data Type 11
-  lf,                                     !- Feature Value 11
-  rsmeans_division_code,                  !- Feature Name 12
-  String,                                 !- Feature Data Type 12
-  08,                                     !- Feature Value 12
-  rsmeans_catalog,                        !- Feature Name 13
-  String,                                 !- Feature Data Type 13
-  bc-mf,                                  !- Feature Value 13
-  rsmeans_search_term_requested,          !- Feature Name 14
-  String,                                 !- Feature Data Type 14
-  metal door 5 ft 3 in x 7 ft 7 in,       !- Feature Value 14
-  rsmeans_search_term_used,               !- Feature Name 15
-  String,                                 !- Feature Data Type 15
-  automatic door bottom,                  !- Feature Value 15
-  rsmeans_id,                             !- Feature Name 16
-  String,                                 !- Feature Data Type 16
-  087113100050,                           !- Feature Value 16
-  rsmeans_description,                    !- Feature Name 17
-  String,                                 !- Feature Data Type 17
-  Door hardware&#44 automatic openers&#44 commercial&#44 pneumatic&#44 for single swing door&#44 per opening&#44 incl. opener&#44 motion sensor&#44 control box&#44 tubing&#44 compressor, !- Feature Value 17
-  rsmeans_unit_cost_$,                    !- Feature Name 18
-  Double,                                 !- Feature Data Type 18
-  7825,                                   !- Feature Value 18
-  rsmeans_total_cost_$,                   !- Feature Name 19
-  Double,                                 !- Feature Data Type 19
-  23475.000751200001,                     !- Feature Value 19
-  rsmeans_door_size,                      !- Feature Name 20
-  String,                                 !- Feature Data Type 20
-  5 ft 3 in x 7 ft 7 in,                  !- Feature Value 20
-  rsmeans_door_materials,                 !- Feature Name 21
-  String,                                 !- Feature Data Type 21
-  metal;                                  !- Feature Value 21
-
-OS:SpaceType,
-  {c7e8c0a9-d613-4e22-bfee-66fb9d135e86}, !- Handle
-  RSMeans Hit 3 - 083323104000;           !- Name
-
-OS:AdditionalProperties,
-  {b318f46f-1586-4ec3-99cd-b35804167d85}, !- Handle
-  {c7e8c0a9-d613-4e22-bfee-66fb9d135e86}, !- Object Name
-  rsmeans_lookup_status,                  !- Feature Name 1
-  String,                                 !- Feature Data Type 1
-  ok,                                     !- Feature Value 1
-  rsmeans_release_id,                     !- Feature Name 2
-  String,                                 !- Feature Data Type 2
-  2024-an,                                !- Feature Value 2
-  rsmeans_location_id,                    !- Feature Name 3
-  String,                                 !- Feature Data Type 3
-  us-us-national,                         !- Feature Value 3
-  rsmeans_labor_type,                     !- Feature Name 4
-  String,                                 !- Feature Data Type 4
-  std,                                    !- Feature Value 4
-  rsmeans_measurement_system,             !- Feature Name 5
-  String,                                 !- Feature Data Type 5
-  imp,                                    !- Feature Value 5
-  rsmeans_catalogs,                       !- Feature Name 6
-  String,                                 !- Feature Data Type 6
-  bc-mf&#44 gb-mf&#44 rp-mf,              !- Feature Value 6
-  rsmeans_overhead_profit_percent,        !- Feature Name 7
-  Double,                                 !- Feature Data Type 7
-  10,                                     !- Feature Value 7
-  rsmeans_material_name,                  !- Feature Name 8
-  String,                                 !- Feature Data Type 8
-  jamb weatherstrip,                      !- Feature Value 8
-  rsmeans_material_description,           !- Feature Name 9
-  String,                                 !- Feature Data Type 9
-  Top and side sealing strip for 1 door(s)&#59 product: jamb weatherstrip&#59 total length: 17.0 lf, !- Feature Value 9
-  rsmeans_quantity,                       !- Feature Name 10
-  Double,                                 !- Feature Data Type 10
-  17.000000544000002,                     !- Feature Value 10
-  rsmeans_unit,                           !- Feature Name 11
-  String,                                 !- Feature Data Type 11
-  lf,                                     !- Feature Value 11
-  rsmeans_division_code,                  !- Feature Name 12
-  String,                                 !- Feature Data Type 12
-  08,                                     !- Feature Value 12
-  rsmeans_catalog,                        !- Feature Name 13
-  String,                                 !- Feature Data Type 13
-  bc-mf,                                  !- Feature Value 13
-  rsmeans_search_term_requested,          !- Feature Name 14
-  String,                                 !- Feature Data Type 14
-  metal door 5 ft 3 in x 7 ft 7 in,       !- Feature Value 14
-  rsmeans_search_term_used,               !- Feature Name 15
-  String,                                 !- Feature Data Type 15
-  jamb weatherstrip,                      !- Feature Value 15
-  rsmeans_id,                             !- Feature Name 16
-  String,                                 !- Feature Data Type 16
-  083323104000,                           !- Feature Value 16
-  rsmeans_description,                    !- Feature Name 17
-  String,                                 !- Feature Data Type 17
-  Doors&#44 rolling service&#44 steel&#44 manual&#44 for weatherstripping&#44 extruded rubber&#44 jambs&#44 add, !- Feature Value 17
-  rsmeans_unit_cost_$,                    !- Feature Name 18
-  Double,                                 !- Feature Data Type 18
-  2.8999999999999999,                     !- Feature Value 18
-  rsmeans_total_cost_$,                   !- Feature Name 19
-  Double,                                 !- Feature Data Type 19
-  49.300001577600007,                     !- Feature Value 19
-  rsmeans_door_size,                      !- Feature Name 20
-  String,                                 !- Feature Data Type 20
-  5 ft 3 in x 7 ft 7 in,                  !- Feature Value 20
-  rsmeans_door_materials,                 !- Feature Name 21
-  String,                                 !- Feature Data Type 21
-  metal;                                  !- Feature Value 21
+  glass door,                             !- Feature Value 10
+  door_bottom_seal_length_per_unit_m,     !- Feature Name 11
+  Double,                                 !- Feature Data Type 11
+  0.91439999999999999,                    !- Feature Value 11
+  door_top_side_seal_length_per_unit_m,   !- Feature Name 12
+  Double,                                 !- Feature Data Type 12
+  5.181;                                  !- Feature Value 12
 

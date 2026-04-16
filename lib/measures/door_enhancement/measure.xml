@@ -340,11 +340,5 @@
       <usage_type>test</usage_type>
       <checksum>74CF9F0C</checksum>
     </file>
-    <file>
-      <filename>test_window_enhancement.py</filename>
-      <filetype>py</filetype>
-      <usage_type>test</usage_type>
-      <checksum>3BFB84E5</checksum>
-    </file>
   </files>
 </measure>

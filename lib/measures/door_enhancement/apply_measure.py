@@ -5,7 +5,9 @@ This script:
 1. Loads a test OSM file from the tests/ folder
 2. Runs the ModelMeasure with a set of configurable arguments
 3. Saves the modified model to tests/output/
-4. Verifies that AdditionalProperties were attached to modified door subsurfaces
+4. Verifies that AdditionalProperties were attached to the standard
+   5-bucket objects (Building, Site, Facility, SimulationControl,
+   SizingParameters)
 """
 
 from pathlib import Path
@@ -16,15 +18,37 @@ import configparser
 # ---------------------------------------------------------------------------
 # OpenStudio path setup
 # ---------------------------------------------------------------------------
-OPENSTUDIO_VERSION = "3.11.0"
-openstudio_path = f"/Applications/OpenStudio-{OPENSTUDIO_VERSION}/Python"
 
-if Path(openstudio_path).exists():
-    sys.path.insert(0, openstudio_path)
-    print(f"Using OpenStudio from: {openstudio_path}")
-else:
-    print(f"Warning: OpenStudio path not found at {openstudio_path}")
-    print("Will attempt to use system OpenStudio installation")
+def configure_openstudio_python_path():
+    """Locate and add an OpenStudio Python directory to sys.path.
+
+    Checks (in order):
+    1. OPENSTUDIO_PYTHON_PATH environment variable.
+    2. Standard Windows install paths for versions 3.11, 3.10, 3.9.
+    3. Standard macOS install paths for the same versions.
+    4. Assumes the openstudio package is already importable (installed).
+    """
+    import os
+    explicit = os.environ.get("OPENSTUDIO_PYTHON_PATH", "").strip()
+    if explicit and Path(explicit).exists():
+        sys.path.insert(0, explicit)
+        print(f"Using OpenStudio from OPENSTUDIO_PYTHON_PATH: {explicit}")
+        return
+
+    candidates = []
+    for ver in ("3.11.0", "3.10.0", "3.9.0"):
+        candidates.append(Path(f"C:/openstudio-{ver}/Python"))
+        candidates.append(Path(f"/Applications/OpenStudio-{ver}/Python"))
+    for candidate in candidates:
+        if candidate.exists():
+            sys.path.insert(0, str(candidate))
+            print(f"Using OpenStudio from: {candidate}")
+            return
+
+    print("Using OpenStudio from installed package")
+
+
+configure_openstudio_python_path()
 
 import openstudio
 from measure import DoorEnhancement
@@ -175,20 +199,27 @@ def print_runner_output(runner):
 
 def verify_additional_properties(model):
     """
-    Check the new separate Facility AdditionalProperties (summary block).
-    Returns a list of (object_name, prop_name, value) tuples.
+    Check all five standard AdditionalProperties buckets and return a list of
+    (bucket_label, property_name, value) tuples.
     """
     found = []
-    facility = model.getFacility()
-    ap = facility.additionalProperties()
-    for feature_name in ap.featureNames():
-        val_opt = ap.getFeatureAsDouble(feature_name)
-        if val_opt.is_initialized():
-            found.append(("Facility", feature_name, val_opt.get()))
-        else:
-            val_str = ap.getFeatureAsString(feature_name)
-            if val_str.is_initialized():
-                found.append(("Facility", feature_name, val_str.get()))
+
+    def _collect_props(label, ap):
+        for feature_name in ap.featureNames():
+            val_opt = ap.getFeatureAsDouble(feature_name)
+            if val_opt.is_initialized():
+                found.append((label, feature_name, val_opt.get()))
+            else:
+                val_str = ap.getFeatureAsString(feature_name)
+                if val_str.is_initialized():
+                    found.append((label, feature_name, val_str.get()))
+
+    _collect_props("Building",         model.getBuilding().additionalProperties())
+    _collect_props("Site",             model.getSite().additionalProperties())
+    _collect_props("Facility",         model.getFacility().additionalProperties())
+    _collect_props("SimulationControl", model.getSimulationControl().additionalProperties())
+    _collect_props("SizingParameters", model.getSizingParameters().additionalProperties())
+
     return found
 
 
@@ -265,16 +296,27 @@ def main():
 
     # Verify AdditionalProperties on Building
     print("\n" + "=" * 80)
-    print("VERIFYING SEPARATE FACILITY ADDITIONAL PROPERTIES")
+    print("VERIFYING SEPARATE ADDITIONAL PROPERTIES")
     print("=" * 80)
 
     ap_data = verify_additional_properties(model)
     if ap_data:
-        print(f"Found {len(ap_data)} properties in separate Facility AdditionalProperties:")
+        print(f"Found {len(ap_data)} properties in separate AdditionalProperties:")
         for obj_name, prop_name, value in ap_data:
             print(f"  [{obj_name}] {prop_name}: {value}")
     else:
-        print("  No properties found on Facility.")
+        print("  No properties found on standard buckets.")
+
+    # Gather cost_factor_basis and cost_unit_basis for summary
+    cost_factor_basis = next(
+        (v for lbl, k, v in ap_data if k == "door_enhancement_cost_factor_basis"), "not_found"
+    )
+    cost_unit_basis = next(
+        (v for lbl, k, v in ap_data if k == "door_enhancement_cost_unit_basis"), ""
+    )
+    cost_source = next(
+        (v for lbl, k, v in ap_data if k == "door_enhancement_cost_source"), "not_found"
+    )
 
     # Save modified model
     print("\n" + "=" * 80)
@@ -288,12 +330,15 @@ def main():
     results = {
         "measure": "DoorEnhancement",
         "success": success,
+        "cost_source": cost_source,
+        "cost_factor_basis": cost_factor_basis,
+        "cost_unit_basis": cost_unit_basis,
         "step_values": step_values,
         "doors_in_model": len(doors),
         "additional_properties_count": len(ap_data),
         "additional_properties_sample": [
-            {"subsurface": s, "property": p, "value": v}
-            for s, p, v in ap_data[:10]
+            {"bucket": s, "property": p, "value": v}
+            for s, p, v in ap_data[:15]
         ]
     }
     with open(results_json_path, "w") as f:
