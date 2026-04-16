@@ -59,6 +59,24 @@ class TestRoofInsulationMeasureSetup(unittest.TestCase):
         for arg_name in required_args:
             self.assertIn(arg_name, content, f"Argument '{arg_name}' not found in measure.py")
 
+    def test_helper_is_local_and_decoupled(self):
+        helper_path = self.measure_dir / "resources" / "call_rsmeans_api.py"
+        content = helper_path.read_text(encoding="utf-8")
+        self.assertNotIn("window_enhancement_call_rsmeans_api", content)
+        self.assertNotIn("window_enhancement/resources", content)
+        self.assertNotIn("_load_shared_helper", content)
+
+    def test_validation_script_has_no_window_path_hack(self):
+        validation_path = self.measure_dir / "resources" / "validate_enhancements.py"
+        content = validation_path.read_text(encoding="utf-8")
+        self.assertNotIn("window_enhancement", content)
+
+    def test_rsmeans_parser_derives_conductivity(self):
+        measure_path = self.measure_dir / "measure.py"
+        content = measure_path.read_text(encoding="utf-8")
+        self.assertIn("extracted['conductivity_W_mK'] = parsed_k", content)
+        self.assertIn("if 'rsmeans_rvalue_ip_in_description' in extracted", content)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -1,56 +1,49 @@
-# RSMeans Intelligent Search Strategy
+# RSMeans Search Strategy (Roofs)
 
 ## Overview
 
-The roof insulation measure uses the shared `call_rsmeans_api.py` helper to perform RSMeans cost lookups. It supports:
-1) Exact line-item lookup (when an RSMeans ID is provided), and
-2) Closest-match search (default) across multiple catalogs.
+The roof measure has a local helper at `resources/call_rsmeans_api.py` so roof costing stays independent from other measures.
 
-If `use_custom_costs` is enabled, RSMeans lookup is skipped and costs are computed from user inputs.
+Lookup modes:
 
-## Search Strategy
+1. Exact ID mode (`use_exact_costline_id=True`)
+2. Closest-match mode (scored candidate selection)
+3. Fallback-ID mode (keyword/default fallback when scored match is weak or missing)
 
-### 1. Priority Order
-For each material, the search proceeds in this order:
-1. Original material name with a provided division code
-2. Material-specific alternatives (insulation-focused)
-3. Simplified terms (remove adjectives)
-4. Broad search without division constraints
+## Candidate Scoring
 
-### 2. Multi-Catalog Search
-Catalogs are searched in priority order (default: bc-mf, gb-mf, rp-mf). The first successful match is used.
+Closest-match mode tokenizes and scores RSMeans candidates from search results.
 
-### 3. Insulation Alternatives
-If the original term fails, the helper tries:
-- roof insulation
-- wall insulation
-- batt insulation
-- rigid insulation
-- insulation
+- Score range is clamped to 0..100.
+- Minimum acceptable closest-match score is **50.0**.
+- Matches below 50.0 are treated as unresolved and use fallback IDs when configured.
 
-### 4. Match Types
-Each material is tagged with a match type:
-- exact_id_match
-- closest_match
+Disallowed entries (for example fasteners, board-foot-only lines, tapered-for-drainage lines) are filtered out before final scoring.
 
-## Usage
+## Catalog and Search Flow
 
-```bash
-python resources/call_rsmeans_api.py
-```
+Per material:
 
-### Custom Catalogs
+1. Try exact costline ID (if specified).
+2. Try generated search-term alternatives across catalogs (default `bc-mf,gb-mf,rp-mf`).
+3. For each candidate hit, resolve unit cost and compute total cost with area/volume-aware logic.
+4. If unresolved or weak-scored, try fallback costline IDs.
 
-```bash
-python resources/call_rsmeans_api.py --catalogs bc-mf,gb-mf,sq-mf
-```
+## Costing Basis
 
-### With Overhead/Profit
+For insulation, the helper supports volume-based conversion from RSMeans area lines when thickness is available:
 
-```bash
-python resources/call_rsmeans_api.py --overhead-profit-percent 25
-```
+- source unit cost may be $/SF
+- converted unit cost may become $/CF for volume-based material totals
 
-## Logging
+The measure persists basis metadata so downstream reporting can identify whether pricing came from area, volume, or mixed units.
 
-Search attempts and results can be captured in a JSON output file. The helper reports catalog, division, unit cost, and total cost per material.
+## Persisted Diagnostics
+
+The measure stores full RSMeans diagnostics JSON in AdditionalProperties:
+
+- `roof_insulation_rsmeans_matches_json`
+- `roof_insulation_rsmeans_search_results_json`
+- `roof_insulation_rsmeans_summary_json`
+
+These payloads include materials, search attempts, candidate scores, and summary metadata.
