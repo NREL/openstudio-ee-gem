@@ -20,13 +20,18 @@
 #                SizingParameters  → mtrl_prop    (material properties: k, density, lifetime, RSMeans extracted JSON)
 import importlib.util
 import json
-import importlib.util
+import os
+import sys
 from pathlib import Path
-sys.path.insert(0, os.path.dirname(__file__))
-import openstudio
+
 import numpy as np
+import openstudio
+
+measure_dir = os.path.dirname(os.path.abspath(__file__))
+if measure_dir not in sys.path:
+    sys.path.insert(0, measure_dir)
+
 from resources.EC3_lookup import *
-import pprint as pp
 
 
 class IncreaseInsulationRValueForExteriorWalls(openstudio.measure.ModelMeasure):
@@ -108,7 +113,7 @@ class IncreaseInsulationRValueForExteriorWalls(openstudio.measure.ModelMeasure):
             insulation_materials_types_chs.append(option)
         insulation_material_type = openstudio.measure.OSArgument.makeChoiceArgument("insulation_material_type", insulation_materials_types_chs, True)
         insulation_material_type.setDisplayName("Chosen Retrofit Material for Insulation of Exterior Wall")
-        insulation_material_type.setDefaultValue("Fiberglass")
+        insulation_material_type.setDefaultValue("Fiberglass Batts")
         args.append(insulation_material_type)
 
         insulation_material_lifetime = openstudio.measure.OSArgument.makeIntegerArgument("insulation_material_lifetime",True)
@@ -247,6 +252,7 @@ class IncreaseInsulationRValueForExteriorWalls(openstudio.measure.ModelMeasure):
         #     runner.registerError("Choose an integer larger than 0 for analysis period of embodeid carbon calcualtion.")
         if insulation_material_lifetime <= 0:
             runner.registerError("Choose an integer larger than 0 for product lifetime of insulating material.")
+            return False
 
         if r_value_ip < 0 or r_value_ip > 500:
             runner.registerError("R-value must be between 0 and 500 ft²·h·°F/Btu.")
@@ -254,15 +260,17 @@ class IncreaseInsulationRValueForExteriorWalls(openstudio.measure.ModelMeasure):
 
         if insulation_thermal_conductivity < 0:
             runner.registerError("Thermal conductivity of insulation material must be non-negative.")
+            return False
 
         if insulation_material_density < 0:
             runner.registerError("Density of insulation material must be non-negative.")
+            return False
 
         # Convert R-value from IP to SI units (m²·K/W)
         r_value_si = openstudio.convert(r_value_ip, "ft^2*h*R/Btu", "m^2*K/W").get()
 
         # Function to parse RSMeans description for material properties
-        def extract_properties_from_rsmeans_description(description: str, mat_name: str):
+        def extract_properties_from_rsmeans_description(description: str):
             """
             Parse RSMeans description to extract density and thermal conductivity.
             Returns dict with 'density_kg_m3' and 'conductivity_W_mK' if found, else empty dict.
@@ -392,7 +400,6 @@ class IncreaseInsulationRValueForExteriorWalls(openstudio.measure.ModelMeasure):
         # Try to get properties from RSMeans first, then fall back to hardcoded
         selected_k = None
         selected_k_source = "hardcoded"
-        selected_density = None
         selected_density_source = "hardcoded"
         rsmeans_extracted_properties = {}
         
@@ -438,7 +445,7 @@ class IncreaseInsulationRValueForExteriorWalls(openstudio.measure.ModelMeasure):
                         materials_results = early_rsmeans_lookup.get("results", {}).get("materials", [])
                         for mat in materials_results:
                             mat_desc = mat.get("description", "")
-                            extracted_props = extract_properties_from_rsmeans_description(mat_desc, mat.get("name", ""))
+                            extracted_props = extract_properties_from_rsmeans_description(mat_desc)
                             if extracted_props:
                                 rsmeans_extracted_properties.update(extracted_props)
                                 if 'density_kg_m3' in extracted_props:
@@ -492,12 +499,10 @@ class IncreaseInsulationRValueForExteriorWalls(openstudio.measure.ModelMeasure):
         for surface in model.getSurfaces():
             # Filter to exterior walls only
             if surface.surfaceType() == "Wall" and surface.outsideBoundaryCondition() == "Outdoors":
-                # print(surface.nameString())         
                 ext_surfaces.append(surface)
                 # Get associated construction, if present
                 if surface.construction().is_initialized():
                     construction = surface.construction().get()
-                    # print(construction)
                     if construction.nameString() not in constructions:
                         constructions[construction.nameString()] = construction
 
@@ -570,8 +575,7 @@ class IncreaseInsulationRValueForExteriorWalls(openstudio.measure.ModelMeasure):
             new_insul.setThermalResistance(delta_r)
 
             # Insert after existing insulation layer
-            import builtins
-            layer_list = builtins.list(new_construction.layers())
+            layer_list = list(new_construction.layers())
             layer_list.insert(insul_index + 1, new_insul)
             new_construction.setLayers(layer_list)
 
@@ -587,13 +591,6 @@ class IncreaseInsulationRValueForExteriorWalls(openstudio.measure.ModelMeasure):
                 "added_thickness_m": required_thickness
             })
         
-        # print("====== Modified Constructions Summary ======")
-        # for item in modified_constructions:
-        #     print("+++++++++++++++++")
-        #     print(f"Construction: {item['construction'].nameString()}")
-        #     print(f"Total Area: {item['total_area_m2']:.2f} m²")
-        #     print(f"Added Thickness: {item['added_thickness_m']:.4f} m")
-
         # ── Phase 4: EC3 EPD data fetch and embodied-carbon calculation ──────────
         # Queries the Building Transparency (EC3) API for Environmental Product
         # Declaration (EPD) data for the chosen insulation type.  GWP outliers are
@@ -602,7 +599,6 @@ class IncreaseInsulationRValueForExteriorWalls(openstudio.measure.ModelMeasure):
 
         # Pull EC3 data for the chosen insulation type once
         ec3_url = self.generate_url_by_material_type(insulation_material_type)
-        # print("Generated EC3 URL:", ec3_url)
         insulation_product_epd = fetch_epd_data(ec3_url, api_key)
 
         # Extract lifetime values from EPD responses
@@ -696,44 +692,6 @@ class IncreaseInsulationRValueForExteriorWalls(openstudio.measure.ModelMeasure):
                 "total_gwp_kg_co2_eq": total_gwp
             })
 
-        # Debug: Print GWP summary
-        # pp.pprint(gwp_summary)
-
-        for idx, item in enumerate(modified_constructions):
-            construction = item["construction"]
-            total_area_m2 = item["total_area_m2"]
-            added_thickness_m = item["added_thickness_m"]
-            total_gwp = gwp_summary[idx]["total_gwp_kg_co2_eq"]
-
-            # Compatibility: write minimal per-construction keys still read by apply_reporting_measure_wall_insulation.py
-            props = construction.additionalProperties()
-            props.setFeature("renovated_exterior_wall_area_m2", total_area_m2)
-            props.setFeature("total_embodied_carbon_kgCO2eq", total_gwp)
-            props.setFeature("insutlation_material_type", insulation_material_type)  # typo preserved for reporting script
-
-            # Verbose per-construction attributes (not used by reporting script — kept commented)
-            # props.setFeature("construction_name", construction.nameString())
-            # props.setFeature("analysis_period_years", analysis_period)
-            # props.setFeature("original_insulation_r-value_ip", openstudio.convert(max_r, "m^2*K/W", "ft^2*h*R/Btu").get())
-            # props.setFeature("target_insulation_r-value_ip", r_value_ip)
-            # props.setFeature("total_volume_m3", added_thickness_m * total_area_m2)
-            # props.setFeature("renovated_exterior_wall_area_m2", total_area_m2)
-            # props.setFeature("added_insulation_layer_thickness_m", added_thickness_m)
-            # props.setFeature("added_insulation_layer_mass_kg", insulation_material_density * added_thickness_m * total_area_m2)
-            # props.setFeature("insulation_material_density_kg_per_m3", insulation_material_density)
-            # props.setFeature("insulation_material_thermal_conductivity_W_per_mK", selected_k)
-            # props.setFeature("insulation_material_lifetime_years", selected_lifetime)
-            # props.setFeature("insulation_material_lifetime_source", lifetime_source)
-            # props.setFeature("insulation_material_gwp_per_kg", item["gwp_per_kg"])
-            # props.setFeature("insulation_material_gwp_per_m2", item["gwp_per_m2"])
-            # props.setFeature("insulation_material_gwp_per_m3", item["gwp_per_m3"])
-
-            # Reduced verbosity - construction tagging happens silently
-            # runner.registerInfo(
-            #     f"Tagged '{construction.nameString()}' with embodied carbon: "
-            #     f"{total_gwp:.2f} kg CO₂ eq over {total_area_m2:.2f} m²"
-            # )
-        
         # Calculate building-level totals for summarization
         total_embodied_carbon = sum(gwp_summary[idx]["total_gwp_kg_co2_eq"] for idx in range(len(modified_constructions)))
         total_wall_area = sum(item["total_area_m2"] for item in modified_constructions)
@@ -758,27 +716,15 @@ class IncreaseInsulationRValueForExteriorWalls(openstudio.measure.ModelMeasure):
         sizingpara = model.getSizingParameters()
         mtrl_prop = sizingpara.additionalProperties()       # Material properties bucket
 
-        # Basic measure inputs
-        basic_input.setFeature("wall_insulation_measure_name", "Increase Insulation R-Value for Exterior Walls")
-        basic_input.setFeature("wall_insulation_analysis_period_years", analysis_period)
-        basic_input.setFeature("wall_insulation_gwp_statistic", gwp_statistic)
-
-        # Material properties and lifetime
-        mtrl_prop.setFeature("wall_insulation_material_lifetime_years", selected_lifetime)
-        mtrl_prop.setFeature("wall_insulation_material_density_kg_per_m3", insulation_material_density)
-        mtrl_prop.setFeature("wall_insulation_material_thermal_conductivity_W_per_mK", selected_k)
-
-        # Renovation details / quantities
-        reno_detail.setFeature("wall_insulation_renovated_area_m2", total_wall_area)
-        reno_detail.setFeature("wall_insulation_added_volume_m3", total_added_volume_m3)
-        reno_detail.setFeature("wall_target_insulation_r_value_ip", r_value_ip)
-        reno_detail.setFeature("wall_insulation_material_type", insulation_material_type)
-        reno_detail.setFeature("wall_insulation_modified_constructions_count", len(modified_constructions))
+        retrofit_materials_json = None
+        rsmeans_materials_detail_json = None
+        rsmeans_material_id_for_write = None
+        rsmeans_material_description_for_write = None
 
         # ===================== RSMeans cost lookup =====================
         total_material_cost = 0.0
         total_overhead_profit_cost = 0.0
-        total_labour_cost = 0.0
+        total_labor_cost = 0.0
         cost_source = "none"
         cost_factor_basis = "not_calculated"
 
@@ -807,8 +753,7 @@ class IncreaseInsulationRValueForExteriorWalls(openstudio.measure.ModelMeasure):
 
         if rsmeans_materials:
             try:
-                materials_json = json.dumps(rsmeans_materials)
-                results.setFeature("wall_insulation_retrofit_materials_json", materials_json)
+                retrofit_materials_json = json.dumps(rsmeans_materials)
             except Exception as e:
                 runner.registerWarning(f"Could not serialize RSMeans retrofit materials to JSON: {e}")
 
@@ -821,7 +766,7 @@ class IncreaseInsulationRValueForExteriorWalls(openstudio.measure.ModelMeasure):
                     if total_added_volume_cf > 0.0:
                         total_material_cost = custom_cost_per_cf * total_added_volume_cf
                         if labor_cost_multiplier and labor_cost_multiplier > 1.0:
-                            total_labour_cost = total_material_cost * (labor_cost_multiplier - 1.0)
+                            total_labor_cost = total_material_cost * (labor_cost_multiplier - 1.0)
                         cost_source = "custom_input"
                         cost_factor_basis = "custom_cost_per_volume"
                         runner.registerInfo(
@@ -852,11 +797,9 @@ class IncreaseInsulationRValueForExteriorWalls(openstudio.measure.ModelMeasure):
                         if rsmeans_lookup and rsmeans_lookup.get("status") == "ok":
                             summary = rsmeans_lookup.get("summary", {})
                             # Note: total_material_cost from RSMeans already includes labor
-                            # RSMeans uses totalOpCost which combines material + labor costs
+                            # RSMeans totalOpCost combines material + labor costs.
                             total_material_cost = float(summary.get("total_material_cost", 0.0))
                             total_overhead_profit_cost = float(summary.get("total_overhead_profit_cost", 0.0))
-                            # Note: total_material_cost from RSMeans already includes labor
-                            # RSMeans totalOpCost combines material + labor costs
                             cost_source = "rsmeans_api"
                             materials_results = rsmeans_lookup.get("results", {}).get("materials", [])
                             mode_values = {
@@ -890,7 +833,7 @@ class IncreaseInsulationRValueForExteriorWalls(openstudio.measure.ModelMeasure):
                                     )
                                     
                                     # Extract material properties from description
-                                    extracted_props = extract_properties_from_rsmeans_description(mat_desc, mat_name)
+                                    extracted_props = extract_properties_from_rsmeans_description(mat_desc)
                                     if extracted_props:
                                         rsmeans_extracted_properties[mat_name] = extracted_props
                                         if 'density_kg_m3' in extracted_props:
@@ -901,19 +844,19 @@ class IncreaseInsulationRValueForExteriorWalls(openstudio.measure.ModelMeasure):
                                             runner.registerInfo(
                                                 f"    → Found R-value in description: R-{extracted_props['rsmeans_rvalue_ip_in_description']}"
                                             )
+
+                                    # Capture RSMeans id/description; write them later in centralized section.
+                                    candidate_id = str(mat.get("rsmeans_id", "")).strip()
+                                    if candidate_id and rsmeans_material_id_for_write is None:
+                                        rsmeans_material_id_for_write = candidate_id
+                                    candidate_desc = str(mat.get("rsmeans_description", "")).strip() or str(mat.get("description", "")).strip()
+                                    if candidate_desc and rsmeans_material_description_for_write is None:
+                                        rsmeans_material_description_for_write = candidate_desc
                                 
-                                # Store extracted RSMeans properties in model (Material properties → SizingParameters)
-                                try:
-                                    mtrl_prop.setFeature(
-                                        "wall_insulation_rsmeans_extracted_properties_json",
-                                        json.dumps(rsmeans_extracted_properties)
+                                if rsmeans_extracted_properties:
+                                    runner.registerInfo(
+                                        f"Extracted material properties from RSMeans descriptions: {list(rsmeans_extracted_properties.keys())}"
                                     )
-                                    if rsmeans_extracted_properties:
-                                        runner.registerInfo(
-                                            f"Extracted material properties from RSMeans descriptions: {list(rsmeans_extracted_properties.keys())}"
-                                        )
-                                except Exception as e:
-                                    runner.registerWarning(f"Could not store extracted RSMeans properties: {e}")
 
                                 # Store full per-material RSMeans lookup results (id, description, unit,
                                 # unit_cost, total_cost, match_type, unit_cost_basis, costing_mode, catalog, etc.)
@@ -937,10 +880,7 @@ class IncreaseInsulationRValueForExteriorWalls(openstudio.measure.ModelMeasure):
                                             "search_term_used": mat.get("search_term_used", ""),
                                             "source": mat.get("source", ""),
                                         })
-                                    results.setFeature(
-                                        "wall_insulation_rsmeans_materials_detail_json",
-                                        json.dumps(storable_results)
-                                    )
+                                    rsmeans_materials_detail_json = json.dumps(storable_results)
                                 except Exception as e:
                                     runner.registerWarning(f"Could not store RSMeans materials detail: {e}")
                             runner.registerInfo(
@@ -955,43 +895,71 @@ class IncreaseInsulationRValueForExteriorWalls(openstudio.measure.ModelMeasure):
                                 f"The RSMeans API could not find a cost for this insulation material.\n"
                                 f"SOLUTION: Retry the measure with custom cost input:\n"
                                 f"  1. Set 'Use Custom Cost Inputs (skip RSMeans)' = true\n"
-                                f"  2. Enter 'Custom Insulation Cost ($/SF)' with your estimated cost\n"
-                                f"  (For Pure Wool Batts, consult RS Means or quotes from vendors for typical $/SF rates)"
+                                f"  2. Enter 'Custom Insulation Cost ($/CF)' with your estimated cost\n"
+                                f"  (For Pure Wool Batts, consult RS Means or quotes from vendors for typical $/CF rates)"
                             )
                     except Exception as e:
                         runner.registerError(
                             f"RSMeans lookup failed: {e}\n"
                             f"SOLUTION: Retry the measure with custom cost input:\n"
                             f"  1. Set 'Use Custom Cost Inputs (skip RSMeans)' = true\n"
-                            f"  2. Enter 'Custom Insulation Cost ($/SF)' with your estimated cost"
+                            f"  2. Enter 'Custom Insulation Cost ($/CF)' with your estimated cost"
                         )
                 else:
                     runner.registerError(
                         "RSMeans helper not found at resources/call_rsmeans_api.py\n"
                         "SOLUTION: Retry the measure with custom cost input:\n"
                         f"  1. Set 'Use Custom Cost Inputs (skip RSMeans)' = true\n"
-                        f"  2. Enter 'Custom Insulation Cost ($/SF)' with your estimated cost"
+                        f"  2. Enter 'Custom Insulation Cost ($/CF)' with your estimated cost"
                     )
 
-        # Results (standardized fields)
-        results.setFeature("wall_insulation_embodied_carbon_kgco2e", total_embodied_carbon)
+        # ===================== AdditionalProperties write-out (centralized) =====================
+        # Per-construction properties for reporting compatibility
+        for idx, item in enumerate(modified_constructions):
+            construction = item["construction"]
+            total_area_m2 = item["total_area_m2"]
+            total_gwp = gwp_summary[idx]["total_gwp_kg_co2_eq"]
+            props = construction.additionalProperties()
+            props.setFeature("renovated_exterior_wall_area_m2", total_area_m2)
+            props.setFeature("renovated_embodied_carbon_kgCO2eq", total_gwp)
+            props.setFeature("insutlation_material_type", insulation_material_type)  
+            if retrofit_materials_json is not None:
+                props.setFeature("wall_insulation_retrofit_materials_json", retrofit_materials_json)
+            if rsmeans_materials_detail_json is not None:
+                props.setFeature("wall_insulation_rsmeans_materials_detail_json", rsmeans_materials_detail_json)
+
+        # Building bucket: basic inputs
+        basic_input.setFeature("wall_insulation_measure_name", "Increase Insulation R-Value for Exterior Walls")
+        basic_input.setFeature("wall_insulation_analysis_period_years", analysis_period)
+        basic_input.setFeature("wall_insulation_gwp_statistic", gwp_statistic)
+
+        # Site bucket: renovation details/quantities
+        reno_detail.setFeature("wall_insulation_renovated_area_m2", total_wall_area)
+        reno_detail.setFeature("wall_insulation_added_volume_m3", total_added_volume_m3)
+        reno_detail.setFeature("wall_insulation_target_r_value_ip", r_value_ip)
+        reno_detail.setFeature("wall_insulation_material_type", insulation_material_type)
+        reno_detail.setFeature("wall_insulation_modified_constructions_count", len(modified_constructions))
+
+        # SizingParameters bucket: material properties
+        mtrl_prop.setFeature("wall_insulation_material_lifetime_years", selected_lifetime)
+        mtrl_prop.setFeature("wall_insulation_material_density_kg_per_m3", insulation_material_density)
+        mtrl_prop.setFeature("wall_insulation_material_thermal_conductivity_W_per_mK", selected_k)
+        if rsmeans_material_id_for_write:
+            mtrl_prop.setFeature("wall_insulation_material_rsmeans_id", rsmeans_material_id_for_write)
+        if rsmeans_material_description_for_write:
+            mtrl_prop.setFeature("wall_insulation_material_rsmeans_description", rsmeans_material_description_for_write)
+
+        # SimulationControl bucket: results and RSMeans detail JSON
+        results.setFeature("wall_insulation_embodied_carbon_kgCO2eq", total_embodied_carbon)
         results.setFeature("wall_insulation_material_cost_$", total_material_cost)
         results.setFeature("wall_insulation_overhead_profit_cost_$", total_overhead_profit_cost)
-        results.setFeature("wall_insulation_labour_cost_$", total_labour_cost)
+        results.setFeature("wall_insulation_labor_cost_$", total_labor_cost)
         results.setFeature("wall_insulation_total_cost_with_overhead_and_profit_$", total_material_cost + total_overhead_profit_cost)
-        results.setFeature("wall_insulation_cost_source", cost_source)
-        results.setFeature("wall_insulation_cost_factor_basis", cost_factor_basis)
-        results.setFeature("wall_insulation_total_embodied_carbon_kgCO2eq", total_embodied_carbon)
         
-        # Mirror cost data to Facility for visibility
-        facility.additionalProperties().setFeature("wall_insulation_total_additional_material_cost_$", total_material_cost)
-        facility.additionalProperties().setFeature("wall_insulation_total_additional_overhead_profit_cost_$", total_overhead_profit_cost)
-        facility.additionalProperties().setFeature("wall_insulation_total_additional_labour_cost_$", total_labour_cost)
-        facility.additionalProperties().setFeature("wall_insulation_total_cost_with_overhead_and_profit_$", total_material_cost + total_overhead_profit_cost)
-        facility.additionalProperties().setFeature("wall_insulation_cost_source", cost_source)
-        facility.additionalProperties().setFeature("wall_insulation_cost_factor_basis", cost_factor_basis)
-
-        # Emission factors
+        # Facility bucket: emission/cost factors
+        factors.setFeature("wall_insulation_cost_source", cost_source)
+        factors.setFeature("wall_insulation_overhead_profit_percent", overhead_profit_percent)
+        factors.setFeature("wall_insulation_cost_factor_basis", cost_factor_basis)
         if material_gwp.get("gwp_per_kg", 0.0) > 0.0:
             factors.setFeature("wall_insulation_material_gwp_per_kg", material_gwp.get("gwp_per_kg", 0.0))
         if material_gwp.get("gwp_per_m2", 0.0) > 0.0:
@@ -1002,20 +970,12 @@ class IncreaseInsulationRValueForExteriorWalls(openstudio.measure.ModelMeasure):
         # Construction names for traceability
         construction_names = [item["construction"].nameString() for item in modified_constructions]
         if construction_names:
-            basic_input.setFeature("wall_insulation_construction_names", ', '.join(construction_names))
-
-        # # Cross-measure extraction fields on Facility
-        # factors.setFeature("name", "Increase_Insulation_R-Value_for_Exterior_Walls")
-        # factors.setFeature("total_additional_embodied_carbon_kgCO2", total_embodied_carbon)
+            basic_input.setFeature("wall_insulation_renovated_construction_names", ', '.join(construction_names))
         
         runner.registerInfo(
             f"Building-level summary: Total embodied carbon = {total_embodied_carbon:.2f} kg CO2 eq "
             f"across {total_wall_area:.2f} m² of exterior walls"
         )
-            
-        # Debug: print all additional properties (commented out for production)
-        # for prop in model.getAdditionalPropertiess():
-        #     print(prop)
 
         runner.registerFinalCondition(
             f"Modified {len(modified_constructions)} construction(s) to meet target R-value of {r_value_ip} ft²·h·°F/Btu."
