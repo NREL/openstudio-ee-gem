@@ -4,6 +4,8 @@
 
 This measure improves window performance through six retrofit enhancement options while calculating the embodied carbon impact of upgrades using Environmental Product Declaration (EPD) data from the EC3 database. The measure modifies window thermal and optical properties, adjusts space infiltration rates, and provides comprehensive embodied carbon accounting over a specified analysis period.
 
+Capital cost output supports RSMeans API lookup with closest-match scoring and fallback to user-provided costs. RSMeans diagnostics are stored in split JSON payloads so downstream tools can consume matches, search logs, and summary independently.
+
 ## Measure Type
 
 ModelMeasure
@@ -201,10 +203,31 @@ Results stored as additional properties include:
 - Renovations applied
 - Total embodied carbon for all enhancements
 
-**RSMeans Outputs (Facility AdditionalProperties):**
-- `window_enhancement_retrofit_materials_json`
-- `window_enhancement_rsmeans_results_json`
-   - Includes matched line items, costs, and `match_type` (`exact_id_match` or `closest_match`)
+**RSMeans/Cost Outputs (5 AdditionalProperties Buckets):**
+- Building/basic input bucket:
+   - `analysis_period_years`, `gwp_statistic`, `measure_name`
+- Site/renovation details bucket:
+   - `total_renovated_window_area_m2`, `total_renovated_glazing_area_m2`, `total_renovated_frame_area_m2`, etc.
+- Facility/factors bucket:
+   - `window_enhancement_cost_source`
+   - `window_enhancement_cost_factor_basis`
+   - `window_enhancement_cost_unit_basis`
+   - `window_enhancement_overhead_profit_percent`
+- SimulationControl/results bucket:
+   - `window_enhancement_total_additional_material_cost_$`
+   - `window_enhancement_total_additional_labour_cost_$`
+   - `window_enhancement_total_additional_overhead_profit_cost_$`
+   - `window_enhancement_total_additional_cost_$`
+   - `window_enhancement_cost_source`
+   - `window_enhancement_cost_factor_basis`
+   - `window_enhancement_cost_unit_basis`
+   - `window_enhancement_retrofit_materials_json`
+   - `window_enhancement_rsmeans_results_json` (full payload)
+   - `window_enhancement_rsmeans_matches_json` (matched material lines)
+   - `window_enhancement_rsmeans_search_results_json` (search_log/errors/catalogs)
+   - `window_enhancement_rsmeans_summary_json` (aggregated cost summary)
+- SizingParameters/material properties bucket:
+   - selected construction/material properties and service lifetimes
 
 ## Important Notes
 

@@ -1,23 +1,21 @@
 #!/usr/bin/env python
 """
-Modular RSMeans API helper for OpenStudio measures.
+RSMeans API helper for the window_enhancement measure.
 
 This script can be used in two ways:
-1. As a library imported by measures (via measure.py)
+1. As a library imported by the measure (via measure.py)
 2. As a standalone CLI tool to query RSMeans costs from saved OSM files
 
-When run as a script, it automatically discovers model paths from the parent
-directory's apply_measure.py and searches across multiple RSMeans catalogs.
+Search behavior summary:
+1. If a specific RSMeans costline ID is provided for a material, exact ID
+    lookup is attempted first.
+2. Otherwise, multi-catalog closest-match search is used with scored
+    candidates and a minimum accepted score threshold.
+3. If the best score is below threshold, a material-specific fallback
+    costline ID is used when available.
 
-Required AdditionalProperties keys (defaults):
-  - retrofit_material_name
-  - retrofit_material_quantity
-  - retrofit_material_unit
-Optional keys:
-  - retrofit_material_description
-  - rsmeans_division_code
-  - rsmeans_unit_cost
-  - rsmeans_total_cost
+When run as a script, it discovers model paths from apply_measure.py and
+searches across configured RSMeans catalogs.
 """
 
 import argparse
@@ -76,20 +74,28 @@ DEFAULT_FEATURE_KEYS = {
 # Threshold for acceptable RSMeans match score (below this triggers fallback ID lookup)
 MIN_ACCEPTABLE_MATCH_SCORE = 0.0
 
-# Fallback RSMeans IDs for insulation materials when scoring fails
-INSULATION_FALLBACK_IDS = {
-    "Blown Cellulose": "072126100020",
-    "Blown Fiberglass": "072126101000",
-    "Blown Mineral Wool": "072123100100",
-    "Polyiso Insulation Foam Board": "072216101700",
-    "polyiso foam board": "072216101700",
-    "Graphite Polystyrene (GPS) Foam Board": "072113130600",
-    "Expanded Polystyrene (EPS) Foam Board": "072113130600",
-    "Extruded Polystyrene (XPS) Foam Board": "072216101910",
-    "Mineral Wool Heavy Density Blanket": "072116201320",
-    "Mineral Wool Light Density Blanket": "072116201320",
-    "Fiberglass Batts": "072116200620",
+# Default fallback RSMeans IDs used for low-confidence matches.
+# Keep this list window-focused for the window_enhancement measure.
+WINDOW_DEFAULT_FALLBACK_COSTLINES = {
+    "silicone adhesive smoke gasket": "087125105050",
+    "brush weatherstrip": "087125103700",
+    "num pane 1 secondary glazing": "088155100015",
+    "num pane 2": "088130100400",
+    "wood operatble window": "085113204100",
+    "wood operable window": "085113204100",
+    "wood fixed window": "085210550100",
+    "acrylic": "079213200050",
+    "polyurethane": "079213203200",
+    "safety film": "088716100050",
+    "solar control film": "088713101020",
+    "anti graffiti film": "088753100020",
+    "decorative film": "088726100050",
+    "low e film": "088713101020",
 }
+
+# Minimum clamped candidate score [0-100] required to accept a closest match.
+# Below this threshold, helper falls back to material-specific fallback IDs.
+MIN_ACCEPTABLE_MATCH_SCORE = 50.0
 
 
 def _get_double_pane_fallback_rsmeans_id(area_sf: float) -> str:
@@ -354,6 +360,17 @@ def _tokenize_search_text(text: str) -> set:
 
 
 def _score_rsmeans_candidate(material_name: str, item: Dict[str, Any]) -> float:
+    """Score an RSMeans candidate against a material name.
+
+    Score components:
+    - +60 if normalized material name appears in description
+    - +12 per overlapping token between material and description
+    - +10 if both contain the token "window"
+    - -20 if description looks like non-installation accessory line
+    - +0..1 for description length bonus
+
+    Returns a raw score; caller clamps it to [0, 100].
+    """
     description = str(item.get("description", ""))
     if not description:
         return -1.0
@@ -383,6 +400,11 @@ def _score_rsmeans_candidate(material_name: str, item: Dict[str, Any]) -> float:
 
 
 def _is_disallowed_candidate(item: Dict[str, Any]) -> bool:
+    """Return True if candidate line should be excluded from ranking.
+
+    Excludes fasteners/hangers/anchors and board-foot line items that are
+    usually not direct retrofit scope lines for this measure.
+    """
     desc = _normalize_search_text(item.get("description", ""))
     if not desc:
         return False
@@ -416,7 +438,19 @@ def _is_disallowed_candidate(item: Dict[str, Any]) -> bool:
     return False
 
 
-def _select_best_rsmeans_candidate(material_name: str, items: List[Dict[str, Any]], material: Optional[Dict[str, Any]] = None) -> tuple:
+def _select_best_rsmeans_candidate(
+    material_name: str,
+    items: List[Dict[str, Any]],
+    material: Optional[Dict[str, Any]] = None,
+) -> tuple:
+    """Return best candidate and ranked score list for diagnostics.
+
+    Behavior:
+    - Filters disallowed candidates where possible.
+    - Scores candidates and clamps to [0, 100].
+    - If best clamped score is below MIN_ACCEPTABLE_MATCH_SCORE, returns a
+      fallback pseudo-candidate when fallback mapping exists.
+    """
     if not items:
         return None, []
 
@@ -428,27 +462,31 @@ def _select_best_rsmeans_candidate(material_name: str, items: List[Dict[str, Any
     for idx, item in enumerate(eligible_items):
         raw_score = _score_rsmeans_candidate(material_name, item)
         bounded_score = max(0.0, min(100.0, raw_score))
-        scored.append({
-            "index": idx,
-            "rsmeans_id": item.get("id", "unknown"),
-            "description": str(item.get("description", ""))[:100],
-            "score": round(bounded_score, 2),
-            "raw_score": round(raw_score, 2),
-        })
+        scored.append(
+            {
+                "index": idx,
+                "rsmeans_id": item.get("id", "unknown"),
+                "description": str(item.get("description", ""))[:100],
+                "score": round(bounded_score, 2),
+                "raw_score": round(raw_score, 2),
+            }
+        )
 
     scored.sort(key=lambda x: -x["score"])
-    
-    # If best score is below threshold (poor match), use fallback ID if available
-    best_score = scored[0]["score"] if scored else -1.0
-    if best_score < MIN_ACCEPTABLE_MATCH_SCORE and material_name in INSULATION_FALLBACK_IDS:
-        fallback_id = INSULATION_FALLBACK_IDS[material_name]
-        # Create a synthetic candidate with fallback ID and score indicator
-        return {
-            "costlineID": fallback_id,
-            "description": f"[Fallback ID: {fallback_id}]",
-            "is_fallback": True,
-        }, scored
-    
+    top_score = scored[0].get("score", 0.0)
+    if top_score < MIN_ACCEPTABLE_MATCH_SCORE:
+        fallback_id = _get_default_fallback_rsmeans_id(material_name, material)
+        if fallback_id:
+            return {
+                "id": fallback_id,
+                "description": f"[fallback costline] {material_name}",
+                "is_fallback": True,
+                "fallback_reason": (
+                    f"poor_match_score_fallback:{top_score:.1f}<"
+                    f"{MIN_ACCEPTABLE_MATCH_SCORE}"
+                ),
+            }, scored
+
     best_idx = scored[0]["index"]
     best_candidate = eligible_items[best_idx]
     return best_candidate, scored
@@ -541,15 +579,10 @@ def _compute_total_cost_for_material(material: Dict[str, Any], unit_cost: float,
 
 
 def generate_search_term_alternatives(material_name: str) -> List[tuple]:
-    """
-    Generate alternative search terms and divisions for a material.
-    Returns list of (search_term, division_code) tuples in priority order.
-    
-    Args:
-        material_name: Original material name (e.g., "window glazing")
-    
-    Returns:
-        List of (search_term, division_code) tuples to try in order
+    """Generate ordered (search_term, division_code) alternatives.
+
+    Uses material-specific heuristics and progressive simplification so
+    searches can recover when the exact source term is absent in RSMeans.
     """
     alternatives = []
     name_lower = material_name.lower().strip()
