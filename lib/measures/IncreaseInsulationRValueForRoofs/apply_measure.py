@@ -216,7 +216,6 @@ def build_cost_response(ap_data):
         "cost_source": props.get("roof_insulation_cost_source"),
         "cost_factor_basis": props.get("roof_insulation_cost_factor_basis"),
         "cost_unit_basis": props.get("roof_insulation_cost_unit_basis"),
-        "selection_mode": props.get("roof_insulation_rsmeans_selection_mode"),
         "material_cost": {
             "value": props.get(
                 "roof_insulation_total_additional_material_cost_$"

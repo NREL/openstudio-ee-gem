@@ -31,7 +31,14 @@ measure_dir = os.path.dirname(os.path.abspath(__file__))
 if measure_dir not in sys.path:
     sys.path.insert(0, measure_dir)
 
-from resources.EC3_lookup import *
+from resources.EC3_lookup import (
+    compute_gwp_data,
+    extract_numeric_value,
+    fetch_epd_data,
+    generate_url_byname,
+    lifetime_multiplier,
+    parse_product_epd,
+)
 
 
 class IncreaseInsulationRValueForExteriorWalls(openstudio.measure.ModelMeasure):
@@ -223,6 +230,7 @@ class IncreaseInsulationRValueForExteriorWalls(openstudio.measure.ModelMeasure):
         return filtered_data
 
     def run(self, model, runner, user_arguments):
+        super().run(model, runner, user_arguments)
         if not runner.validateUserArguments(self.arguments(model), user_arguments):
             return False
 
@@ -248,8 +256,9 @@ class IncreaseInsulationRValueForExteriorWalls(openstudio.measure.ModelMeasure):
             return False
 
         # Check if numeric values are reasonable
-        # if analysis_period <= 0:
-        #     runner.registerError("Choose an integer larger than 0 for analysis period of embodeid carbon calcualtion.")
+        if analysis_period <= 0:
+            runner.registerError("Analysis period must be greater than 0 years.")
+            return False
         if insulation_material_lifetime <= 0:
             runner.registerError("Choose an integer larger than 0 for product lifetime of insulating material.")
             return False
@@ -409,7 +418,7 @@ class IncreaseInsulationRValueForExteriorWalls(openstudio.measure.ModelMeasure):
         # This matters because embodied carbon = GWP × volume, and volume = thickness × area,
         # where thickness = delta_R × k.  If the user left k = 0.0, we try RSMeans first;
         # the hardcoded default is the last resort.
-        # A second RSMeans call is made later in Phase 5 to compute actual installed cost.
+        # A second RSMeans call is made later in Phase 5 to compute actual cost outputs.
         if calculate_costs and not use_custom_costs:
             try:
                 # Build minimal materials list just for RSMeans property extraction
@@ -920,9 +929,10 @@ class IncreaseInsulationRValueForExteriorWalls(openstudio.measure.ModelMeasure):
             total_area_m2 = item["total_area_m2"]
             total_gwp = gwp_summary[idx]["total_gwp_kg_co2_eq"]
             props = construction.additionalProperties()
-            props.setFeature("renovated_exterior_wall_area_m2", total_area_m2)
-            props.setFeature("renovated_embodied_carbon_kgCO2eq", total_gwp)
-            props.setFeature("insutlation_material_type", insulation_material_type)  
+            # Aligned per-construction keys
+            props.setFeature("wall_insulation_renovated_exterior_wall_area_m2", total_area_m2)
+            props.setFeature("wall_insulation_renovated_embodied_carbon_kgCO2eq", total_gwp)
+            props.setFeature("wall_insulation_material_type", insulation_material_type)
             if retrofit_materials_json is not None:
                 props.setFeature("wall_insulation_retrofit_materials_json", retrofit_materials_json)
             if rsmeans_materials_detail_json is not None:
@@ -951,10 +961,10 @@ class IncreaseInsulationRValueForExteriorWalls(openstudio.measure.ModelMeasure):
 
         # SimulationControl bucket: results and RSMeans detail JSON
         results.setFeature("wall_insulation_embodied_carbon_kgCO2eq", total_embodied_carbon)
+        results.setFeature("wall_insulation_labor_cost_$", total_labor_cost)
         results.setFeature("wall_insulation_material_cost_$", total_material_cost)
         results.setFeature("wall_insulation_overhead_profit_cost_$", total_overhead_profit_cost)
-        results.setFeature("wall_insulation_labor_cost_$", total_labor_cost)
-        results.setFeature("wall_insulation_total_cost_with_overhead_and_profit_$", total_material_cost + total_overhead_profit_cost)
+        results.setFeature("wall_insulation_total_cost_with_overhead_and_profit_$", total_material_cost + total_labor_cost + total_overhead_profit_cost)
         
         # Facility bucket: emission/cost factors
         factors.setFeature("wall_insulation_cost_source", cost_source)
