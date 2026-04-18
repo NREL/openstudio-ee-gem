@@ -161,7 +161,7 @@ def run_measure(model, args_overrides=None):
     # --- Custom costs (optional; set use_custom_costs=True to enable) ---
     set_arg("use_custom_costs", False)                     # False = use RSMeans API; True = use custom costs below
     set_arg("rsmeans_unit_costline_id", "")               # optional exact RSMeans line ID override
-    set_arg("custom_door_cost_per_unit", 3500.0)          # $/m² (e.g., material + labor for door)
+    set_arg("custom_door_cost_per_area", 3500.0)          # $/m² (e.g., material + labor for door)
     set_arg("custom_bottom_seal_cost", 45.50)             # $/m  (e.g., material + labor for bottom seal)
     set_arg("custom_top_side_seal_cost", 22.75)           # $/m  (e.g., material + labor for top/side seal)
 
@@ -307,12 +307,9 @@ def main():
     else:
         print("  No properties found on standard buckets.")
 
-    # Gather cost_factor_basis and cost_unit_basis for summary
+    # Gather cost metadata for summary
     cost_factor_basis = next(
         (v for lbl, k, v in ap_data if k == "door_enhancement_cost_factor_basis"), "not_found"
-    )
-    cost_unit_basis = next(
-        (v for lbl, k, v in ap_data if k == "door_enhancement_cost_unit_basis"), ""
     )
     cost_source = next(
         (v for lbl, k, v in ap_data if k == "door_enhancement_cost_source"), "not_found"
@@ -332,7 +329,6 @@ def main():
         "success": success,
         "cost_source": cost_source,
         "cost_factor_basis": cost_factor_basis,
-        "cost_unit_basis": cost_unit_basis,
         "step_values": step_values,
         "doors_in_model": len(doors),
         "additional_properties_count": len(ap_data),

@@ -32,7 +32,7 @@ This measure improves door performance in OpenStudio models by adding sealing pr
 | `door_density` | Double | 0.0 | Door density (kg/m³); 0.0 = use material default |
 | `door_thickness` | Double | 0.0 | Door thickness (m); 0.0 = use material default |
 | `use_custom_costs` | Boolean | false | Skip RSMeans; use custom cost inputs |
-| `custom_door_cost_per_unit` | Double | 0.0 | Custom door cost ($/m²) |
+| `custom_door_cost_per_area` | Double | 0.0 | Custom door cost ($/m²) |
 | `custom_bottom_seal_cost` | Double | 0.0 | Custom bottom seal cost ($/m) |
 | `custom_top_side_seal_cost` | Double | 0.0 | Custom top/side seal cost ($/m) |
 | `rsmeans_unit_costline_id` | String | "" | Optional exact RSMeans unit cost line ID |
