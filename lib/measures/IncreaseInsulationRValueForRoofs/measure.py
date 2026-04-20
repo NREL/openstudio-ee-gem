@@ -982,28 +982,35 @@ class IncreaseInsulationRValueForRoofs(openstudio.measure.ModelMeasure):
         if density_values:
             # Remove outliers from density values
             density_values = self.remove_outliers_iqr(density_values)
-            
-            # Apply statistic based on user selection
-            epd_density = 0.0
-            if len(density_values) == 1:
-                epd_density = density_values[0]
-            elif gwp_statistic == "minimum":
-                epd_density = float(np.min(density_values))
-            elif gwp_statistic == "maximum":
-                epd_density = float(np.max(density_values))
-            elif gwp_statistic == "mean":
-                epd_density = float(np.mean(density_values))
-            elif gwp_statistic == "median":
-                epd_density = float(np.median(density_values))
-            else:
-                epd_density = float(np.mean(density_values))  # default to mean
-            
-            # Use EPD density only when density came from hardcoded defaults.
-            # Preserve user-provided and RSMeans-extracted density values.
-            if (not user_specified_density) and (selected_density_source == "hardcoded_default"):
-                selected_rho = epd_density
+
+            if density_values:
+                # Apply statistic based on user selection
+                epd_density = 0.0
+                if len(density_values) == 1:
+                    epd_density = density_values[0]
+                elif gwp_statistic == "minimum":
+                    epd_density = float(np.min(density_values))
+                elif gwp_statistic == "maximum":
+                    epd_density = float(np.max(density_values))
+                elif gwp_statistic == "mean":
+                    epd_density = float(np.mean(density_values))
+                elif gwp_statistic == "median":
+                    epd_density = float(np.median(density_values))
+                else:
+                    epd_density = float(np.mean(density_values))  # default to mean
+
+                # Use EPD density only when density came from hardcoded defaults.
+                # Preserve user-provided and RSMeans-extracted density values.
+                if (not user_specified_density) and (selected_density_source == "hardcoded_default"):
+                    selected_rho = epd_density
+                else:
+                    selected_rho = insulation_material_density
             else:
                 selected_rho = insulation_material_density
+                runner.registerInfo(
+                    f"Density values became empty after outlier filtering. "
+                    f"Using {'user-specified' if user_specified_density else 'default'} density: {selected_rho:.2f} kg/m³"
+                )
         else:
             selected_rho = insulation_material_density
             runner.registerInfo(f"No density data found in EPDs. Using {'user-specified' if user_specified_density else 'default'} density: {selected_rho:.2f} kg/m³")
@@ -1023,7 +1030,9 @@ class IncreaseInsulationRValueForRoofs(openstudio.measure.ModelMeasure):
 
             for functional_unit, gwp_list in gwp_values.items():
                 gwp = 0.0
-                if len(gwp_list) == 1:
+                if not gwp_list:
+                    gwp = 0.0
+                elif len(gwp_list) == 1:
                     gwp = gwp_list[0]
                 elif gwp_statistic == "minimum":
                     gwp = float(np.min(gwp_list))
@@ -1033,6 +1042,8 @@ class IncreaseInsulationRValueForRoofs(openstudio.measure.ModelMeasure):
                     gwp = float(np.mean(gwp_list))
                 elif gwp_statistic == "median":
                     gwp = float(np.median(gwp_list))
+                if not np.isfinite(gwp):
+                    gwp = 0.0
                 # store gwp value to modified_constructions dictionary
                 item[functional_unit] = gwp
 
@@ -1042,8 +1053,10 @@ class IncreaseInsulationRValueForRoofs(openstudio.measure.ModelMeasure):
 
             # Calculate total GWP for this added insulation
             total_gwp = item['gwp_per_m3'] * added_volume_m3 * mult
-            if total_gwp == 0.0 and item["gwp_per_kg"] != 0.0:
+            if (not np.isfinite(total_gwp) or total_gwp == 0.0) and item["gwp_per_kg"] != 0.0:
                 total_gwp = item["gwp_per_kg"] * added_mass_kg * mult
+            if not np.isfinite(total_gwp):
+                total_gwp = 0.0
 
             gwp_summary_rows.append({
                 "construction_name": item["construction"].nameString(),

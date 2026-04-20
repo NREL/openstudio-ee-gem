@@ -1319,7 +1319,7 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
             total_cost_with_overhead_profit=total_cost_with_overhead_profit,
             cost_factor_basis=cost_factor_basis,
             overhead_profit_percent=overhead_profit_percent,
-            custom_labor_cost_multiplier=labor_cost_multiplier,
+            labor_cost_multiplier=labor_cost_multiplier,
             rsmeans_material_features=rsmeans_material_features,
         )
 

@@ -19,61 +19,34 @@
     "overhead_profit_percent": 10.0
   },
   "cost_response": {
-    "cost_source": "rsmeans_api",
-    "cost_factor_basis": "cost_per_volume",
-    "cost_unit_basis": "CF",
-    "selection_mode": "exact_id",
+    "cost_source": "none",
+    "cost_factor_basis": "not_calculated",
+    "cost_unit_basis": null,
     "material_cost": {
-      "value": 13468.61995215097,
+      "value": null,
       "unit": "$"
     },
     "overhead_profit_cost": {
-      "value": 1346.861995215097,
+      "value": null,
       "unit": "$"
     },
     "total_cost_with_overhead_and_profit": {
-      "value": 14815.481947366066,
+      "value": 0.0,
       "unit": "$"
     },
-    "materials": [
-      {
-        "name": "Pure Wool Batts roof insulation (Typical IEAD Roof R-15.87)",
-        "description": "Added insulation to reach R-30.0; actual added thickness 4.23 in",
-        "match_type": "exact_id_match",
-        "rsmeans_id": "072116201320",
-        "catalog": "bc-mf",
-        "search_term_used": "rsmeans_id:072116201320",
-        "quantity": {
-          "value": 4999.999999999987,
-          "unit": "SF"
-        },
-        "unit_cost": {
-          "value": 7.645714285714285,
-          "unit": "$/ SF"
-        },
-        "total_cost": {
-          "value": 13468.61995215097,
-          "unit": "$"
-        }
-      }
-    ]
+    "materials": []
   },
-  "additional_properties_count": 28,
+  "additional_properties_count": 12,
   "additional_properties_sample": [
     {
       "construction": "Facility",
       "property": "roof_insulation_cost_factor_basis",
-      "value": "cost_per_volume"
+      "value": "not_calculated"
     },
     {
       "construction": "Facility",
       "property": "roof_insulation_cost_source",
-      "value": "rsmeans_api"
-    },
-    {
-      "construction": "Facility",
-      "property": "roof_insulation_cost_unit_basis",
-      "value": "CF"
+      "value": "none"
     },
     {
       "construction": "Facility",
@@ -87,28 +60,33 @@
     },
     {
       "construction": "Facility",
-      "property": "roof_insulation_rsmeans_requested_costline_id",
-      "value": "072116201320"
+      "property": "roof_insulation_overhead_profit_percent",
+      "value": 10.0
     },
     {
-      "construction": "Facility",
-      "property": "roof_insulation_rsmeans_selection_mode",
-      "value": "exact_id"
+      "construction": "SimulationControl",
+      "property": "roof_insulation_cost_factor_basis",
+      "value": "not_calculated"
     },
     {
-      "construction": "Facility",
-      "property": "roof_insulation_total_additional_installed_cost_$",
-      "value": 13468.61995215097
+      "construction": "SimulationControl",
+      "property": "roof_insulation_embodied_carbon_kgCO2eq",
+      "value": 3287.0245362304145
     },
     {
-      "construction": "Facility",
-      "property": "roof_insulation_total_additional_labour_cost_$",
+      "construction": "SimulationControl",
+      "property": "roof_insulation_labor_cost_$",
       "value": 0.0
     },
     {
-      "construction": "Facility",
-      "property": "roof_insulation_total_additional_material_cost_$",
-      "value": 13468.61995215097
+      "construction": "SimulationControl",
+      "property": "roof_insulation_material_cost_$",
+      "value": 0.0
+    },
+    {
+      "construction": "SimulationControl",
+      "property": "roof_insulation_overhead_profit_cost_$",
+      "value": 0.0
     }
   ]
 }

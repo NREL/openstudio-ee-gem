@@ -1,0 +1,49 @@
+{
+  "measure": "IncreaseInsulationRValueForExteriorWalls",
+  "success": true,
+  "step_values": {
+    "r_value": 20.0,
+    "analysis_period": 30,
+    "gwp_statistic": "median",
+    "api_key": "cibHn9cLcZAD7MyzBTLamVfSNyQHKD",
+    "insulation_material_type": "Pure Wool Batts",
+    "insulation_material_lifetime": 30,
+    "insulation_thermal_conductivity": 0.0,
+    "insulation_material_density": 0.0,
+    "calculate_costs": true,
+    "use_custom_costs": true,
+    "custom_cost_per_cf": 15.0,
+    "labor_cost_multiplier": 1.5,
+    "overhead_profit_percent": 10.0,
+    "use_exact_costline_id": false,
+    "exact_costline_id": ""
+  },
+  "additional_properties_count": 5,
+  "additional_properties_sample": [
+    {
+      "construction": "Facility",
+      "property": "wall_insulation_cost_factor_basis",
+      "value": "custom_cost_per_volume"
+    },
+    {
+      "construction": "Facility",
+      "property": "wall_insulation_cost_source",
+      "value": "custom_input"
+    },
+    {
+      "construction": "Facility",
+      "property": "wall_insulation_material_gwp_per_kg",
+      "value": 2.637913741
+    },
+    {
+      "construction": "Facility",
+      "property": "wall_insulation_material_gwp_per_m2",
+      "value": 2.63
+    },
+    {
+      "construction": "Facility",
+      "property": "wall_insulation_overhead_profit_percent",
+      "value": 10.0
+    }
+  ]
+}

@@ -1,6 +1,6 @@
 
 OS:Version,
-  {50bb953e-f4fb-466a-8f19-271db3fba6da}, !- Handle
+  {ed3af4ea-22ef-4116-82da-3b2feacf4159}, !- Handle
   3.11.0;                                 !- Version Identifier
 
 OS:Site,
@@ -37,7 +37,7 @@ OS:Building,
   ,                                       !- North Axis {deg}
   ,                                       !- Nominal Floor to Floor Height {m}
   {2d524ba6-938a-4aa5-a16a-60a01316a593}, !- Space Type Name
-  {aab6e65d-ab63-4bf9-a8d1-7d3975a9984f}, !- Default Construction Set Name
+  {0725dc3c-7da8-4934-847a-7465ede97dbd}, !- Default Construction Set Name
   ,                                       !- Default Schedule Set Name
   ,                                       !- Standards Number of Stories
   ,                                       !- Standards Number of Above Ground Stories
@@ -323,7 +323,7 @@ OS:Surface,
   {337e37ed-651c-4887-8ead-1641166dfb30}, !- Handle
   West Perimeter Space - Story ground Wall 4, !- Name
   Wall,                                   !- Surface Type
-  ,                                       !- Construction Name
+  {2637ee20-99d0-4b2b-ae31-f5576418fb26}, !- Construction Name
   {83c4e9ff-5637-4707-a2aa-6eb7c30581ba}, !- Space Name
   Outdoors,                               !- Outside Boundary Condition
   ,                                       !- Outside Boundary Condition Object
@@ -391,7 +391,7 @@ OS:Surface,
   {323c4460-98ac-4fd9-9f59-ba67420e3ceb}, !- Handle
   West Perimeter Space - Story ground RoofCeiling 1, !- Name
   RoofCeiling,                            !- Surface Type
-  {a362b311-6fc6-4b5a-ad69-10e1451dda72}, !- Construction Name
+  ,                                       !- Construction Name
   {83c4e9ff-5637-4707-a2aa-6eb7c30581ba}, !- Space Name
   Outdoors,                               !- Outside Boundary Condition
   ,                                       !- Outside Boundary Condition Object
@@ -543,7 +543,7 @@ OS:Surface,
   {2fde56da-7946-40ac-82f0-576fe0ebb258}, !- Handle
   North Perimeter Space - Story ground Wall 4, !- Name
   Wall,                                   !- Surface Type
-  ,                                       !- Construction Name
+  {2637ee20-99d0-4b2b-ae31-f5576418fb26}, !- Construction Name
   {7ab78f69-8037-4dad-8269-74931fa47239}, !- Space Name
   Outdoors,                               !- Outside Boundary Condition
   ,                                       !- Outside Boundary Condition Object
@@ -611,7 +611,7 @@ OS:Surface,
   {31e00403-4a5d-4c06-9bcd-9a02873b0c9e}, !- Handle
   North Perimeter Space - Story ground RoofCeiling 1, !- Name
   RoofCeiling,                            !- Surface Type
-  {a362b311-6fc6-4b5a-ad69-10e1451dda72}, !- Construction Name
+  ,                                       !- Construction Name
   {7ab78f69-8037-4dad-8269-74931fa47239}, !- Space Name
   Outdoors,                               !- Outside Boundary Condition
   ,                                       !- Outside Boundary Condition Object
@@ -763,7 +763,7 @@ OS:Surface,
   {d1defcfd-3123-4069-93d9-cd19bda7279e}, !- Handle
   East Perimeter Space - Story ground Wall 1, !- Name
   Wall,                                   !- Surface Type
-  ,                                       !- Construction Name
+  {2637ee20-99d0-4b2b-ae31-f5576418fb26}, !- Construction Name
   {a3ca5320-0a29-4714-8f5f-7d98e8d34c42}, !- Space Name
   Outdoors,                               !- Outside Boundary Condition
   ,                                       !- Outside Boundary Condition Object
@@ -831,7 +831,7 @@ OS:Surface,
   {bf9e1a0c-d38c-4c8c-af59-f356483bca16}, !- Handle
   East Perimeter Space - Story ground RoofCeiling 1, !- Name
   RoofCeiling,                            !- Surface Type
-  {a362b311-6fc6-4b5a-ad69-10e1451dda72}, !- Construction Name
+  ,                                       !- Construction Name
   {a3ca5320-0a29-4714-8f5f-7d98e8d34c42}, !- Space Name
   Outdoors,                               !- Outside Boundary Condition
   ,                                       !- Outside Boundary Condition Object
@@ -983,7 +983,7 @@ OS:Surface,
   {ecf463c7-565d-411e-8c43-c88ff0bb828a}, !- Handle
   South Perimeter Space - Story ground Wall 2, !- Name
   Wall,                                   !- Surface Type
-  ,                                       !- Construction Name
+  {2637ee20-99d0-4b2b-ae31-f5576418fb26}, !- Construction Name
   {8424b6ea-bb22-4725-a328-ecb7c3005a8f}, !- Space Name
   Outdoors,                               !- Outside Boundary Condition
   ,                                       !- Outside Boundary Condition Object
@@ -1051,7 +1051,7 @@ OS:Surface,
   {3bcbc92b-a916-491d-a1b3-a0c6938c632a}, !- Handle
   South Perimeter Space - Story ground RoofCeiling 1, !- Name
   RoofCeiling,                            !- Surface Type
-  {a362b311-6fc6-4b5a-ad69-10e1451dda72}, !- Construction Name
+  ,                                       !- Construction Name
   {8424b6ea-bb22-4725-a328-ecb7c3005a8f}, !- Space Name
   Outdoors,                               !- Outside Boundary Condition
   ,                                       !- Outside Boundary Condition Object
@@ -1271,7 +1271,7 @@ OS:Surface,
   {45276f21-8c1b-4d65-a66d-17abf7ad3e6e}, !- Handle
   Core Space - Story ground RoofCeiling 1, !- Name
   RoofCeiling,                            !- Surface Type
-  {a362b311-6fc6-4b5a-ad69-10e1451dda72}, !- Construction Name
+  ,                                       !- Construction Name
   {5e2c7e8f-383a-43c9-b38f-be5bbf0c0a1a}, !- Space Name
   Outdoors,                               !- Outside Boundary Condition
   ,                                       !- Outside Boundary Condition Object
@@ -6419,18 +6419,18 @@ OS:AdditionalProperties,
   hvac_system_type,                       !- Feature Name 1
   String,                                 !- Feature Data Type 1
   PSZ-AC with gas coil,                   !- Feature Value 1
-  roof_insulation_measure_name,           !- Feature Name 2
+  wall_insulation_measure_name,           !- Feature Name 2
   String,                                 !- Feature Data Type 2
-  Increase Insulation R-Value for Roofs,  !- Feature Value 2
-  roof_insulation_analysis_period_years,  !- Feature Name 3
+  Increase Insulation R-Value for Exterior Walls, !- Feature Value 2
+  wall_insulation_analysis_period_years,  !- Feature Name 3
   Integer,                                !- Feature Data Type 3
   30,                                     !- Feature Value 3
-  roof_insulation_gwp_statistic,          !- Feature Name 4
+  wall_insulation_gwp_statistic,          !- Feature Name 4
   String,                                 !- Feature Data Type 4
   median,                                 !- Feature Value 4
-  roof_insulation_renovated_construction_names, !- Feature Name 5
+  wall_insulation_renovated_construction_names, !- Feature Name 5
   String,                                 !- Feature Data Type 5
-  Typical IEAD Roof R-15.87 adj roof insulation; !- Feature Value 5
+  Typical Insulated Exterior Mass Wall R-8.13 1; !- Feature Value 5
 
 OS:Schedule:Ruleset,
   {f0379cce-4811-4302-8a9b-b4865f135cac}, !- Handle
@@ -7141,131 +7141,131 @@ OS:Curve:Cubic,
   1;                                      !- Maximum Value of x
 
 OS:StandardsInformation:Construction,
-  {d667bb1f-449f-4cd3-aef7-6948817bac59}, !- Handle
+  {7d329f78-8d8b-41cb-9f7e-97ccb425d2e0}, !- Handle
   {ef95a29b-5658-4d45-bf9e-b8bd43a75011}; !- Construction Name
 
 OS:StandardsInformation:Construction,
-  {860f9e8d-38d8-4176-af35-5a658a775813}, !- Handle
+  {63341a7f-cafd-4b52-a8ea-86497f6d2b75}, !- Handle
   {62d8ba66-b619-4e18-b044-15a4692ffeab}; !- Construction Name
 
 OS:StandardsInformation:Construction,
-  {60189ae8-7f1f-4522-9d34-f7273f763f95}, !- Handle
+  {50ce9582-9377-411e-8125-373d1acc7dfa}, !- Handle
   {821355a3-3be5-4c0d-bd2a-701c5802f12a}; !- Construction Name
 
 OS:StandardsInformation:Material,
-  {cfc2faf0-8333-4d8f-af06-c8091a4f16e0}, !- Handle
+  {4423c50c-4d89-469a-a711-4e75996af9f2}, !- Handle
   {7fdf1418-da70-4f17-80d7-dae036b345a9}; !- Material Name
 
 OS:StandardsInformation:Material,
-  {fc7541ff-217a-49ff-ba15-2ebc33ac095d}, !- Handle
+  {6f6aa81a-2c6d-4630-8f52-f4e8ba887c91}, !- Handle
   {e9cd93cd-3735-4388-a49b-aded5ff9c7b4}; !- Material Name
 
 OS:StandardsInformation:Material,
-  {a1f5f4fd-ef29-4657-99ff-0476b4089e1d}, !- Handle
+  {c2544d6b-da40-4a1c-a991-ee2677486b80}, !- Handle
   {834e83b3-fa94-4aca-b3ba-452d3727c24b}; !- Material Name
 
 OS:StandardsInformation:Material,
-  {1a7693ec-ea5d-44b5-aad4-2fc99fbdfc77}, !- Handle
+  {678155f5-0cb1-41f2-9d5a-1672d18177d1}, !- Handle
   {873875b6-4903-4fc2-af93-ad8d747cc28d}; !- Material Name
 
 OS:StandardsInformation:Material,
-  {ec04d162-1392-4920-b384-488a922d0533}, !- Handle
+  {dec56fea-3ac9-4ba6-bac7-cf73113f57f9}, !- Handle
   {0df260ed-f9ae-42ec-a707-aa5b3e6b24a2}; !- Material Name
 
 OS:StandardsInformation:Material,
-  {4459109c-df81-41a7-9815-9b938bef9388}, !- Handle
+  {2e36e6d8-ed50-49c1-8848-66390cad96f6}, !- Handle
   {b7e70aec-48d8-40e8-9042-cde8c45eec78}; !- Material Name
 
 OS:StandardsInformation:Material,
-  {632c3dbf-76f4-4ac7-99f5-105452348daf}, !- Handle
+  {80fc9ac8-e378-43d7-895c-ed7faa78df5c}, !- Handle
   {0b854bf9-23fe-4fb5-852a-dbb94ecc6978}; !- Material Name
 
 OS:StandardsInformation:Material,
-  {74dd9094-f267-44d1-810d-2bda4d08ac7c}, !- Handle
+  {1f0f528c-3d23-47f0-949b-047e4ae0c813}, !- Handle
   {72454668-6251-46de-93d0-6b6855fe3e3f}; !- Material Name
 
 OS:StandardsInformation:Material,
-  {8e00144c-a7ab-47f6-9fd9-16feaaeb4e46}, !- Handle
+  {2bd06872-24c7-4dcb-a6ae-4cc557d8537f}, !- Handle
   {e619f9c1-0ee7-4aae-94ae-8b0d51f3ec62}; !- Material Name
 
 OS:StandardsInformation:Material,
-  {eeb42a72-c565-4d70-ac39-30c671ccdd89}, !- Handle
+  {44c65a0b-2aa1-4992-a96d-df7b61af6fe4}, !- Handle
   {8287a39d-10ab-4ef2-a655-e7c5e4656897}; !- Material Name
 
 OS:StandardsInformation:Material,
-  {4e5e621e-8133-4060-a478-8f70066411e9}, !- Handle
+  {2fed6b20-59a5-45fa-bffd-b18ba29309f1}, !- Handle
   {bcb971f9-2731-4e6b-b275-830e4c6caa30}; !- Material Name
 
 OS:StandardsInformation:Material,
-  {dcf226c3-e438-47e7-99b8-d50c4ebaf072}, !- Handle
+  {1802e120-9880-4615-b9fd-cba1919f9743}, !- Handle
   {d14b12f0-2ed3-47ac-8c0d-65d3e7df8d34}; !- Material Name
 
 OS:StandardsInformation:Material,
-  {64fc55ac-dd29-41fb-a604-610a28c2bb12}, !- Handle
+  {e29c4847-8c1c-46d8-96fd-5a063df679db}, !- Handle
   {3732bf2e-f237-4dd4-baa3-0c5c6afaf122}; !- Material Name
 
 OS:StandardsInformation:Material,
-  {0f55fabd-b6d7-4dc5-b2df-1d810d9f5e4f}, !- Handle
+  {2aa71632-7647-4776-9b0f-86fc4ad70d67}, !- Handle
   {12f95f94-fa46-4f1f-a4da-8c27d695ed6a}; !- Material Name
 
 OS:StandardsInformation:Material,
-  {a421ce21-bf03-431a-9ad7-2f627741c4f6}, !- Handle
+  {9cf9c6e4-baff-4eb3-9e9d-c6ccef3ddb01}, !- Handle
   {4adaeba1-50e3-4c48-bd6a-b9dda655aa2c}; !- Material Name
 
 OS:StandardsInformation:Material,
-  {c4d9ed30-d02b-49b7-95f7-9a44be9ec5bd}, !- Handle
+  {ccc4c107-20f8-48da-8717-85162a9f5d58}, !- Handle
   {9475b6cb-c819-4c4b-a9f9-8183c96d129f}; !- Material Name
 
 OS:StandardsInformation:Material,
-  {6471727f-834e-45e0-b455-5a1b09190d8a}, !- Handle
+  {12c0e453-744e-4b17-bafc-6e931fccd919}, !- Handle
   {67d7ba8f-3d89-4498-bd98-936142cabf95}; !- Material Name
 
 OS:StandardsInformation:Material,
-  {e1af2bc2-ebdc-4e2d-8f64-108497f6e99c}, !- Handle
+  {b63e72d3-5b22-4478-943a-a1ab3a74f996}, !- Handle
   {7f0891c8-112c-4767-ab55-1d87649d5f23}; !- Material Name
 
 OS:StandardsInformation:Material,
-  {be8634fe-bb04-4c05-9ce5-230ed85a570d}, !- Handle
+  {9cf1b66d-a881-4957-a4e3-67ad45334327}, !- Handle
   {2d5c7b17-acaa-48b5-be37-70655ab34a47}; !- Material Name
 
 OS:StandardsInformation:Material,
-  {659e9db1-2379-43a7-b32f-c3ef1d5185d0}, !- Handle
+  {4497e163-256f-4435-a651-e9dccbd843ab}, !- Handle
   {af16923f-d051-418f-92b0-c9b416572c94}; !- Material Name
 
 OS:StandardsInformation:Material,
-  {183cb646-c699-4306-add5-4b5aaa96427f}, !- Handle
+  {a95f682b-b2e5-4789-bba5-9cca60dbba66}, !- Handle
   {15e9044a-bbe6-4b92-893d-da9a3c7866c6}; !- Material Name
 
 OS:StandardsInformation:Material,
-  {dabe783e-6800-4480-82ee-0c6291ab2a0a}, !- Handle
+  {ef14f47c-485a-44d1-86d9-0e540b1563e2}, !- Handle
   {44de7485-248e-4050-89c0-deef1bde542f}; !- Material Name
 
 OS:StandardsInformation:Material,
-  {2e26fdba-ecc0-418b-821c-f6d95ee660ce}, !- Handle
+  {ac23dfd8-1d09-4508-8cfb-b614b182c728}, !- Handle
   {da15f817-1dd7-4616-a0fe-8210773c1d2f}; !- Material Name
 
 OS:StandardsInformation:Material,
-  {d6a7ed86-31e1-40fe-af04-355e387e64ea}, !- Handle
+  {91cb4d8b-6f41-4baa-9df4-c100898e460a}, !- Handle
   {23534e8c-f649-43ff-8a2b-780f31868169}; !- Material Name
 
 OS:StandardsInformation:Construction,
-  {7ee76986-bf44-4556-8884-d39c871c1df6}, !- Handle
+  {057eeaa2-201e-402c-8138-2f64e874007e}, !- Handle
   {a5c3b9a4-9880-404d-9a27-fa10fb558a4c}; !- Construction Name
 
 OS:StandardsInformation:Material,
-  {65f5df75-d779-4210-aad2-f11cb5813a51}, !- Handle
+  {9c5b47e3-eb83-44cc-b12a-60a2f5542755}, !- Handle
   {03981049-983e-4fe5-a0c4-2c6134f8a138}; !- Material Name
 
 OS:StandardsInformation:Material,
-  {39b35df3-c2c4-4641-b2c5-c0ff0d847dfd}, !- Handle
+  {f1fbd42c-e4de-4612-89f5-47c3bb235017}, !- Handle
   {0cf3de34-5104-4954-9e10-4236f1cfd6b5}; !- Material Name
 
 OS:StandardsInformation:Construction,
-  {99f07f4d-78b0-40e2-8f23-173172d87368}, !- Handle
+  {605573f3-95fd-4ead-85ca-56492c3b436e}, !- Handle
   {2dc48553-2cc9-4d42-8392-6684462920ec}; !- Construction Name
 
 OS:WeatherFile,
-  {56a79216-d3a8-4e23-ba71-f142317eb2f9}, !- Handle
+  {2d4fb249-288b-442e-b2a2-4728621ea1c9}, !- Handle
   Denver-Aurora-Buckley AFB,              !- City
   CO,                                     !- State Province Region
   USA,                                    !- Country
@@ -7281,142 +7281,110 @@ OS:WeatherFile,
   Sunday;                                 !- Start Day of Week
 
 OS:Construction,
-  {a362b311-6fc6-4b5a-ad69-10e1451dda72}, !- Handle
-  Typical IEAD Roof R-15.87 adj roof insulation, !- Name
+  {2637ee20-99d0-4b2b-ae31-f5576418fb26}, !- Handle
+  Typical Insulated Exterior Mass Wall R-8.13 1, !- Name
   ,                                       !- Surface Rendering Name
-  {72454668-6251-46de-93d0-6b6855fe3e3f}, !- Layer 1
-  {52e692aa-4a76-45f7-847c-94bf1f241040}, !- Layer 2
-  {8287a39d-10ab-4ef2-a655-e7c5e4656897}; !- Layer 3
+  {873875b6-4903-4fc2-af93-ad8d747cc28d}, !- Layer 1
+  {0df260ed-f9ae-42ec-a707-aa5b3e6b24a2}, !- Layer 2
+  {b7e70aec-48d8-40e8-9042-cde8c45eec78}, !- Layer 3
+  {5aa121eb-0c0a-47ef-8069-8c32785f11ec}, !- Layer 4
+  {0b854bf9-23fe-4fb5-852a-dbb94ecc6978}; !- Layer 5
 
 OS:StandardsInformation:Construction,
-  {6df22b32-8a5f-41ce-a234-e54baa961445}, !- Handle
-  {a362b311-6fc6-4b5a-ad69-10e1451dda72}, !- Construction Name
-  ExteriorRoof,                           !- Intended Surface Type
-  IEAD;                                   !- Standards Construction Type
+  {c38dfd7a-ec3f-4e6d-a087-8b03472054b1}, !- Handle
+  {2637ee20-99d0-4b2b-ae31-f5576418fb26}, !- Construction Name
+  ExteriorWall,                           !- Intended Surface Type
+  Mass;                                   !- Standards Construction Type
 
 OS:Material:NoMass,
-  {52e692aa-4a76-45f7-847c-94bf1f241040}, !- Handle
-  Typical Insulation R-14.76_R-value 30.0 (ft^2*h*R/Btu), !- Name
+  {5aa121eb-0c0a-47ef-8069-8c32785f11ec}, !- Handle
+  Pure Wool Batts_Added,                  !- Name
   Smooth,                                 !- Roughness
-  5.28330551046918,                       !- Thermal Resistance {m2-K/W}
-  0.9,                                    !- Thermal Absorptance
-  0.7,                                    !- Solar Absorptance
-  0.7;                                    !- Visible Absorptance
-
-OS:StandardsInformation:Material,
-  {a2d75f26-9410-4f94-bd9d-2f43145d747f}, !- Handle
-  {52e692aa-4a76-45f7-847c-94bf1f241040}; !- Material Name
-
-OS:DefaultConstructionSet,
-  {aab6e65d-ab63-4bf9-a8d1-7d3975a9984f}, !- Handle
-  90.1-2004 - Office - ASHRAE 169-2013-5B adj roof insulation, !- Name
-  {360bde55-c7a0-4955-8d07-12de9ec743b1}, !- Default Exterior Surface Constructions Name
-  {2d004610-bf7d-4e70-88dd-06f90080fc75}, !- Default Interior Surface Constructions Name
-  {2508ebc9-5fea-4b19-a538-abb8c410fea0}, !- Default Ground Contact Surface Constructions Name
-  {65e4fb96-c51c-404c-9285-4e455d0361a0}, !- Default Exterior SubSurface Constructions Name
-  {a84e0d74-0683-4f80-ba00-532356b689d6}, !- Default Interior SubSurface Constructions Name
-  {b9978ea9-0b7b-49b5-b9e0-b9e51ab45713}, !- Interior Partition Construction Name
-  ,                                       !- Space Shading Construction Name
-  ,                                       !- Building Shading Construction Name
-  ,                                       !- Site Shading Construction Name
-  ;                                       !- Adiabatic Surface Construction Name
-
-OS:DefaultSurfaceConstructions,
-  {360bde55-c7a0-4955-8d07-12de9ec743b1}, !- Handle
-  Default Surface Constructions 1 adj roof insulation, !- Name
-  {b898be60-183c-41ca-8d10-7d2d36a2049e}, !- Floor Construction Name
-  {571d5e7f-3517-4d08-a9af-f1575fa38b55}, !- Wall Construction Name
-  {a362b311-6fc6-4b5a-ad69-10e1451dda72}; !- Roof Ceiling Construction Name
+  2.5110496680262;                        !- Thermal Resistance {m2-K/W}
 
 OS:AdditionalProperties,
-  {3f410634-67db-4ec2-94f0-96d43cecb25d}, !- Handle
+  {2c9717fd-9ce1-4ce7-9124-de8cda448ba0}, !- Handle
   {272d9a4d-ec25-4bbb-b083-822aef42268c}, !- Object Name
-  roof_insulation_renovated_area_m2,      !- Feature Name 1
+  wall_insulation_renovated_area_m2,      !- Feature Name 1
   Double,                                 !- Feature Data Type 1
-  464.5151999999988,                      !- Feature Value 1
-  roof_insulation_added_volume_m3,        !- Feature Name 2
+  268.18797576267207,                     !- Feature Value 1
+  wall_insulation_added_volume_m3,        !- Feature Name 2
   Double,                                 !- Feature Data Type 2
-  49.882696467433973,                     !- Feature Value 2
-  roof_insulation_target_r_value_ip,      !- Feature Name 3
+  26.937333100299025,                     !- Feature Value 2
+  wall_insulation_target_r_value_ip,      !- Feature Name 3
   Double,                                 !- Feature Data Type 3
-  30,                                     !- Feature Value 3
-  roof_insulation_material_type,          !- Feature Name 4
+  20,                                     !- Feature Value 3
+  wall_insulation_material_type,          !- Feature Name 4
   String,                                 !- Feature Data Type 4
   Pure Wool Batts,                        !- Feature Value 4
-  roof_insulation_modified_constructions_count, !- Feature Name 5
+  wall_insulation_modified_constructions_count, !- Feature Name 5
   Integer,                                !- Feature Data Type 5
   1;                                      !- Feature Value 5
 
 OS:AdditionalProperties,
-  {41c55243-5a45-40c3-a453-43dea934f51a}, !- Handle
+  {147c828f-4738-40af-9225-e032b13a9a7f}, !- Handle
   {fabc41a8-018f-4730-a73a-b7ae2e5ab091}, !- Object Name
-  roof_insulation_cost_source,            !- Feature Name 1
+  wall_insulation_cost_source,            !- Feature Name 1
   String,                                 !- Feature Data Type 1
-  none,                                   !- Feature Value 1
-  roof_insulation_overhead_profit_percent, !- Feature Name 2
+  custom_input,                           !- Feature Value 1
+  wall_insulation_overhead_profit_percent, !- Feature Name 2
   Double,                                 !- Feature Data Type 2
   10,                                     !- Feature Value 2
-  roof_insulation_cost_factor_basis,      !- Feature Name 3
+  wall_insulation_cost_factor_basis,      !- Feature Name 3
   String,                                 !- Feature Data Type 3
-  not_calculated,                         !- Feature Value 3
-  roof_insulation_material_gwp_per_kg,    !- Feature Name 4
+  custom_cost_per_volume,                 !- Feature Value 3
+  wall_insulation_material_gwp_per_kg,    !- Feature Name 4
   Double,                                 !- Feature Data Type 4
   2.6379137410000002,                     !- Feature Value 4
-  roof_insulation_material_gwp_per_m2,    !- Feature Name 5
+  wall_insulation_material_gwp_per_m2,    !- Feature Name 5
   Double,                                 !- Feature Data Type 5
   2.6299999999999999;                     !- Feature Value 5
 
 OS:AdditionalProperties,
-  {8132a814-0e01-4c75-a346-570f7af19dc6}, !- Handle
+  {28608b1b-a52c-4aa2-91a1-c0d2211ec30c}, !- Handle
   {c0b51378-f9a5-4264-951f-3845cfc487fd}, !- Object Name
-  roof_insulation_embodied_carbon_kgCO2eq, !- Feature Name 1
+  wall_insulation_embodied_carbon_kgCO2eq, !- Feature Name 1
   Double,                                 !- Feature Data Type 1
-  3287.0245362304145,                     !- Feature Value 1
-  roof_insulation_material_cost_$,        !- Feature Name 2
+  1775.0378610566997,                     !- Feature Value 1
+  wall_insulation_labor_cost_$,           !- Feature Name 2
   Double,                                 !- Feature Data Type 2
-  0,                                      !- Feature Value 2
-  roof_insulation_labor_cost_$,           !- Feature Name 3
+  7134.6220560208722,                     !- Feature Value 2
+  wall_insulation_material_cost_$,        !- Feature Name 3
   Double,                                 !- Feature Data Type 3
-  0,                                      !- Feature Value 3
-  roof_insulation_overhead_profit_cost_$, !- Feature Name 4
+  14269.244112041744,                     !- Feature Value 3
+  wall_insulation_overhead_profit_cost_$, !- Feature Name 4
   Double,                                 !- Feature Data Type 4
   0,                                      !- Feature Value 4
-  roof_insulation_total_cost_with_overhead_and_profit_$, !- Feature Name 5
+  wall_insulation_total_cost_with_overhead_and_profit_$, !- Feature Name 5
   Double,                                 !- Feature Data Type 5
-  0,                                      !- Feature Value 5
-  roof_insulation_cost_factor_basis,      !- Feature Name 6
-  String,                                 !- Feature Data Type 6
-  not_calculated,                         !- Feature Value 6
-  roof_insulation_rsmeans_requested_costline_id, !- Feature Name 7
-  String,                                 !- Feature Data Type 7
-  072116201320;                           !- Feature Value 7
+  21403.866168062617;                     !- Feature Value 5
 
 OS:AdditionalProperties,
-  {dedf1e97-db5c-42c5-834f-790833518747}, !- Handle
+  {84376a55-d9c2-4d91-b5a0-8c362a2c04de}, !- Handle
   {1caa628a-3341-4dc5-9562-7eeadd446702}, !- Object Name
-  roof_insulation_material_lifetime_years, !- Feature Name 1
+  wall_insulation_material_lifetime_years, !- Feature Name 1
   Integer,                                !- Feature Data Type 1
   30,                                     !- Feature Value 1
-  roof_insulation_material_density_kg_per_m3, !- Feature Name 2
+  wall_insulation_material_density_kg_per_m3, !- Feature Name 2
   Double,                                 !- Feature Data Type 2
   24.98,                                  !- Feature Value 2
-  roof_insulation_material_thermal_conductivity_W_per_mK, !- Feature Name 3
+  wall_insulation_material_thermal_conductivity_W_per_mK, !- Feature Name 3
   Double,                                 !- Feature Data Type 3
   0.040000000000000001;                   !- Feature Value 3
 
 OS:AdditionalProperties,
-  {a556178e-2261-44d9-bc6b-9c0f06c416af}, !- Handle
-  {a362b311-6fc6-4b5a-ad69-10e1451dda72}, !- Object Name
-  roof_insulation_renovated_exterior_roof_area_m2, !- Feature Name 1
+  {ac0b901d-51dd-4c47-abda-52e12d6f7667}, !- Handle
+  {2637ee20-99d0-4b2b-ae31-f5576418fb26}, !- Object Name
+  wall_insulation_renovated_exterior_wall_area_m2, !- Feature Name 1
   Double,                                 !- Feature Data Type 1
-  464.5151999999988,                      !- Feature Value 1
-  roof_insulation_renovated_embodied_carbon_kgCO2eq, !- Feature Name 2
+  268.18797576267207,                     !- Feature Value 1
+  wall_insulation_renovated_embodied_carbon_kgCO2eq, !- Feature Name 2
   Double,                                 !- Feature Data Type 2
-  3287.0245362304145,                     !- Feature Value 2
-  roof_insulation_material_type,          !- Feature Name 3
+  1775.0378610566997,                     !- Feature Value 2
+  wall_insulation_material_type,          !- Feature Name 3
   String,                                 !- Feature Data Type 3
   Pure Wool Batts,                        !- Feature Value 3
-  roof_insulation_retrofit_materials_json, !- Feature Name 4
+  wall_insulation_retrofit_materials_json, !- Feature Name 4
   String,                                 !- Feature Data Type 4
-  [{"name": "Pure Wool Batts roof insulation (Typical IEAD Roof R-15.87)"&#44 "description": "Added insulation to reach R-30.0&#59 actual added thickness 4.23 in"&#44 "quantity": 4999.999999999987&#44 "unit": "SF"&#44 "quantity_volume": 1761.590800916607&#44 "unit_volume": "CF"&#44 "rsmeans_thickness_ft": 0.3523181601833223&#44 "costing_mode": "volume_from_area"&#44 "quantity_si": 464.5151999999988&#44 "unit_si": "m2"&#44 "division_code": "07"&#44 "rsmeans_id": "072116201320"}]; !- Feature Value 4
+  [{"name": "Pure Wool Batts insulation"&#44 "description": "Added insulation to reach R-20.0&#59 avg added thickness 3.95 in"&#44 "quantity": 2886.75134594812&#44 "unit": "SF"&#44 "quantity_volume": 951.282940802783&#44 "unit_volume": "CF"&#44 "rsmeans_thickness_ft": 0.32953408771388276&#44 "costing_mode": "volume_from_area"&#44 "quantity_si": 268.18797576267207&#44 "unit_si": "m2"&#44 "division_code": "07"}]; !- Feature Value 4
 

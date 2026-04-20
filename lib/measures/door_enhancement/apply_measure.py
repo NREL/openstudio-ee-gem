@@ -229,7 +229,7 @@ def main():
     print("=" * 80)
 
     # Paths
-    model_path = SCRIPT_DIR / "tests" / "DOE_small_office.osm"
+    model_path = SCRIPT_DIR / "tests" / "EnvelopeAndLoadTestModel_01.osm"
     output_dir = SCRIPT_DIR / "tests" / "output"
     output_model_path = output_dir / "DOE_small_office_door_enhanced.osm"
     results_json_path = output_dir / "apply_measure_results.json"
