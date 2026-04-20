@@ -7618,7 +7618,7 @@ OS:AdditionalProperties,
   window_enhancement_total_additional_material_cost_$, !- Feature Name 5
   Double,                                 !- Feature Data Type 5
   57976.882713688479,                     !- Feature Value 5
-  window_enhancement_total_additional_labour_cost_$, !- Feature Name 6
+  window_enhancement_total_additional_labor_cost_$, !- Feature Name 6
   Double,                                 !- Feature Data Type 6
   0,                                      !- Feature Value 6
   window_enhancement_total_additional_overhead_profit_cost_$, !- Feature Name 7
@@ -7661,4 +7661,5 @@ OS:AdditionalProperties,
   window_weatherstrip_length_per_unit_m,  !- Feature Name 10
   Double,                                 !- Feature Data Type 10
   5.1816000000000004;                     !- Feature Value 10
+
 

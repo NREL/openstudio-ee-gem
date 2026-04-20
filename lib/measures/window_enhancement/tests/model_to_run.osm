@@ -9744,7 +9744,7 @@ OS:AdditionalProperties,
   window_enhancement_total_additional_overhead_profit_cost_$, !- Feature Name 3
   Double,                                 !- Feature Data Type 3
   0,                                      !- Feature Value 3
-  window_enhancement_total_additional_labour_cost_$, !- Feature Name 4
+  window_enhancement_total_additional_labor_cost_$, !- Feature Name 4
   Double,                                 !- Feature Data Type 4
   0,                                      !- Feature Value 4
   window_enhancement_total_embodied_carbon_kgCO2eq, !- Feature Name 5
@@ -9778,4 +9778,5 @@ OS:AdditionalProperties,
   glass_replacement_gap_thickness_m,      !- Feature Name 8
   Double,                                 !- Feature Data Type 8
   0.012999999999999999;                   !- Feature Value 8
+
 

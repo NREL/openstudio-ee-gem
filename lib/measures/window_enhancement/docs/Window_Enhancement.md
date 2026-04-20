@@ -215,7 +215,7 @@ Results stored as additional properties include:
    - `window_enhancement_overhead_profit_percent`
 - SimulationControl/results bucket:
    - `window_enhancement_total_additional_material_cost_$`
-   - `window_enhancement_total_additional_labour_cost_$`
+   - `window_enhancement_total_additional_labor_cost_$`
    - `window_enhancement_total_additional_overhead_profit_cost_$`
    - `window_enhancement_total_additional_cost_$`
    - `window_enhancement_cost_source`
@@ -289,3 +289,4 @@ Results stored as additional properties include:
    - Preserve original exterior appearance
    - Calculate embodied carbon for additional glass and air gaps
    - Improve thermal resistance without visible modification
+

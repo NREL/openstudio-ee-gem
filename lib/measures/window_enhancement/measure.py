@@ -4,14 +4,12 @@
 # *******************************************************************************
 
 
-import json
 import importlib.util
 import re
 from pathlib import Path
 import openstudio
 import typing
 import numpy as np
-import pprint as pp
 from resources.EC3_lookup import *
 
 
@@ -720,6 +718,8 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
 
     def run(self, model: openstudio.model.Model, runner: openstudio.measure.OSRunner,
             user_arguments: openstudio.measure.OSArgumentMap):
+        super().run(model, runner, user_arguments)
+
         # Phase 1: Validate arguments and load user inputs.
         if not runner.validateUserArguments(self.arguments(model), user_arguments):
             return False
@@ -760,12 +760,16 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
         overhead_profit_percent = runner.getDoubleArgumentValue("overhead_profit_percent", user_arguments)
         api_key = runner.getStringArgumentValue("api_key", user_arguments)
         user_num_panes = runner.getIntegerArgumentValue("user_num_panes", user_arguments)
-        glass_pane_thickness = runner.getDoubleArgumentValue("glass_pane_thickness", user_arguments)
-        gap_thickness = runner.getDoubleArgumentValue("gap_thickness", user_arguments)
-        if glass_pane_thickness == 0.0:
+        glass_pane_thickness_input = runner.getDoubleArgumentValue("glass_pane_thickness", user_arguments)
+        gap_thickness_input = runner.getDoubleArgumentValue("gap_thickness", user_arguments)
+        use_default_glass_thickness = (glass_pane_thickness_input == 0.0)
+        use_default_gap_thickness = (gap_thickness_input == 0.0)
+        glass_pane_thickness = glass_pane_thickness_input
+        gap_thickness = gap_thickness_input
+        if use_default_glass_thickness:
             glass_pane_thickness = 0.003
             runner.registerInfo("Argument 'glass_pane_thickness' set to 0.0, using default value 0.003 m.")
-        if gap_thickness == 0.0:
+        if use_default_gap_thickness:
             gap_thickness = 0.013
             runner.registerInfo("Argument 'gap_thickness' set to 0.0, using default value 0.013 m.")
         glass_solar_transmittance = runner.getDoubleArgumentValue(
@@ -782,8 +786,10 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
             "glass_front_visible_reflectance", user_arguments)
         glass_back_visible_reflectance = runner.getDoubleArgumentValue(
             "glass_back_visible_reflectance", user_arguments)
-        length_per_unit = runner.getDoubleArgumentValue("length_per_unit", user_arguments)
-        if length_per_unit == 0.0:
+        length_per_unit_input = runner.getDoubleArgumentValue("length_per_unit", user_arguments)
+        use_default_length_per_unit = (length_per_unit_input == 0.0)
+        length_per_unit = length_per_unit_input
+        if use_default_length_per_unit:
             length_per_unit = 5.1816
             runner.registerInfo("Argument 'length_per_unit' set to 0.0, using default value 5.1816 m.")
         num_horizontal_dividers = runner.getIntegerArgumentValue("num_horizontal_dividers", user_arguments)
@@ -858,14 +864,10 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
                                                      glass_back_visible_reflectance):
             return False
 
-        # Effective defaults that may be overridden by RSMeans description parsing.
+        # Effective values may be overridden by RSMeans only when user selected auto/default (0.0).
         effective_glass_pane_thickness = float(glass_pane_thickness)
         effective_gap_thickness = float(gap_thickness)
         effective_length_per_unit = float(length_per_unit)
-
-        default_glass_pane_thickness = 0.003
-        default_gap_thickness = 0.013
-        default_length_per_unit = 5.1816
 
         # Early RSMeans lookup to infer preferred defaults from matched descriptions.
         if calculate_costs and not use_custom_costs:
@@ -922,20 +924,11 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
                         weatherstrip_option,
                     )
 
-                    if (
-                        abs(effective_glass_pane_thickness - default_glass_pane_thickness) < 1e-9
-                        and "glass_thickness_m" in inferred
-                    ):
+                    if use_default_glass_thickness and "glass_thickness_m" in inferred:
                         effective_glass_pane_thickness = inferred["glass_thickness_m"]
-                    if (
-                        abs(effective_gap_thickness - default_gap_thickness) < 1e-9
-                        and "gap_thickness_m" in inferred
-                    ):
+                    if use_default_gap_thickness and "gap_thickness_m" in inferred:
                         effective_gap_thickness = inferred["gap_thickness_m"]
-                    if (
-                        abs(effective_length_per_unit - default_length_per_unit) < 1e-9
-                        and "length_per_unit_m" in inferred
-                    ):
+                    if use_default_length_per_unit and "length_per_unit_m" in inferred:
                         effective_length_per_unit = inferred["length_per_unit_m"]
 
         runner.registerInfo(
@@ -1205,7 +1198,7 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
         # Calculate total weatherstrip length (only operable windows)
         total_weatherstrip_length_m = 0.0
         for name in subsurface_dict.keys():
-            if subsurface_dict[name]["subsurface_object"].subSurfaceType() in ["OperableWindow", "GlassDoor"]:
+            if subsurface_dict[name]["subsurface_object"].subSurfaceType() == "OperableWindow":
                 # Weatherstrip applied to sliding edge (minimum of length and width)
                 total_weatherstrip_length_m += subsurface_dict[name]["weatherstrip"]["length_m"]
         
@@ -1224,490 +1217,124 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
         # Store construction material properties in SizingParameters's additional properties
         sizingpara = model.getSizingParameters()
         mtrl_prop = sizingpara.additionalProperties()
-        
-        # Store basic measure parameters
-        basic_input.setFeature("analysis_period_years", analysis_period)
-        basic_input.setFeature("gwp_statistic", gwp_statistic)
-        basic_input.setFeature("measure_name", "Window Enhancement")
-
-        # Store construction material lifetimes
-        mtrl_prop.setFeature("window_glass_lifetime_years", glass_lifetime)
-        mtrl_prop.setFeature("window_frame_lifetime_years", wf_lifetime)
-        mtrl_prop.setFeature("window_caulking_lifetime_years", caulking_lifetime)
-        mtrl_prop.setFeature("window_film_lifetime_years", film_lifetime)
-        mtrl_prop.setFeature("window_weatherstrip_lifetime_years", weatherstrip_lifetime)
-        
-        # Store infiltration reduction
-        reno_detail.setFeature("window_infiltration_reduction_percent", space_infiltration_reduction_percent)
-        # Store total window weatherstrip length
-        reno_detail.setFeature("window_weatherstrip_length_m", total_weatherstrip_length_m)
-        # Store total window area renovated
-        reno_detail.setFeature("window_total_renovated_area_m2", total_window_area_m2)
-        # Store material geometry and density info for window renovation.
-        # Use existing variables only; write "NA" where no direct variable exists.
-        reno_detail.setFeature("window_glass_volume_m3", "NA")
-        reno_detail.setFeature("window_glass_area_m2", total_glazing_area_m2)
-        reno_detail.setFeature("window_glass_length_m", "NA")
-        reno_detail.setFeature("window_glass_thickness_m", glass_pane_thickness)
-        reno_detail.setFeature("window_glass_density_kg_per_m3", "NA")
-
-        reno_detail.setFeature("window_frame_volume_m3", "NA")
-        reno_detail.setFeature("window_frame_area_m2", total_frame_area_m2)
-        reno_detail.setFeature("window_frame_length_m", "NA")
-        reno_detail.setFeature("window_frame_thickness_m", "NA")
-        reno_detail.setFeature("window_frame_density_kg_per_m3", "NA")
-
-        reno_detail.setFeature("window_caulking_volume_m3", total_caulking_volume_m3)
-        reno_detail.setFeature("window_caulking_area_m2", "NA")
-        reno_detail.setFeature("window_caulking_length_m", total_perimeter_m)
-        reno_detail.setFeature("window_caulking_thickness_m", caulking_thickness)
-        reno_detail.setFeature("window_caulking_density_kg_per_m3", "NA")
-
-        reno_detail.setFeature("window_film_volume_m3", "NA")
-        reno_detail.setFeature("window_film_area_m2", "NA")
-        reno_detail.setFeature("window_film_length_m", "NA")
-        reno_detail.setFeature("window_film_thickness_m", "NA")
-        reno_detail.setFeature("window_film_density_kg_per_m3", "NA")
-
-        reno_detail.setFeature("window_weatherstrip_volume_m3", "NA")
-        reno_detail.setFeature("window_weatherstrip_area_m2", "NA")
-        reno_detail.setFeature("window_weatherstrip_length_m_total", total_weatherstrip_length_m)
-        reno_detail.setFeature("window_weatherstrip_thickness_m", "NA")
-        reno_detail.setFeature("window_weatherstrip_density_kg_per_m3", "NA")
-
-        reno_detail.setFeature("window_secondary_glazing_volume_m3", "NA")
-        reno_detail.setFeature("window_secondary_glazing_area_m2", "NA")
-        reno_detail.setFeature("window_secondary_glazing_length_m", "NA")
-        reno_detail.setFeature("window_secondary_glazing_thickness_m", glass_pane_thickness)
-        reno_detail.setFeature("window_secondary_glazing_density_kg_per_m3", "NA")
-
-        reno_detail.setFeature("window_glazing_gap_thickness_m", gap_thickness)
-        # 
-        # Store renovation options selected
-        reno_detail.setFeature("window_frame_option", wf_option)
-        reno_detail.setFeature("window_caulking_option", caulking_option)
-        reno_detail.setFeature("window_film_option", film_option)
-        reno_detail.setFeature("window_weatherstrip_option", weatherstrip_option)
-        reno_detail.setFeature("window_glass_option", glass_option)
-        reno_detail.setFeature("window_secondary_glazing_option", secondary_glazing_option)
-        
-        # Store glass properties if glass replacement was selected
-        if glass_option != "none" and user_num_panes > 0:
-            mtrl_prop.setFeature("glass_replacement_num_panes", user_num_panes)
-            mtrl_prop.setFeature("glass_replacement_pane_thickness_m", effective_glass_pane_thickness)
-            mtrl_prop.setFeature("glass_replacement_gap_thickness_m", effective_gap_thickness)
-        
-        # Store caulking properties if caulking was selected
-        if caulking_option != "none":
-            mtrl_prop.setFeature("window_caulking_thickness_m", caulking_thickness)
-        
-        # Store weatherstrip properties if weatherstrip was selected
-        if weatherstrip_option != "none":
-            mtrl_prop.setFeature("window_weatherstrip_length_per_unit_m", effective_length_per_unit)
-        
-        # Store aggregate results (including standardized fields for all measures)
-        results.setFeature("window_enhancement_total_additional_embodied_carbon_kg", total_embodied_carbon)
-        results.setFeature("window_enhancement_total_embodied_carbon_kgCO2eq", total_embodied_carbon)  # Keep for backwards compatibility
-        reno_detail.setFeature("total_renovated_window_area_m2", total_window_area_m2)
-        reno_detail.setFeature("total_renovated_glazing_area_m2", total_glazing_area_m2)
-        reno_detail.setFeature("total_renovated_frame_area_m2", total_frame_area_m2)
-        reno_detail.setFeature("total_renovated_perimeter_m", total_perimeter_m)
-        reno_detail.setFeature("total_renovated_caulking_volume_m3", total_caulking_volume_m3)
-        reno_detail.setFeature("total_renovated_weatherstrip_length_m", total_weatherstrip_length_m)
-        # reno_detail.setFeature("total_renovated_windows_processed_count", len(sub_surfaces_to_change))
-        # reno_detail.setFeature("total_renovated_windows_with_glass_upgrade_count", windows_with_glass_upgrade)
-        # reno_detail.setFeature("total_renovated_windows_with_frame_replacement_count", windows_with_frame_replacement)
-        # reno_detail.setFeature("total_renovated_windows_with_film_count", windows_with_film)
-        # reno_detail.setFeature("total_renovated_windows_with_caulking_count", windows_with_caulking)
-        # reno_detail.setFeature("total_renovated_windows_with_weatherstrip_count", windows_with_weatherstrip)
-        # reno_detail.setFeature("total_renovated_windows_with_secondary_glazing_count", windows_with_secondary_glazing)
-        
+        (
+            basic_input_features,
+            reno_detail_features,
+            mtrl_prop_features,
+            factors_features,
+            results_features,
+        ) = self._initialize_additional_property_feature_maps(
+            analysis_period=analysis_period,
+            gwp_statistic=gwp_statistic,
+            space_infiltration_reduction_percent=space_infiltration_reduction_percent,
+            total_weatherstrip_length_m=total_weatherstrip_length_m,
+            total_window_area_m2=total_window_area_m2,
+            total_glazing_area_m2=total_glazing_area_m2,
+            total_frame_area_m2=total_frame_area_m2,
+            total_perimeter_m=total_perimeter_m,
+            total_caulking_volume_m3=total_caulking_volume_m3,
+            glass_pane_thickness=glass_pane_thickness,
+            gap_thickness=gap_thickness,
+            wf_option=wf_option,
+            caulking_option=caulking_option,
+            film_option=film_option,
+            weatherstrip_option=weatherstrip_option,
+            glass_option=glass_option,
+            secondary_glazing_option=secondary_glazing_option,
+            glass_lifetime=glass_lifetime,
+            wf_lifetime=wf_lifetime,
+            caulking_lifetime=caulking_lifetime,
+            film_lifetime=film_lifetime,
+            weatherstrip_lifetime=weatherstrip_lifetime,
+            total_embodied_carbon=total_embodied_carbon,
+        )
+        reno_detail_features["window_enhancement_windows_processed_count"] = len(sub_surfaces_to_change)
+   
         # Phase 2: Build normalized material payload for RSMeans lookup.
-        materials = []
-
-        def _m2_to_sf(value_m2: float) -> float:
-            return value_m2 * 10.7639
-
-        def _m3_to_cy(value_m3: float) -> float:
-            return value_m3 * 1.30795
-
-        def _m_to_lf(value_m: float) -> float:
-            return value_m * 3.28084
-
-        def _m_to_ft(value_m: float) -> float:
-            return value_m * 3.28084
-
-        if glass_option != "none" and user_num_panes > 0 and total_glazing_area_m2 > 0:
-            pane_count = max(1, int(user_num_panes))
-            glass_thickness_ft = _m_to_ft(float(effective_glass_pane_thickness)) if effective_glass_pane_thickness > 0 else 0.0
-            glazing_qty_sf = _m2_to_sf(total_glazing_area_m2)
-            glazing_material = {
-                "name": "window glazing",
-                "description": (
-                    f"{user_num_panes}-pane glass replacement; "
-                    f"single-pane thickness {effective_glass_pane_thickness*1000:.1f} mm; "
-                    f"gap {effective_gap_thickness*1000:.1f} mm"
-                ),
-                "quantity": glazing_qty_sf,
-                "unit": "SF",
-                "quantity_volume": float(glazing_qty_sf * glass_thickness_ft * pane_count),
-                "unit_volume": "CF",
-                "rsmeans_thickness_ft": float(glass_thickness_ft),
-                "costing_mode": "volume_from_area",
-                "quantity_si": total_glazing_area_m2,
-                "unit_si": "m2",
-                "division_code": "08",
-            }
-            if use_specific_rsmeans_line_item_ids and rsmeans_id_glazing:
-                glazing_material["rsmeans_id"] = rsmeans_id_glazing
-            materials.append(glazing_material)
-
-        if wf_option != "none" and total_frame_area_m2 > 0:
-            frame_material = {
-                "name": "window frame",
-                "description": f"{wf_option} frame replacement",
-                "quantity": _m2_to_sf(total_frame_area_m2),
-                "unit": "SF",
-                "quantity_si": total_frame_area_m2,
-                "unit_si": "m2",
-                "division_code": "08",
-            }
-            if use_specific_rsmeans_line_item_ids and rsmeans_id_frame:
-                frame_material["rsmeans_id"] = rsmeans_id_frame
-            materials.append(frame_material)
-
-        if film_option != "none" and total_glazing_area_m2 > 0:
-            film_material = {
-                "name": "glazing film",
-                "description": film_option,
-                "quantity": _m2_to_sf(total_glazing_area_m2),
-                "unit": "SF",
-                "quantity_si": total_glazing_area_m2,
-                "unit_si": "m2",
-                "division_code": "08",
-            }
-            if use_specific_rsmeans_line_item_ids and rsmeans_id_film:
-                film_material["rsmeans_id"] = rsmeans_id_film
-            materials.append(film_material)
-
-        if caulking_option != "none" and total_caulking_volume_m3 > 0:
-            caulking_material = {
-                "name": "sealant",
-                "description": f"{caulking_option} caulking",
-                "quantity": _m3_to_cy(total_caulking_volume_m3),
-                "unit": "CY",
-                "quantity_si": total_caulking_volume_m3,
-                "unit_si": "m3",
-                "division_code": "07",
-            }
-            if use_specific_rsmeans_line_item_ids and rsmeans_id_caulking:
-                caulking_material["rsmeans_id"] = rsmeans_id_caulking
-            materials.append(caulking_material)
-
-        if weatherstrip_option != "none" and total_weatherstrip_length_m > 0:
-            weatherstrip_material = {
-                "name": "weatherstrip",
-                "description": weatherstrip_option,
-                "quantity": _m_to_lf(total_weatherstrip_length_m),
-                "unit": "LF",
-                "quantity_si": total_weatherstrip_length_m,
-                "unit_si": "m",
-                "division_code": "08",
-            }
-            if use_specific_rsmeans_line_item_ids and rsmeans_id_weatherstrip:
-                weatherstrip_material["rsmeans_id"] = rsmeans_id_weatherstrip
-            materials.append(weatherstrip_material)
-
-        if secondary_glazing_option != "none" and total_glazing_area_m2 > 0:
-            secondary_glazing_qty_sf = _m2_to_sf(total_glazing_area_m2)
-            secondary_glass_thickness_ft = _m_to_ft(float(effective_glass_pane_thickness)) if effective_glass_pane_thickness > 0 else 0.0
-            secondary_glazing_material = {
-                "name": "secondary glazing",
-                "description": (
-                    "secondary glazing installation; "
-                    f"single-pane thickness {effective_glass_pane_thickness*1000:.1f} mm; "
-                    f"gap {effective_gap_thickness*1000:.1f} mm"
-                ),
-                "quantity": secondary_glazing_qty_sf,
-                "unit": "SF",
-                "quantity_volume": float(secondary_glazing_qty_sf * secondary_glass_thickness_ft),
-                "unit_volume": "CF",
-                "rsmeans_thickness_ft": float(secondary_glass_thickness_ft),
-                "costing_mode": "volume_from_area",
-                "quantity_si": total_glazing_area_m2,
-                "unit_si": "m2",
-                "division_code": "08",
-            }
-            if use_specific_rsmeans_line_item_ids and rsmeans_id_secondary_glazing:
-                secondary_glazing_material["rsmeans_id"] = rsmeans_id_secondary_glazing
-            materials.append(secondary_glazing_material)
-
-        if materials:
-            try:
-                results.setFeature("window_enhancement_retrofit_materials_json", json.dumps(materials))
-            except Exception:
-                runner.registerWarning("Could not serialize retrofit materials to JSON for AdditionalProperties.")
+        materials = self._build_rsmeans_material_payload(
+            total_glazing_area_m2=total_glazing_area_m2,
+            total_frame_area_m2=total_frame_area_m2,
+            total_caulking_volume_m3=total_caulking_volume_m3,
+            total_weatherstrip_length_m=total_weatherstrip_length_m,
+            glass_option=glass_option,
+            wf_option=wf_option,
+            caulking_option=caulking_option,
+            film_option=film_option,
+            weatherstrip_option=weatherstrip_option,
+            secondary_glazing_option=secondary_glazing_option,
+            user_num_panes=user_num_panes,
+            effective_glass_pane_thickness=effective_glass_pane_thickness,
+            effective_gap_thickness=effective_gap_thickness,
+            use_specific_rsmeans_line_item_ids=use_specific_rsmeans_line_item_ids,
+            rsmeans_id_glazing=rsmeans_id_glazing,
+            rsmeans_id_frame=rsmeans_id_frame,
+            rsmeans_id_caulking=rsmeans_id_caulking,
+            rsmeans_id_film=rsmeans_id_film,
+            rsmeans_id_weatherstrip=rsmeans_id_weatherstrip,
+            rsmeans_id_secondary_glazing=rsmeans_id_secondary_glazing,
+        )
 
         # Phase 3: Calculate capital cost using RSMeans or custom fallback inputs.
-        total_material_cost = 0.0
-        total_overhead_profit_cost = 0.0
-        total_labour_cost = 0.0
-        cost_source = "none"  # Track where costs came from
-        cost_factor_basis = "not_calculated"
-        cost_unit_basis = "not_calculated"
-        rsmeans_lookup = None
-        rsmeans_matches = []
-        rsmeans_search_results = {}
-        rsmeans_summary = {}
+        cost_metrics = self._calculate_cost_metrics(
+            runner=runner,
+            calculate_costs=calculate_costs,
+            materials=materials,
+            use_custom_costs=use_custom_costs,
+            overhead_profit_percent=overhead_profit_percent,
+            labor_cost_multiplier=labor_cost_multiplier,
+            total_glazing_area_m2=total_glazing_area_m2,
+            total_frame_area_m2=total_frame_area_m2,
+            total_caulking_volume_m3=total_caulking_volume_m3,
+            total_weatherstrip_length_m=total_weatherstrip_length_m,
+            glass_cost_per_cf=glass_cost_per_cf,
+            frame_cost_per_sf=frame_cost_per_sf,
+            caulking_cost_per_cy=caulking_cost_per_cy,
+            film_cost_per_sf=film_cost_per_sf,
+            weatherstrip_cost_per_lf=weatherstrip_cost_per_lf,
+            glass_option=glass_option,
+            wf_option=wf_option,
+            caulking_option=caulking_option,
+            film_option=film_option,
+            weatherstrip_option=weatherstrip_option,
+            user_num_panes=user_num_panes,
+            effective_glass_pane_thickness=effective_glass_pane_thickness,
+            secondary_glazing_option=secondary_glazing_option,
+            subsurface_dict=subsurface_dict,
+            effective_gap_thickness=effective_gap_thickness,
+        )
+        total_material_cost = cost_metrics["total_material_cost"]
+        total_labor_cost = cost_metrics["total_labor_cost"]
+        total_overhead_profit_cost = cost_metrics["total_overhead_profit_cost"]
+        total_cost_with_overhead_profit = cost_metrics["total_cost_with_overhead_profit"]
+        cost_factor_basis = cost_metrics["cost_factor_basis"]
+        rsmeans_material_features = cost_metrics["rsmeans_material_features"]
 
-        if calculate_costs and materials:
-            if use_custom_costs:
-                # Custom cost mode: skip RSMeans, use user-provided values directly
-                runner.registerInfo("\n" + "=" * 80)
-                runner.registerInfo("USING CUSTOM USER-PROVIDED COSTS (RSMeans API SKIPPED)")
-                runner.registerInfo("=" * 80)
-                
-                # Calculate costs from user-provided unit rates
-                total_material_cost = self.calculate_costs_from_user_rates(
-                    runner, total_glazing_area_m2, total_frame_area_m2, total_caulking_volume_m3,
-                    total_weatherstrip_length_m, glass_cost_per_cf, frame_cost_per_sf,
-                    caulking_cost_per_cy, film_cost_per_sf, weatherstrip_cost_per_lf,
-                    glass_option, wf_option, caulking_option, film_option, weatherstrip_option,
-                    user_num_panes, effective_glass_pane_thickness, secondary_glazing_option
-                )
-                total_labour_cost = total_material_cost * (labor_cost_multiplier - 1.0)
-                cost_source = "custom_input"
-                cost_factor_basis = "custom_user_inputs"
-                cost_unit_basis = "CF, SF, CY, LF"
-                
-                runner.registerInfo(f"✓ Custom costs calculated: ${total_material_cost:,.2f} (material) + ${total_labour_cost:,.2f} (labor)")
-            else:
-                # RSMeans API mode: try API first, fallback to user costs if API fails
-                runner.registerInfo("\n" + "=" * 80)
-                runner.registerInfo("ATTEMPTING RSMeans API LOOKUP FOR CAPITAL COSTS")
-                runner.registerInfo("=" * 80)
-                
-                rsmeans_lookup = self.pull_rsmeans_cost_from_api(
-                    runner,
-                    materials,
-                    use_custom_costs=False,
-                    overhead_profit_percent=overhead_profit_percent,
-                )
-                
-                if rsmeans_lookup and rsmeans_lookup.get("status") == "ok":
-                    # RSMeans lookup successful
-                    summary = rsmeans_lookup.get("summary", {})
-                    total_material_cost = float(summary.get("total_cost_with_overhead_profit", 0.0))
-                    total_labour_cost = 0.0  # Labor included in RSMeans cost
-                    cost_source = "rsmeans_api"
-                    cost_factor_basis = "rsmeans_api"
-                    rsmeans_summary = summary
-                    
-                    runner.registerInfo(f"✓ RSMeans API successful:")
-                    runner.registerInfo(f"  Materials found: {summary.get('materials_count', 0)}")
-                    runner.registerInfo(f"  Total material cost: ${summary.get('total_material_cost', 0):,.2f}")
-                    runner.registerInfo(f"  Overhead + Profit: ${summary.get('total_overhead_profit_cost', 0):,.2f}")
-                    runner.registerInfo(f"  Total cost with O&P: ${total_material_cost:,.2f}")
-                    materials_results = rsmeans_lookup.get("results", {}).get("materials", [])
-                    rsmeans_matches = materials_results
-                    rsmeans_search_results = {
-                        "search_log": rsmeans_lookup.get("results", {}).get("search_log", []),
-                        "errors": rsmeans_lookup.get("results", {}).get("errors", []),
-                        "catalogs_searched": rsmeans_lookup.get("results", {}).get("catalogs_searched", []),
-                    }
-                    unit_basis_values = sorted({
-                        str(mat.get("unit_cost_basis") or mat.get("unit") or "").strip()
-                        for mat in materials_results
-                        if str(mat.get("unit_cost_basis") or mat.get("unit") or "").strip()
-                    })
-                    if unit_basis_values:
-                        cost_unit_basis = ", ".join(unit_basis_values)
-                    else:
-                        cost_unit_basis = "unknown"
-                    if materials_results:
-                        for mat in materials_results:
-                            mat_name = str(mat.get("name", "")).strip().lower()
-                            matched_rsmeans_id = mat.get("rsmeans_id", "")
-                            matched_rsmeans_description = mat.get("rsmeans_description") or mat.get("description", "")
+        self._update_cost_and_rsmeans_feature_maps(
+            results_features=results_features,
+            factors_features=factors_features,
+            mtrl_prop_features=mtrl_prop_features,
+            total_material_cost=total_material_cost,
+            total_labor_cost=total_labor_cost,
+            total_overhead_profit_cost=total_overhead_profit_cost,
+            total_cost_with_overhead_profit=total_cost_with_overhead_profit,
+            cost_factor_basis=cost_factor_basis,
+            overhead_profit_percent=overhead_profit_percent,
+            custom_labor_cost_multiplier=labor_cost_multiplier,
+            rsmeans_material_features=rsmeans_material_features,
+        )
 
-                            feature_prefix = None
-                            if "glazing film" in mat_name:
-                                feature_prefix = "window_film"
-                            elif "window glazing" in mat_name or mat_name == "glazing":
-                                feature_prefix = "window_glass"
-                            elif "window frame" in mat_name:
-                                feature_prefix = "window_frame"
-                            elif "weatherstrip" in mat_name:
-                                feature_prefix = "window_weatherstrip"
-                            elif "secondary glazing" in mat_name:
-                                feature_prefix = "window_secondary_glazing"
-                            elif "sealant" in mat_name or "caulking" in mat_name:
-                                feature_prefix = "window_caulking"
+        self._update_gwp_and_construction_feature_maps(
+            subsurface_dict=subsurface_dict,
+            factors_features=factors_features,
+            basic_input_features=basic_input_features,
+        )
 
-                            if feature_prefix:
-                                if matched_rsmeans_id:
-                                    mtrl_prop.setFeature(f"{feature_prefix}_rsmeans_id", str(matched_rsmeans_id))
-                                if matched_rsmeans_description:
-                                    mtrl_prop.setFeature(f"{feature_prefix}_rsmeans_description", str(matched_rsmeans_description))
-                    if materials_results:
-                        runner.registerInfo("  RSMeans materials detail:")
-                        for mat in materials_results:
-                            mat_name = mat.get("name", "(unknown)")
-                            mat_qty = mat.get("quantity", 0.0)
-                            mat_unit = mat.get("unit", "")
-                            mat_unit_cost = mat.get("unit_cost", 0.0)
-                            mat_total_cost = mat.get("total_cost", 0.0)
-                            mat_basis = mat.get("unit_cost_basis", mat_unit)
-                            runner.registerInfo(
-                                f"    - {mat_name}: {mat_qty:.2f} {mat_unit}, "
-                                f"unit=${mat_unit_cost:.2f}/{mat_basis}, total=${mat_total_cost:,.2f}"
-                            )
-
-                    # Optionally update window constructions with high-confidence
-                    # glazing properties inferred from matched RSMeans lines.
-                    self.apply_rsmeans_glazing_updates_to_model(
-                        runner,
-                        subsurface_dict,
-                        rsmeans_lookup,
-                        effective_glass_pane_thickness,
-                        effective_gap_thickness,
-                    )
-                    
-                    try:
-                        results.setFeature("window_enhancement_rsmeans_results_json", json.dumps(rsmeans_lookup))
-                    except Exception:
-                        runner.registerWarning("Could not serialize RSMeans results to JSON for AdditionalProperties.")
-                else:
-                    # RSMeans lookup failed or returned $0 - use fallback costs
-                    runner.registerInfo("✗ RSMeans API lookup failed or returned no costs.")
-                    runner.registerInfo("\nFalling back to user-provided cost data...")
-                    
-                    # Calculate costs from user-provided unit rates
-                    total_material_cost = self.calculate_costs_from_user_rates(
-                        runner, total_glazing_area_m2, total_frame_area_m2, total_caulking_volume_m3,
-                        total_weatherstrip_length_m, glass_cost_per_cf, frame_cost_per_sf,
-                        caulking_cost_per_cy, film_cost_per_sf, weatherstrip_cost_per_lf,
-                        glass_option, wf_option, caulking_option, film_option, weatherstrip_option,
-                        user_num_panes, effective_glass_pane_thickness, secondary_glazing_option
-                    )
-                    total_labour_cost = total_material_cost * (labor_cost_multiplier - 1.0)
-                    cost_source = "user_provided_fallback" if total_material_cost > 0 else "none"
-                    if total_material_cost > 0:
-                        cost_factor_basis = "custom_user_inputs"
-                        cost_unit_basis = "CF, SF, CY, LF"
-                    
-                    if total_material_cost > 0:
-                        runner.registerInfo(f"✓ Using user-provided costs: ${total_material_cost:,.2f} materials + ${total_labour_cost:,.2f} labor")
-                    else:
-                        runner.registerInfo("✗ No user-provided costs specified. Skipping cost calculation.")
-                        runner.registerInfo("  Tip: Provide values for 'Glass Cost ($/CF)', 'Frame Cost ($/SF)', etc.")
-
-        if calculate_costs:
-            total_overhead_profit_cost = (total_material_cost + total_labour_cost) * (overhead_profit_percent / 100.0)
-
-        total_project_cost = total_material_cost + total_labour_cost + total_overhead_profit_cost
-
-        # Phase 4: Persist normalized cost and RSMeans diagnostics into measure buckets.
-        results.setFeature("window_enhancement_total_additional_material_cost_$", total_material_cost)
-        results.setFeature("window_enhancement_total_additional_labour_cost_$", total_labour_cost)
-        results.setFeature("window_enhancement_total_additional_overhead_profit_cost_$", total_overhead_profit_cost)
-        results.setFeature("window_enhancement_total_additional_cost_$", total_project_cost)
-        results.setFeature("window_enhancement_cost_calculation_source", cost_source)
-        results.setFeature("window_enhancement_cost_source", cost_source)
-        results.setFeature("window_enhancement_cost_factor_basis", cost_factor_basis)
-        results.setFeature("window_enhancement_cost_unit_basis", cost_unit_basis)
-        results.setFeature("window_enhancement_rsmeans_matches_json", json.dumps(rsmeans_matches))
-        results.setFeature("window_enhancement_rsmeans_search_results_json", json.dumps(rsmeans_search_results))
-        results.setFeature("window_enhancement_rsmeans_summary_json", json.dumps(rsmeans_summary))
-
-        factors.setFeature("window_enhancement_cost_source", cost_source)
-        factors.setFeature("window_enhancement_cost_factor_basis", cost_factor_basis)
-        factors.setFeature("window_enhancement_cost_unit_basis", cost_unit_basis)
-        factors.setFeature("window_enhancement_overhead_profit_percent", overhead_profit_percent)
-
-        # Calculate and store average GWP values per functional unit (aggregate from all processed windows)
-        # Collect GWP values from all windows
-        gwp_glass_per_m2_list = []
-        gwp_glass_per_m3_list = []
-        gwp_frame_per_m2_list = []
-        gwp_caulking_per_m3_list = []
-        gwp_film_per_m2_list = []
-        gwp_weatherstrip_per_m_list = []
-        gwp_second_glazing_per_m2_list = []
-        
-        for name in subsurface_dict.keys():
-            # Glass GWP per m2
-            if 'glass' in subsurface_dict[name] and 'gwp_per_m2' in subsurface_dict[name]['glass']:
-                gwp_m2 = subsurface_dict[name]['glass']['gwp_per_m2']
-                if gwp_m2 is not None and gwp_m2 > 0:
-
-                    gwp_glass_per_m2_list.append(gwp_m2)
-            
-            # Glass GWP per m3
-            if 'glass' in subsurface_dict[name] and 'gwp_per_m3' in subsurface_dict[name]['glass']:
-                gwp_m3 = subsurface_dict[name]['glass']['gwp_per_m3']
-                if gwp_m3 is not None and gwp_m3 > 0:
-                    gwp_glass_per_m3_list.append(gwp_m3)
-            
-            # Frame GWP per m2
-            if 'frame' in subsurface_dict[name] and 'gwp_per_m2' in subsurface_dict[name]['frame']:
-                gwp_m2 = subsurface_dict[name]['frame']['gwp_per_m2']
-                if gwp_m2 is not None and gwp_m2 > 0:
-                    gwp_frame_per_m2_list.append(gwp_m2)
-            
-            # Caulking GWP per m3
-            if 'caulking' in subsurface_dict[name] and 'gwp_per_m3' in subsurface_dict[name]['caulking']:
-                gwp_m3 = subsurface_dict[name]['caulking']['gwp_per_m3']
-                if gwp_m3 is not None and gwp_m3 > 0:
-                    gwp_caulking_per_m3_list.append(gwp_m3)
-            
-            # Film GWP per m2
-            if 'film' in subsurface_dict[name] and 'gwp_per_m2' in subsurface_dict[name]['film']:
-                gwp_m2 = subsurface_dict[name]['film']['gwp_per_m2']
-                if gwp_m2 is not None and gwp_m2 > 0:
-                    gwp_film_per_m2_list.append(gwp_m2)
-            
-            # Weatherstrip GWP per m
-            if 'weatherstrip' in subsurface_dict[name] and 'gwp_per_m' in subsurface_dict[name]['weatherstrip']:
-                gwp_m = subsurface_dict[name]['weatherstrip']['gwp_per_m']
-                if gwp_m is not None and gwp_m > 0:
-                    gwp_weatherstrip_per_m_list.append(gwp_m)
-            
-            # Second glazing GWP per m2
-            if 'second_glazing' in subsurface_dict[name] and 'gwp_per_m2' in subsurface_dict[name]['second_glazing']:
-                gwp_m2 = subsurface_dict[name]['second_glazing']['gwp_per_m2']
-                if gwp_m2 is not None and gwp_m2 > 0:
-                    gwp_second_glazing_per_m2_list.append(gwp_m2)
-        
-        # Store GWP factors
-        if gwp_glass_per_m2_list:
-            factors.setFeature("window_glass_gwp_per_m2_kgCO2eq", float(np.mean(gwp_glass_per_m2_list)))
-        if gwp_glass_per_m3_list:
-            factors.setFeature("window_glass_gwp_per_m3_kgCO2eq", float(np.mean(gwp_glass_per_m3_list)))
-        if gwp_frame_per_m2_list:
-            factors.setFeature("window_frame_gwp_per_m2_kgCO2eq", float(np.mean(gwp_frame_per_m2_list)))
-        if gwp_caulking_per_m3_list:
-            factors.setFeature("window_caulking_gwp_per_m3_kgCO2eq", float(np.mean(gwp_caulking_per_m3_list)))
-        if gwp_film_per_m2_list:
-            factors.setFeature("window_film_gwp_per_m2_kgCO2eq", float(np.mean(gwp_film_per_m2_list)))
-        if gwp_weatherstrip_per_m_list:
-            factors.setFeature("window_weatherstrip_gwp_per_m_kgCO2eq", float(np.mean(gwp_weatherstrip_per_m_list)))
-        if gwp_second_glazing_per_m2_list:
-            factors.setFeature("window_secondary_glazing_gwp_per_m2_kgCO2eq", float(np.mean(gwp_second_glazing_per_m2_list)))
-        
-        # Store construction names and handles for windows with glass replacement
-        construction_names = []
-        construction_handles = []
-        for name in subsurface_dict.keys():
-            if 'glass' in subsurface_dict[name] and 'object' in subsurface_dict[name]['glass']:
-                construction = subsurface_dict[name]['glass']['object']
-                if construction is not None:
-                    construction_names.append(construction.nameString())
-                    construction_handles.append(str(construction.handle()))
-        
-        if construction_names:
-            basic_input.setFeature("window_enhancement_construction_names", ', '.join(construction_names))
-            # basic_input.setFeature("window_enhancement_construction_handles", ', '.join(construction_handles))
+        # Centralized AdditionalProperties write-out for easier review and debugging.
+        self._write_features(basic_input, basic_input_features)
+        self._write_features(reno_detail, reno_detail_features)
+        self._write_features(mtrl_prop, mtrl_prop_features)
+        self._write_features(factors, factors_features)
+        self._write_features(results, results_features)
         
         runner.registerInfo(f"\n✓ Window enhancement summary stored in building additional properties")
         
@@ -1739,23 +1366,22 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
         else:
             runner.registerInfo(f"Renovations applied: None (infiltration reduction only)")
         runner.registerInfo(f"Total embodied carbon: {total_embodied_carbon:.2f} kg CO2 eq")
-        runner.registerInfo(f"Cost source: {cost_source}")
+        runner.registerInfo(f"Cost factor basis: {cost_factor_basis}")
         runner.registerInfo("=" * 80)
         
         if renovation_summary:
             runner.registerFinalCondition(
                 f"Window enhancement completed: {altered_instances} infiltration objects modified, "
                 f"{len(sub_surfaces_to_change)} windows processed with {', '.join(renovation_summary)}, "
-                f"Total EC: {total_embodied_carbon:.2f} kg CO2 eq, Cost source: {cost_source}"
+                f"Total EC: {total_embodied_carbon:.2f} kg CO2 eq, Cost factor basis: {cost_factor_basis}"
             )
         else:
             runner.registerFinalCondition(
                 f"Window enhancement completed: {altered_instances} infiltration objects modified, "
                 f"{len(sub_surfaces_to_change)} windows processed (infiltration only), "
-                f"Total EC: {total_embodied_carbon:.2f} kg CO2 eq, Cost source: {cost_source}"
+                f"Total EC: {total_embodied_carbon:.2f} kg CO2 eq, Cost factor basis: {cost_factor_basis}"
             )
 
-        pp.pprint(subsurface_dict)
         return True
 
     def calculate_costs_from_user_rates(
@@ -2028,10 +1654,14 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
         data["frame"]["renovation_option"] = wf_option
         data["caulking"]["renovation_option"] = caulking_option
         data["film"]["renovation_option"] = film_option
-        data["weatherstrip"]["renovation_option"] = weatherstrip_option
-        
         if weatherstrip_option != "none" and subsurface.subSurfaceType() != "OperableWindow":
-            runner.registerInfo(f"  ⚠ Weatherstrip skipped for {subsurface.nameString()} (not an operable window)")
+            data["weatherstrip"]["renovation_option"] = "none"
+            runner.registerInfo(
+                f"  ⚠ Weatherstrip skipped for {subsurface.nameString()} "
+                f"(subsurface type: {subsurface.subSurfaceType()}, only OperableWindow is supported)"
+            )
+        else:
+            data["weatherstrip"]["renovation_option"] = weatherstrip_option
         
         data["second_glazing"]["renovation_option"] = secondary_glazing_option
         
@@ -2128,7 +1758,7 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
         
         # Weatherstrip EPD
         urls["weatherstrip"] = None
-        if weatherstrip_option != "none":
+        if weatherstrip_option != "none" and subsurface.subSurfaceType() == "OperableWindow":
             urls["weatherstrip"] = generate_url_byname(category='ca54e842c0fc4bf2b4f3a8564c3b1a4d', name_like=weatherstrip_option)
         
         # Secondary glazing EPD
@@ -3444,6 +3074,490 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
             runner.registerWarning(
                 "RSMeans glazing parse succeeded, but no layered window constructions were eligible for model updates."
             )
+
+    @staticmethod
+    def _write_features(target_ap, feature_map):
+        for feature_name, feature_value in feature_map.items():
+            target_ap.setFeature(feature_name, feature_value)
+
+    def _initialize_additional_property_feature_maps(
+        self,
+        analysis_period,
+        gwp_statistic,
+        space_infiltration_reduction_percent,
+        total_weatherstrip_length_m,
+        total_window_area_m2,
+        total_glazing_area_m2,
+        total_frame_area_m2,
+        total_perimeter_m,
+        total_caulking_volume_m3,
+        glass_pane_thickness,
+        gap_thickness,
+        wf_option,
+        caulking_option,
+        film_option,
+        weatherstrip_option,
+        glass_option,
+        secondary_glazing_option,
+        glass_lifetime,
+        wf_lifetime,
+        caulking_lifetime,
+        film_lifetime,
+        weatherstrip_lifetime,
+        total_embodied_carbon,
+    ):
+        basic_input_features = {
+            "analysis_period_years": analysis_period,
+            "gwp_statistic": gwp_statistic,
+            "measure_name": "Window Enhancement",
+        }
+        # Keep only canonical reno_detail keys.
+        reno_detail_features = {
+            "window_infiltration_reduction_percent": space_infiltration_reduction_percent,
+            "window_glass_pane_thickness_m": glass_pane_thickness,
+            "window_glazing_gap_thickness_m": gap_thickness,
+            "window_frame_option": wf_option,
+            "window_caulking_option": caulking_option,
+            "window_film_option": film_option,
+            "window_weatherstrip_option": weatherstrip_option,
+            "window_glass_option": glass_option,
+            "window_secondary_glazing_option": secondary_glazing_option,
+            "window_enhancement_renovated_window_area_m2": total_window_area_m2,
+            "window_enhancement_renovated_glazing_area_m2": total_glazing_area_m2,
+            "window_enhancement_renovated_frame_area_m2": total_frame_area_m2,
+            "window_enhancement_renovated_perimeter_m": total_perimeter_m,
+            "window_enhancement_renovated_caulking_volume_m3": total_caulking_volume_m3,
+            "window_enhancement_renovated_weatherstrip_length_m": total_weatherstrip_length_m,
+        }
+        mtrl_prop_features = {
+            "window_glass_lifetime_years": glass_lifetime,
+            "window_frame_lifetime_years": wf_lifetime,
+            "window_caulking_lifetime_years": caulking_lifetime,
+            "window_film_lifetime_years": film_lifetime,
+            "window_weatherstrip_lifetime_years": weatherstrip_lifetime,
+        }
+        factors_features = {}
+        results_features = {
+            "window_enhancement_embodied_carbon_kgCO2eq": total_embodied_carbon,
+        }
+
+        return (
+            basic_input_features,
+            reno_detail_features,
+            mtrl_prop_features,
+            factors_features,
+            results_features,
+        )
+
+    def _build_rsmeans_material_payload(
+        self,
+        total_glazing_area_m2,
+        total_frame_area_m2,
+        total_caulking_volume_m3,
+        total_weatherstrip_length_m,
+        glass_option,
+        wf_option,
+        caulking_option,
+        film_option,
+        weatherstrip_option,
+        secondary_glazing_option,
+        user_num_panes,
+        effective_glass_pane_thickness,
+        effective_gap_thickness,
+        use_specific_rsmeans_line_item_ids,
+        rsmeans_id_glazing,
+        rsmeans_id_frame,
+        rsmeans_id_caulking,
+        rsmeans_id_film,
+        rsmeans_id_weatherstrip,
+        rsmeans_id_secondary_glazing,
+    ):
+        materials = []
+
+        def _m2_to_sf(value_m2: float) -> float:
+            return value_m2 * 10.7639
+
+        def _m3_to_cy(value_m3: float) -> float:
+            return value_m3 * 1.30795
+
+        def _m_to_lf(value_m: float) -> float:
+            return value_m * 3.28084
+
+        def _m_to_ft(value_m: float) -> float:
+            return value_m * 3.28084
+
+        if glass_option != "none" and user_num_panes > 0 and total_glazing_area_m2 > 0:
+            pane_count = max(1, int(user_num_panes))
+            glass_thickness_ft = _m_to_ft(float(effective_glass_pane_thickness)) if effective_glass_pane_thickness > 0 else 0.0
+            glazing_qty_sf = _m2_to_sf(total_glazing_area_m2)
+            glazing_material = {
+                "name": "window glazing",
+                "description": (
+                    f"{user_num_panes}-pane glass replacement; "
+                    f"single-pane thickness {effective_glass_pane_thickness*1000:.1f} mm; "
+                    f"gap {effective_gap_thickness*1000:.1f} mm"
+                ),
+                "quantity": glazing_qty_sf,
+                "unit": "SF",
+                "quantity_volume": float(glazing_qty_sf * glass_thickness_ft * pane_count),
+                "unit_volume": "CF",
+                "rsmeans_thickness_ft": float(glass_thickness_ft),
+                "costing_mode": "volume_from_area",
+                "quantity_si": total_glazing_area_m2,
+                "unit_si": "m2",
+                "division_code": "08",
+            }
+            if use_specific_rsmeans_line_item_ids and rsmeans_id_glazing:
+                glazing_material["rsmeans_id"] = rsmeans_id_glazing
+            materials.append(glazing_material)
+
+        if wf_option != "none" and total_frame_area_m2 > 0:
+            frame_material = {
+                "name": "window frame",
+                "description": f"{wf_option} frame replacement",
+                "quantity": _m2_to_sf(total_frame_area_m2),
+                "unit": "SF",
+                "quantity_si": total_frame_area_m2,
+                "unit_si": "m2",
+                "division_code": "08",
+            }
+            if use_specific_rsmeans_line_item_ids and rsmeans_id_frame:
+                frame_material["rsmeans_id"] = rsmeans_id_frame
+            materials.append(frame_material)
+
+        if film_option != "none" and total_glazing_area_m2 > 0:
+            film_material = {
+                "name": "glazing film",
+                "description": film_option,
+                "quantity": _m2_to_sf(total_glazing_area_m2),
+                "unit": "SF",
+                "quantity_si": total_glazing_area_m2,
+                "unit_si": "m2",
+                "division_code": "08",
+            }
+            if use_specific_rsmeans_line_item_ids and rsmeans_id_film:
+                film_material["rsmeans_id"] = rsmeans_id_film
+            materials.append(film_material)
+
+        if caulking_option != "none" and total_caulking_volume_m3 > 0:
+            caulking_material = {
+                "name": "sealant",
+                "description": f"{caulking_option} caulking",
+                "quantity": _m3_to_cy(total_caulking_volume_m3),
+                "unit": "CY",
+                "quantity_si": total_caulking_volume_m3,
+                "unit_si": "m3",
+                "division_code": "07",
+            }
+            if use_specific_rsmeans_line_item_ids and rsmeans_id_caulking:
+                caulking_material["rsmeans_id"] = rsmeans_id_caulking
+            materials.append(caulking_material)
+
+        if weatherstrip_option != "none" and total_weatherstrip_length_m > 0:
+            weatherstrip_material = {
+                "name": "weatherstrip",
+                "description": weatherstrip_option,
+                "quantity": _m_to_lf(total_weatherstrip_length_m),
+                "unit": "LF",
+                "quantity_si": total_weatherstrip_length_m,
+                "unit_si": "m",
+                "division_code": "08",
+            }
+            if use_specific_rsmeans_line_item_ids and rsmeans_id_weatherstrip:
+                weatherstrip_material["rsmeans_id"] = rsmeans_id_weatherstrip
+            materials.append(weatherstrip_material)
+
+        if secondary_glazing_option != "none" and total_glazing_area_m2 > 0:
+            secondary_glazing_qty_sf = _m2_to_sf(total_glazing_area_m2)
+            secondary_glass_thickness_ft = _m_to_ft(float(effective_glass_pane_thickness)) if effective_glass_pane_thickness > 0 else 0.0
+            secondary_glazing_material = {
+                "name": "secondary glazing",
+                "description": (
+                    "secondary glazing installation; "
+                    f"single-pane thickness {effective_glass_pane_thickness*1000:.1f} mm; "
+                    f"gap {effective_gap_thickness*1000:.1f} mm"
+                ),
+                "quantity": secondary_glazing_qty_sf,
+                "unit": "SF",
+                "quantity_volume": float(secondary_glazing_qty_sf * secondary_glass_thickness_ft),
+                "unit_volume": "CF",
+                "rsmeans_thickness_ft": float(secondary_glass_thickness_ft),
+                "costing_mode": "volume_from_area",
+                "quantity_si": total_glazing_area_m2,
+                "unit_si": "m2",
+                "division_code": "08",
+            }
+            if use_specific_rsmeans_line_item_ids and rsmeans_id_secondary_glazing:
+                secondary_glazing_material["rsmeans_id"] = rsmeans_id_secondary_glazing
+            materials.append(secondary_glazing_material)
+
+        return materials
+
+    def _calculate_cost_metrics(
+        self,
+        runner,
+        calculate_costs,
+        materials,
+        use_custom_costs,
+        overhead_profit_percent,
+        labor_cost_multiplier,
+        total_glazing_area_m2,
+        total_frame_area_m2,
+        total_caulking_volume_m3,
+        total_weatherstrip_length_m,
+        glass_cost_per_cf,
+        frame_cost_per_sf,
+        caulking_cost_per_cy,
+        film_cost_per_sf,
+        weatherstrip_cost_per_lf,
+        glass_option,
+        wf_option,
+        caulking_option,
+        film_option,
+        weatherstrip_option,
+        user_num_panes,
+        effective_glass_pane_thickness,
+        secondary_glazing_option,
+        subsurface_dict,
+        effective_gap_thickness,
+    ):
+        total_material_cost = 0.0
+        total_overhead_profit_cost = 0.0
+        total_labor_cost = 0.0
+        cost_factor_basis = "not_calculated"
+        rsmeans_lookup = None
+        rsmeans_summary = {}
+        rsmeans_totals_provided = False
+        rsmeans_material_features = {}
+
+        if calculate_costs and materials:
+            if use_custom_costs:
+                runner.registerInfo("\n" + "=" * 80)
+                runner.registerInfo("USING CUSTOM USER-PROVIDED COSTS (RSMeans API SKIPPED)")
+                runner.registerInfo("=" * 80)
+
+                total_material_cost = self.calculate_costs_from_user_rates(
+                    runner, total_glazing_area_m2, total_frame_area_m2, total_caulking_volume_m3,
+                    total_weatherstrip_length_m, glass_cost_per_cf, frame_cost_per_sf,
+                    caulking_cost_per_cy, film_cost_per_sf, weatherstrip_cost_per_lf,
+                    glass_option, wf_option, caulking_option, film_option, weatherstrip_option,
+                    user_num_panes, effective_glass_pane_thickness, secondary_glazing_option
+                )
+                total_labor_cost = total_material_cost * labor_cost_multiplier
+                cost_factor_basis = "custom_user_inputs"
+
+                runner.registerInfo(f"✓ Custom costs calculated: ${total_material_cost:,.2f} (material) + ${total_labor_cost:,.2f} (labor)")
+            else:
+                runner.registerInfo("\n" + "=" * 80)
+                runner.registerInfo("ATTEMPTING RSMeans API LOOKUP FOR CAPITAL COSTS")
+                runner.registerInfo("=" * 80)
+
+                rsmeans_lookup = self.pull_rsmeans_cost_from_api(
+                    runner,
+                    materials,
+                    use_custom_costs=False,
+                    overhead_profit_percent=overhead_profit_percent,
+                )
+
+                if rsmeans_lookup and rsmeans_lookup.get("status") == "ok":
+                    summary = rsmeans_lookup.get("summary", {})
+                    total_material_cost = float(summary.get("total_material_cost", 0.0))
+                    total_overhead_profit_cost = float(summary.get("total_overhead_profit_cost", 0.0))
+                    total_labor_cost = 0.0
+                    cost_factor_basis = "rsmeans_api"
+                    rsmeans_summary = summary
+                    rsmeans_totals_provided = True
+
+                    runner.registerInfo(f"✓ RSMeans API successful:")
+                    runner.registerInfo(f"  Materials found: {summary.get('materials_count', 0)}")
+                    runner.registerInfo(f"  Total material cost: ${summary.get('total_material_cost', 0):,.2f}")
+                    runner.registerInfo(f"  Overhead + Profit: ${summary.get('total_overhead_profit_cost', 0):,.2f}")
+                    runner.registerInfo(f"  Total cost with O&P: ${total_material_cost:,.2f}")
+                    materials_results = rsmeans_lookup.get("results", {}).get("materials", [])
+
+                    if materials_results:
+                        for mat in materials_results:
+                            mat_name = str(mat.get("name", "")).strip().lower()
+                            matched_rsmeans_id = mat.get("rsmeans_id", "")
+                            matched_rsmeans_description = mat.get("rsmeans_description") or mat.get("description", "")
+
+                            feature_prefix = None
+                            if "glazing film" in mat_name:
+                                feature_prefix = "window_film"
+                            elif "window glazing" in mat_name or mat_name == "glazing":
+                                feature_prefix = "window_glass"
+                            elif "window frame" in mat_name:
+                                feature_prefix = "window_frame"
+                            elif "weatherstrip" in mat_name:
+                                feature_prefix = "window_weatherstrip"
+                            elif "secondary glazing" in mat_name:
+                                feature_prefix = "window_secondary_glazing"
+                            elif "sealant" in mat_name or "caulking" in mat_name:
+                                feature_prefix = "window_caulking"
+
+                            if feature_prefix:
+                                if matched_rsmeans_id:
+                                    rsmeans_material_features[f"{feature_prefix}_rsmeans_id"] = str(matched_rsmeans_id)
+                                if matched_rsmeans_description:
+                                    rsmeans_material_features[f"{feature_prefix}_rsmeans_description"] = str(matched_rsmeans_description)
+
+                    if materials_results:
+                        runner.registerInfo("  RSMeans materials detail:")
+                        for mat in materials_results:
+                            mat_name = mat.get("name", "(unknown)")
+                            mat_qty = mat.get("quantity", 0.0)
+                            mat_unit = mat.get("unit", "")
+                            mat_unit_cost = mat.get("unit_cost", 0.0)
+                            mat_total_cost = mat.get("total_cost", 0.0)
+                            mat_basis = mat.get("unit_cost_basis", mat_unit)
+                            runner.registerInfo(
+                                f"    - {mat_name}: {mat_qty:.2f} {mat_unit}, "
+                                f"unit=${mat_unit_cost:.2f}/{mat_basis}, total=${mat_total_cost:,.2f}"
+                            )
+
+                    self.apply_rsmeans_glazing_updates_to_model(
+                        runner,
+                        subsurface_dict,
+                        rsmeans_lookup,
+                        effective_glass_pane_thickness,
+                        effective_gap_thickness,
+                    )
+
+                else:
+                    runner.registerInfo("✗ RSMeans API lookup failed or returned no costs.")
+                    runner.registerInfo("\nFalling back to user-provided cost data...")
+
+                    total_material_cost = self.calculate_costs_from_user_rates(
+                        runner, total_glazing_area_m2, total_frame_area_m2, total_caulking_volume_m3,
+                        total_weatherstrip_length_m, glass_cost_per_cf, frame_cost_per_sf,
+                        caulking_cost_per_cy, film_cost_per_sf, weatherstrip_cost_per_lf,
+                        glass_option, wf_option, caulking_option, film_option, weatherstrip_option,
+                        user_num_panes, effective_glass_pane_thickness, secondary_glazing_option
+                    )
+                    total_labor_cost = total_material_cost * labor_cost_multiplier
+                    if total_material_cost > 0:
+                        cost_factor_basis = "custom_user_inputs"
+
+                    if total_material_cost > 0:
+                        runner.registerInfo(f"✓ Using user-provided costs: ${total_material_cost:,.2f} materials + ${total_labor_cost:,.2f} labor")
+                    else:
+                        runner.registerInfo("✗ No user-provided costs specified. Skipping cost calculation.")
+                        runner.registerInfo("  Tip: Provide values for 'Glass Cost ($/CF)', 'Frame Cost ($/SF)', etc.")
+
+        if calculate_costs and not rsmeans_totals_provided:
+            total_overhead_profit_cost = (total_material_cost + total_labor_cost) * (overhead_profit_percent / 100.0)
+        if rsmeans_totals_provided:
+            total_cost_with_overhead_profit = float(rsmeans_summary.get("total_cost_with_overhead_profit", 0.0))
+        else:
+            total_cost_with_overhead_profit = total_material_cost + total_labor_cost + total_overhead_profit_cost
+
+        return {
+            "total_material_cost": total_material_cost,
+            "total_labor_cost": total_labor_cost,
+            "total_overhead_profit_cost": total_overhead_profit_cost,
+            "total_cost_with_overhead_profit": total_cost_with_overhead_profit,
+            "cost_factor_basis": cost_factor_basis,
+            "rsmeans_material_features": rsmeans_material_features,
+        }
+
+    def _update_cost_and_rsmeans_feature_maps(
+        self,
+        results_features,
+        factors_features,
+        mtrl_prop_features,
+        total_material_cost,
+        total_labor_cost,
+        total_overhead_profit_cost,
+        total_cost_with_overhead_profit,
+        cost_factor_basis,
+        overhead_profit_percent,
+        labor_cost_multiplier,
+        rsmeans_material_features,
+    ):
+        results_features.update({
+            "window_enhancement_material_cost_$": total_material_cost,
+            "window_enhancement_labor_cost_$": total_labor_cost,
+            "window_enhancement_overhead_profit_cost_$": total_overhead_profit_cost,
+            "window_enhancement_total_cost_with_overhead_profit_$": total_cost_with_overhead_profit,
+            "window_enhancement_cost_factor_basis": cost_factor_basis
+        })
+
+        factors_features.update({
+            "window_enhancement_cost_factor_basis": cost_factor_basis,
+            "window_enhancement_overhead_profit_percent": overhead_profit_percent,
+            "window_enhancement_custom_labor_cost_multiplier": labor_cost_multiplier,
+        })
+        mtrl_prop_features.update(rsmeans_material_features)
+
+    def _update_gwp_and_construction_feature_maps(self, subsurface_dict, factors_features, basic_input_features):
+        gwp_glass_per_m2_list = []
+        gwp_glass_per_m3_list = []
+        gwp_frame_per_m2_list = []
+        gwp_caulking_per_m3_list = []
+        gwp_film_per_m2_list = []
+        gwp_weatherstrip_per_m_list = []
+        gwp_second_glazing_per_m2_list = []
+
+        for name in subsurface_dict.keys():
+            if 'glass' in subsurface_dict[name] and 'gwp_per_m2' in subsurface_dict[name]['glass']:
+                gwp_m2 = subsurface_dict[name]['glass']['gwp_per_m2']
+                if gwp_m2 is not None and gwp_m2 > 0:
+                    gwp_glass_per_m2_list.append(gwp_m2)
+
+            if 'glass' in subsurface_dict[name] and 'gwp_per_m3' in subsurface_dict[name]['glass']:
+                gwp_m3 = subsurface_dict[name]['glass']['gwp_per_m3']
+                if gwp_m3 is not None and gwp_m3 > 0:
+                    gwp_glass_per_m3_list.append(gwp_m3)
+
+            if 'frame' in subsurface_dict[name] and 'gwp_per_m2' in subsurface_dict[name]['frame']:
+                gwp_m2 = subsurface_dict[name]['frame']['gwp_per_m2']
+                if gwp_m2 is not None and gwp_m2 > 0:
+                    gwp_frame_per_m2_list.append(gwp_m2)
+
+            if 'caulking' in subsurface_dict[name] and 'gwp_per_m3' in subsurface_dict[name]['caulking']:
+                gwp_m3 = subsurface_dict[name]['caulking']['gwp_per_m3']
+                if gwp_m3 is not None and gwp_m3 > 0:
+                    gwp_caulking_per_m3_list.append(gwp_m3)
+
+            if 'film' in subsurface_dict[name] and 'gwp_per_m2' in subsurface_dict[name]['film']:
+                gwp_m2 = subsurface_dict[name]['film']['gwp_per_m2']
+                if gwp_m2 is not None and gwp_m2 > 0:
+                    gwp_film_per_m2_list.append(gwp_m2)
+
+            if 'weatherstrip' in subsurface_dict[name] and 'gwp_per_m' in subsurface_dict[name]['weatherstrip']:
+                gwp_m = subsurface_dict[name]['weatherstrip']['gwp_per_m']
+                if gwp_m is not None and gwp_m > 0:
+                    gwp_weatherstrip_per_m_list.append(gwp_m)
+
+            if 'second_glazing' in subsurface_dict[name] and 'gwp_per_m2' in subsurface_dict[name]['second_glazing']:
+                gwp_m2 = subsurface_dict[name]['second_glazing']['gwp_per_m2']
+                if gwp_m2 is not None and gwp_m2 > 0:
+                    gwp_second_glazing_per_m2_list.append(gwp_m2)
+
+        if gwp_glass_per_m2_list:
+            factors_features["window_glass_gwp_per_m2_kgCO2eq"] = float(np.mean(gwp_glass_per_m2_list))
+        if gwp_glass_per_m3_list:
+            factors_features["window_glass_gwp_per_m3_kgCO2eq"] = float(np.mean(gwp_glass_per_m3_list))
+        if gwp_frame_per_m2_list:
+            factors_features["window_frame_gwp_per_m2_kgCO2eq"] = float(np.mean(gwp_frame_per_m2_list))
+        if gwp_caulking_per_m3_list:
+            factors_features["window_caulking_gwp_per_m3_kgCO2eq"] = float(np.mean(gwp_caulking_per_m3_list))
+        if gwp_film_per_m2_list:
+            factors_features["window_film_gwp_per_m2_kgCO2eq"] = float(np.mean(gwp_film_per_m2_list))
+        if gwp_weatherstrip_per_m_list:
+            factors_features["window_weatherstrip_gwp_per_m_kgCO2eq"] = float(np.mean(gwp_weatherstrip_per_m_list))
+        if gwp_second_glazing_per_m2_list:
+            factors_features["window_secondary_glazing_gwp_per_m2_kgCO2eq"] = float(np.mean(gwp_second_glazing_per_m2_list))
+
+        construction_names = []
+        for name in subsurface_dict.keys():
+            if 'glass' in subsurface_dict[name] and 'object' in subsurface_dict[name]['glass']:
+                construction = subsurface_dict[name]['glass']['object']
+                if construction is not None:
+                    construction_names.append(construction.nameString())
+
+        if construction_names:
+            basic_input_features["window_enhancement_construction_names"] = ', '.join(construction_names)
 
     def get_frame_and_divider_dimension(self, runner, subsurface):
         """Get dimensions of window frame and any dividers (muntins).
