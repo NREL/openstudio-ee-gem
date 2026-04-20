@@ -3107,9 +3107,9 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
         total_embodied_carbon,
     ):
         basic_input_features = {
-            "analysis_period_years": analysis_period,
-            "gwp_statistic": gwp_statistic,
-            "measure_name": "Window Enhancement",
+            "window_enhancement_analysis_period_years": analysis_period,
+            "window_enhancement_gwp_statistic": gwp_statistic,
+            "window_enhancement_measure_name": "Window Enhancement",
         }
         # Keep only canonical reno_detail keys.
         reno_detail_features = {
@@ -3478,7 +3478,7 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
             "window_enhancement_material_cost_$": total_material_cost,
             "window_enhancement_labor_cost_$": total_labor_cost,
             "window_enhancement_overhead_profit_cost_$": total_overhead_profit_cost,
-            "window_enhancement_total_cost_with_overhead_profit_$": total_cost_with_overhead_profit,
+            "window_enhancement_total_cost_with_overhead_and_profit_$": total_cost_with_overhead_profit,
             "window_enhancement_cost_factor_basis": cost_factor_basis
         })
 

@@ -1675,7 +1675,9 @@ class DoorEnhancement(openstudio.measure.ModelMeasure):
             factors.setFeature("door_side_seal_gwp_per_m_kgCO2eq", float(np.mean(gwp_per_m_side_list)))
 
         # 5G) SimulationControl bucket (results)
-        results.setFeature("door_enhancement_embodied_carbon_kg", total_embodied_carbon)
+        # Canonical embodied carbon key used by wall/roof/window measures.
+        results.setFeature("door_enhancement_embodied_carbon_kgCO2eq", total_embodied_carbon)
+
 
         if rsmeans_lookup is not None and rsmeans_lookup.get("status") == "ok":
             rsmeans_summary_dict = rsmeans_lookup.get("summary", {})
@@ -1718,9 +1720,10 @@ class DoorEnhancement(openstudio.measure.ModelMeasure):
             factors.setFeature("door_enhancement_overhead_profit_percent", rsmeans_overhead_percent)
 
             # -- SimulationControl (results) bucket: mirrored scalars + JSON --
-            results.setFeature("door_enhancement_total_material_cost_$", rsmeans_material_cost)
-            results.setFeature("door_enhancement_total_overhead_profit_cost_$", rsmeans_overhead_cost)
-            results.setFeature("door_enhancement_total_cost_with_overhead_profit_$", rsmeans_total_cost)
+            results.setFeature("door_enhancement_material_cost_$", rsmeans_material_cost)
+            results.setFeature("door_enhancement_labor_cost_$", 0.0)  # Custom costs assumed to already include labor
+            results.setFeature("door_enhancement_overhead_profit_cost_$", rsmeans_overhead_cost)
+            results.setFeature("door_enhancement_total_cost_with_overhead_and_profit_$", rsmeans_total_cost)
 
             # Three JSON payloads for full diagnostic traceability (mirrors
             # the three-payload pattern used by wall and roof insulation measures).
