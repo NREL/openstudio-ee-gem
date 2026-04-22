@@ -853,15 +853,15 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
 
         # Validate all user arguments
         if not self.validate_user_arguments_values(runner, analysis_period, glass_lifetime, wf_lifetime, 
-                                                     caulking_lifetime, film_lifetime, weatherstrip_lifetime, 
-                                                     caulking_thickness, glass_pane_thickness, 
-                                                     gap_thickness, length_per_unit, film_visible_transmittance, 
-                                                     film_solar_transmittance, film_thermal_emissivity, 
-                                                     film_thermal_resistance, glass_solar_transmittance, 
-                                                     glass_visible_transmittance, glass_front_emissivity, 
-                                                     glass_back_emissivity, glass_front_solar_reflectance, 
-                                                     glass_back_solar_reflectance, glass_front_visible_reflectance, 
-                                                     glass_back_visible_reflectance):
+                                 caulking_lifetime, film_lifetime, weatherstrip_lifetime, 
+                                 caulking_thickness, glass_pane_thickness, 
+                                 gap_thickness, length_per_unit, film_visible_transmittance, 
+                                 film_solar_transmittance, film_thermal_emissivity, 
+                                 film_thermal_resistance, glass_solar_transmittance, 
+                                 glass_visible_transmittance, glass_front_emissivity, 
+                                 glass_back_emissivity, glass_front_solar_reflectance, 
+                                 glass_back_solar_reflectance, glass_front_visible_reflectance, 
+                                 glass_back_visible_reflectance, labor_cost_multiplier):
             return False
 
         # Effective values may be overridden by RSMeans only when user selected auto/default (0.0).
@@ -1897,7 +1897,7 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
                                         glass_visible_transmittance, glass_front_emissivity, 
                                         glass_back_emissivity, glass_front_solar_reflectance, 
                                         glass_back_solar_reflectance, glass_front_visible_reflectance, 
-                                        glass_back_visible_reflectance):
+                                        glass_back_visible_reflectance, labor_cost_multiplier):
         """Check that all user inputs are within reasonable ranges.
         
         Validates lifetimes (>0, within max limits), dimensions (>0, physically realistic),

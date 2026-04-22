@@ -1,11 +1,11 @@
 {
-  "weather_file": "c:\\All_repos\\openstudio-ee-gem\\lib\\parametric_run\\weather\\Amarillo\\USA_TX_Amarillo-Husband.Amarillo.Intl.AP.723630_TMYx.epw",
+  "weather_file": "c:\\All repos\\openstudio-ee-gem\\lib\\parametric_run\\weather\\Amarillo\\USA_TX_Amarillo-Husband.Amarillo.Intl.AP.723630_TMYx.epw",
   "file_paths": [
-    "c:\\All_repos\\openstudio-ee-gem\\lib\\parametric_run\\weather",
-    "c:\\All_repos\\openstudio-ee-gem\\lib\\parametric_run\\weather\\Amarillo"
+    "c:\\All repos\\openstudio-ee-gem\\lib\\parametric_run\\weather",
+    "c:\\All repos\\openstudio-ee-gem\\lib\\parametric_run\\weather\\Amarillo"
   ],
   "measure_paths": [
-    "c:\\All_repos\\openstudio-ee-gem\\lib\\measures"
+    "c:\\All repos\\openstudio-ee-gem\\lib\\measures"
   ],
   "steps": [
     {
