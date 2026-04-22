@@ -350,7 +350,7 @@ class DoorEnhancement(openstudio.measure.ModelMeasure):
         # make an argument for custom door cost ($/unit area)
         custom_door_cost_per_area = openstudio.measure.OSArgument.makeDoubleArgument("custom_door_cost_per_area", False)
         custom_door_cost_per_area.setDisplayName("Custom Door Cost ($/m²)")
-        custom_door_cost_per_area.setDescription("Custom material and labor cost for door replacement per unit area. Only used if 'Use Custom Cost Inputs?' is true.")
+        custom_door_cost_per_area.setDescription("Custom material cost for door replacement per unit area. Only used if 'Use Custom Cost Inputs?' is true.")
         custom_door_cost_per_area.setUnits("$/m²")
         custom_door_cost_per_area.setDefaultValue(0.0)
         args.append(custom_door_cost_per_area)
@@ -358,7 +358,7 @@ class DoorEnhancement(openstudio.measure.ModelMeasure):
         # make an argument for custom bottom seal cost ($/length)
         custom_bottom_seal_cost = openstudio.measure.OSArgument.makeDoubleArgument("custom_bottom_seal_cost", False)
         custom_bottom_seal_cost.setDisplayName("Custom Bottom Seal Cost ($/m)")
-        custom_bottom_seal_cost.setDescription("Custom material and labor cost for bottom seal per unit length. Only used if 'Use Custom Cost Inputs?' is true.")
+        custom_bottom_seal_cost.setDescription("Custom material cost for bottom seal per unit length. Only used if 'Use Custom Cost Inputs?' is true.")
         custom_bottom_seal_cost.setUnits("$/m")
         custom_bottom_seal_cost.setDefaultValue(0.0)
         args.append(custom_bottom_seal_cost)
@@ -366,10 +366,17 @@ class DoorEnhancement(openstudio.measure.ModelMeasure):
         # make an argument for custom top/side seal cost ($/length)
         custom_top_side_seal_cost = openstudio.measure.OSArgument.makeDoubleArgument("custom_top_side_seal_cost", False)
         custom_top_side_seal_cost.setDisplayName("Custom Top/Side Seal Cost ($/m)")
-        custom_top_side_seal_cost.setDescription("Custom material and labor cost for top and side seal per unit length. Only used if 'Use Custom Cost Inputs?' is true.")
+        custom_top_side_seal_cost.setDescription("Custom material cost for top and side seal per unit length. Only used if 'Use Custom Cost Inputs?' is true.")
         custom_top_side_seal_cost.setUnits("$/m")
         custom_top_side_seal_cost.setDefaultValue(0.0)
         args.append(custom_top_side_seal_cost)
+
+        # make an argument for labor cost multiplier (custom cost path only)
+        labor_cost_multiplier = openstudio.measure.OSArgument.makeDoubleArgument("labor_cost_multiplier", True)
+        labor_cost_multiplier.setDisplayName("Labor Cost Multiplier (applies to custom material cost)")
+        labor_cost_multiplier.setDescription("Total installed cost as a multiple of custom material cost. labor = material × (multiplier − 1). Only used if 'Use Custom Cost Inputs?' is true. Must be ≥ 1.0. Default 1.0 means no separate labor cost (e.g. 1.5 = installed cost is 1.5× material, meaning labor is 50% of material).")
+        labor_cost_multiplier.setDefaultValue(1.0)
+        args.append(labor_cost_multiplier)
 
         # optional exact RSMeans unit cost line ID override
         rsmeans_unit_costline_id = openstudio.measure.OSArgument.makeStringArgument("rsmeans_unit_costline_id", True)
@@ -432,6 +439,7 @@ class DoorEnhancement(openstudio.measure.ModelMeasure):
         custom_door_cost_per_area = runner.getDoubleArgumentValue("custom_door_cost_per_area", user_arguments)
         custom_bottom_seal_cost = runner.getDoubleArgumentValue("custom_bottom_seal_cost", user_arguments)
         custom_top_side_seal_cost = runner.getDoubleArgumentValue("custom_top_side_seal_cost", user_arguments)
+        labor_cost_multiplier = runner.getDoubleArgumentValue("labor_cost_multiplier", user_arguments)
         rsmeans_unit_costline_id = runner.getStringArgumentValue("rsmeans_unit_costline_id", user_arguments).strip()
 
         if use_custom_costs:
@@ -439,6 +447,7 @@ class DoorEnhancement(openstudio.measure.ModelMeasure):
             runner.registerInfo(f"  Door cost: ${custom_door_cost_per_area}/m²")
             runner.registerInfo(f"  Bottom seal cost: ${custom_bottom_seal_cost}/m")
             runner.registerInfo(f"  Top/side seal cost: ${custom_top_side_seal_cost}/m")
+            runner.registerInfo(f"  Labor cost multiplier: {labor_cost_multiplier}")
             if rsmeans_unit_costline_id:
                 runner.registerInfo("  RSMeans Unit Cost Line ID override ignored because custom cost mode is enabled.")
         elif rsmeans_unit_costline_id:
@@ -483,7 +492,10 @@ class DoorEnhancement(openstudio.measure.ModelMeasure):
         if door_thickness < 0:
             runner.registerError("Door thickness must be non-negative.")
             return False
-        
+        if labor_cost_multiplier < 1.0:
+            runner.registerError("Labor cost multiplier must be at least 1.0.")
+            return False
+
         # Check for conflicting door options
         if door_option != 'none':
             if door_thermal_conductivity > 0.0 and door_density > 0.0 and door_thickness > 0.0:
@@ -1264,22 +1276,41 @@ class DoorEnhancement(openstudio.measure.ModelMeasure):
             try:
                 if use_custom_costs:
                     runner.registerInfo("Using custom cost inputs (RSMeans API lookup skipped).")
-                    # Create a mock RSMeans lookup result using custom costs
+                    # --- Step 1: Material costs (each rate × quantity, scales with building size) ---
+                    # door material cost = rate ($/m²) × total door area (m²)
                     door_cost_total = custom_door_cost_per_area * float(total_door_area_m2)
+                    # bottom seal cost = rate ($/m) × total bottom seal length (m); 0 if seal option is 'none'
                     bottom_seal_cost_total = (custom_bottom_seal_cost * float(total_sealing_bottom_length_m)
                                               if door_bottom_seal_option != 'none' else 0.0)
+                    # top/side seal cost = rate ($/m) × total top/side seal length (m); 0 if seal option is 'none'
                     top_side_seal_cost_total = (custom_top_side_seal_cost * float(total_sealing_side_length_m)
                                                 if door_top_side_seal_option != 'none' else 0.0)
-                    total_custom_cost = door_cost_total + bottom_seal_cost_total + top_side_seal_cost_total
+                    # total material cost = sum of all component material costs
+                    total_custom_material_cost = door_cost_total + bottom_seal_cost_total + top_side_seal_cost_total
+
+                    # --- Step 2: Labor cost derived from material cost via multiplier ---
+                    # labor = material × (multiplier - 1)
+                    # e.g. multiplier=1.0 → labor=$0 (default, no labor added)
+                    #      multiplier=1.5 → labor = 50% of material cost
+                    #      multiplier=2.0 → labor = 100% of material cost (labor equals material)
+                    total_custom_labor_cost = (
+                        total_custom_material_cost * (labor_cost_multiplier - 1.0)
+                        if labor_cost_multiplier > 1.0 else 0.0
+                    )
+
+                    # --- Step 3: Total installed cost = material + labor ---
+                    # equivalently: total = material × multiplier
+                    total_custom_installed_cost = total_custom_material_cost + total_custom_labor_cost
                     rsmeans_lookup = {
                         "status": "ok",
                         "cost_source": "custom_input",
                         "summary": {
                             "materials_count": len(rsmeans_materials),
-                            "total_material_cost": total_custom_cost,  # Fixed field name
-                            "overhead_profit_percent": 0.0,  # Fixed field name
-                            "total_overhead_profit_cost": 0.0,  # Fixed field name - Custom costs assumed to already include labor/profit
-                            "total_cost_with_overhead_profit": total_custom_cost,
+                            "total_material_cost": total_custom_material_cost,
+                            "total_labor_cost": total_custom_labor_cost,
+                            "overhead_profit_percent": 0.0,
+                            "total_overhead_profit_cost": 0.0,
+                            "total_cost_with_overhead_profit": total_custom_installed_cost,
                             "release_id": "custom",
                             "location_id": "custom",
                             "labor_type": "custom",
@@ -1295,7 +1326,9 @@ class DoorEnhancement(openstudio.measure.ModelMeasure):
                         f"({total_sealing_bottom_length_m:.2f} m @ ${custom_bottom_seal_cost}/m), "
                         f"top_side_seal_cost=${top_side_seal_cost_total:,.2f} "
                         f"({total_sealing_side_length_m:.2f} m @ ${custom_top_side_seal_cost}/m), "
-                        f"total=${total_custom_cost:,.2f}"
+                        f"material=${total_custom_material_cost:,.2f}, "
+                        f"labor=${total_custom_labor_cost:,.2f} (multiplier={labor_cost_multiplier}), "
+                        f"total=${total_custom_installed_cost:,.2f}"
                     )
                     runner.registerInfo(rsmeans_summary_line)
                 else:
@@ -1684,6 +1717,7 @@ class DoorEnhancement(openstudio.measure.ModelMeasure):
             rsmeans_results_dict = rsmeans_lookup.get("results", {})
             cost_source_val = rsmeans_lookup.get("cost_source", "rsmeans_api")
             rsmeans_material_cost = float(rsmeans_summary_dict.get("total_material_cost", 0.0))
+            rsmeans_labor_cost = float(rsmeans_summary_dict.get("total_labor_cost", 0.0))
             rsmeans_overhead_percent = float(rsmeans_summary_dict.get("overhead_profit_percent", 0.0))
             rsmeans_overhead_cost = float(rsmeans_summary_dict.get("total_overhead_profit_cost", 0.0))
             rsmeans_total_cost = float(rsmeans_summary_dict.get("total_cost_with_overhead_profit", 0.0))
@@ -1721,7 +1755,7 @@ class DoorEnhancement(openstudio.measure.ModelMeasure):
 
             # -- SimulationControl (results) bucket: mirrored scalars + JSON --
             results.setFeature("door_enhancement_material_cost_$", rsmeans_material_cost)
-            results.setFeature("door_enhancement_labor_cost_$", 0.0)  # Custom costs assumed to already include labor
+            results.setFeature("door_enhancement_labor_cost_$", rsmeans_labor_cost)
             results.setFeature("door_enhancement_overhead_profit_cost_$", rsmeans_overhead_cost)
             results.setFeature("door_enhancement_total_cost_with_overhead_and_profit_$", rsmeans_total_cost)
 

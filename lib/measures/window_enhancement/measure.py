@@ -634,11 +634,11 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
 
         # Labor cost
         labor_cost_multiplier = openstudio.measure.OSArgument.makeDoubleArgument("labor_cost_multiplier", True)
-        labor_cost_multiplier.setDisplayName("Labor Cost Multiplier (% of Material Cost)")
+        labor_cost_multiplier.setDisplayName("Labor Cost Multiplier (applies to custom material cost)")
         labor_cost_multiplier.setDescription(
-            "Labor cost as a percentage of total material cost. Used as a fallback when RSMeans API fails. "
-            "Typical range: 50-150% (0.5-1.5). For example, 1.0 means labor cost equals material cost. "
-            "Set to 0 to include only material costs.")
+            "Total installed cost as a multiple of custom material cost. labor = material × (multiplier − 1). "
+            "Must be ≥ 1.0. Default 1.0 means no separate labor cost. "
+            "e.g. 1.5 = installed cost is 1.5× material, meaning labor is 50% of material cost.")
         labor_cost_multiplier.setDefaultValue(1.0)
         args.append(labor_cost_multiplier)
 
@@ -1940,7 +1940,10 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
         if weatherstrip_lifetime > 50:
             runner.registerError("Weatherstrip lifetime must be 50 years or less.")
             return False
-        
+        if labor_cost_multiplier < 1.0:
+            runner.registerError("Labor cost multiplier must be at least 1.0.")
+            return False
+
         # Check geometric parameters
         if caulking_thickness <= 0.0:
             runner.registerError("Caulking thickness must be greater than 0.")
@@ -3343,10 +3346,13 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
                     glass_option, wf_option, caulking_option, film_option, weatherstrip_option,
                     user_num_panes, effective_glass_pane_thickness, secondary_glazing_option
                 )
-                total_labor_cost = total_material_cost * labor_cost_multiplier
+                total_labor_cost = (
+                    total_material_cost * (labor_cost_multiplier - 1.0)
+                    if labor_cost_multiplier > 1.0 else 0.0
+                )
                 cost_factor_basis = "custom_user_inputs"
 
-                runner.registerInfo(f"✓ Custom costs calculated: ${total_material_cost:,.2f} (material) + ${total_labor_cost:,.2f} (labor)")
+                runner.registerInfo(f"✓ Custom costs calculated: ${total_material_cost:,.2f} (material) + ${total_labor_cost:,.2f} (labor) (multiplier={labor_cost_multiplier})")
             else:
                 runner.registerInfo("\n" + "=" * 80)
                 runner.registerInfo("ATTEMPTING RSMeans API LOOKUP FOR CAPITAL COSTS")
@@ -3434,12 +3440,15 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
                         glass_option, wf_option, caulking_option, film_option, weatherstrip_option,
                         user_num_panes, effective_glass_pane_thickness, secondary_glazing_option
                     )
-                    total_labor_cost = total_material_cost * labor_cost_multiplier
+                    total_labor_cost = (
+                        total_material_cost * (labor_cost_multiplier - 1.0)
+                        if labor_cost_multiplier > 1.0 else 0.0
+                    )
                     if total_material_cost > 0:
                         cost_factor_basis = "custom_user_inputs"
 
                     if total_material_cost > 0:
-                        runner.registerInfo(f"✓ Using user-provided costs: ${total_material_cost:,.2f} materials + ${total_labor_cost:,.2f} labor")
+                        runner.registerInfo(f"✓ Using user-provided costs: ${total_material_cost:,.2f} materials + ${total_labor_cost:,.2f} labor (multiplier={labor_cost_multiplier})")
                     else:
                         runner.registerInfo("✗ No user-provided costs specified. Skipping cost calculation.")
                         runner.registerInfo("  Tip: Provide values for 'Glass Cost ($/CF)', 'Frame Cost ($/SF)', etc.")
