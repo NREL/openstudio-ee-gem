@@ -885,11 +885,18 @@ class IncreaseInsulationRValueForRoofs(openstudio.measure.ModelMeasure):
         # We collect all matching EPD values into lists and then apply the user's
         # chosen statistic (min/max/mean/median) to select a representative GWP.
         # This guards against outlier EPDs skewing the result.
+        carbon_data_unavailable_reasons = []
         ec3_url = self._generate_url_by_material_type(insulation_material_type)
         insulation_product_epd = fetch_epd_data(ec3_url, api_key) if ec3_url else []
         if not isinstance(insulation_product_epd, list):
             runner.registerWarning("EC3 lookup returned invalid data; continuing with empty EPD set.")
             insulation_product_epd = []
+        if len(insulation_product_epd) == 0:
+            carbon_data_unavailable_reasons.append("ec3_epd_fetch_empty")
+            runner.registerWarning(
+                f"No EC3 EPD records found for '{insulation_material_type}'. "
+                "Embodied carbon may be reported as 0 due to unavailable carbon data."
+            )
 
         # Accumulate GWP samples from every EPD returned for this material type.
         # Multiple functional-unit bases are kept so we can cross-check and fall back.
@@ -948,6 +955,12 @@ class IncreaseInsulationRValueForRoofs(openstudio.measure.ModelMeasure):
         for key in ["gwp_per_kg", "gwp_per_m3", "gwp_per_m2"]:
             if gwp_values[key]:
                 gwp_values[key] = self.remove_outliers_iqr(gwp_values[key])
+        if not any(len(gwp_values[k]) > 0 for k in ["gwp_per_kg", "gwp_per_m3", "gwp_per_m2"]):
+            carbon_data_unavailable_reasons.append("no_valid_gwp_values")
+            runner.registerWarning(
+                f"No valid GWP values were computed for '{insulation_material_type}'. "
+                "Embodied carbon may be reported as 0 due to unavailable carbon data."
+            )
         
         # Remove outliers from lifetime values
         if lifetime_values:
@@ -1433,6 +1446,13 @@ class IncreaseInsulationRValueForRoofs(openstudio.measure.ModelMeasure):
         results.setFeature("roof_insulation_overhead_profit_cost_$", total_overhead_profit_cost)
         results.setFeature("roof_insulation_total_cost_with_overhead_and_profit_$", total_material_cost + total_labor_cost + total_overhead_profit_cost)
         results.setFeature("roof_insulation_cost_factor_basis", cost_factor_basis)
+        results.setFeature("roof_insulation_carbon_data_unavailable", 1 if carbon_data_unavailable_reasons else 0)
+        results.setFeature("roof_insulation_carbon_data_unavailable_reason_count", len(carbon_data_unavailable_reasons))
+        if carbon_data_unavailable_reasons:
+            results.setFeature(
+                "roof_insulation_carbon_data_unavailable_reasons",
+                ";".join(carbon_data_unavailable_reasons),
+            )
         if use_exact_costline_id and exact_costline_id:
             results.setFeature("roof_insulation_rsmeans_requested_costline_id", exact_costline_id)
 

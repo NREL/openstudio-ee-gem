@@ -973,6 +973,7 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
 
         # Dictionary storing properties of subsurfaces containing window constructions 
         subsurface_dict = {}
+        carbon_data_unavailable_tracker = {"count": 0, "reasons": []}
         
         runner.registerInfo("\n" + "=" * 80)
         runner.registerInfo("WINDOW RENOVATION PROCESSING")
@@ -1129,7 +1130,8 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
             # Process EPD data and calculate embodied carbon
             self.process_epd_for_subsurface(runner, subsurface_name, subsurface_dict[subsurface_name], 
                                            epd_datalist, gwp_statistic, analysis_period, 
-                                           effective_glass_pane_thickness, effective_length_per_unit)
+                                           effective_glass_pane_thickness, effective_length_per_unit,
+                                           carbon_data_unavailable_tracker)
 
             runner.registerValue(f"{subsurface_name}_total_embodied_carbon_kg_co2_eq", subsurface_dict[subsurface_name]['window_renovation_embodied_carbon_kg_co2_eq'], "kg CO2 eq")
             runner.registerInfo(f"\n{'─' * 80}")
@@ -1249,6 +1251,10 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
             total_embodied_carbon=total_embodied_carbon,
         )
         reno_detail_features["window_enhancement_windows_processed_count"] = len(sub_surfaces_to_change)
+        results_features["window_enhancement_carbon_data_unavailable"] = 1 if carbon_data_unavailable_tracker["count"] > 0 else 0
+        results_features["window_enhancement_carbon_data_unavailable_reason_count"] = int(carbon_data_unavailable_tracker["count"])
+        if carbon_data_unavailable_tracker["reasons"]:
+            results_features["window_enhancement_carbon_data_unavailable_reasons"] = ";".join(carbon_data_unavailable_tracker["reasons"])
    
         # Phase 2: Build normalized material payload for RSMeans lookup.
         materials = self._build_rsmeans_material_payload(
@@ -1782,19 +1788,33 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
         return urls
 
     def process_epd_for_subsurface(self, runner, subsurface_name, subsurface_data, epd_datalist, 
-                                    gwp_statistic, analysis_period, glass_pane_thickness, length_per_unit):
+                                    gwp_statistic, analysis_period, glass_pane_thickness, length_per_unit,
+                                    carbon_data_unavailable_tracker=None):
         """Calculate total embodied carbon (CO2 emissions) for all window materials.
         
         Extracts GWP values and lifetime from EPD data, applies selected statistic (min/max/mean/median),
         multiplies by material quantities and replacement cycles over analysis period.
         Updates subsurface_data with embodied carbon for each material and lifetime from EPD.
         """
+        if carbon_data_unavailable_tracker is None:
+            carbon_data_unavailable_tracker = {"count": 0, "reasons": []}
+
+        def _mark_carbon_data_unavailable(reason):
+            carbon_data_unavailable_tracker["count"] += 1
+            if reason not in carbon_data_unavailable_tracker["reasons"]:
+                carbon_data_unavailable_tracker["reasons"].append(reason)
+
         for material_name, epd_data in epd_datalist.items():
-            if epd_data is None:
+            if epd_data is None or (isinstance(epd_data, list) and len(epd_data) == 0):
                 subsurface_data[material_name]["gwp_per_m2"] = None
                 subsurface_data[material_name]["gwp_per_kg"] = None
                 subsurface_data[material_name]["gwp_per_m3"] = None
                 subsurface_data[material_name]["gwp_per_m"] = None
+                _mark_carbon_data_unavailable(f"missing_epd_{material_name}")
+                runner.registerWarning(
+                    f"No EPD data found for {material_name} in {subsurface_name}; "
+                    "embodied carbon set to 0 for this material."
+                )
                 continue
 
             # Extract GWP, thickness, and lifetime from EPD data
@@ -1846,6 +1866,7 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
             if material_name == "glass":
                 if subsurface_data[material_name]["gwp_per_m3"] is None:
                     embodied_carbon = 0.0
+                    _mark_carbon_data_unavailable(f"missing_gwp_{material_name}")
                     runner.registerWarning(f"No gwp_per_m3 data found for {material_name} in {subsurface_name}, assigning 0 embodied carbon.")
                 else:
                     num_panes_installed = subsurface_data[material_name]["renovation_option"]
@@ -1856,6 +1877,7 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
             elif material_name == "second_glazing":
                 if subsurface_data[material_name]["gwp_per_m3"] is None:
                     embodied_carbon = 0.0
+                    _mark_carbon_data_unavailable(f"missing_gwp_{material_name}")
                     runner.registerWarning(f"No gwp_per_m3 data found for {material_name} in {subsurface_name}, assigning 0 embodied carbon.")
                 else:
                     embodied_carbon = float(subsurface_data[material_name]["gwp_per_m3"] * 
@@ -1865,18 +1887,21 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
             elif material_name in ["window","film","frame"]:
                 if subsurface_data[material_name]["gwp_per_m2"] is None:
                     embodied_carbon = 0.0
+                    _mark_carbon_data_unavailable(f"missing_gwp_{material_name}")
                     runner.registerWarning(f"No GWP data found for {material_name} in {subsurface_name}, assigning 0 embodied carbon.")
                 else:
                     embodied_carbon = float(subsurface_data[material_name]["gwp_per_m2"] * subsurface_data[material_name]["area_m2"] * multiplier)
             elif material_name == "caulking":
                 if subsurface_data[material_name]["gwp_per_m3"] is None:
                     embodied_carbon = 0.0
+                    _mark_carbon_data_unavailable(f"missing_gwp_{material_name}")
                     runner.registerWarning(f"No GWP data found for {material_name} in {subsurface_name}, assigning 0 embodied carbon.")
                 else:
                     embodied_carbon = float(subsurface_data[material_name]["gwp_per_m3"] * subsurface_data[material_name]["volume_m3"] * multiplier)
             elif material_name == "weatherstrip":
                 if subsurface_data[material_name]["gwp_per_m"] is None:
                     embodied_carbon = 0.0
+                    _mark_carbon_data_unavailable(f"missing_gwp_{material_name}")
                     runner.registerWarning(f"No GWP data found for {material_name} in {subsurface_name}, assigning 0 embodied carbon.")
                 else:
                     embodied_carbon = float(subsurface_data[material_name]["gwp_per_m"] * subsurface_data[material_name]["length_m"] * multiplier)

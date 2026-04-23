@@ -1,4 +1,4 @@
-Program Version,EnergyPlus, Version 25.2.0-cf7368216c, YMD=2026.04.23 09:30
+Program Version,EnergyPlus, Version 25.2.0-cf7368216c, YMD=2026.04.23 13:05
 ! <Version>, Version ID
  Version, 25.2
 ! <Timesteps per Hour>, #TimeSteps, Minutes per TimeStep {minutes}
@@ -34,7 +34,7 @@ Site:Location,Amarillo-Husband.Amarillo.Intl.AP TX USA SRC-TMYx WMO#=723630,35.2
 ! <Site Water Mains Temperature Information>,Calculation Method{},Water Mains Temperature Schedule Name{},Annual Average Outdoor Air Temperature{C},Maximum Difference In Monthly Average Outdoor Air Temperatures{deltaC},Fixed Default Water Mains Temperature{C}
 Site Water Mains Temperature Information,Correlation,NA,17.94,21.10,NA
 ! <Building Information>, Building Name,North Axis {deg},Terrain,  Loads Convergence Tolerance Value,Temperature Convergence Tolerance Value,  Solar Distribution,Maximum Number of Warmup Days,Minimum Number of Warmup Days
- Building Information,-SmallOffice-ASHRAE 169-2013-3B created: 2026-04-23 09:29:24 -0600,0.000,City,4.00000E-002,0.20000,FullInteriorAndExterior,25,6
+ Building Information,-SmallOffice-ASHRAE 169-2013-3B created: 2026-04-23 12:57:13 -0600,0.000,City,4.00000E-002,0.20000,FullInteriorAndExterior,25,6
 ! <Inside Convection Algorithm>, Algorithm {Simple | TARP | CeilingDiffuser | AdaptiveConvectionAlgorithm}
 Inside Convection Algorithm,TARP
 ! <Outside Convection Algorithm>, Algorithm {SimpleCombined | TARP | MoWitt | DOE-2 | AdaptiveConvectionAlgorithm}
@@ -310,208 +310,208 @@ Zone Volume Capacitance Multiplier,   1.000 ,   1.000,   1.000,   1.000
  Sky Daylight Factors,Overcast Sky,07/21,PERIMETER_ZN_4 ZN DAYLIGHTINGCONTROLS,PERIMETER_ZN_4,PERIMETER_ZN_4_WALL_WEST_WINDOW_4,PERIMETER_ZN_4 DAYLT SENSOR 1,1.9614E-003
  Sky Daylight Factors,Overcast Sky,07/21,PERIMETER_ZN_4 ZN DAYLIGHTINGCONTROLS,PERIMETER_ZN_4,PERIMETER_ZN_4_WALL_WEST_WINDOW_4,PERIMETER_ZN_4 DAYLT SENSOR 2,2.0263E-003
 ! <Zone Sizing Information>, Zone Name, Load Type, Calc Des Load {W}, User Des Load {W}, Calc Des Air Flow Rate {m3/s}, User Des Air Flow Rate {m3/s}, Design Day Name, Date/Time of Peak, Temperature at Peak {C}, Humidity Ratio at Peak {kgWater/kgDryAir}, Floor Area {m2}, # Occupants, Calc Outdoor Air Flow Rate {m3/s}, Calc DOAS Heat Addition Rate {W}
- Zone Sizing Information, CORE_ZN ZN, Cooling, 3444.17727, 4133.01272, 0.28762, 0.34514, EL PASO INTERNATIONAL AP  UT ANN CLG .4% CONDNS DB=>MWB, 7/21 18:40:00, 33.68000, 6.86443E-003, 149.65740, 9.02103, 6.46221E-002, 0.00000
- Zone Sizing Information, CORE_ZN ZN, Heating, 761.39210, 913.67051, 2.44757E-002, 6.46221E-002, EL PASO INTERNATIONAL AP  UT ANN HTG 99.6% CONDNS DB, 12/21 24:00:00, -5.20000, 2.80840E-003, 149.65740, 9.02103, 6.46221E-002, 0.00000
- Zone Sizing Information, PERIMETER_ZN_1 ZN, Cooling, 3525.60628, 4230.72754, 0.29441, 0.35330, EL PASO INTERNATIONAL AP  UT ANN CLG .4% CONDNS DB=>MWB, 7/21 15:50:00, 37.45000, 6.87043E-003, 113.45000, 6.83853, 4.89877E-002, 0.00000
- Zone Sizing Information, PERIMETER_ZN_1 ZN, Heating, 2417.00098, 2900.40118, 7.76926E-002, 9.32311E-002, EL PASO INTERNATIONAL AP  UT ANN HTG 99.6% CONDNS DB, 12/21 24:00:00, -5.20000, 2.80840E-003, 113.45000, 6.83853, 4.89877E-002, 0.00000
- Zone Sizing Information, PERIMETER_ZN_2 ZN, Cooling, 2712.49355, 3254.99225, 0.22651, 0.27181, EL PASO INTERNATIONAL AP  UT ANN CLG .4% CONDNS DB=>MWB, 7/21 10:40:00, 34.46000, 6.86567E-003, 67.30000, 4.05670, 2.90601E-002, 0.00000
- Zone Sizing Information, PERIMETER_ZN_2 ZN, Heating, 1580.82080, 1896.98496, 5.08141E-002, 6.09769E-002, EL PASO INTERNATIONAL AP  UT ANN HTG 99.6% CONDNS DB, 12/21 24:00:00, -5.20000, 2.80840E-003, 67.30000, 4.05670, 2.90601E-002, 0.00000
- Zone Sizing Information, PERIMETER_ZN_3 ZN, Cooling, 3502.03603, 4202.44324, 0.29245, 0.35093, EL PASO INTERNATIONAL AP  UT ANN CLG .4% CONDNS DB=>MWB, 7/21 16:00:00, 37.32000, 6.87023E-003, 113.45000, 6.83853, 4.89877E-002, 0.00000
- Zone Sizing Information, PERIMETER_ZN_3 ZN, Heating, 2441.43641, 2929.72369, 7.84780E-002, 9.41736E-002, EL PASO INTERNATIONAL AP  UT ANN HTG 99.6% CONDNS DB, 12/21 24:00:00, -5.20000, 2.80840E-003, 113.45000, 6.83853, 4.89877E-002, 0.00000
- Zone Sizing Information, PERIMETER_ZN_4 ZN, Cooling, 3000.66905, 3600.80286, 0.25058, 0.30069, EL PASO INTERNATIONAL AP  UT ANN CLG .4% CONDNS DB=>MWB, 7/21 17:50:00, 35.19667, 6.86684E-003, 67.30000, 4.05670, 2.90601E-002, 0.00000
- Zone Sizing Information, PERIMETER_ZN_4 ZN, Heating, 1564.44293, 1877.33151, 5.02876E-002, 6.03451E-002, EL PASO INTERNATIONAL AP  UT ANN HTG 99.6% CONDNS DB, 12/21 24:00:00, -5.20000, 2.80840E-003, 67.30000, 4.05670, 2.90601E-002, 0.00000
+ Zone Sizing Information, CORE_ZN ZN, Cooling, 3450.95875, 4141.15050, 0.28819, 0.34582, EL PASO INTERNATIONAL AP  UT ANN CLG .4% CONDNS DB=>MWB, 7/21 18:20:00, 34.33000, 6.86546E-003, 149.65740, 9.02103, 6.46221E-002, 0.00000
+ Zone Sizing Information, CORE_ZN ZN, Heating, 773.55804, 928.26964, 2.48668E-002, 6.46221E-002, EL PASO INTERNATIONAL AP  UT ANN HTG 99.6% CONDNS DB, 12/21 24:00:00, -5.20000, 2.80840E-003, 149.65740, 9.02103, 6.46221E-002, 0.00000
+ Zone Sizing Information, PERIMETER_ZN_1 ZN, Cooling, 3618.54348, 4342.25218, 0.30217, 0.36261, EL PASO INTERNATIONAL AP  UT ANN CLG .4% CONDNS DB=>MWB, 7/21 15:50:00, 37.45000, 6.87043E-003, 113.45000, 6.83853, 4.89877E-002, 0.00000
+ Zone Sizing Information, PERIMETER_ZN_1 ZN, Heating, 2537.97779, 3045.57334, 8.15813E-002, 9.78975E-002, EL PASO INTERNATIONAL AP  UT ANN HTG 99.6% CONDNS DB, 12/21 24:00:00, -5.20000, 2.80840E-003, 113.45000, 6.83853, 4.89877E-002, 0.00000
+ Zone Sizing Information, PERIMETER_ZN_2 ZN, Cooling, 2714.02526, 3256.83031, 0.22664, 0.27197, EL PASO INTERNATIONAL AP  UT ANN CLG .4% CONDNS DB=>MWB, 7/21 10:40:00, 34.46000, 6.86567E-003, 67.30000, 4.05670, 2.90601E-002, 0.00000
+ Zone Sizing Information, PERIMETER_ZN_2 ZN, Heating, 1585.84285, 1903.01142, 5.09755E-002, 6.11706E-002, EL PASO INTERNATIONAL AP  UT ANN HTG 99.6% CONDNS DB, 12/21 24:00:00, -5.20000, 2.80840E-003, 67.30000, 4.05670, 2.90601E-002, 0.00000
+ Zone Sizing Information, PERIMETER_ZN_3 ZN, Cooling, 3585.11731, 4302.14077, 0.29938, 0.35926, EL PASO INTERNATIONAL AP  UT ANN CLG .4% CONDNS DB=>MWB, 7/21 16:00:00, 37.32000, 6.87023E-003, 113.45000, 6.83853, 4.89877E-002, 0.00000
+ Zone Sizing Information, PERIMETER_ZN_3 ZN, Heating, 2565.02385, 3078.02862, 8.24506E-002, 9.89407E-002, EL PASO INTERNATIONAL AP  UT ANN HTG 99.6% CONDNS DB, 12/21 24:00:00, -5.20000, 2.80840E-003, 113.45000, 6.83853, 4.89877E-002, 0.00000
+ Zone Sizing Information, PERIMETER_ZN_4 ZN, Cooling, 3003.65383, 3604.38459, 0.25083, 0.30099, EL PASO INTERNATIONAL AP  UT ANN CLG .4% CONDNS DB=>MWB, 7/21 17:50:00, 35.19667, 6.86684E-003, 67.30000, 4.05670, 2.90601E-002, 0.00000
+ Zone Sizing Information, PERIMETER_ZN_4 ZN, Heating, 1569.46626, 1883.35951, 5.04491E-002, 6.05389E-002, EL PASO INTERNATIONAL AP  UT ANN HTG 99.6% CONDNS DB, 12/21 24:00:00, -5.20000, 2.80840E-003, 67.30000, 4.05670, 2.90601E-002, 0.00000
 ! <System Sizing Information>, System Name, Load Type, Peak Load Kind, User Design Capacity [W], Calc Des Air Flow Rate [m3/s], User Des Air Flow Rate [m3/s], Design Day Name, Date/Time of Peak
- System Sizing Information, CORE_ZN ZN PSZ-AC-1, Cooling, Sensible, 5005.64, 0.34514, 0.34514, EL PASO INTERNATIONAL AP  UT ANN CLG .4% CONDNS DB=>MWB, 7/21 15:00:00
+ System Sizing Information, CORE_ZN ZN PSZ-AC-1, Cooling, Sensible, 5013.75, 0.34582, 0.34582, EL PASO INTERNATIONAL AP  UT ANN CLG .4% CONDNS DB=>MWB, 7/21 15:00:00
  System Sizing Information, CORE_ZN ZN PSZ-AC-1, Heating, Sensible, 3785.06, 6.46221E-002, 6.46221E-002, EL PASO INTERNATIONAL AP  UT ANN HTG 99.6% CONDNS DB, 12/21 00:10:00
- System Sizing Information, PERIMETER_ZN_1 ZN PSZ-AC-2, Cooling, Sensible, 4878.52, 0.35330, 0.35330, EL PASO INTERNATIONAL AP  UT ANN CLG .4% CONDNS DB=>MWB, 7/21 15:20:00
- System Sizing Information, PERIMETER_ZN_1 ZN PSZ-AC-2, Heating, Sensible, 4225.67, 9.32311E-002, 9.32311E-002, EL PASO INTERNATIONAL AP  UT ANN HTG 99.6% CONDNS DB, 12/21 24:00:00
- System Sizing Information, PERIMETER_ZN_2 ZN PSZ-AC-3, Cooling, Sensible, 3531.62, 0.27181, 0.27181, EL PASO INTERNATIONAL AP  UT ANN CLG .4% CONDNS DB=>MWB, 7/21 10:50:00
- System Sizing Information, PERIMETER_ZN_2 ZN PSZ-AC-3, Heating, Sensible, 2680.58, 6.09769E-002, 6.09769E-002, EL PASO INTERNATIONAL AP  UT ANN HTG 99.6% CONDNS DB, 12/21 24:00:00
- System Sizing Information, PERIMETER_ZN_3 ZN PSZ-AC-4, Cooling, Sensible, 4850.04, 0.35093, 0.35093, EL PASO INTERNATIONAL AP  UT ANN CLG .4% CONDNS DB=>MWB, 7/21 15:20:00
- System Sizing Information, PERIMETER_ZN_3 ZN PSZ-AC-4, Heating, Sensible, 4254.57, 9.41736E-002, 9.41736E-002, EL PASO INTERNATIONAL AP  UT ANN HTG 99.6% CONDNS DB, 12/21 24:00:00
- System Sizing Information, PERIMETER_ZN_4 ZN PSZ-AC-5, Cooling, Sensible, 3897.77, 0.30069, 0.30069, EL PASO INTERNATIONAL AP  UT ANN CLG .4% CONDNS DB=>MWB, 7/21 17:40:00
- System Sizing Information, PERIMETER_ZN_4 ZN PSZ-AC-5, Heating, Sensible, 2661.21, 6.03451E-002, 6.03451E-002, EL PASO INTERNATIONAL AP  UT ANN HTG 99.6% CONDNS DB, 12/21 24:00:00
+ System Sizing Information, PERIMETER_ZN_1 ZN PSZ-AC-2, Cooling, Sensible, 4993.39, 0.36261, 0.36261, EL PASO INTERNATIONAL AP  UT ANN CLG .4% CONDNS DB=>MWB, 7/21 15:20:00
+ System Sizing Information, PERIMETER_ZN_1 ZN PSZ-AC-2, Heating, Sensible, 4368.73, 9.78975E-002, 9.78975E-002, EL PASO INTERNATIONAL AP  UT ANN HTG 99.6% CONDNS DB, 12/21 24:00:00
+ System Sizing Information, PERIMETER_ZN_2 ZN PSZ-AC-3, Cooling, Sensible, 3533.50, 0.27197, 0.27197, EL PASO INTERNATIONAL AP  UT ANN CLG .4% CONDNS DB=>MWB, 7/21 10:50:00
+ System Sizing Information, PERIMETER_ZN_2 ZN PSZ-AC-3, Heating, Sensible, 2686.52, 6.11706E-002, 6.11706E-002, EL PASO INTERNATIONAL AP  UT ANN HTG 99.6% CONDNS DB, 12/21 24:00:00
+ System Sizing Information, PERIMETER_ZN_3 ZN PSZ-AC-4, Cooling, Sensible, 4947.65, 0.35926, 0.35926, EL PASO INTERNATIONAL AP  UT ANN CLG .4% CONDNS DB=>MWB, 7/21 15:20:00
+ System Sizing Information, PERIMETER_ZN_3 ZN PSZ-AC-4, Heating, Sensible, 4400.71, 9.89407E-002, 9.89407E-002, EL PASO INTERNATIONAL AP  UT ANN HTG 99.6% CONDNS DB, 12/21 24:00:00
+ System Sizing Information, PERIMETER_ZN_4 ZN PSZ-AC-5, Cooling, Sensible, 3901.32, 0.30099, 0.30099, EL PASO INTERNATIONAL AP  UT ANN CLG .4% CONDNS DB=>MWB, 7/21 17:40:00
+ System Sizing Information, PERIMETER_ZN_4 ZN PSZ-AC-5, Heating, Sensible, 2667.15, 6.05389E-002, 6.05389E-002, EL PASO INTERNATIONAL AP  UT ANN HTG 99.6% CONDNS DB, 12/21 24:00:00
 ! <Component Sizing Information>, Component Type, Component Name, Input Field Description, Value
- Component Sizing Information, AirTerminal:SingleDuct:ConstantVolume:NoReheat, CORE_ZN ZN PSZ-AC-1 DIFFUSER, Design Size Maximum Air Flow Rate [m3/s], 0.34514
- Component Sizing Information, AirTerminal:SingleDuct:ConstantVolume:NoReheat, PERIMETER_ZN_1 ZN PSZ-AC-2 DIFFUSER, Design Size Maximum Air Flow Rate [m3/s], 0.35330
- Component Sizing Information, AirTerminal:SingleDuct:ConstantVolume:NoReheat, PERIMETER_ZN_2 ZN PSZ-AC-3 DIFFUSER, Design Size Maximum Air Flow Rate [m3/s], 0.27181
- Component Sizing Information, AirTerminal:SingleDuct:ConstantVolume:NoReheat, PERIMETER_ZN_3 ZN PSZ-AC-4 DIFFUSER, Design Size Maximum Air Flow Rate [m3/s], 0.35093
- Component Sizing Information, AirTerminal:SingleDuct:ConstantVolume:NoReheat, PERIMETER_ZN_4 ZN PSZ-AC-5 DIFFUSER, Design Size Maximum Air Flow Rate [m3/s], 0.30069
- Component Sizing Information, AirLoopHVAC, CORE_ZN ZN PSZ-AC-1, Sum of Air Terminal Maximum Heating Flow Rates [m3/s], 0.34514
- Component Sizing Information, AirLoopHVAC, CORE_ZN ZN PSZ-AC-1, Sum of Air Terminal Minimum Heating Flow Rates [m3/s], 0.34514
- Component Sizing Information, AirLoopHVAC, CORE_ZN ZN PSZ-AC-1, Sum of Air Terminal Maximum Flow Rates [m3/s], 0.34514
- Component Sizing Information, AirLoopHVAC, CORE_ZN ZN PSZ-AC-1, Adjusted Heating Design Air Flow Rate [m3/s], 0.34514
- Component Sizing Information, AirLoopHVAC, CORE_ZN ZN PSZ-AC-1, Adjusted Cooling Design Air Flow Rate [m3/s], 0.34514
- Component Sizing Information, AirLoopHVAC, CORE_ZN ZN PSZ-AC-1, Adjusted Main Design Air Flow Rate [m3/s], 0.34514
+ Component Sizing Information, AirTerminal:SingleDuct:ConstantVolume:NoReheat, CORE_ZN ZN PSZ-AC-1 DIFFUSER, Design Size Maximum Air Flow Rate [m3/s], 0.34582
+ Component Sizing Information, AirTerminal:SingleDuct:ConstantVolume:NoReheat, PERIMETER_ZN_1 ZN PSZ-AC-2 DIFFUSER, Design Size Maximum Air Flow Rate [m3/s], 0.36261
+ Component Sizing Information, AirTerminal:SingleDuct:ConstantVolume:NoReheat, PERIMETER_ZN_2 ZN PSZ-AC-3 DIFFUSER, Design Size Maximum Air Flow Rate [m3/s], 0.27197
+ Component Sizing Information, AirTerminal:SingleDuct:ConstantVolume:NoReheat, PERIMETER_ZN_3 ZN PSZ-AC-4 DIFFUSER, Design Size Maximum Air Flow Rate [m3/s], 0.35926
+ Component Sizing Information, AirTerminal:SingleDuct:ConstantVolume:NoReheat, PERIMETER_ZN_4 ZN PSZ-AC-5 DIFFUSER, Design Size Maximum Air Flow Rate [m3/s], 0.30099
+ Component Sizing Information, AirLoopHVAC, CORE_ZN ZN PSZ-AC-1, Sum of Air Terminal Maximum Heating Flow Rates [m3/s], 0.34582
+ Component Sizing Information, AirLoopHVAC, CORE_ZN ZN PSZ-AC-1, Sum of Air Terminal Minimum Heating Flow Rates [m3/s], 0.34582
+ Component Sizing Information, AirLoopHVAC, CORE_ZN ZN PSZ-AC-1, Sum of Air Terminal Maximum Flow Rates [m3/s], 0.34582
+ Component Sizing Information, AirLoopHVAC, CORE_ZN ZN PSZ-AC-1, Adjusted Heating Design Air Flow Rate [m3/s], 0.34582
+ Component Sizing Information, AirLoopHVAC, CORE_ZN ZN PSZ-AC-1, Adjusted Cooling Design Air Flow Rate [m3/s], 0.34582
+ Component Sizing Information, AirLoopHVAC, CORE_ZN ZN PSZ-AC-1, Adjusted Main Design Air Flow Rate [m3/s], 0.34582
  Component Sizing Information, AirLoopHVAC, CORE_ZN ZN PSZ-AC-1, User Heating Air Flow Ratio [], 1.00000
  Component Sizing Information, AirLoopHVAC, CORE_ZN ZN PSZ-AC-1, Calculated Heating Air Flow Ratio [], 1.00000
- Component Sizing Information, AirLoopHVAC, PERIMETER_ZN_1 ZN PSZ-AC-2, Sum of Air Terminal Maximum Heating Flow Rates [m3/s], 0.35330
- Component Sizing Information, AirLoopHVAC, PERIMETER_ZN_1 ZN PSZ-AC-2, Sum of Air Terminal Minimum Heating Flow Rates [m3/s], 0.35330
- Component Sizing Information, AirLoopHVAC, PERIMETER_ZN_1 ZN PSZ-AC-2, Sum of Air Terminal Maximum Flow Rates [m3/s], 0.35330
- Component Sizing Information, AirLoopHVAC, PERIMETER_ZN_1 ZN PSZ-AC-2, Adjusted Heating Design Air Flow Rate [m3/s], 0.35330
- Component Sizing Information, AirLoopHVAC, PERIMETER_ZN_1 ZN PSZ-AC-2, Adjusted Cooling Design Air Flow Rate [m3/s], 0.35330
- Component Sizing Information, AirLoopHVAC, PERIMETER_ZN_1 ZN PSZ-AC-2, Adjusted Main Design Air Flow Rate [m3/s], 0.35330
+ Component Sizing Information, AirLoopHVAC, PERIMETER_ZN_1 ZN PSZ-AC-2, Sum of Air Terminal Maximum Heating Flow Rates [m3/s], 0.36261
+ Component Sizing Information, AirLoopHVAC, PERIMETER_ZN_1 ZN PSZ-AC-2, Sum of Air Terminal Minimum Heating Flow Rates [m3/s], 0.36261
+ Component Sizing Information, AirLoopHVAC, PERIMETER_ZN_1 ZN PSZ-AC-2, Sum of Air Terminal Maximum Flow Rates [m3/s], 0.36261
+ Component Sizing Information, AirLoopHVAC, PERIMETER_ZN_1 ZN PSZ-AC-2, Adjusted Heating Design Air Flow Rate [m3/s], 0.36261
+ Component Sizing Information, AirLoopHVAC, PERIMETER_ZN_1 ZN PSZ-AC-2, Adjusted Cooling Design Air Flow Rate [m3/s], 0.36261
+ Component Sizing Information, AirLoopHVAC, PERIMETER_ZN_1 ZN PSZ-AC-2, Adjusted Main Design Air Flow Rate [m3/s], 0.36261
  Component Sizing Information, AirLoopHVAC, PERIMETER_ZN_1 ZN PSZ-AC-2, User Heating Air Flow Ratio [], 1.00000
  Component Sizing Information, AirLoopHVAC, PERIMETER_ZN_1 ZN PSZ-AC-2, Calculated Heating Air Flow Ratio [], 1.00000
- Component Sizing Information, AirLoopHVAC, PERIMETER_ZN_2 ZN PSZ-AC-3, Sum of Air Terminal Maximum Heating Flow Rates [m3/s], 0.27181
- Component Sizing Information, AirLoopHVAC, PERIMETER_ZN_2 ZN PSZ-AC-3, Sum of Air Terminal Minimum Heating Flow Rates [m3/s], 0.27181
- Component Sizing Information, AirLoopHVAC, PERIMETER_ZN_2 ZN PSZ-AC-3, Sum of Air Terminal Maximum Flow Rates [m3/s], 0.27181
- Component Sizing Information, AirLoopHVAC, PERIMETER_ZN_2 ZN PSZ-AC-3, Adjusted Heating Design Air Flow Rate [m3/s], 0.27181
- Component Sizing Information, AirLoopHVAC, PERIMETER_ZN_2 ZN PSZ-AC-3, Adjusted Cooling Design Air Flow Rate [m3/s], 0.27181
- Component Sizing Information, AirLoopHVAC, PERIMETER_ZN_2 ZN PSZ-AC-3, Adjusted Main Design Air Flow Rate [m3/s], 0.27181
+ Component Sizing Information, AirLoopHVAC, PERIMETER_ZN_2 ZN PSZ-AC-3, Sum of Air Terminal Maximum Heating Flow Rates [m3/s], 0.27197
+ Component Sizing Information, AirLoopHVAC, PERIMETER_ZN_2 ZN PSZ-AC-3, Sum of Air Terminal Minimum Heating Flow Rates [m3/s], 0.27197
+ Component Sizing Information, AirLoopHVAC, PERIMETER_ZN_2 ZN PSZ-AC-3, Sum of Air Terminal Maximum Flow Rates [m3/s], 0.27197
+ Component Sizing Information, AirLoopHVAC, PERIMETER_ZN_2 ZN PSZ-AC-3, Adjusted Heating Design Air Flow Rate [m3/s], 0.27197
+ Component Sizing Information, AirLoopHVAC, PERIMETER_ZN_2 ZN PSZ-AC-3, Adjusted Cooling Design Air Flow Rate [m3/s], 0.27197
+ Component Sizing Information, AirLoopHVAC, PERIMETER_ZN_2 ZN PSZ-AC-3, Adjusted Main Design Air Flow Rate [m3/s], 0.27197
  Component Sizing Information, AirLoopHVAC, PERIMETER_ZN_2 ZN PSZ-AC-3, User Heating Air Flow Ratio [], 1.00000
  Component Sizing Information, AirLoopHVAC, PERIMETER_ZN_2 ZN PSZ-AC-3, Calculated Heating Air Flow Ratio [], 1.00000
- Component Sizing Information, AirLoopHVAC, PERIMETER_ZN_3 ZN PSZ-AC-4, Sum of Air Terminal Maximum Heating Flow Rates [m3/s], 0.35093
- Component Sizing Information, AirLoopHVAC, PERIMETER_ZN_3 ZN PSZ-AC-4, Sum of Air Terminal Minimum Heating Flow Rates [m3/s], 0.35093
- Component Sizing Information, AirLoopHVAC, PERIMETER_ZN_3 ZN PSZ-AC-4, Sum of Air Terminal Maximum Flow Rates [m3/s], 0.35093
- Component Sizing Information, AirLoopHVAC, PERIMETER_ZN_3 ZN PSZ-AC-4, Adjusted Heating Design Air Flow Rate [m3/s], 0.35093
- Component Sizing Information, AirLoopHVAC, PERIMETER_ZN_3 ZN PSZ-AC-4, Adjusted Cooling Design Air Flow Rate [m3/s], 0.35093
- Component Sizing Information, AirLoopHVAC, PERIMETER_ZN_3 ZN PSZ-AC-4, Adjusted Main Design Air Flow Rate [m3/s], 0.35093
+ Component Sizing Information, AirLoopHVAC, PERIMETER_ZN_3 ZN PSZ-AC-4, Sum of Air Terminal Maximum Heating Flow Rates [m3/s], 0.35926
+ Component Sizing Information, AirLoopHVAC, PERIMETER_ZN_3 ZN PSZ-AC-4, Sum of Air Terminal Minimum Heating Flow Rates [m3/s], 0.35926
+ Component Sizing Information, AirLoopHVAC, PERIMETER_ZN_3 ZN PSZ-AC-4, Sum of Air Terminal Maximum Flow Rates [m3/s], 0.35926
+ Component Sizing Information, AirLoopHVAC, PERIMETER_ZN_3 ZN PSZ-AC-4, Adjusted Heating Design Air Flow Rate [m3/s], 0.35926
+ Component Sizing Information, AirLoopHVAC, PERIMETER_ZN_3 ZN PSZ-AC-4, Adjusted Cooling Design Air Flow Rate [m3/s], 0.35926
+ Component Sizing Information, AirLoopHVAC, PERIMETER_ZN_3 ZN PSZ-AC-4, Adjusted Main Design Air Flow Rate [m3/s], 0.35926
  Component Sizing Information, AirLoopHVAC, PERIMETER_ZN_3 ZN PSZ-AC-4, User Heating Air Flow Ratio [], 1.00000
  Component Sizing Information, AirLoopHVAC, PERIMETER_ZN_3 ZN PSZ-AC-4, Calculated Heating Air Flow Ratio [], 1.00000
- Component Sizing Information, AirLoopHVAC, PERIMETER_ZN_4 ZN PSZ-AC-5, Sum of Air Terminal Maximum Heating Flow Rates [m3/s], 0.30069
- Component Sizing Information, AirLoopHVAC, PERIMETER_ZN_4 ZN PSZ-AC-5, Sum of Air Terminal Minimum Heating Flow Rates [m3/s], 0.30069
- Component Sizing Information, AirLoopHVAC, PERIMETER_ZN_4 ZN PSZ-AC-5, Sum of Air Terminal Maximum Flow Rates [m3/s], 0.30069
- Component Sizing Information, AirLoopHVAC, PERIMETER_ZN_4 ZN PSZ-AC-5, Adjusted Heating Design Air Flow Rate [m3/s], 0.30069
- Component Sizing Information, AirLoopHVAC, PERIMETER_ZN_4 ZN PSZ-AC-5, Adjusted Cooling Design Air Flow Rate [m3/s], 0.30069
- Component Sizing Information, AirLoopHVAC, PERIMETER_ZN_4 ZN PSZ-AC-5, Adjusted Main Design Air Flow Rate [m3/s], 0.30069
+ Component Sizing Information, AirLoopHVAC, PERIMETER_ZN_4 ZN PSZ-AC-5, Sum of Air Terminal Maximum Heating Flow Rates [m3/s], 0.30099
+ Component Sizing Information, AirLoopHVAC, PERIMETER_ZN_4 ZN PSZ-AC-5, Sum of Air Terminal Minimum Heating Flow Rates [m3/s], 0.30099
+ Component Sizing Information, AirLoopHVAC, PERIMETER_ZN_4 ZN PSZ-AC-5, Sum of Air Terminal Maximum Flow Rates [m3/s], 0.30099
+ Component Sizing Information, AirLoopHVAC, PERIMETER_ZN_4 ZN PSZ-AC-5, Adjusted Heating Design Air Flow Rate [m3/s], 0.30099
+ Component Sizing Information, AirLoopHVAC, PERIMETER_ZN_4 ZN PSZ-AC-5, Adjusted Cooling Design Air Flow Rate [m3/s], 0.30099
+ Component Sizing Information, AirLoopHVAC, PERIMETER_ZN_4 ZN PSZ-AC-5, Adjusted Main Design Air Flow Rate [m3/s], 0.30099
  Component Sizing Information, AirLoopHVAC, PERIMETER_ZN_4 ZN PSZ-AC-5, User Heating Air Flow Ratio [], 1.00000
  Component Sizing Information, AirLoopHVAC, PERIMETER_ZN_4 ZN PSZ-AC-5, Calculated Heating Air Flow Ratio [], 1.00000
- Component Sizing Information, AirLoopHVAC, CORE_ZN ZN PSZ-AC-1, Design Supply Air Flow Rate [m3/s], 0.34514
- Component Sizing Information, AirLoopHVAC, PERIMETER_ZN_1 ZN PSZ-AC-2, Design Supply Air Flow Rate [m3/s], 0.35330
- Component Sizing Information, AirLoopHVAC, PERIMETER_ZN_2 ZN PSZ-AC-3, Design Supply Air Flow Rate [m3/s], 0.27181
- Component Sizing Information, AirLoopHVAC, PERIMETER_ZN_3 ZN PSZ-AC-4, Design Supply Air Flow Rate [m3/s], 0.35093
- Component Sizing Information, AirLoopHVAC, PERIMETER_ZN_4 ZN PSZ-AC-5, Design Supply Air Flow Rate [m3/s], 0.30069
+ Component Sizing Information, AirLoopHVAC, CORE_ZN ZN PSZ-AC-1, Design Supply Air Flow Rate [m3/s], 0.34582
+ Component Sizing Information, AirLoopHVAC, PERIMETER_ZN_1 ZN PSZ-AC-2, Design Supply Air Flow Rate [m3/s], 0.36261
+ Component Sizing Information, AirLoopHVAC, PERIMETER_ZN_2 ZN PSZ-AC-3, Design Supply Air Flow Rate [m3/s], 0.27197
+ Component Sizing Information, AirLoopHVAC, PERIMETER_ZN_3 ZN PSZ-AC-4, Design Supply Air Flow Rate [m3/s], 0.35926
+ Component Sizing Information, AirLoopHVAC, PERIMETER_ZN_4 ZN PSZ-AC-5, Design Supply Air Flow Rate [m3/s], 0.30099
 !<Controller:MechanicalVentilation>,Name,Availability Schedule Name,Demand Controlled Ventilation {Yes/No},System Outdoor Air Method,Zone Maximum Outdoor Air Fraction,Number of Zones,Zone Name,DSOA Name,DSZAD Name
  Controller:MechanicalVentilation,CONTROLLER MECHANICAL VENTILATION 5,ALWAYS ON DISCRETE,No,ZoneSum,1.00,1,CORE_ZN ZN,OFFICE WHOLEBUILDING - SM OFFICE VENTILATION,
  Controller:MechanicalVentilation,CONTROLLER MECHANICAL VENTILATION 1,ALWAYS ON DISCRETE,No,ZoneSum,1.00,1,PERIMETER_ZN_1 ZN,OFFICE WHOLEBUILDING - SM OFFICE VENTILATION,
  Controller:MechanicalVentilation,CONTROLLER MECHANICAL VENTILATION 2,ALWAYS ON DISCRETE,No,ZoneSum,1.00,1,PERIMETER_ZN_2 ZN,OFFICE WHOLEBUILDING - SM OFFICE VENTILATION,
  Controller:MechanicalVentilation,CONTROLLER MECHANICAL VENTILATION 3,ALWAYS ON DISCRETE,No,ZoneSum,1.00,1,PERIMETER_ZN_3 ZN,OFFICE WHOLEBUILDING - SM OFFICE VENTILATION,
  Controller:MechanicalVentilation,CONTROLLER MECHANICAL VENTILATION 4,ALWAYS ON DISCRETE,No,ZoneSum,1.00,1,PERIMETER_ZN_4 ZN,OFFICE WHOLEBUILDING - SM OFFICE VENTILATION,
- Component Sizing Information, Controller:OutdoorAir, CORE_ZN ZN PSZ-AC-1 OA SYSTEM CONTROLLER, Maximum Outdoor Air Flow Rate [m3/s], 0.34514
+ Component Sizing Information, Controller:OutdoorAir, CORE_ZN ZN PSZ-AC-1 OA SYSTEM CONTROLLER, Maximum Outdoor Air Flow Rate [m3/s], 0.34582
  Component Sizing Information, Controller:OutdoorAir, CORE_ZN ZN PSZ-AC-1 OA SYSTEM CONTROLLER, Minimum Outdoor Air Flow Rate [m3/s], 6.46221E-002
- Component Sizing Information, AirLoopHVAC:UnitarySystem, CORE_ZN ZN PSZ-AC-1 UNITARY HP, Design Size Supply Air Flow Rate [m3/s], 0.34514
- Component Sizing Information, AirLoopHVAC:UnitarySystem, CORE_ZN ZN PSZ-AC-1 UNITARY HP, Design Size Heating Supply Air Flow Rate [m3/s], 0.34514
- Component Sizing Information, AirLoopHVAC:UnitarySystem, CORE_ZN ZN PSZ-AC-1 UNITARY HP, Design Size Cooling Supply Air Flow Rate [m3/s], 0.34514
+ Component Sizing Information, AirLoopHVAC:UnitarySystem, CORE_ZN ZN PSZ-AC-1 UNITARY HP, Design Size Supply Air Flow Rate [m3/s], 0.34582
+ Component Sizing Information, AirLoopHVAC:UnitarySystem, CORE_ZN ZN PSZ-AC-1 UNITARY HP, Design Size Heating Supply Air Flow Rate [m3/s], 0.34582
+ Component Sizing Information, AirLoopHVAC:UnitarySystem, CORE_ZN ZN PSZ-AC-1 UNITARY HP, Design Size Cooling Supply Air Flow Rate [m3/s], 0.34582
  Component Sizing Information, AirLoopHVAC:UnitarySystem, CORE_ZN ZN PSZ-AC-1 UNITARY HP, User-Specified No Load Supply Air Flow Rate [m3/s], 0.00000
- Component Sizing Information, AirLoopHVAC:UnitarySystem, CORE_ZN ZN PSZ-AC-1 UNITARY HP, Design Size Nominal Cooling Capacity [W], 8570.72889
- Component Sizing Information, AirLoopHVAC:UnitarySystem, CORE_ZN ZN PSZ-AC-1 UNITARY HP, Design Size Nominal Heating Capacity [W], 8570.72889
+ Component Sizing Information, AirLoopHVAC:UnitarySystem, CORE_ZN ZN PSZ-AC-1 UNITARY HP, Design Size Nominal Cooling Capacity [W], 8587.60426
+ Component Sizing Information, AirLoopHVAC:UnitarySystem, CORE_ZN ZN PSZ-AC-1 UNITARY HP, Design Size Nominal Heating Capacity [W], 8587.60426
  Component Sizing Information, AirLoopHVAC:UnitarySystem, CORE_ZN ZN PSZ-AC-1 UNITARY HP, Design Size Maximum Supply Air Temperature [C], 50.00000
  Component Sizing Information, AirLoopHVAC:UnitarySystem, CORE_ZN ZN PSZ-AC-1 UNITARY HP, User-Specified Maximum Supply Air Temperature [C], 80.00000
- Component Sizing Information, AirLoopHVAC:UnitarySystem, CORE_ZN ZN PSZ-AC-1 UNITARY HP, User-Specified Supplemental Heating Coil Nominal Capacity [W], 8570.72889
+ Component Sizing Information, AirLoopHVAC:UnitarySystem, CORE_ZN ZN PSZ-AC-1 UNITARY HP, User-Specified Supplemental Heating Coil Nominal Capacity [W], 8587.60426
  Component Sizing Information, AirLoopHVAC:UnitarySystem, CORE_ZN ZN PSZ-AC-1 UNITARY HP, Fraction of Supply Air Flow That Goes Through the Controlling Zone, 1.00000
- Component Sizing Information, Fan:OnOff, CORE_ZN ZN PSZ-AC-1 FAN, Design Size Maximum Flow Rate [m3/s], 0.34514
- Component Sizing Information, Fan:OnOff, CORE_ZN ZN PSZ-AC-1 FAN, Design Electric Power Consumption [W], 386.73575
- Component Sizing Information, Coil:Cooling:DX:SingleSpeed, CORE_ZN ZN PSZ-AC-1 1SPD DX HP CLG COIL 32KBTU/HR 13SEER, Design Size Rated Air Flow Rate [m3/s], 0.34514
- Component Sizing Information, Coil:Cooling:DX:SingleSpeed, CORE_ZN ZN PSZ-AC-1 1SPD DX HP CLG COIL 32KBTU/HR 13SEER, Design Size Gross Rated Total Cooling Capacity [W], 8570.72889
+ Component Sizing Information, Fan:OnOff, CORE_ZN ZN PSZ-AC-1 FAN, Design Size Maximum Flow Rate [m3/s], 0.34582
+ Component Sizing Information, Fan:OnOff, CORE_ZN ZN PSZ-AC-1 FAN, Design Electric Power Consumption [W], 387.49721
+ Component Sizing Information, Coil:Cooling:DX:SingleSpeed, CORE_ZN ZN PSZ-AC-1 1SPD DX HP CLG COIL 32KBTU/HR 13SEER, Design Size Rated Air Flow Rate [m3/s], 0.34582
+ Component Sizing Information, Coil:Cooling:DX:SingleSpeed, CORE_ZN ZN PSZ-AC-1 1SPD DX HP CLG COIL 32KBTU/HR 13SEER, Design Size Gross Rated Total Cooling Capacity [W], 8587.60426
  Component Sizing Information, Coil:Cooling:DX:SingleSpeed, CORE_ZN ZN PSZ-AC-1 1SPD DX HP CLG COIL 32KBTU/HR 13SEER, Design Size Gross Rated Sensible Heat Ratio, 0.70159
 ! <DX Cooling Coil Standard Rating Information>, Component Type, Component Name, Standard Rating (Net) Cooling Capacity {W}, Standard Rating Net COP {W/W}, EER {Btu/W-h}, SEER User {Btu/W-h}, SEER Standard {Btu/W-h}, IEER {Btu/W-h}
- DX Cooling Coil Standard Rating Information, Coil:Cooling:DX:SingleSpeed, CORE_ZN ZN PSZ-AC-1 1SPD DX HP CLG COIL 32KBTU/HR 13SEER, 8290.2, 3.17, 10.83, 11.43, 10.86, 11.1
+ DX Cooling Coil Standard Rating Information, Coil:Cooling:DX:SingleSpeed, CORE_ZN ZN PSZ-AC-1 1SPD DX HP CLG COIL 32KBTU/HR 13SEER, 8306.5, 3.17, 10.83, 11.43, 10.86, 11.1
 ! <DX Cooling Coil AHRI 2023 Standard Rating Information>, Component Type, Component Name, Standard Rating (Net) Cooling Capacity {W}, Standard Rating Net COP2 {W/W}, EER2 {Btu/W-h}, SEER2 User {Btu/W-h}, SEER2 Standard {Btu/W-h}, IEER 2022 {Btu/W-h}
- DX Cooling Coil AHRI 2023 Standard Rating Information, Coil:Cooling:DX:SingleSpeed, CORE_ZN ZN PSZ-AC-1 1SPD DX HP CLG COIL 32KBTU/HR 13SEER, 8234.6, 3.09, 10.54, 11.10, 10.85, 10.6
- Component Sizing Information, Coil:Heating:DX:SingleSpeed, CORE_ZN ZN HP HTG COIL 32 CLG KBTU/HR 7.7HSPF, Design Size Rated Air Flow Rate [m3/s], 0.34514
- Component Sizing Information, Coil:Heating:DX:SingleSpeed, CORE_ZN ZN HP HTG COIL 32 CLG KBTU/HR 7.7HSPF, Design Size Gross Rated Heating Capacity [W], 8570.72889
+ DX Cooling Coil AHRI 2023 Standard Rating Information, Coil:Cooling:DX:SingleSpeed, CORE_ZN ZN PSZ-AC-1 1SPD DX HP CLG COIL 32KBTU/HR 13SEER, 8250.8, 3.09, 10.54, 11.10, 10.85, 10.6
+ Component Sizing Information, Coil:Heating:DX:SingleSpeed, CORE_ZN ZN HP HTG COIL 32 CLG KBTU/HR 7.7HSPF, Design Size Rated Air Flow Rate [m3/s], 0.34582
+ Component Sizing Information, Coil:Heating:DX:SingleSpeed, CORE_ZN ZN HP HTG COIL 32 CLG KBTU/HR 7.7HSPF, Design Size Gross Rated Heating Capacity [W], 8587.60426
 ! <DX Heating Coil Standard Rating Information>, Component Type, Component Name, High Temperature Heating (net) Rating Capacity {W}, Low Temperature Heating (net) Rating Capacity {W}, HSPF {Btu/W-h}, Region Number
- DX Heating Coil Standard Rating Information, Coil:Heating:DX:SingleSpeed, CORE_ZN ZN HP HTG COIL 32 CLG KBTU/HR 7.7HSPF, 10178.9, 10178.9, 12.88, 4
+ DX Heating Coil Standard Rating Information, Coil:Heating:DX:SingleSpeed, CORE_ZN ZN HP HTG COIL 32 CLG KBTU/HR 7.7HSPF, 10199.0, 10199.0, 12.87, 4
 ! <DX Heating Coil AHRI 2023 Standard Rating Information>, Component Type, Component Name, High Temperature Heating (net) Rating Capacity {W}, Low Temperature Heating (net) Rating Capacity {W}, HSPF2 {Btu/W-h}, Region Number
- DX Heating Coil AHRI 2023 Standard Rating Information, Coil:Heating:DX:SingleSpeed, CORE_ZN ZN HP HTG COIL 32 CLG KBTU/HR 7.7HSPF, 10234.5, 10234.5, 12.90, 4
- Component Sizing Information, Coil:Heating:Fuel, CORE_ZN ZN PSZ-AC-1 GAS BACKUP HTG COIL 32KBTU/HR 0.8 THERMAL EFF, Design Size Nominal Capacity [W], 8570.72889
- Component Sizing Information, Controller:OutdoorAir, PERIMETER_ZN_1 ZN PSZ-AC-2 OA SYSTEM CONTROLLER, Maximum Outdoor Air Flow Rate [m3/s], 0.35330
+ DX Heating Coil AHRI 2023 Standard Rating Information, Coil:Heating:DX:SingleSpeed, CORE_ZN ZN HP HTG COIL 32 CLG KBTU/HR 7.7HSPF, 10254.7, 10254.7, 12.90, 4
+ Component Sizing Information, Coil:Heating:Fuel, CORE_ZN ZN PSZ-AC-1 GAS BACKUP HTG COIL 32KBTU/HR 0.8 THERMAL EFF, Design Size Nominal Capacity [W], 8587.60426
+ Component Sizing Information, Controller:OutdoorAir, PERIMETER_ZN_1 ZN PSZ-AC-2 OA SYSTEM CONTROLLER, Maximum Outdoor Air Flow Rate [m3/s], 0.36261
  Component Sizing Information, Controller:OutdoorAir, PERIMETER_ZN_1 ZN PSZ-AC-2 OA SYSTEM CONTROLLER, Minimum Outdoor Air Flow Rate [m3/s], 4.89877E-002
- Component Sizing Information, AirLoopHVAC:UnitarySystem, PERIMETER_ZN_1 ZN PSZ-AC-2 UNITARY HP, Design Size Supply Air Flow Rate [m3/s], 0.35330
- Component Sizing Information, AirLoopHVAC:UnitarySystem, PERIMETER_ZN_1 ZN PSZ-AC-2 UNITARY HP, Design Size Heating Supply Air Flow Rate [m3/s], 0.35330
- Component Sizing Information, AirLoopHVAC:UnitarySystem, PERIMETER_ZN_1 ZN PSZ-AC-2 UNITARY HP, Design Size Cooling Supply Air Flow Rate [m3/s], 0.35330
+ Component Sizing Information, AirLoopHVAC:UnitarySystem, PERIMETER_ZN_1 ZN PSZ-AC-2 UNITARY HP, Design Size Supply Air Flow Rate [m3/s], 0.36261
+ Component Sizing Information, AirLoopHVAC:UnitarySystem, PERIMETER_ZN_1 ZN PSZ-AC-2 UNITARY HP, Design Size Heating Supply Air Flow Rate [m3/s], 0.36261
+ Component Sizing Information, AirLoopHVAC:UnitarySystem, PERIMETER_ZN_1 ZN PSZ-AC-2 UNITARY HP, Design Size Cooling Supply Air Flow Rate [m3/s], 0.36261
  Component Sizing Information, AirLoopHVAC:UnitarySystem, PERIMETER_ZN_1 ZN PSZ-AC-2 UNITARY HP, User-Specified No Load Supply Air Flow Rate [m3/s], 0.00000
- Component Sizing Information, AirLoopHVAC:UnitarySystem, PERIMETER_ZN_1 ZN PSZ-AC-2 UNITARY HP, Design Size Nominal Cooling Capacity [W], 8773.20208
- Component Sizing Information, AirLoopHVAC:UnitarySystem, PERIMETER_ZN_1 ZN PSZ-AC-2 UNITARY HP, Design Size Nominal Heating Capacity [W], 8773.20208
+ Component Sizing Information, AirLoopHVAC:UnitarySystem, PERIMETER_ZN_1 ZN PSZ-AC-2 UNITARY HP, Design Size Nominal Cooling Capacity [W], 9004.46524
+ Component Sizing Information, AirLoopHVAC:UnitarySystem, PERIMETER_ZN_1 ZN PSZ-AC-2 UNITARY HP, Design Size Nominal Heating Capacity [W], 9004.46524
  Component Sizing Information, AirLoopHVAC:UnitarySystem, PERIMETER_ZN_1 ZN PSZ-AC-2 UNITARY HP, Design Size Maximum Supply Air Temperature [C], 50.00000
  Component Sizing Information, AirLoopHVAC:UnitarySystem, PERIMETER_ZN_1 ZN PSZ-AC-2 UNITARY HP, User-Specified Maximum Supply Air Temperature [C], 80.00000
- Component Sizing Information, AirLoopHVAC:UnitarySystem, PERIMETER_ZN_1 ZN PSZ-AC-2 UNITARY HP, User-Specified Supplemental Heating Coil Nominal Capacity [W], 8773.20208
+ Component Sizing Information, AirLoopHVAC:UnitarySystem, PERIMETER_ZN_1 ZN PSZ-AC-2 UNITARY HP, User-Specified Supplemental Heating Coil Nominal Capacity [W], 9004.46524
  Component Sizing Information, AirLoopHVAC:UnitarySystem, PERIMETER_ZN_1 ZN PSZ-AC-2 UNITARY HP, Fraction of Supply Air Flow That Goes Through the Controlling Zone, 1.00000
- Component Sizing Information, Fan:OnOff, PERIMETER_ZN_1 ZN PSZ-AC-2 FAN, Design Size Maximum Flow Rate [m3/s], 0.35330
- Component Sizing Information, Fan:OnOff, PERIMETER_ZN_1 ZN PSZ-AC-2 FAN, Design Electric Power Consumption [W], 395.87191
- Component Sizing Information, Coil:Cooling:DX:SingleSpeed, PERIMETER_ZN_1 ZN PSZ-AC-2 1SPD DX HP CLG COIL 35KBTU/HR 13SEER, Design Size Rated Air Flow Rate [m3/s], 0.35330
- Component Sizing Information, Coil:Cooling:DX:SingleSpeed, PERIMETER_ZN_1 ZN PSZ-AC-2 1SPD DX HP CLG COIL 35KBTU/HR 13SEER, Design Size Gross Rated Total Cooling Capacity [W], 8773.20208
+ Component Sizing Information, Fan:OnOff, PERIMETER_ZN_1 ZN PSZ-AC-2 FAN, Design Size Maximum Flow Rate [m3/s], 0.36261
+ Component Sizing Information, Fan:OnOff, PERIMETER_ZN_1 ZN PSZ-AC-2 FAN, Design Electric Power Consumption [W], 406.30717
+ Component Sizing Information, Coil:Cooling:DX:SingleSpeed, PERIMETER_ZN_1 ZN PSZ-AC-2 1SPD DX HP CLG COIL 35KBTU/HR 13SEER, Design Size Rated Air Flow Rate [m3/s], 0.36261
+ Component Sizing Information, Coil:Cooling:DX:SingleSpeed, PERIMETER_ZN_1 ZN PSZ-AC-2 1SPD DX HP CLG COIL 35KBTU/HR 13SEER, Design Size Gross Rated Total Cooling Capacity [W], 9004.46524
  Component Sizing Information, Coil:Cooling:DX:SingleSpeed, PERIMETER_ZN_1 ZN PSZ-AC-2 1SPD DX HP CLG COIL 35KBTU/HR 13SEER, Design Size Gross Rated Sensible Heat Ratio, 0.70159
- DX Cooling Coil Standard Rating Information, Coil:Cooling:DX:SingleSpeed, PERIMETER_ZN_1 ZN PSZ-AC-2 1SPD DX HP CLG COIL 35KBTU/HR 13SEER, 8486.0, 3.17, 10.83, 11.43, 10.86, 11.1
- DX Cooling Coil AHRI 2023 Standard Rating Information, Coil:Cooling:DX:SingleSpeed, PERIMETER_ZN_1 ZN PSZ-AC-2 1SPD DX HP CLG COIL 35KBTU/HR 13SEER, 8429.1, 3.09, 10.54, 11.10, 10.85, 10.6
- Component Sizing Information, Coil:Heating:DX:SingleSpeed, PERIMETER_ZN_1 ZN HP HTG COIL 35 CLG KBTU/HR 7.7HSPF, Design Size Rated Air Flow Rate [m3/s], 0.35330
- Component Sizing Information, Coil:Heating:DX:SingleSpeed, PERIMETER_ZN_1 ZN HP HTG COIL 35 CLG KBTU/HR 7.7HSPF, Design Size Gross Rated Heating Capacity [W], 8773.20208
- DX Heating Coil Standard Rating Information, Coil:Heating:DX:SingleSpeed, PERIMETER_ZN_1 ZN HP HTG COIL 35 CLG KBTU/HR 7.7HSPF, 10419.4, 10419.4, 12.84, 4
- DX Heating Coil AHRI 2023 Standard Rating Information, Coil:Heating:DX:SingleSpeed, PERIMETER_ZN_1 ZN HP HTG COIL 35 CLG KBTU/HR 7.7HSPF, 10476.3, 10476.3, 12.90, 4
- Component Sizing Information, Coil:Heating:Fuel, PERIMETER_ZN_1 ZN PSZ-AC-2 GAS BACKUP HTG COIL 35KBTU/HR 0.8 THERMAL EFF, Design Size Nominal Capacity [W], 8773.20208
- Component Sizing Information, Controller:OutdoorAir, PERIMETER_ZN_2 ZN PSZ-AC-3 OA SYSTEM CONTROLLER, Maximum Outdoor Air Flow Rate [m3/s], 0.27181
+ DX Cooling Coil Standard Rating Information, Coil:Cooling:DX:SingleSpeed, PERIMETER_ZN_1 ZN PSZ-AC-2 1SPD DX HP CLG COIL 35KBTU/HR 13SEER, 8709.7, 3.17, 10.83, 11.43, 10.86, 11.1
+ DX Cooling Coil AHRI 2023 Standard Rating Information, Coil:Cooling:DX:SingleSpeed, PERIMETER_ZN_1 ZN PSZ-AC-2 1SPD DX HP CLG COIL 35KBTU/HR 13SEER, 8651.3, 3.09, 10.54, 11.10, 10.85, 10.6
+ Component Sizing Information, Coil:Heating:DX:SingleSpeed, PERIMETER_ZN_1 ZN HP HTG COIL 35 CLG KBTU/HR 7.7HSPF, Design Size Rated Air Flow Rate [m3/s], 0.36261
+ Component Sizing Information, Coil:Heating:DX:SingleSpeed, PERIMETER_ZN_1 ZN HP HTG COIL 35 CLG KBTU/HR 7.7HSPF, Design Size Gross Rated Heating Capacity [W], 9004.46524
+ DX Heating Coil Standard Rating Information, Coil:Heating:DX:SingleSpeed, PERIMETER_ZN_1 ZN HP HTG COIL 35 CLG KBTU/HR 7.7HSPF, 10694.0, 10694.0, 12.80, 4
+ DX Heating Coil AHRI 2023 Standard Rating Information, Coil:Heating:DX:SingleSpeed, PERIMETER_ZN_1 ZN HP HTG COIL 35 CLG KBTU/HR 7.7HSPF, 10752.5, 10752.5, 12.90, 4
+ Component Sizing Information, Coil:Heating:Fuel, PERIMETER_ZN_1 ZN PSZ-AC-2 GAS BACKUP HTG COIL 35KBTU/HR 0.8 THERMAL EFF, Design Size Nominal Capacity [W], 9004.46524
+ Component Sizing Information, Controller:OutdoorAir, PERIMETER_ZN_2 ZN PSZ-AC-3 OA SYSTEM CONTROLLER, Maximum Outdoor Air Flow Rate [m3/s], 0.27197
  Component Sizing Information, Controller:OutdoorAir, PERIMETER_ZN_2 ZN PSZ-AC-3 OA SYSTEM CONTROLLER, Minimum Outdoor Air Flow Rate [m3/s], 2.90601E-002
- Component Sizing Information, AirLoopHVAC:UnitarySystem, PERIMETER_ZN_2 ZN PSZ-AC-3 UNITARY HP, Design Size Supply Air Flow Rate [m3/s], 0.27181
- Component Sizing Information, AirLoopHVAC:UnitarySystem, PERIMETER_ZN_2 ZN PSZ-AC-3 UNITARY HP, Design Size Heating Supply Air Flow Rate [m3/s], 0.27181
- Component Sizing Information, AirLoopHVAC:UnitarySystem, PERIMETER_ZN_2 ZN PSZ-AC-3 UNITARY HP, Design Size Cooling Supply Air Flow Rate [m3/s], 0.27181
+ Component Sizing Information, AirLoopHVAC:UnitarySystem, PERIMETER_ZN_2 ZN PSZ-AC-3 UNITARY HP, Design Size Supply Air Flow Rate [m3/s], 0.27197
+ Component Sizing Information, AirLoopHVAC:UnitarySystem, PERIMETER_ZN_2 ZN PSZ-AC-3 UNITARY HP, Design Size Heating Supply Air Flow Rate [m3/s], 0.27197
+ Component Sizing Information, AirLoopHVAC:UnitarySystem, PERIMETER_ZN_2 ZN PSZ-AC-3 UNITARY HP, Design Size Cooling Supply Air Flow Rate [m3/s], 0.27197
  Component Sizing Information, AirLoopHVAC:UnitarySystem, PERIMETER_ZN_2 ZN PSZ-AC-3 UNITARY HP, User-Specified No Load Supply Air Flow Rate [m3/s], 0.00000
- Component Sizing Information, AirLoopHVAC:UnitarySystem, PERIMETER_ZN_2 ZN PSZ-AC-3 UNITARY HP, Design Size Nominal Cooling Capacity [W], 6749.81179
- Component Sizing Information, AirLoopHVAC:UnitarySystem, PERIMETER_ZN_2 ZN PSZ-AC-3 UNITARY HP, Design Size Nominal Heating Capacity [W], 6749.81179
+ Component Sizing Information, AirLoopHVAC:UnitarySystem, PERIMETER_ZN_2 ZN PSZ-AC-3 UNITARY HP, Design Size Nominal Cooling Capacity [W], 6753.62328
+ Component Sizing Information, AirLoopHVAC:UnitarySystem, PERIMETER_ZN_2 ZN PSZ-AC-3 UNITARY HP, Design Size Nominal Heating Capacity [W], 6753.62328
  Component Sizing Information, AirLoopHVAC:UnitarySystem, PERIMETER_ZN_2 ZN PSZ-AC-3 UNITARY HP, Design Size Maximum Supply Air Temperature [C], 50.00000
  Component Sizing Information, AirLoopHVAC:UnitarySystem, PERIMETER_ZN_2 ZN PSZ-AC-3 UNITARY HP, User-Specified Maximum Supply Air Temperature [C], 80.00000
- Component Sizing Information, AirLoopHVAC:UnitarySystem, PERIMETER_ZN_2 ZN PSZ-AC-3 UNITARY HP, User-Specified Supplemental Heating Coil Nominal Capacity [W], 6749.81179
+ Component Sizing Information, AirLoopHVAC:UnitarySystem, PERIMETER_ZN_2 ZN PSZ-AC-3 UNITARY HP, User-Specified Supplemental Heating Coil Nominal Capacity [W], 6753.62328
  Component Sizing Information, AirLoopHVAC:UnitarySystem, PERIMETER_ZN_2 ZN PSZ-AC-3 UNITARY HP, Fraction of Supply Air Flow That Goes Through the Controlling Zone, 1.00000
- Component Sizing Information, Fan:OnOff, PERIMETER_ZN_2 ZN PSZ-AC-3 FAN, Design Size Maximum Flow Rate [m3/s], 0.27181
- Component Sizing Information, Fan:OnOff, PERIMETER_ZN_2 ZN PSZ-AC-3 FAN, Design Electric Power Consumption [W], 304.57077
- Component Sizing Information, Coil:Cooling:DX:SingleSpeed, PERIMETER_ZN_2 ZN PSZ-AC-3 1SPD DX HP CLG COIL 24KBTU/HR 13SEER, Design Size Rated Air Flow Rate [m3/s], 0.27181
- Component Sizing Information, Coil:Cooling:DX:SingleSpeed, PERIMETER_ZN_2 ZN PSZ-AC-3 1SPD DX HP CLG COIL 24KBTU/HR 13SEER, Design Size Gross Rated Total Cooling Capacity [W], 6749.81179
+ Component Sizing Information, Fan:OnOff, PERIMETER_ZN_2 ZN PSZ-AC-3 FAN, Design Size Maximum Flow Rate [m3/s], 0.27197
+ Component Sizing Information, Fan:OnOff, PERIMETER_ZN_2 ZN PSZ-AC-3 FAN, Design Electric Power Consumption [W], 304.74276
+ Component Sizing Information, Coil:Cooling:DX:SingleSpeed, PERIMETER_ZN_2 ZN PSZ-AC-3 1SPD DX HP CLG COIL 24KBTU/HR 13SEER, Design Size Rated Air Flow Rate [m3/s], 0.27197
+ Component Sizing Information, Coil:Cooling:DX:SingleSpeed, PERIMETER_ZN_2 ZN PSZ-AC-3 1SPD DX HP CLG COIL 24KBTU/HR 13SEER, Design Size Gross Rated Total Cooling Capacity [W], 6753.62328
  Component Sizing Information, Coil:Cooling:DX:SingleSpeed, PERIMETER_ZN_2 ZN PSZ-AC-3 1SPD DX HP CLG COIL 24KBTU/HR 13SEER, Design Size Gross Rated Sensible Heat Ratio, 0.70159
- DX Cooling Coil Standard Rating Information, Coil:Cooling:DX:SingleSpeed, PERIMETER_ZN_2 ZN PSZ-AC-3 1SPD DX HP CLG COIL 24KBTU/HR 13SEER, 6528.9, 3.17, 10.83, 11.43, 10.86, 11.1
- DX Cooling Coil AHRI 2023 Standard Rating Information, Coil:Cooling:DX:SingleSpeed, PERIMETER_ZN_2 ZN PSZ-AC-3 1SPD DX HP CLG COIL 24KBTU/HR 13SEER, 6485.1, 3.09, 10.54, 11.10, 10.85, 10.6
- Component Sizing Information, Coil:Heating:DX:SingleSpeed, PERIMETER_ZN_2 ZN HP HTG COIL 24 CLG KBTU/HR 7.7HSPF, Design Size Rated Air Flow Rate [m3/s], 0.27181
- Component Sizing Information, Coil:Heating:DX:SingleSpeed, PERIMETER_ZN_2 ZN HP HTG COIL 24 CLG KBTU/HR 7.7HSPF, Design Size Gross Rated Heating Capacity [W], 6749.81179
- DX Heating Coil Standard Rating Information, Coil:Heating:DX:SingleSpeed, PERIMETER_ZN_2 ZN HP HTG COIL 24 CLG KBTU/HR 7.7HSPF, 8016.3, 8016.3, 12.73, 4
- DX Heating Coil AHRI 2023 Standard Rating Information, Coil:Heating:DX:SingleSpeed, PERIMETER_ZN_2 ZN HP HTG COIL 24 CLG KBTU/HR 7.7HSPF, 8060.1, 8060.1, 12.90, 4
- Component Sizing Information, Coil:Heating:Fuel, PERIMETER_ZN_2 ZN PSZ-AC-3 GAS BACKUP HTG COIL 24KBTU/HR 0.8 THERMAL EFF, Design Size Nominal Capacity [W], 6749.81179
- Component Sizing Information, Controller:OutdoorAir, PERIMETER_ZN_3 ZN PSZ-AC-4 OA SYSTEM CONTROLLER, Maximum Outdoor Air Flow Rate [m3/s], 0.35093
+ DX Cooling Coil Standard Rating Information, Coil:Cooling:DX:SingleSpeed, PERIMETER_ZN_2 ZN PSZ-AC-3 1SPD DX HP CLG COIL 24KBTU/HR 13SEER, 6532.5, 3.17, 10.83, 11.43, 10.86, 11.1
+ DX Cooling Coil AHRI 2023 Standard Rating Information, Coil:Cooling:DX:SingleSpeed, PERIMETER_ZN_2 ZN PSZ-AC-3 1SPD DX HP CLG COIL 24KBTU/HR 13SEER, 6488.7, 3.09, 10.54, 11.10, 10.85, 10.6
+ Component Sizing Information, Coil:Heating:DX:SingleSpeed, PERIMETER_ZN_2 ZN HP HTG COIL 24 CLG KBTU/HR 7.7HSPF, Design Size Rated Air Flow Rate [m3/s], 0.27197
+ Component Sizing Information, Coil:Heating:DX:SingleSpeed, PERIMETER_ZN_2 ZN HP HTG COIL 24 CLG KBTU/HR 7.7HSPF, Design Size Gross Rated Heating Capacity [W], 6753.62328
+ DX Heating Coil Standard Rating Information, Coil:Heating:DX:SingleSpeed, PERIMETER_ZN_2 ZN HP HTG COIL 24 CLG KBTU/HR 7.7HSPF, 8020.9, 8020.9, 12.73, 4
+ DX Heating Coil AHRI 2023 Standard Rating Information, Coil:Heating:DX:SingleSpeed, PERIMETER_ZN_2 ZN HP HTG COIL 24 CLG KBTU/HR 7.7HSPF, 8064.7, 8064.7, 12.90, 4
+ Component Sizing Information, Coil:Heating:Fuel, PERIMETER_ZN_2 ZN PSZ-AC-3 GAS BACKUP HTG COIL 24KBTU/HR 0.8 THERMAL EFF, Design Size Nominal Capacity [W], 6753.62328
+ Component Sizing Information, Controller:OutdoorAir, PERIMETER_ZN_3 ZN PSZ-AC-4 OA SYSTEM CONTROLLER, Maximum Outdoor Air Flow Rate [m3/s], 0.35926
  Component Sizing Information, Controller:OutdoorAir, PERIMETER_ZN_3 ZN PSZ-AC-4 OA SYSTEM CONTROLLER, Minimum Outdoor Air Flow Rate [m3/s], 4.89877E-002
- Component Sizing Information, AirLoopHVAC:UnitarySystem, PERIMETER_ZN_3 ZN PSZ-AC-4 UNITARY HP, Design Size Supply Air Flow Rate [m3/s], 0.35093
- Component Sizing Information, AirLoopHVAC:UnitarySystem, PERIMETER_ZN_3 ZN PSZ-AC-4 UNITARY HP, Design Size Heating Supply Air Flow Rate [m3/s], 0.35093
- Component Sizing Information, AirLoopHVAC:UnitarySystem, PERIMETER_ZN_3 ZN PSZ-AC-4 UNITARY HP, Design Size Cooling Supply Air Flow Rate [m3/s], 0.35093
+ Component Sizing Information, AirLoopHVAC:UnitarySystem, PERIMETER_ZN_3 ZN PSZ-AC-4 UNITARY HP, Design Size Supply Air Flow Rate [m3/s], 0.35926
+ Component Sizing Information, AirLoopHVAC:UnitarySystem, PERIMETER_ZN_3 ZN PSZ-AC-4 UNITARY HP, Design Size Heating Supply Air Flow Rate [m3/s], 0.35926
+ Component Sizing Information, AirLoopHVAC:UnitarySystem, PERIMETER_ZN_3 ZN PSZ-AC-4 UNITARY HP, Design Size Cooling Supply Air Flow Rate [m3/s], 0.35926
  Component Sizing Information, AirLoopHVAC:UnitarySystem, PERIMETER_ZN_3 ZN PSZ-AC-4 UNITARY HP, User-Specified No Load Supply Air Flow Rate [m3/s], 0.00000
- Component Sizing Information, AirLoopHVAC:UnitarySystem, PERIMETER_ZN_3 ZN PSZ-AC-4 UNITARY HP, Design Size Nominal Cooling Capacity [W], 8714.54851
- Component Sizing Information, AirLoopHVAC:UnitarySystem, PERIMETER_ZN_3 ZN PSZ-AC-4 UNITARY HP, Design Size Nominal Heating Capacity [W], 8714.54851
+ Component Sizing Information, AirLoopHVAC:UnitarySystem, PERIMETER_ZN_3 ZN PSZ-AC-4 UNITARY HP, Design Size Nominal Cooling Capacity [W], 8921.28734
+ Component Sizing Information, AirLoopHVAC:UnitarySystem, PERIMETER_ZN_3 ZN PSZ-AC-4 UNITARY HP, Design Size Nominal Heating Capacity [W], 8921.28734
  Component Sizing Information, AirLoopHVAC:UnitarySystem, PERIMETER_ZN_3 ZN PSZ-AC-4 UNITARY HP, Design Size Maximum Supply Air Temperature [C], 50.00000
  Component Sizing Information, AirLoopHVAC:UnitarySystem, PERIMETER_ZN_3 ZN PSZ-AC-4 UNITARY HP, User-Specified Maximum Supply Air Temperature [C], 80.00000
- Component Sizing Information, AirLoopHVAC:UnitarySystem, PERIMETER_ZN_3 ZN PSZ-AC-4 UNITARY HP, User-Specified Supplemental Heating Coil Nominal Capacity [W], 8714.54851
+ Component Sizing Information, AirLoopHVAC:UnitarySystem, PERIMETER_ZN_3 ZN PSZ-AC-4 UNITARY HP, User-Specified Supplemental Heating Coil Nominal Capacity [W], 8921.28734
  Component Sizing Information, AirLoopHVAC:UnitarySystem, PERIMETER_ZN_3 ZN PSZ-AC-4 UNITARY HP, Fraction of Supply Air Flow That Goes Through the Controlling Zone, 1.00000
- Component Sizing Information, Fan:OnOff, PERIMETER_ZN_3 ZN PSZ-AC-4 FAN, Design Size Maximum Flow Rate [m3/s], 0.35093
- Component Sizing Information, Fan:OnOff, PERIMETER_ZN_3 ZN PSZ-AC-4 FAN, Design Electric Power Consumption [W], 393.22530
- Component Sizing Information, Coil:Cooling:DX:SingleSpeed, PERIMETER_ZN_3 ZN PSZ-AC-4 1SPD DX HP CLG COIL 35KBTU/HR 13SEER, Design Size Rated Air Flow Rate [m3/s], 0.35093
- Component Sizing Information, Coil:Cooling:DX:SingleSpeed, PERIMETER_ZN_3 ZN PSZ-AC-4 1SPD DX HP CLG COIL 35KBTU/HR 13SEER, Design Size Gross Rated Total Cooling Capacity [W], 8714.54851
+ Component Sizing Information, Fan:OnOff, PERIMETER_ZN_3 ZN PSZ-AC-4 FAN, Design Size Maximum Flow Rate [m3/s], 0.35926
+ Component Sizing Information, Fan:OnOff, PERIMETER_ZN_3 ZN PSZ-AC-4 FAN, Design Electric Power Consumption [W], 402.55394
+ Component Sizing Information, Coil:Cooling:DX:SingleSpeed, PERIMETER_ZN_3 ZN PSZ-AC-4 1SPD DX HP CLG COIL 35KBTU/HR 13SEER, Design Size Rated Air Flow Rate [m3/s], 0.35926
+ Component Sizing Information, Coil:Cooling:DX:SingleSpeed, PERIMETER_ZN_3 ZN PSZ-AC-4 1SPD DX HP CLG COIL 35KBTU/HR 13SEER, Design Size Gross Rated Total Cooling Capacity [W], 8921.28734
  Component Sizing Information, Coil:Cooling:DX:SingleSpeed, PERIMETER_ZN_3 ZN PSZ-AC-4 1SPD DX HP CLG COIL 35KBTU/HR 13SEER, Design Size Gross Rated Sensible Heat Ratio, 0.70159
- DX Cooling Coil Standard Rating Information, Coil:Cooling:DX:SingleSpeed, PERIMETER_ZN_3 ZN PSZ-AC-4 1SPD DX HP CLG COIL 35KBTU/HR 13SEER, 8429.3, 3.17, 10.83, 11.43, 10.86, 11.1
- DX Cooling Coil AHRI 2023 Standard Rating Information, Coil:Cooling:DX:SingleSpeed, PERIMETER_ZN_3 ZN PSZ-AC-4 1SPD DX HP CLG COIL 35KBTU/HR 13SEER, 8372.7, 3.09, 10.54, 11.10, 10.85, 10.6
- Component Sizing Information, Coil:Heating:DX:SingleSpeed, PERIMETER_ZN_3 ZN HP HTG COIL 35 CLG KBTU/HR 7.7HSPF, Design Size Rated Air Flow Rate [m3/s], 0.35093
- Component Sizing Information, Coil:Heating:DX:SingleSpeed, PERIMETER_ZN_3 ZN HP HTG COIL 35 CLG KBTU/HR 7.7HSPF, Design Size Gross Rated Heating Capacity [W], 8714.54851
- DX Heating Coil Standard Rating Information, Coil:Heating:DX:SingleSpeed, PERIMETER_ZN_3 ZN HP HTG COIL 35 CLG KBTU/HR 7.7HSPF, 10349.7, 10349.7, 12.85, 4
- DX Heating Coil AHRI 2023 Standard Rating Information, Coil:Heating:DX:SingleSpeed, PERIMETER_ZN_3 ZN HP HTG COIL 35 CLG KBTU/HR 7.7HSPF, 10406.3, 10406.3, 12.90, 4
- Component Sizing Information, Coil:Heating:Fuel, PERIMETER_ZN_3 ZN PSZ-AC-4 GAS BACKUP HTG COIL 35KBTU/HR 0.8 THERMAL EFF, Design Size Nominal Capacity [W], 8714.54851
- Component Sizing Information, Controller:OutdoorAir, PERIMETER_ZN_4 ZN PSZ-AC-5 OA SYSTEM CONTROLLER, Maximum Outdoor Air Flow Rate [m3/s], 0.30069
+ DX Cooling Coil Standard Rating Information, Coil:Cooling:DX:SingleSpeed, PERIMETER_ZN_3 ZN PSZ-AC-4 1SPD DX HP CLG COIL 35KBTU/HR 13SEER, 8629.2, 3.17, 10.83, 11.43, 10.86, 11.1
+ DX Cooling Coil AHRI 2023 Standard Rating Information, Coil:Cooling:DX:SingleSpeed, PERIMETER_ZN_3 ZN PSZ-AC-4 1SPD DX HP CLG COIL 35KBTU/HR 13SEER, 8571.4, 3.09, 10.54, 11.10, 10.85, 10.6
+ Component Sizing Information, Coil:Heating:DX:SingleSpeed, PERIMETER_ZN_3 ZN HP HTG COIL 35 CLG KBTU/HR 7.7HSPF, Design Size Rated Air Flow Rate [m3/s], 0.35926
+ Component Sizing Information, Coil:Heating:DX:SingleSpeed, PERIMETER_ZN_3 ZN HP HTG COIL 35 CLG KBTU/HR 7.7HSPF, Design Size Gross Rated Heating Capacity [W], 8921.28734
+ DX Heating Coil Standard Rating Information, Coil:Heating:DX:SingleSpeed, PERIMETER_ZN_3 ZN HP HTG COIL 35 CLG KBTU/HR 7.7HSPF, 10595.3, 10595.3, 12.82, 4
+ DX Heating Coil AHRI 2023 Standard Rating Information, Coil:Heating:DX:SingleSpeed, PERIMETER_ZN_3 ZN HP HTG COIL 35 CLG KBTU/HR 7.7HSPF, 10653.1, 10653.1, 12.90, 4
+ Component Sizing Information, Coil:Heating:Fuel, PERIMETER_ZN_3 ZN PSZ-AC-4 GAS BACKUP HTG COIL 35KBTU/HR 0.8 THERMAL EFF, Design Size Nominal Capacity [W], 8921.28734
+ Component Sizing Information, Controller:OutdoorAir, PERIMETER_ZN_4 ZN PSZ-AC-5 OA SYSTEM CONTROLLER, Maximum Outdoor Air Flow Rate [m3/s], 0.30099
  Component Sizing Information, Controller:OutdoorAir, PERIMETER_ZN_4 ZN PSZ-AC-5 OA SYSTEM CONTROLLER, Minimum Outdoor Air Flow Rate [m3/s], 2.90601E-002
- Component Sizing Information, AirLoopHVAC:UnitarySystem, PERIMETER_ZN_4 ZN PSZ-AC-5 UNITARY HP, Design Size Supply Air Flow Rate [m3/s], 0.30069
- Component Sizing Information, AirLoopHVAC:UnitarySystem, PERIMETER_ZN_4 ZN PSZ-AC-5 UNITARY HP, Design Size Heating Supply Air Flow Rate [m3/s], 0.30069
- Component Sizing Information, AirLoopHVAC:UnitarySystem, PERIMETER_ZN_4 ZN PSZ-AC-5 UNITARY HP, Design Size Cooling Supply Air Flow Rate [m3/s], 0.30069
+ Component Sizing Information, AirLoopHVAC:UnitarySystem, PERIMETER_ZN_4 ZN PSZ-AC-5 UNITARY HP, Design Size Supply Air Flow Rate [m3/s], 0.30099
+ Component Sizing Information, AirLoopHVAC:UnitarySystem, PERIMETER_ZN_4 ZN PSZ-AC-5 UNITARY HP, Design Size Heating Supply Air Flow Rate [m3/s], 0.30099
+ Component Sizing Information, AirLoopHVAC:UnitarySystem, PERIMETER_ZN_4 ZN PSZ-AC-5 UNITARY HP, Design Size Cooling Supply Air Flow Rate [m3/s], 0.30099
  Component Sizing Information, AirLoopHVAC:UnitarySystem, PERIMETER_ZN_4 ZN PSZ-AC-5 UNITARY HP, User-Specified No Load Supply Air Flow Rate [m3/s], 0.00000
- Component Sizing Information, AirLoopHVAC:UnitarySystem, PERIMETER_ZN_4 ZN PSZ-AC-5 UNITARY HP, Design Size Nominal Cooling Capacity [W], 7466.89003
- Component Sizing Information, AirLoopHVAC:UnitarySystem, PERIMETER_ZN_4 ZN PSZ-AC-5 UNITARY HP, Design Size Nominal Heating Capacity [W], 7466.89003
+ Component Sizing Information, AirLoopHVAC:UnitarySystem, PERIMETER_ZN_4 ZN PSZ-AC-5 UNITARY HP, Design Size Nominal Cooling Capacity [W], 7474.31723
+ Component Sizing Information, AirLoopHVAC:UnitarySystem, PERIMETER_ZN_4 ZN PSZ-AC-5 UNITARY HP, Design Size Nominal Heating Capacity [W], 7474.31723
  Component Sizing Information, AirLoopHVAC:UnitarySystem, PERIMETER_ZN_4 ZN PSZ-AC-5 UNITARY HP, Design Size Maximum Supply Air Temperature [C], 50.00000
  Component Sizing Information, AirLoopHVAC:UnitarySystem, PERIMETER_ZN_4 ZN PSZ-AC-5 UNITARY HP, User-Specified Maximum Supply Air Temperature [C], 80.00000
- Component Sizing Information, AirLoopHVAC:UnitarySystem, PERIMETER_ZN_4 ZN PSZ-AC-5 UNITARY HP, User-Specified Supplemental Heating Coil Nominal Capacity [W], 7466.89003
+ Component Sizing Information, AirLoopHVAC:UnitarySystem, PERIMETER_ZN_4 ZN PSZ-AC-5 UNITARY HP, User-Specified Supplemental Heating Coil Nominal Capacity [W], 7474.31723
  Component Sizing Information, AirLoopHVAC:UnitarySystem, PERIMETER_ZN_4 ZN PSZ-AC-5 UNITARY HP, Fraction of Supply Air Flow That Goes Through the Controlling Zone, 1.00000
- Component Sizing Information, Fan:OnOff, PERIMETER_ZN_4 ZN PSZ-AC-5 FAN, Design Size Maximum Flow Rate [m3/s], 0.30069
- Component Sizing Information, Fan:OnOff, PERIMETER_ZN_4 ZN PSZ-AC-5 FAN, Design Electric Power Consumption [W], 336.92739
- Component Sizing Information, Coil:Cooling:DX:SingleSpeed, PERIMETER_ZN_4 ZN PSZ-AC-5 1SPD DX HP CLG COIL 29KBTU/HR 13SEER, Design Size Rated Air Flow Rate [m3/s], 0.30069
- Component Sizing Information, Coil:Cooling:DX:SingleSpeed, PERIMETER_ZN_4 ZN PSZ-AC-5 1SPD DX HP CLG COIL 29KBTU/HR 13SEER, Design Size Gross Rated Total Cooling Capacity [W], 7466.89003
+ Component Sizing Information, Fan:OnOff, PERIMETER_ZN_4 ZN PSZ-AC-5 FAN, Design Size Maximum Flow Rate [m3/s], 0.30099
+ Component Sizing Information, Fan:OnOff, PERIMETER_ZN_4 ZN PSZ-AC-5 FAN, Design Electric Power Consumption [W], 337.26252
+ Component Sizing Information, Coil:Cooling:DX:SingleSpeed, PERIMETER_ZN_4 ZN PSZ-AC-5 1SPD DX HP CLG COIL 29KBTU/HR 13SEER, Design Size Rated Air Flow Rate [m3/s], 0.30099
+ Component Sizing Information, Coil:Cooling:DX:SingleSpeed, PERIMETER_ZN_4 ZN PSZ-AC-5 1SPD DX HP CLG COIL 29KBTU/HR 13SEER, Design Size Gross Rated Total Cooling Capacity [W], 7474.31723
  Component Sizing Information, Coil:Cooling:DX:SingleSpeed, PERIMETER_ZN_4 ZN PSZ-AC-5 1SPD DX HP CLG COIL 29KBTU/HR 13SEER, Design Size Gross Rated Sensible Heat Ratio, 0.70159
- DX Cooling Coil Standard Rating Information, Coil:Cooling:DX:SingleSpeed, PERIMETER_ZN_4 ZN PSZ-AC-5 1SPD DX HP CLG COIL 29KBTU/HR 13SEER, 7222.5, 3.17, 10.83, 11.43, 10.86, 11.1
- DX Cooling Coil AHRI 2023 Standard Rating Information, Coil:Cooling:DX:SingleSpeed, PERIMETER_ZN_4 ZN PSZ-AC-5 1SPD DX HP CLG COIL 29KBTU/HR 13SEER, 7174.0, 3.09, 10.54, 11.10, 10.85, 10.6
- Component Sizing Information, Coil:Heating:DX:SingleSpeed, PERIMETER_ZN_4 ZN HP HTG COIL 29 CLG KBTU/HR 7.7HSPF, Design Size Rated Air Flow Rate [m3/s], 0.30069
- Component Sizing Information, Coil:Heating:DX:SingleSpeed, PERIMETER_ZN_4 ZN HP HTG COIL 29 CLG KBTU/HR 7.7HSPF, Design Size Gross Rated Heating Capacity [W], 7466.89003
- DX Heating Coil Standard Rating Information, Coil:Heating:DX:SingleSpeed, PERIMETER_ZN_4 ZN HP HTG COIL 29 CLG KBTU/HR 7.7HSPF, 8868.0, 8868.0, 12.85, 4
- DX Heating Coil AHRI 2023 Standard Rating Information, Coil:Heating:DX:SingleSpeed, PERIMETER_ZN_4 ZN HP HTG COIL 29 CLG KBTU/HR 7.7HSPF, 8916.4, 8916.4, 12.90, 4
- Component Sizing Information, Coil:Heating:Fuel, PERIMETER_ZN_4 ZN PSZ-AC-5 GAS BACKUP HTG COIL 29KBTU/HR 0.8 THERMAL EFF, Design Size Nominal Capacity [W], 7466.89003
+ DX Cooling Coil Standard Rating Information, Coil:Cooling:DX:SingleSpeed, PERIMETER_ZN_4 ZN PSZ-AC-5 1SPD DX HP CLG COIL 29KBTU/HR 13SEER, 7229.6, 3.17, 10.83, 11.43, 10.86, 11.1
+ DX Cooling Coil AHRI 2023 Standard Rating Information, Coil:Cooling:DX:SingleSpeed, PERIMETER_ZN_4 ZN PSZ-AC-5 1SPD DX HP CLG COIL 29KBTU/HR 13SEER, 7181.2, 3.09, 10.54, 11.10, 10.85, 10.6
+ Component Sizing Information, Coil:Heating:DX:SingleSpeed, PERIMETER_ZN_4 ZN HP HTG COIL 29 CLG KBTU/HR 7.7HSPF, Design Size Rated Air Flow Rate [m3/s], 0.30099
+ Component Sizing Information, Coil:Heating:DX:SingleSpeed, PERIMETER_ZN_4 ZN HP HTG COIL 29 CLG KBTU/HR 7.7HSPF, Design Size Gross Rated Heating Capacity [W], 7474.31723
+ DX Heating Coil Standard Rating Information, Coil:Heating:DX:SingleSpeed, PERIMETER_ZN_4 ZN HP HTG COIL 29 CLG KBTU/HR 7.7HSPF, 8876.8, 8876.8, 12.85, 4
+ DX Heating Coil AHRI 2023 Standard Rating Information, Coil:Heating:DX:SingleSpeed, PERIMETER_ZN_4 ZN HP HTG COIL 29 CLG KBTU/HR 7.7HSPF, 8925.3, 8925.3, 12.90, 4
+ Component Sizing Information, Coil:Heating:Fuel, PERIMETER_ZN_4 ZN PSZ-AC-5 GAS BACKUP HTG COIL 29KBTU/HR 0.8 THERMAL EFF, Design Size Nominal Capacity [W], 7474.31723
 Water Heater Information,WaterHeater:Mixed,40GAL ELECTRICITY WATER HEATER - 40KBTU/HR 1.0 THERM EFF,0.1514,11722.8,0.981,0.4610
  Component Sizing Information, PlantLoop, MAIN SERVICE WATER LOOP, Maximum Loop Flow Rate [m3/s], 4.03777E-006
  Component Sizing Information, PlantLoop, MAIN SERVICE WATER LOOP, Plant Loop Volume [m3], 4.84533E-004
@@ -533,12 +533,12 @@ Environment:WarmupDays, 18
 ! <Tabular Report>,Style,Unit Conversion, Format Reals
 Tabular Report,HTML,None,Yes
 ! <Warmup Convergence Information>,Zone Name,Environment Type/Name,Average Warmup Temperature Difference {deltaC},Std Dev Warmup Temperature Difference {deltaC},Max Temperature Pass/Fail Convergence,Min Temperature Pass/Fail Convergence,Average Warmup Load Difference {W},Std Dev Warmup Load Difference {W},Heating Load Pass/Fail Convergence,Cooling Load Pass/Fail Convergence
- Warmup Convergence Information,ATTIC ZN,RunPeriod: RUN PERIOD 1,1.3483513150E-002,1.0677418296E-002,Pass,Pass,0.0000000000,0.0000000000,Pass,Pass
- Warmup Convergence Information,CORE_ZN ZN,RunPeriod: RUN PERIOD 1,5.2770373174E-003,1.7625571971E-003,Pass,Pass,0.0000000000,0.0000000000,Pass,Pass
- Warmup Convergence Information,PERIMETER_ZN_1 ZN,RunPeriod: RUN PERIOD 1,4.6192450632E-002,3.6376926339E-002,Pass,Pass,0.0000000000,0.0000000000,Pass,Pass
- Warmup Convergence Information,PERIMETER_ZN_2 ZN,RunPeriod: RUN PERIOD 1,2.2779783392E-002,2.7777724568E-002,Pass,Pass,0.0000000000,0.0000000000,Pass,Pass
- Warmup Convergence Information,PERIMETER_ZN_3 ZN,RunPeriod: RUN PERIOD 1,1.0929271999E-002,6.2529379432E-003,Pass,Pass,0.0000000000,0.0000000000,Pass,Pass
- Warmup Convergence Information,PERIMETER_ZN_4 ZN,RunPeriod: RUN PERIOD 1,2.5614057088E-002,2.4765363772E-002,Pass,Pass,0.0000000000,0.0000000000,Pass,Pass
+ Warmup Convergence Information,ATTIC ZN,RunPeriod: RUN PERIOD 1,1.3486789520E-002,1.0706687381E-002,Pass,Pass,0.0000000000,0.0000000000,Pass,Pass
+ Warmup Convergence Information,CORE_ZN ZN,RunPeriod: RUN PERIOD 1,5.5388837143E-003,1.9814621697E-003,Pass,Pass,0.0000000000,0.0000000000,Pass,Pass
+ Warmup Convergence Information,PERIMETER_ZN_1 ZN,RunPeriod: RUN PERIOD 1,5.0001055868E-002,4.0274562173E-002,Pass,Pass,0.0000000000,0.0000000000,Pass,Pass
+ Warmup Convergence Information,PERIMETER_ZN_2 ZN,RunPeriod: RUN PERIOD 1,2.2853467585E-002,2.7697591487E-002,Pass,Pass,0.0000000000,0.0000000000,Pass,Pass
+ Warmup Convergence Information,PERIMETER_ZN_3 ZN,RunPeriod: RUN PERIOD 1,1.1388642896E-002,6.6166875493E-003,Pass,Pass,0.0000000000,0.0000000000,Pass,Pass
+ Warmup Convergence Information,PERIMETER_ZN_4 ZN,RunPeriod: RUN PERIOD 1,2.5795388394E-002,2.4846060246E-002,Pass,Pass,0.0000000000,0.0000000000,Pass,Pass
 ! <Program Control Information:Threads/Parallel Sims>, Threading Supported,Maximum Number of Threads, Env Set Threads (OMP_NUM_THREADS), EP Env Set Threads (EP_OMP_NUM_THREADS), IDF Set Threads, Number of Threads Used (Interior Radiant Exchange), Number Nominal Surfaces, Number Parallel Sims
 Program Control Information:Threads/Parallel Sims, No,1, N/A, N/A, N/A, N/A, N/A, N/A
 End of Data

@@ -701,6 +701,7 @@ class DoorEnhancement(openstudio.measure.ModelMeasure):
         runner.registerInfo("=" * 80)
         
         subsurface_dict = {}
+        carbon_data_unavailable_tracker = {"count": 0, "reasons": []}
         for subsurface in sub_surfaces_to_change:
             subsurface_name = subsurface.nameString()
             runner.registerInfo(f"\n{'─' * 80}")
@@ -753,6 +754,10 @@ class DoorEnhancement(openstudio.measure.ModelMeasure):
                 # Skip if no EPD data available (None or empty list), but initialize with zeros
                 if epd_data is None or (isinstance(epd_data, list) and len(epd_data) == 0):
                     runner.registerInfo(f"  ⚠ No EPD data available for {material_name}, setting embodied carbon to 0")
+                    carbon_data_unavailable_tracker["count"] += 1
+                    reason_key = f"missing_epd_{material_name}"
+                    if reason_key not in carbon_data_unavailable_tracker["reasons"]:
+                        carbon_data_unavailable_tracker["reasons"].append(reason_key)
                     subsurface_dict[subsurface_name][material_name]["gwp_per_m2"] = None
                     subsurface_dict[subsurface_name][material_name]["gwp_per_m"] = None
                     subsurface_dict[subsurface_name][material_name]["gwp_per_unit"] = None
@@ -930,6 +935,10 @@ class DoorEnhancement(openstudio.measure.ModelMeasure):
                                                 multiplier)
                 else:
                     runner.registerInfo(f"  ○ {material_name}: No GWP data available, entering 0.0")
+                    carbon_data_unavailable_tracker["count"] += 1
+                    reason_key = f"missing_gwp_{material_name}"
+                    if reason_key not in carbon_data_unavailable_tracker["reasons"]:
+                        carbon_data_unavailable_tracker["reasons"].append(reason_key)
                     embodied_carbon = 0.0
 
                 # store embodied carbon value for this renovation option on this subsurface
@@ -1710,6 +1719,13 @@ class DoorEnhancement(openstudio.measure.ModelMeasure):
         # 5G) SimulationControl bucket (results)
         # Canonical embodied carbon key used by wall/roof/window measures.
         results.setFeature("door_enhancement_embodied_carbon_kgCO2eq", total_embodied_carbon)
+        results.setFeature("door_enhancement_carbon_data_unavailable", 1 if carbon_data_unavailable_tracker["count"] > 0 else 0)
+        results.setFeature("door_enhancement_carbon_data_unavailable_reason_count", int(carbon_data_unavailable_tracker["count"]))
+        if carbon_data_unavailable_tracker["reasons"]:
+            results.setFeature(
+                "door_enhancement_carbon_data_unavailable_reasons",
+                ";".join(carbon_data_unavailable_tracker["reasons"]),
+            )
 
 
         if rsmeans_lookup is not None and rsmeans_lookup.get("status") == "ok":

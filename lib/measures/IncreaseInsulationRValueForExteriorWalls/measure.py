@@ -607,8 +607,17 @@ class IncreaseInsulationRValueForExteriorWalls(openstudio.measure.ModelMeasure):
         # Embodied carbon = GWP_per_m³ × volume × lifetime_multiplier.
 
         # Pull EC3 data for the chosen insulation type once
+        carbon_data_unavailable_reasons = []
         ec3_url = self.generate_url_by_material_type(insulation_material_type)
         insulation_product_epd = fetch_epd_data(ec3_url, api_key)
+        if not isinstance(insulation_product_epd, list):
+            insulation_product_epd = []
+        if len(insulation_product_epd) == 0:
+            carbon_data_unavailable_reasons.append("ec3_epd_fetch_empty")
+            runner.registerWarning(
+                f"No EC3 EPD records found for '{insulation_material_type}'. "
+                "Embodied carbon may be reported as 0 due to unavailable carbon data."
+            )
 
         # Extract lifetime values from EPD responses
         lifetime_values = []
@@ -655,6 +664,12 @@ class IncreaseInsulationRValueForExteriorWalls(openstudio.measure.ModelMeasure):
         
         # Extract GWP values for the selected material
         material_gwp = gwp_data.get(insulation_material_type, {})
+        if not any(material_gwp.get(k, 0.0) > 0.0 for k in ["gwp_per_kg", "gwp_per_m2", "gwp_per_m3"]):
+            carbon_data_unavailable_reasons.append("no_valid_gwp_values")
+            runner.registerWarning(
+                f"No valid GWP values were computed for '{insulation_material_type}'. "
+                "Embodied carbon may be reported as 0 due to unavailable carbon data."
+            )
         
         # Reduced verbosity - GWP values computed but not logging details
         # runner.registerInfo(f"GWP values computed for {insulation_material_type}:")
@@ -965,6 +980,13 @@ class IncreaseInsulationRValueForExteriorWalls(openstudio.measure.ModelMeasure):
         results.setFeature("wall_insulation_material_cost_$", total_material_cost)
         results.setFeature("wall_insulation_overhead_profit_cost_$", total_overhead_profit_cost)
         results.setFeature("wall_insulation_total_cost_with_overhead_and_profit_$", total_material_cost + total_labor_cost + total_overhead_profit_cost)
+        results.setFeature("wall_insulation_carbon_data_unavailable", 1 if carbon_data_unavailable_reasons else 0)
+        results.setFeature("wall_insulation_carbon_data_unavailable_reason_count", len(carbon_data_unavailable_reasons))
+        if carbon_data_unavailable_reasons:
+            results.setFeature(
+                "wall_insulation_carbon_data_unavailable_reasons",
+                ";".join(carbon_data_unavailable_reasons),
+            )
         
         # Facility bucket: emission/cost factors
         factors.setFeature("wall_insulation_cost_source", cost_source)
