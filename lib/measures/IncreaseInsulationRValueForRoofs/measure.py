@@ -646,6 +646,7 @@ class IncreaseInsulationRValueForRoofs(openstudio.measure.ModelMeasure):
 
         # For EC3 summary (per modified construction)
         modified_constructions = []  # dicts: name, area_m2, added_thickness_m, gwp per FU, total_gwp
+        skipped_constructions_target_already_met = 0
 
         # --- Edit each unique roof construction ---
         # For each construction we:
@@ -715,6 +716,16 @@ class IncreaseInsulationRValueForRoofs(openstudio.measure.ModelMeasure):
             # Sanity: minimal insulation - only skip if there's essentially no insulation layer
             if target_R <= self._unit_convert(0.1, "ft^2*h*R/Btu", "m^2*K/W"):
                 runner.registerWarning(f"Construction '{cname}' does not appear to have an insulation layer (R < 0.1) and was not altered.")
+                continue
+
+            # Skip renovation when requested target does not exceed existing insulation R-value.
+            if target_R >= r_value_si:
+                current_r_ip = self._unit_convert(target_R, "m^2*K/W", "ft^2*h*R/Btu")
+                runner.registerInfo(
+                    f"'{cname}' already meets or exceeds the target insulation R-value "
+                    f"(current: {current_r_ip:.2f}, target: {r_value_ip:.2f}); skipping renovation."
+                )
+                skipped_constructions_target_already_met += 1
                 continue
 
             # Clone the whole construction so the original is preserved.
@@ -1418,6 +1429,23 @@ class IncreaseInsulationRValueForRoofs(openstudio.measure.ModelMeasure):
         reno_detail.setFeature("roof_insulation_target_r_value_ip", r_value_ip)
         reno_detail.setFeature("roof_insulation_material_type", insulation_material_type)
         reno_detail.setFeature("roof_insulation_modified_constructions_count", len(modified_constructions))
+        if len(modified_constructions) != 0 and skipped_constructions_target_already_met > 0:
+            roof_summary_notes = (
+                "No roof insulation renovation executed because target R-value is less than or equal to existing roof insulation R-value "
+                f"for all eligible constructions (skipped={skipped_constructions_target_already_met}) "
+                f"even though insulation material '{insulation_material_type}' was selected."
+            )
+        elif len(modified_constructions) == 0:
+            roof_summary_notes = (
+                "No roof insulation renovation executed because no roof constructions were found. "
+            )
+        else:
+            roof_summary_notes = (
+                "Roof insulation renovation completed. "
+                f"Modified constructions={len(modified_constructions)}, "
+                f"target-already-met skips={skipped_constructions_target_already_met}."
+            )
+        reno_detail.setFeature("roof_insulation_summary_notes", roof_summary_notes)
 
         # SizingParameters bucket: material properties
         mtrl_prop.setFeature("roof_insulation_material_lifetime_years", selected_lifetime)

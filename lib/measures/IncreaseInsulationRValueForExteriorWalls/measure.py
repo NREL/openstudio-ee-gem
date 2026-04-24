@@ -522,6 +522,7 @@ class IncreaseInsulationRValueForExteriorWalls(openstudio.measure.ModelMeasure):
         
         # store constructions require additional insulation layer
         modified_constructions = []
+        skipped_constructions_target_already_met = 0
 
         # Loop through unique constructions found on exterior walls
         for name, construction in constructions.items():
@@ -550,6 +551,7 @@ class IncreaseInsulationRValueForExteriorWalls(openstudio.measure.ModelMeasure):
             # Skip update if construction already meets or exceeds target R-value
             if max_r >= r_value_si:
                 runner.registerInfo(f"'{name}' already meets or exceeds the R-value target (current: {openstudio.convert(max_r, 'm^2*K/W', 'ft^2*h*R/Btu').get():.2f}, target: {r_value_ip:.2f}).")
+                skipped_constructions_target_already_met += 1
                 continue
 
             # Calculate additional R-value needed
@@ -964,6 +966,23 @@ class IncreaseInsulationRValueForExteriorWalls(openstudio.measure.ModelMeasure):
         reno_detail.setFeature("wall_insulation_target_r_value_ip", r_value_ip)
         reno_detail.setFeature("wall_insulation_material_type", insulation_material_type)
         reno_detail.setFeature("wall_insulation_modified_constructions_count", len(modified_constructions))
+        if len(modified_constructions) != 0 and skipped_constructions_target_already_met > 0:
+            wall_summary_notes = (
+                "No wall insulation renovation executed because target R-value is less than or equal to existing wall insulation R-value "
+                f"for all eligible constructions (skipped={skipped_constructions_target_already_met}) "
+                f"even though insulation material '{insulation_material_type}' was selected."
+            )
+        elif len(modified_constructions) == 0:
+            wall_summary_notes = (
+                "No wall insulation renovation executed because no wall constructions were found. "
+            )
+        else:
+            wall_summary_notes = (
+                "Wall insulation renovation completed. "
+                f"Modified constructions={len(modified_constructions)}, "
+                f"target-already-met skips={skipped_constructions_target_already_met}."
+            )
+        reno_detail.setFeature("wall_insulation_summary_notes", wall_summary_notes)
 
         # SizingParameters bucket: material properties
         mtrl_prop.setFeature("wall_insulation_material_lifetime_years", selected_lifetime)
