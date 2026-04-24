@@ -673,6 +673,17 @@ class DoorEnhancement(openstudio.measure.ModelMeasure):
             for surface in space.surfaces():
                 for subsurface in surface.subSurfaces():
                     sub_surfaces.append(subsurface)
+
+        # Track door subtype availability for summary note conflict detection.
+        available_door_subsurface_types = {
+            "Door": 0,
+            "GlassDoor": 0,
+            "OverheadDoor": 0,
+        }
+        for subsurface in sub_surfaces:
+            subtype = subsurface.subSurfaceType()
+            if subtype in available_door_subsurface_types:
+                available_door_subsurface_types[subtype] += 1
         
         runner.registerInfo("\n" + "=" * 80)
         runner.registerInfo("SUBSURFACE DISCOVERY")
@@ -1650,9 +1661,37 @@ class DoorEnhancement(openstudio.measure.ModelMeasure):
         reno_detail.setFeature("door_enhancement_door_area_per_unit_m2", door_area_per_unit)
         reno_detail.setFeature("door_enhancement_infiltration_reduction_percent", space_infiltration_reduction_percent)
         reno_detail.setFeature("door_bottom_seal_option", door_bottom_seal_option)
+        reno_detail.setFeature("door_bottom_seal_length_m", total_sealing_bottom_length_m)
         reno_detail.setFeature("door_top_side_seal_option", door_top_side_seal_option)
+        reno_detail.setFeature("door_top_side_seal_length_m", total_sealing_side_length_m)
         reno_detail.setFeature("door_option", door_option)
         reno_detail.setFeature("total_renovated_door_area_m2", total_door_area_m2)
+
+        # Set summary notes based on model-door compatibility conflicts.
+        summary_notes = "door enhancement successfully completed!"
+        has_any_supported_door_subsurface = any(v > 0 for v in available_door_subsurface_types.values())
+        normalized_door_option = str(door_option).strip().lower().replace("_", " ").replace("-", " ")
+        normalized_door_option = " ".join(normalized_door_option.split())
+        available_types_summary = (
+            f"available subsurface counts -> "
+            f"Door={available_door_subsurface_types['Door']}, "
+            f"GlassDoor={available_door_subsurface_types['GlassDoor']}, "
+            f"OverheadDoor={available_door_subsurface_types['OverheadDoor']}"
+        )
+
+        if (
+            (not has_any_supported_door_subsurface)
+            or (normalized_door_option == "wooden door" and available_door_subsurface_types["Door"] == 0)
+            or (normalized_door_option in {"polystyrene core steel door", "polyurethane core steel door", "honeycomb core steel door", "stiffened core steel door"} and available_door_subsurface_types["Door"] == 0)
+            or (normalized_door_option in {"garage door", "garagedoor"} and available_door_subsurface_types["OverheadDoor"] == 0)
+            or (normalized_door_option in {"glass door", "glassdoor"} and available_door_subsurface_types["GlassDoor"] == 0)
+        ):
+            summary_notes = (
+                "No door construction or appropriate door subsurface type in the model for renovation; "
+                + available_types_summary
+            )
+
+        reno_detail.setFeature("door_enhancement_summary_notes", summary_notes)
 
         # 5E) SizingParameters bucket (material properties)
         mtrl_prop.setFeature("door_strip_lifetime_years", strip_lifetime)
