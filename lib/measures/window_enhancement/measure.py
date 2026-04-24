@@ -952,6 +952,17 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
             for surface in space.surfaces():
                 for subsurface in surface.subSurfaces():
                     sub_surfaces.append(subsurface)
+
+        # Track window subtype availability for summary note compatibility checks.
+        available_window_subsurface_types = {
+            "FixedWindow": 0,
+            "OperableWindow": 0,
+            "Skylight": 0,
+        }
+        for subsurface in sub_surfaces:
+            subtype = subsurface.subSurfaceType()
+            if subtype in available_window_subsurface_types:
+                available_window_subsurface_types[subtype] += 1
         
         runner.registerInfo("=" * 80)
         runner.registerInfo("SUBSURFACE DISCOVERY")
@@ -971,9 +982,26 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
                 runner.registerInfo(f"  ✗ Skipping non-window surface: {subsurface.nameString()}")
                 continue
 
+        def _is_simple_glazing_in_subsurface(subsurface):
+            if not subsurface.construction().is_initialized():
+                return False
+            construction = subsurface.construction().get()
+            if not construction.to_LayeredConstruction().is_initialized():
+                return False
+            layered = construction.to_LayeredConstruction().get()
+            for i in range(layered.numLayers()):
+                if layered.getLayer(i).to_SimpleGlazing().is_initialized():
+                    return True
+            return False
+
         # Dictionary storing properties of subsurfaces containing window constructions 
         subsurface_dict = {}
         carbon_data_unavailable_tracker = {"count": 0, "reasons": []}
+        total_window_constructions = len(sub_surfaces_to_change)
+        simple_glazing_objects_count = sum(
+            1 for subsurface in sub_surfaces_to_change
+            if _is_simple_glazing_in_subsurface(subsurface)
+        )
         
         runner.registerInfo("\n" + "=" * 80)
         runner.registerInfo("WINDOW RENOVATION PROCESSING")
@@ -1251,6 +1279,57 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
             total_embodied_carbon=total_embodied_carbon,
         )
         reno_detail_features["window_enhancement_windows_processed_count"] = len(sub_surfaces_to_change)
+        reno_detail_features["window_enhancement_simple_glazing_objects_count"] = simple_glazing_objects_count
+        summary_notes = "window enhancement successfully completed!"
+
+        available_window_types_summary = (
+            f"available subsurface counts -> "
+            f"FixedWindow={available_window_subsurface_types['FixedWindow']}, "
+            f"OperableWindow={available_window_subsurface_types['OperableWindow']}, "
+            f"Skylight={available_window_subsurface_types['Skylight']}"
+        )
+        construction_counts_summary = (
+            f"window constructions={total_window_constructions}, "
+            f"simple glazing objects={simple_glazing_objects_count}"
+        )
+        selected_window_renovation = any([
+            glass_option != "none",
+            wf_option != "none",
+            caulking_option != "none",
+            film_option != "none",
+            weatherstrip_option != "none",
+            secondary_glazing_option != "none",
+        ])
+
+        conflict_reasons = []
+        if selected_window_renovation and len(sub_surfaces_to_change) == 0:
+            conflict_reasons.append("No supported window subsurfaces found for selected renovation options")
+
+        if weatherstrip_option != "none" and available_window_subsurface_types["OperableWindow"] == 0:
+            conflict_reasons.append("Weatherstrip selected but no OperableWindow subsurfaces found")
+
+        if film_option != "none" and len(sub_surfaces_to_change) > 0 and len(sub_surfaces_to_change) == simple_glazing_objects_count:
+            conflict_reasons.append("Film selected but all window constructions are SimpleGlazing")
+
+        if glass_option != "none" and len(sub_surfaces_to_change) > 0 and len(sub_surfaces_to_change) == simple_glazing_objects_count:
+            conflict_reasons.append("Glass replacement selected but all window constructions are SimpleGlazing")
+
+        if secondary_glazing_option != "none" and len(sub_surfaces_to_change) > 0 and len(sub_surfaces_to_change) == simple_glazing_objects_count:
+            conflict_reasons.append("Secondary glazing selected but all window constructions are SimpleGlazing")
+
+        if conflict_reasons:
+            summary_notes = (
+                "Window renovation option conflict(s): "
+                + " | ".join(conflict_reasons)
+                + "; "
+                + construction_counts_summary
+                + "; "
+                + available_window_types_summary
+            )
+        else:
+            summary_notes = summary_notes + " " + construction_counts_summary + "; " + available_window_types_summary
+
+        reno_detail_features["window_enhancement_summary_notes"] = summary_notes
         results_features["window_enhancement_carbon_data_unavailable"] = 1 if carbon_data_unavailable_tracker["count"] > 0 else 0
         results_features["window_enhancement_carbon_data_unavailable_reason_count"] = int(carbon_data_unavailable_tracker["count"])
         if carbon_data_unavailable_tracker["reasons"]:

@@ -1658,6 +1658,7 @@ class DoorEnhancement(openstudio.measure.ModelMeasure):
         basic_input.setFeature("door_enhancement_gwp_statistic", gwp_statistic)
 
         # 5D) Site bucket (renovation details)
+        reno_detail.setFeature("door_enhancement_processed_door_count", len(sub_surfaces_to_change))
         reno_detail.setFeature("door_enhancement_door_area_per_unit_m2", door_area_per_unit)
         reno_detail.setFeature("door_enhancement_infiltration_reduction_percent", space_infiltration_reduction_percent)
         reno_detail.setFeature("door_bottom_seal_option", door_bottom_seal_option)
@@ -1669,7 +1670,7 @@ class DoorEnhancement(openstudio.measure.ModelMeasure):
 
         # Set summary notes based on model-door compatibility conflicts.
         summary_notes = "door enhancement successfully completed!"
-        has_any_supported_door_subsurface = any(v > 0 for v in available_door_subsurface_types.values())
+
         normalized_door_option = str(door_option).strip().lower().replace("_", " ").replace("-", " ")
         normalized_door_option = " ".join(normalized_door_option.split())
         available_types_summary = (
@@ -1680,7 +1681,7 @@ class DoorEnhancement(openstudio.measure.ModelMeasure):
         )
 
         if (
-            (not has_any_supported_door_subsurface)
+            (not len(sub_surfaces_to_change) > 0)
             or (normalized_door_option == "wooden door" and available_door_subsurface_types["Door"] == 0)
             or (normalized_door_option in {"polystyrene core steel door", "polyurethane core steel door", "honeycomb core steel door", "stiffened core steel door"} and available_door_subsurface_types["Door"] == 0)
             or (normalized_door_option in {"garage door", "garagedoor"} and available_door_subsurface_types["OverheadDoor"] == 0)
