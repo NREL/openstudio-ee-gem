@@ -1662,9 +1662,9 @@ class DoorEnhancement(openstudio.measure.ModelMeasure):
         reno_detail.setFeature("door_enhancement_door_area_per_unit_m2", door_area_per_unit)
         reno_detail.setFeature("door_enhancement_infiltration_reduction_percent", space_infiltration_reduction_percent)
         reno_detail.setFeature("door_bottom_seal_option", door_bottom_seal_option)
-        reno_detail.setFeature("door_bottom_seal_length_m", total_sealing_bottom_length_m)
+        reno_detail.setFeature("total_sealing_bottom_length_m", total_sealing_bottom_length_m)
         reno_detail.setFeature("door_top_side_seal_option", door_top_side_seal_option)
-        reno_detail.setFeature("door_top_side_seal_length_m", total_sealing_side_length_m)
+        reno_detail.setFeature("total_sealing_side_length_m", total_sealing_side_length_m)
         reno_detail.setFeature("door_option", door_option)
         reno_detail.setFeature("total_renovated_door_area_m2", total_door_area_m2)
 

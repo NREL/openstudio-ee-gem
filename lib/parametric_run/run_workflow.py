@@ -84,10 +84,25 @@ def generate_scenario_name(scenario_dict):
     if scenario_dict.get("is_baseline", False):
         parts.append("baseline")
     else:
+        scenario_index = scenario_dict.get("scenario_index")
+        if scenario_index is not None:
+            parts.append(f"scenario_{int(scenario_index)}")
+
+        has_window_request = any([
+            scenario_dict.get("window_u_factor") not in [None, ""],
+            scenario_dict.get("window_num_panes") not in [None, ""],
+            str(scenario_dict.get("glass_option", "none")).strip().lower() != "none",
+            str(scenario_dict.get("wf_option", "none")).strip().lower() != "none",
+            str(scenario_dict.get("caulking_option", "none")).strip().lower() != "none",
+            str(scenario_dict.get("film_option", "none")).strip().lower() != "none",
+            str(scenario_dict.get("weatherstrip_option", "none")).strip().lower() != "none",
+            str(scenario_dict.get("secondary_glazing_option", "none")).strip().lower() != "none",
+        ])
+
         measure_count = sum([
             1 if scenario_dict.get("wall_r_value") else 0,
             1 if scenario_dict.get("roof_r_value") else 0,
-            1 if scenario_dict.get("window_u_factor") else 0,
+            1 if has_window_request else 0,
             1 if scenario_dict.get("door_option") else 0,
         ])
         
@@ -100,6 +115,8 @@ def generate_scenario_name(scenario_dict):
             parts.append(f"roof_r{scenario_dict['roof_r_value']}")
         if scenario_dict.get("window_u_factor"):
             parts.append(f"window_u{scenario_dict['window_u_factor']}")
+        elif scenario_dict.get("window_num_panes"):
+            parts.append(f"window_num_panes{scenario_dict['window_num_panes']}")
         if scenario_dict.get("door_option"):
             door_abbrev = scenario_dict['door_option'].replace(' ', '_').replace('door', 'd')
             parts.append(f"door_{door_abbrev}")
@@ -385,13 +402,13 @@ def create_simulation(
         if scenario_dict.get("wall_r_value"):
             wall_args = {
                 "r_value": float(scenario_dict["wall_r_value"]),
-                "analysis_period": 30,
-                "gwp_statistic": "median",
+                "analysis_period": float(scenario_dict.get("analysis_period") or 30),
+                "gwp_statistic": str(scenario_dict.get("gwp_statistic") or "median"),
                 "api_key": EC3_API_TOKEN or "",
-                "insulation_material_type": "Blown Fiberglass",
-                "insulation_material_lifetime": 30,
-                "insulation_thermal_conductivity": 0.0,
-                "insulation_material_density": 0.0,
+                "insulation_material_type": str(scenario_dict.get("wall_insulation_material_type") or "Blown Fiberglass"),
+                "insulation_material_lifetime": float(scenario_dict.get("wall_insulation_material_lifetime") or 30),
+                "insulation_thermal_conductivity": float(scenario_dict.get("wall_insulation_thermal_conductivity") or 0.0),
+                "insulation_material_density": float(scenario_dict.get("wall_insulation_material_density") or 0.0),
             }
             print(f"  Applying wall insulation (R={scenario_dict['wall_r_value']})...")
             if not apply_python_measure(model, Path(measure_dir_path) / "IncreaseInsulationRValueForExteriorWalls", "IncreaseInsulationRValueForExteriorWalls", wall_args):
@@ -402,13 +419,13 @@ def create_simulation(
         if scenario_dict.get("roof_r_value"):
             roof_args = {
                 "r_value": float(scenario_dict["roof_r_value"]),
-                "analysis_period": 30,
-                "gwp_statistic": "median",
+                "analysis_period": float(scenario_dict.get("analysis_period") or 30),
+                "gwp_statistic": str(scenario_dict.get("gwp_statistic") or "median"),
                 "api_key": EC3_API_TOKEN or "",
-                "insulation_material_type": "Blown Fiberglass",
-                "insulation_material_lifetime": 30,
-                "insulation_thermal_conductivity": 0.0,
-                "insulation_material_density": 0.0,
+                "insulation_material_type": str(scenario_dict.get("roof_insulation_material_type") or "Blown Fiberglass"),
+                "insulation_material_lifetime": float(scenario_dict.get("roof_insulation_material_lifetime") or 30),
+                "insulation_thermal_conductivity": float(scenario_dict.get("roof_insulation_thermal_conductivity") or 0.0),
+                "insulation_material_density": float(scenario_dict.get("roof_insulation_material_density") or 0.0),
             }
             print(f"  Applying roof insulation (R={scenario_dict['roof_r_value']})...")
             if not apply_python_measure(model, Path(measure_dir_path) / "IncreaseInsulationRValueForRoofs", "IncreaseInsulationRValueForRoofs", roof_args):
@@ -416,75 +433,99 @@ def create_simulation(
                 del model
                 return None
 
-        if scenario_dict.get("window_u_factor"):
+        has_window_renovation = any([
+            scenario_dict.get("window_u_factor") not in [None, ""],
+            scenario_dict.get("window_num_panes") not in [None, ""],
+            str(scenario_dict.get("glass_option", "none")).strip().lower() != "none",
+            str(scenario_dict.get("wf_option", "none")).strip().lower() != "none",
+            str(scenario_dict.get("caulking_option", "none")).strip().lower() != "none",
+            str(scenario_dict.get("film_option", "none")).strip().lower() != "none",
+            str(scenario_dict.get("weatherstrip_option", "none")).strip().lower() != "none",
+            str(scenario_dict.get("secondary_glazing_option", "none")).strip().lower() != "none",
+        ])
+
+        if has_window_renovation:
             if EC3_API_TOKEN is None:
                 print(f"⚠️  EC3 API token not found, skipping window enhancement")
             else:
-                u_factor = float(scenario_dict["window_u_factor"])
-                num_panes = 2 if u_factor >= 0.30 else 3
+                requested_panes = scenario_dict.get("window_num_panes")
+                if requested_panes not in [None, ""]:
+                    num_panes = max(1, min(3, int(float(requested_panes))))
+                elif scenario_dict.get("window_u_factor") not in [None, ""]:
+                    u_factor = float(scenario_dict["window_u_factor"])
+                    num_panes = 2 if u_factor >= 0.30 else 3
+                else:
+                    num_panes = 2
+
                 window_args = {
-                    "glass_option": "provide user_num_panes",
+                    "glass_option": str(scenario_dict.get("glass_option") or "provide user_num_panes"),
                     "user_num_panes": num_panes,
-                    "space_infiltration_reduction_percent": 50.0,
-                    "glass_pane_thickness": 0.003,
-                    "gap_thickness": 0.013,
-                    "glass_solar_transmittance": 0.7,
-                    "glass_visible_transmittance": 0.8,
-                    "glass_front_emissivity": 0.84,
-                    "glass_back_emissivity": 0.84,
-                    "glass_front_solar_reflectance": 0.15,
-                    "glass_back_solar_reflectance": 0.15,
-                    "glass_front_visible_reflectance": 0.1,
-                    "glass_back_visible_reflectance": 0.1,
-                    "analysis_period": 30,
-                    "glass_lifetime": 15,
-                    "wf_lifetime": 15,
-                    "caulking_lifetime": 10,
-                    "film_lifetime": 10,
-                    "weatherstrip_lifetime": 10,
-                    "wf_option": "none",
-                    "caulking_option": "none",
-                    "caulking_thickness": 0.003,
-                    "film_option": "none",
-                    "film_visible_transmittance": 0.0,
-                    "film_solar_transmittance": 0.0,
-                    "film_thermal_emissivity": 0.0,
-                    "film_thermal_resistance": 0.0,
-                    "weatherstrip_option": "none",
-                    "length_per_unit": 1.0,
-                    "secondary_glazing_option": "none",
+                    "space_infiltration_reduction_percent": float(scenario_dict.get("window_infiltration_reduction_percent") or 50.0),
+                    "glass_pane_thickness": float(scenario_dict.get("glass_pane_thickness") or 0.003),
+                    "gap_thickness": float(scenario_dict.get("gap_thickness") or 0.013),
+                    "glass_solar_transmittance": float(scenario_dict.get("glass_solar_transmittance") or 0.7),
+                    "glass_visible_transmittance": float(scenario_dict.get("glass_visible_transmittance") or 0.8),
+                    "glass_front_emissivity": float(scenario_dict.get("glass_front_emissivity") or 0.84),
+                    "glass_back_emissivity": float(scenario_dict.get("glass_back_emissivity") or 0.84),
+                    "glass_front_solar_reflectance": float(scenario_dict.get("glass_front_solar_reflectance") or 0.15),
+                    "glass_back_solar_reflectance": float(scenario_dict.get("glass_back_solar_reflectance") or 0.15),
+                    "glass_front_visible_reflectance": float(scenario_dict.get("glass_front_visible_reflectance") or 0.1),
+                    "glass_back_visible_reflectance": float(scenario_dict.get("glass_back_visible_reflectance") or 0.1),
+                    "analysis_period": float(scenario_dict.get("analysis_period") or 30),
+                    "glass_lifetime": float(scenario_dict.get("glass_lifetime") or 15),
+                    "wf_lifetime": float(scenario_dict.get("wf_lifetime") or 15),
+                    "caulking_lifetime": float(scenario_dict.get("caulking_lifetime") or 10),
+                    "film_lifetime": float(scenario_dict.get("film_lifetime") or 10),
+                    "weatherstrip_lifetime": float(scenario_dict.get("weatherstrip_lifetime") or 10),
+                    "wf_option": str(scenario_dict.get("wf_option") or "none"),
+                    "caulking_option": str(scenario_dict.get("caulking_option") or "none"),
+                    "caulking_thickness": float(scenario_dict.get("caulking_thickness") or 0.003),
+                    "film_option": str(scenario_dict.get("film_option") or "none"),
+                    "film_visible_transmittance": float(scenario_dict.get("film_visible_transmittance") or 0.0),
+                    "film_solar_transmittance": float(scenario_dict.get("film_solar_transmittance") or 0.0),
+                    "film_thermal_emissivity": float(scenario_dict.get("film_thermal_emissivity") or 0.0),
+                    "film_thermal_resistance": float(scenario_dict.get("film_thermal_resistance") or 0.0),
+                    "weatherstrip_option": str(scenario_dict.get("weatherstrip_option") or "none"),
+                    "length_per_unit": float(scenario_dict.get("length_per_unit") or 1.0),
+                    "secondary_glazing_option": str(scenario_dict.get("secondary_glazing_option") or "none"),
                     "api_key": EC3_API_TOKEN,
-                    "gwp_statistic": "median",
+                    "gwp_statistic": str(scenario_dict.get("gwp_statistic") or "median"),
                 }
-                print(f"  Applying window enhancement (U={scenario_dict['window_u_factor']}, {num_panes} panes)...")
+                print(f"  Applying window enhancement ({num_panes} panes)...")
                 if not apply_python_measure(model, Path(measure_dir_path) / "window_enhancement", "WindowEnhancement", window_args):
                     print(f"❌ {scenario_name}: window measure failed")
                     del model
                     return None
 
-        if scenario_dict.get("door_option"):
+        has_door_renovation = any([
+            scenario_dict.get("door_option") not in [None, ""],
+            str(scenario_dict.get("door_bottom_seal_option", "none")).strip().lower() != "none",
+            str(scenario_dict.get("door_top_side_seal_option", "none")).strip().lower() != "none",
+        ])
+
+        if has_door_renovation:
             if EC3_API_TOKEN is None:
                 print(f"⚠️  EC3 API token not found, skipping door enhancement")
             else:
                 door_args = {
-                    "space_infiltration_reduction_percent": 30.0,
-                    "alter_coef": False,
-                    "door_area_per_unit": 1.95,
-                    "analysis_period": 30,
-                    "door_bottom_seal_option": "automatic door bottom",
-                    "door_top_side_seal_option": "jamb weatherstrip",
-                    "door_option": scenario_dict["door_option"],
-                    "strip_lifetime": 15,
-                    "door_lifetime": 30,
-                    "gwp_statistic": "median",
+                    "space_infiltration_reduction_percent": float(scenario_dict.get("door_infiltration_reduction_percent") or 30.0),
+                    "alter_coef": bool(scenario_dict.get("alter_coef", False)),
+                    "door_area_per_unit": float(scenario_dict.get("door_area_per_unit") or 1.95),
+                    "analysis_period": float(scenario_dict.get("analysis_period") or 30),
+                    "door_bottom_seal_option": str(scenario_dict.get("door_bottom_seal_option") or "automatic door bottom"),
+                    "door_top_side_seal_option": str(scenario_dict.get("door_top_side_seal_option") or "jamb weatherstrip"),
+                    "door_option": str(scenario_dict.get("door_option") or "wooden door"),
+                    "strip_lifetime": float(scenario_dict.get("strip_lifetime") or 15),
+                    "door_lifetime": float(scenario_dict.get("door_lifetime") or 30),
+                    "gwp_statistic": str(scenario_dict.get("gwp_statistic") or "median"),
                     "api_key": EC3_API_TOKEN,
-                    "length_per_unit_bottom_side": 0.9144,
-                    "length_per_unit_other_sides": 5.1816,
-                    "door_thermal_conductivity": 0.0,
-                    "door_density": 0.0,
-                    "door_thickness": 0.0,
+                    "length_per_unit_bottom_side": float(scenario_dict.get("length_per_unit_bottom_side") or 0.9144),
+                    "length_per_unit_other_sides": float(scenario_dict.get("length_per_unit_other_sides") or 5.1816),
+                    "door_thermal_conductivity": float(scenario_dict.get("door_thermal_conductivity") or 0.0),
+                    "door_density": float(scenario_dict.get("door_density") or 0.0),
+                    "door_thickness": float(scenario_dict.get("door_thickness") or 0.0),
                 }
-                print(f"  Applying door enhancement (door={scenario_dict['door_option']})...")
+                print(f"  Applying door enhancement (door={door_args['door_option']})...")
                 if not apply_python_measure(model, Path(measure_dir_path) / "door_enhancement", "DoorEnhancement", door_args):
                     print(f"❌ {scenario_name}: door measure failed")
                     del model
@@ -523,21 +564,12 @@ def create_simulation(
 def generate_scenarios(
     cities,
     building_types,
-    run_wall_insulation=False,
-    run_roof_insulation=False,
-    run_window_enhancement=False,
-    run_door_enhancement=False,
-    run_all_measures=False,
-    wall_r_values=None,
-    roof_r_values=None,
-    window_u_factors=None,
-    door_options=None,
+    custom_combos=None,
 ):
     """
     Generate scenarios:
     - Always includes baseline
-    - Individual measures (wall only, roof only, window only, door only)
-    - All measures combined
+    - Explicit combinations via custom_combos
     """
     scenarios = []
 
@@ -553,75 +585,27 @@ def generate_scenarios(
             "door_option": None,
         })
 
-    # 2) INDIVIDUAL MEASURES
-    if run_wall_insulation and wall_r_values:
-        for city, building_type, wall_r in product(cities, building_types, wall_r_values):
-            scenarios.append({
-                "is_baseline": False,
-                "city": city,
-                "building_type": building_type,
-                "wall_r_value": wall_r,
-                "roof_r_value": None,
-                "window_u_factor": None,
-                "door_option": None,
-            })
-
-    if run_roof_insulation and roof_r_values:
-        for city, building_type, roof_r in product(cities, building_types, roof_r_values):
-            scenarios.append({
-                "is_baseline": False,
-                "city": city,
-                "building_type": building_type,
-                "wall_r_value": None,
-                "roof_r_value": roof_r,
-                "window_u_factor": None,
-                "door_option": None,
-            })
-
-    if run_window_enhancement and window_u_factors:
-        for city, building_type, window_u in product(cities, building_types, window_u_factors):
-            scenarios.append({
-                "is_baseline": False,
-                "city": city,
-                "building_type": building_type,
-                "wall_r_value": None,
-                "roof_r_value": None,
-                "window_u_factor": window_u,
-                "door_option": None,
-            })
-
-    if run_door_enhancement and door_options:
-        for city, building_type, door_opt in product(cities, building_types, door_options):
-            scenarios.append({
-                "is_baseline": False,
-                "city": city,
-                "building_type": building_type,
-                "wall_r_value": None,
-                "roof_r_value": None,
-                "window_u_factor": None,
-                "door_option": door_opt,
-            })
-
-    # 3) ALL MEASURES COMBINED
-    if run_all_measures:
-        walls = wall_r_values if wall_r_values else [None]
-        roofs = roof_r_values if roof_r_values else [None]
-        windows = window_u_factors if window_u_factors else [None]
-        doors = door_options if door_options else [None]
-
-        for city, building_type, wall_r, roof_r, window_u, door_opt in product(
-            cities, building_types, walls, roofs, windows, doors
-        ):
-            if wall_r or roof_r or window_u or door_opt:
-                scenarios.append({
+    # 2) EXPLICIT CUSTOM COMBINATIONS
+    if custom_combos:
+        for combo_index, combo in enumerate(custom_combos, start=1):
+            for city, building_type in product(cities, building_types):
+                scenario = {
                     "is_baseline": False,
                     "city": city,
                     "building_type": building_type,
-                    "wall_r_value": wall_r,
-                    "roof_r_value": roof_r,
-                    "window_u_factor": window_u,
-                    "door_option": door_opt,
-                })
+                    "scenario_index": combo_index,
+                    "wall_r_value": None,
+                    "roof_r_value": None,
+                    "window_u_factor": None,
+                    "window_num_panes": None,
+                    "door_option": None,
+                }
+                scenario.update(combo)
+                scenario["is_baseline"] = False
+                scenario["city"] = city
+                scenario["building_type"] = building_type
+                scenario["scenario_index"] = combo_index
+                scenarios.append(scenario)
 
     return scenarios
 
@@ -906,12 +890,6 @@ city_climate_zones = {
 # PARAMETRIC STUDY CONFIGURATION
 # =========================
 
-RUN_WALL_INSULATION = True
-RUN_ROOF_INSULATION = True
-RUN_WINDOW_ENHANCEMENT = True
-RUN_DOOR_ENHANCEMENT = True
-RUN_ALL_MEASURES = False
-
 CITIES = list(city_climate_zones.keys())
 
 BUILDING_TYPES = [
@@ -920,20 +898,27 @@ BUILDING_TYPES = [
 
 TEMPLATE = "90.1-2010"
 
-WALL_R_VALUES = [
-    30,
-]
-
-ROOF_R_VALUES = [
-    40,
-]
-
-WINDOW_U_FACTORS = [
-    0.20,
-]
-
-DOOR_OPTIONS = [
-    "wooden door",
+CUSTOM_COMBOS = [
+    {
+        "wall_r_value": 13,
+        "wall_insulation_material_type": "Fiberglass Batts",
+        "roof_r_value": 24.4,
+        "roof_insulation_material_type": "Blown Fiberglass",
+        "window_num_panes": 3,
+        "window_infiltration_reduction_percent": 30.0,
+        "glass_option": "provide user_num_panes",
+        "wf_option": "wood window frame",
+        "caulking_option": "acrylic",
+        "film_option": "low-e film",
+        "weatherstrip_option": "silicone adhesive smoke gasket",
+        "secondary_glazing_option": "none",
+        "door_option": "wooden door",
+        "door_infiltration_reduction_percent": 30.0,
+        "door_bottom_seal_option": "automatic door bottom",
+        "door_top_side_seal_option": "jamb weatherstrip",
+        "analysis_period": 30,
+        "gwp_statistic": "median",
+    },
 ]
 
 # =========================
@@ -952,35 +937,19 @@ if __name__ == "__main__":
     scenarios = generate_scenarios(
         cities=CITIES,
         building_types=BUILDING_TYPES,
-        run_wall_insulation=RUN_WALL_INSULATION,
-        run_roof_insulation=RUN_ROOF_INSULATION,
-        run_window_enhancement=RUN_WINDOW_ENHANCEMENT,
-        run_door_enhancement=RUN_DOOR_ENHANCEMENT,
-        run_all_measures=RUN_ALL_MEASURES,
-        wall_r_values=WALL_R_VALUES if RUN_WALL_INSULATION or RUN_ALL_MEASURES else None,
-        roof_r_values=ROOF_R_VALUES if RUN_ROOF_INSULATION or RUN_ALL_MEASURES else None,
-        window_u_factors=WINDOW_U_FACTORS if RUN_WINDOW_ENHANCEMENT or RUN_ALL_MEASURES else None,
-        door_options=DOOR_OPTIONS if RUN_DOOR_ENHANCEMENT or RUN_ALL_MEASURES else None,
+        custom_combos=CUSTOM_COMBOS,
     )
 
     total_sims = len(scenarios)
     baseline_count = sum(1 for s in scenarios if s["is_baseline"])
-    individual_wall = sum(1 for s in scenarios if not s["is_baseline"] and s["wall_r_value"] and not s["roof_r_value"] and not s["window_u_factor"] and not s["door_option"])
-    individual_roof = sum(1 for s in scenarios if not s["is_baseline"] and s["roof_r_value"] and not s["wall_r_value"] and not s["window_u_factor"] and not s["door_option"])
-    individual_window = sum(1 for s in scenarios if not s["is_baseline"] and s["window_u_factor"] and not s["wall_r_value"] and not s["roof_r_value"] and not s["door_option"])
-    individual_door = sum(1 for s in scenarios if not s["is_baseline"] and s["door_option"] and not s["wall_r_value"] and not s["roof_r_value"] and not s["window_u_factor"])
-    all_measures = sum(1 for s in scenarios if not s["is_baseline"] and sum([bool(s["wall_r_value"]), bool(s["roof_r_value"]), bool(s["window_u_factor"]), bool(s["door_option"])]) > 1)
+    custom_count = total_sims - baseline_count
 
     print(f"\n📦 Total scenarios: {total_sims}")
     print(f"   - Cities: {len(CITIES)}")
     print(f"   - Building Types: {len(BUILDING_TYPES)}")
     print(f"\n   Breakdown:")
     print(f"   - Baseline: {baseline_count}")
-    print(f"   - Wall only: {individual_wall}")
-    print(f"   - Roof only: {individual_roof}")
-    print(f"   - Window only: {individual_window}")
-    print(f"   - Door only: {individual_door}")
-    print(f"   - All measures: {all_measures}")
+    print(f"   - Custom combos: {custom_count}")
     print("=" * 70)
 
     sim_count = 0

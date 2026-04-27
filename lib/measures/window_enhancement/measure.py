@@ -1280,7 +1280,6 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
         )
         reno_detail_features["window_enhancement_windows_processed_count"] = len(sub_surfaces_to_change)
         reno_detail_features["window_enhancement_simple_glazing_objects_count"] = simple_glazing_objects_count
-        summary_notes = "window enhancement successfully completed!"
 
         available_window_types_summary = (
             f"available subsurface counts -> "
@@ -1302,32 +1301,82 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
         ])
 
         conflict_reasons = []
-        if selected_window_renovation and len(sub_surfaces_to_change) == 0:
-            conflict_reasons.append("No supported window subsurfaces found for selected renovation options")
+        conflict_reason_set = set()
 
-        if weatherstrip_option != "none" and available_window_subsurface_types["OperableWindow"] == 0:
-            conflict_reasons.append("Weatherstrip selected but no OperableWindow subsurfaces found")
+        def _add_conflict(reason):
+            if reason and reason not in conflict_reason_set:
+                conflict_reason_set.add(reason)
+                conflict_reasons.append(reason)
 
-        if film_option != "none" and len(sub_surfaces_to_change) > 0 and len(sub_surfaces_to_change) == simple_glazing_objects_count:
-            conflict_reasons.append("Film selected but all window constructions are SimpleGlazing")
+        processed_window_count = len(sub_surfaces_to_change)
+        no_supported_window_subsurfaces = processed_window_count == 0
+        no_operable_windows = available_window_subsurface_types["OperableWindow"] == 0
+        has_simple_glazing = simple_glazing_objects_count > 0
+        all_windows_simple_glazing = has_simple_glazing and processed_window_count > 0 and simple_glazing_objects_count == processed_window_count
 
-        if glass_option != "none" and len(sub_surfaces_to_change) > 0 and len(sub_surfaces_to_change) == simple_glazing_objects_count:
-            conflict_reasons.append("Glass replacement selected but all window constructions are SimpleGlazing")
+        if selected_window_renovation and no_supported_window_subsurfaces:
+            _add_conflict("No supported window subsurfaces found for selected renovation options")
 
-        if secondary_glazing_option != "none" and len(sub_surfaces_to_change) > 0 and len(sub_surfaces_to_change) == simple_glazing_objects_count:
-            conflict_reasons.append("Secondary glazing selected but all window constructions are SimpleGlazing")
+        if weatherstrip_option != "none" and no_operable_windows:
+            _add_conflict("Weatherstrip selected but no OperableWindow subsurfaces found")
+
+        def _append_simple_glazing_conflicts(option_selected, option_label):
+            if not option_selected:
+                return
+            if all_windows_simple_glazing:
+                _add_conflict(f"{option_label} selected but all window constructions are SimpleGlazing")
+            elif has_simple_glazing:
+                _add_conflict(
+                    f"{option_label} partially blocked by SimpleGlazing windows "
+                    f"({simple_glazing_objects_count}/{processed_window_count})"
+                )
+
+        _append_simple_glazing_conflicts(film_option != "none", "Film")
+        _append_simple_glazing_conflicts(glass_option != "none", "Glass replacement")
+        _append_simple_glazing_conflicts(secondary_glazing_option != "none", "Secondary glazing")
+
+        requested_actions = []
+        if glass_option != "none":
+            requested_actions.append(f"glass upgrade ({glass_option})")
+        if wf_option != "none":
+            requested_actions.append(f"frame upgrade ({wf_option})")
+        if caulking_option != "none":
+            requested_actions.append(f"caulking ({caulking_option})")
+        if film_option != "none":
+            requested_actions.append(f"film ({film_option})")
+        if weatherstrip_option != "none":
+            requested_actions.append(f"weatherstrip ({weatherstrip_option})")
+        if secondary_glazing_option != "none":
+            requested_actions.append(f"secondary glazing ({secondary_glazing_option})")
+
+        if requested_actions:
+            requested_summary = ", ".join(requested_actions)
+        else:
+            requested_summary = "no window renovation options"
 
         if conflict_reasons:
             summary_notes = (
-                "Window renovation option conflict(s): "
+                "Requested: "
+                + requested_summary
+                + ". Outcome: Completed with option conflicts; one or more requested actions were skipped or partially applied. "
+                + "Reason(s): "
                 + " | ".join(conflict_reasons)
-                + "; "
+                + ". Context: "
                 + construction_counts_summary
                 + "; "
                 + available_window_types_summary
+                + "."
             )
         else:
-            summary_notes = summary_notes + " " + construction_counts_summary + "; " + available_window_types_summary
+            summary_notes = (
+                "Requested: "
+                + requested_summary
+                + ". Outcome: Window enhancement completed without option conflicts. Context: "
+                + construction_counts_summary
+                + "; "
+                + available_window_types_summary
+                + "."
+            )
 
         reno_detail_features["window_enhancement_summary_notes"] = summary_notes
         results_features["window_enhancement_carbon_data_unavailable"] = 1 if carbon_data_unavailable_tracker["count"] > 0 else 0

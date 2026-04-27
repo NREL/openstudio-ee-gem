@@ -966,21 +966,42 @@ class IncreaseInsulationRValueForExteriorWalls(openstudio.measure.ModelMeasure):
         reno_detail.setFeature("wall_insulation_target_r_value_ip", r_value_ip)
         reno_detail.setFeature("wall_insulation_material_type", insulation_material_type)
         reno_detail.setFeature("wall_insulation_modified_constructions_count", len(modified_constructions))
-        if len(modified_constructions) != 0 and skipped_constructions_target_already_met > 0:
+        requested_summary = f"wall insulation upgrade to target R-{r_value_ip:.2f} using '{insulation_material_type}'"
+        context_summary = (
+            f"modified constructions={len(modified_constructions)}, "
+            f"target-already-met skips={skipped_constructions_target_already_met}, "
+            f"renovated area={total_wall_area:.3f} m2, added volume={total_added_volume_m3:.3f} m3"
+        )
+
+        if len(modified_constructions) == 0 and skipped_constructions_target_already_met > 0:
             wall_summary_notes = (
-                "No wall insulation renovation executed because target R-value is less than or equal to existing wall insulation R-value "
-                f"for all eligible constructions (skipped={skipped_constructions_target_already_met}) "
-                f"even though insulation material '{insulation_material_type}' was selected."
+                "Requested: "
+                + requested_summary
+                + ". Outcome: Not implemented. "
+                + "Reason: All eligible wall constructions already met or exceeded the target R-value. "
+                + "Context: "
+                + context_summary
+                + "."
             )
         elif len(modified_constructions) == 0:
             wall_summary_notes = (
-                "No wall insulation renovation executed because no wall constructions were found. "
+                "Requested: "
+                + requested_summary
+                + ". Outcome: Not implemented. "
+                + "Reason: No eligible exterior wall constructions were found. "
+                + "Context: "
+                + context_summary
+                + "."
             )
         else:
             wall_summary_notes = (
-                "Wall insulation renovation completed. "
-                f"Modified constructions={len(modified_constructions)}, "
-                f"target-already-met skips={skipped_constructions_target_already_met}."
+                "Requested: "
+                + requested_summary
+                + ". Outcome: Implemented. "
+                + "Details: Exterior wall insulation layers were updated to meet the target R-value where needed. "
+                + "Context: "
+                + context_summary
+                + "."
             )
         reno_detail.setFeature("wall_insulation_summary_notes", wall_summary_notes)
 
