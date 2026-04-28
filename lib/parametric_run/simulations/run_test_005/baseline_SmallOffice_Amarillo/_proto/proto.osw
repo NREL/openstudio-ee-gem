@@ -1,0 +1,23 @@
+{
+  "weather_file": "C:\\All repos\\openstudio-ee-gem\\lib\\parametric_run\\weather\\Amarillo\\USA_TX_Amarillo-Husband.Amarillo.Intl.AP.723630_TMYx.epw",
+  "file_paths": [
+    "C:\\All repos\\openstudio-ee-gem\\lib\\parametric_run\\weather",
+    "C:\\All repos\\openstudio-ee-gem\\lib\\parametric_run\\weather\\Amarillo"
+  ],
+  "measure_paths": [
+    "C:\\All repos\\openstudio-ee-gem\\lib\\measures"
+  ],
+  "steps": [
+    {
+      "measure_dir_name": "create_DOE_prototype_building",
+      "name": "Create DOE Prototype Building",
+      "arguments": {
+        "building_type": "SmallOffice",
+        "template": "90.1-2010",
+        "climate_zone": "ASHRAE 169-2013-3B",
+        "epw_file": "Not Applicable"
+      }
+    }
+  ],
+  "name": "baseline_SmallOffice_Amarillo_proto"
+}

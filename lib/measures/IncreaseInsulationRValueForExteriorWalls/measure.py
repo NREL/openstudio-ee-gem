@@ -1020,18 +1020,13 @@ class IncreaseInsulationRValueForExteriorWalls(openstudio.measure.ModelMeasure):
         results.setFeature("wall_insulation_material_cost_$", total_material_cost)
         results.setFeature("wall_insulation_overhead_profit_cost_$", total_overhead_profit_cost)
         results.setFeature("wall_insulation_total_cost_with_overhead_and_profit_$", total_material_cost + total_labor_cost + total_overhead_profit_cost)
-        results.setFeature("wall_insulation_carbon_data_unavailable", 1 if carbon_data_unavailable_reasons else 0)
-        results.setFeature("wall_insulation_carbon_data_unavailable_reason_count", len(carbon_data_unavailable_reasons))
-        if carbon_data_unavailable_reasons:
-            results.setFeature(
-                "wall_insulation_carbon_data_unavailable_reasons",
-                ";".join(carbon_data_unavailable_reasons),
-            )
         
         # Facility bucket: emission/cost factors
         factors.setFeature("wall_insulation_cost_source", cost_source)
         factors.setFeature("wall_insulation_overhead_profit_percent", overhead_profit_percent)
         factors.setFeature("wall_insulation_cost_factor_basis", cost_factor_basis)
+        factors.setFeature("wall_insulation_custom_labor_cost_multiplier", labor_cost_multiplier)
+        factors.setFeature("wall_insulation_custom_cost_per_cf", custom_cost_per_cf)
         if material_gwp.get("gwp_per_kg", 0.0) > 0.0:
             factors.setFeature("wall_insulation_material_gwp_per_kg", material_gwp.get("gwp_per_kg", 0.0))
         if material_gwp.get("gwp_per_m2", 0.0) > 0.0:

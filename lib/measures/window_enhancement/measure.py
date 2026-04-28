@@ -13,6 +13,16 @@ import numpy as np
 from resources.EC3_lookup import *
 
 
+_LOCAL_EC3_LOOKUP_PATH = Path(__file__).resolve().parent / "resources" / "EC3_lookup.py"
+_LOCAL_EC3_SPEC = importlib.util.spec_from_file_location("window_enhancement_local_ec3_lookup", _LOCAL_EC3_LOOKUP_PATH)
+_LOCAL_EC3_MODULE = importlib.util.module_from_spec(_LOCAL_EC3_SPEC)
+_LOCAL_EC3_SPEC.loader.exec_module(_LOCAL_EC3_MODULE)
+
+
+def fetch_epd_data(url, api_token):
+    return _LOCAL_EC3_MODULE.fetch_epd_data(url=url, api_token=api_token)
+
+
 class WindowEnhancement(openstudio.measure.ModelMeasure):
 
     """A ModelMeasure for window enhancement, calculating embodied carbon.
@@ -1277,6 +1287,7 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
             film_lifetime=film_lifetime,
             weatherstrip_lifetime=weatherstrip_lifetime,
             total_embodied_carbon=total_embodied_carbon,
+            length_per_unit=length_per_unit,
         )
         reno_detail_features["window_enhancement_windows_processed_count"] = len(sub_surfaces_to_change)
         reno_detail_features["window_enhancement_simple_glazing_objects_count"] = simple_glazing_objects_count
@@ -1379,10 +1390,7 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
             )
 
         reno_detail_features["window_enhancement_summary_notes"] = summary_notes
-        results_features["window_enhancement_carbon_data_unavailable"] = 1 if carbon_data_unavailable_tracker["count"] > 0 else 0
-        results_features["window_enhancement_carbon_data_unavailable_reason_count"] = int(carbon_data_unavailable_tracker["count"])
-        if carbon_data_unavailable_tracker["reasons"]:
-            results_features["window_enhancement_carbon_data_unavailable_reasons"] = ";".join(carbon_data_unavailable_tracker["reasons"])
+        reno_detail_features["window_weatherstrip_length_per_unit"] = length_per_unit
    
         # Phase 2: Build normalized material payload for RSMeans lookup.
         materials = self._build_rsmeans_material_payload(
@@ -1455,6 +1463,11 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
             overhead_profit_percent=overhead_profit_percent,
             labor_cost_multiplier=labor_cost_multiplier,
             rsmeans_material_features=rsmeans_material_features,
+            glass_cost_per_cf=glass_cost_per_cf,
+            frame_cost_per_sf=frame_cost_per_sf,
+            caulking_cost_per_cy=caulking_cost_per_cy,
+            film_cost_per_sf=film_cost_per_sf,
+            weatherstrip_cost_per_lf=weatherstrip_cost_per_lf,
         )
 
         self._update_gwp_and_construction_feature_maps(
@@ -1972,19 +1985,19 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
             subsurface_data[material_name]["lifetime_source"] = "EPD" if epd_lifetime != user_lifetime else "user_input"
 
             # Extract gwp statistics
-            for functional_unit, list in gwp_values.items():
-                if len(list) == 0:
+            for functional_unit, gwp_list in gwp_values.items():
+                if len(gwp_list) == 0:
                     gwp = None
-                elif len(list) == 1:
-                    gwp = list[0]
+                elif len(gwp_list) == 1:
+                    gwp = gwp_list[0]
                 elif gwp_statistic == "minimum":
-                    gwp = float(np.min(list))
+                    gwp = float(np.min(gwp_list))
                 elif gwp_statistic == "maximum":
-                    gwp = float(np.max(list))
+                    gwp = float(np.max(gwp_list))
                 elif gwp_statistic == "mean":
-                    gwp = float(np.mean(list))
+                    gwp = float(np.mean(gwp_list))
                 elif gwp_statistic == "median":
-                    gwp = float(np.median(list))
+                    gwp = float(np.median(gwp_list))
                 subsurface_data[material_name][functional_unit] = gwp
             
             # Multipliers for calculating embodied carbon over analysis period (using updated lifetime)
@@ -3261,6 +3274,7 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
         film_lifetime,
         weatherstrip_lifetime,
         total_embodied_carbon,
+        length_per_unit,
     ):
         basic_input_features = {
             "window_enhancement_analysis_period_years": analysis_period,
@@ -3269,21 +3283,22 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
         }
         # Keep only canonical reno_detail keys.
         reno_detail_features = {
-            "window_infiltration_reduction_percent": space_infiltration_reduction_percent,
+            "window_enhancement_infiltration_reduction_percent": space_infiltration_reduction_percent,
             "window_glass_pane_thickness_m": glass_pane_thickness,
-            "window_glazing_gap_thickness_m": gap_thickness,
+            "window_glass_gap_thickness_m": gap_thickness,
             "window_frame_option": wf_option,
             "window_caulking_option": caulking_option,
             "window_film_option": film_option,
             "window_weatherstrip_option": weatherstrip_option,
             "window_glass_option": glass_option,
             "window_secondary_glazing_option": secondary_glazing_option,
-            "window_enhancement_renovated_window_area_m2": total_window_area_m2,
+            "window_enhancement_renovated_area_m2": total_window_area_m2,
             "window_enhancement_renovated_glazing_area_m2": total_glazing_area_m2,
             "window_enhancement_renovated_frame_area_m2": total_frame_area_m2,
             "window_enhancement_renovated_perimeter_m": total_perimeter_m,
             "window_enhancement_renovated_caulking_volume_m3": total_caulking_volume_m3,
             "window_enhancement_renovated_weatherstrip_length_m": total_weatherstrip_length_m,
+            "window_weatherstrip_length_per_unit": length_per_unit,
         }
         mtrl_prop_features = {
             "window_glass_lifetime_years": glass_lifetime,
@@ -3635,6 +3650,11 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
         overhead_profit_percent,
         labor_cost_multiplier,
         rsmeans_material_features,
+        glass_cost_per_cf,
+        frame_cost_per_sf,
+        caulking_cost_per_cy,
+        film_cost_per_sf,
+        weatherstrip_cost_per_lf,
     ):
         results_features.update({
             "window_enhancement_material_cost_$": total_material_cost,
@@ -3648,6 +3668,11 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
             "window_enhancement_cost_factor_basis": cost_factor_basis,
             "window_enhancement_overhead_profit_percent": overhead_profit_percent,
             "window_enhancement_custom_labor_cost_multiplier": labor_cost_multiplier,
+            "window_custom_glass_cost_per_cf": glass_cost_per_cf,
+            "window_custom_frame_cost_per_sf": frame_cost_per_sf,
+            "window_custom_caulking_cost_per_cy": caulking_cost_per_cy,
+            "window_custom_film_cost_per_sf": film_cost_per_sf,
+            "window_custom_weatherstrip_cost_per_lf": weatherstrip_cost_per_lf,
         })
         mtrl_prop_features.update(rsmeans_material_features)
 

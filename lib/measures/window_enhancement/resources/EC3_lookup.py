@@ -125,7 +125,7 @@ def generate_url_byname(
     return f"{base_url}?{urllib.parse.urlencode(params)}"
 
 # this function is sending API call, the response is json format
-def fetch_epd_data(url, api_token, max_retries=3, timeout=30):
+def fetch_epd_data(url, api_token, max_retries=1, timeout=10):
     """
     input url address generted by generate_url()
     Fetch EPD data from the EC3 API with retry logic and timeout.

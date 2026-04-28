@@ -1044,6 +1044,17 @@ class DoorEnhancement(openstudio.measure.ModelMeasure):
             for name in subsurface_dict.keys()
         )
         
+        # Collect door construction names for traceability
+        construction_names = []
+        for name in subsurface_dict.keys():
+            if 'new_construction_name' in subsurface_dict[name]:
+                construction_names.append(subsurface_dict[name]['new_construction_name'])
+            else:
+                subsurface = subsurface_dict[name]["subsurface object"]
+                if subsurface.construction().is_initialized():
+                    construction = subsurface.construction().get()
+                    construction_names.append(construction.nameString())
+        
         # Calculate total sealing lengths
         total_sealing_bottom_length_m = 0.0
         total_sealing_side_length_m = 0.0
@@ -1600,21 +1611,6 @@ class DoorEnhancement(openstudio.measure.ModelMeasure):
         sizingpara = model.getSizingParameters()
         mtrl_prop = sizingpara.additionalProperties()
 
-        # 5A) Per-door (subsurface) properties
-        for subsurface_name in subsurface_dict.keys():
-            item = subsurface_dict[subsurface_name]
-            subsurface_props = item["subsurface object"].additionalProperties()
-            door_material = door_option if door_option != 'none' else 'none'
-            bottom_material = door_bottom_seal_option if door_bottom_seal_option != 'none' else 'none'
-            top_side_material = door_top_side_seal_option if door_top_side_seal_option != 'none' else 'none'
-            subsurface_props.setFeature("door_enhancement_renovated_door_area_m2", item["dimension"]["area_m2"])
-            subsurface_props.setFeature(
-                "door_enhancement_renovated_embodied_carbon_kgCO2eq",
-                item["door_renovation_embodied_carbon_kg_co2_eq"],
-            )
-            subsurface_props.setFeature("door_enhancement_door_material_type", door_material)
-            subsurface_props.setFeature("door_enhancement_bottom_seal_material_type", bottom_material)
-            subsurface_props.setFeature("door_enhancement_top_side_seal_material_type", top_side_material)
 
         # 5B) Aggregate values used by model-level bucket writes
         gwp_per_unit_list = []
@@ -1662,11 +1658,11 @@ class DoorEnhancement(openstudio.measure.ModelMeasure):
         reno_detail.setFeature("door_enhancement_door_area_per_unit_m2", door_area_per_unit)
         reno_detail.setFeature("door_enhancement_infiltration_reduction_percent", space_infiltration_reduction_percent)
         reno_detail.setFeature("door_bottom_seal_option", door_bottom_seal_option)
-        reno_detail.setFeature("total_sealing_bottom_length_m", total_sealing_bottom_length_m)
+        reno_detail.setFeature("door_sealing_bottom_length_m", total_sealing_bottom_length_m)
         reno_detail.setFeature("door_top_side_seal_option", door_top_side_seal_option)
-        reno_detail.setFeature("total_sealing_side_length_m", total_sealing_side_length_m)
+        reno_detail.setFeature("door_sealing_side_length_m", total_sealing_side_length_m)
         reno_detail.setFeature("door_option", door_option)
-        reno_detail.setFeature("total_renovated_door_area_m2", total_door_area_m2)
+        reno_detail.setFeature("door_enhancement_renovated_area_m2", total_door_area_m2)
 
         # Set summary notes based on model-door compatibility conflicts.
         summary_notes = "door enhancement successfully completed!"
@@ -1759,13 +1755,6 @@ class DoorEnhancement(openstudio.measure.ModelMeasure):
         # 5G) SimulationControl bucket (results)
         # Canonical embodied carbon key used by wall/roof/window measures.
         results.setFeature("door_enhancement_embodied_carbon_kgCO2eq", total_embodied_carbon)
-        results.setFeature("door_enhancement_carbon_data_unavailable", 1 if carbon_data_unavailable_tracker["count"] > 0 else 0)
-        results.setFeature("door_enhancement_carbon_data_unavailable_reason_count", int(carbon_data_unavailable_tracker["count"]))
-        if carbon_data_unavailable_tracker["reasons"]:
-            results.setFeature(
-                "door_enhancement_carbon_data_unavailable_reasons",
-                ";".join(carbon_data_unavailable_tracker["reasons"]),
-            )
 
 
         if rsmeans_lookup is not None and rsmeans_lookup.get("status") == "ok":
@@ -1808,6 +1797,10 @@ class DoorEnhancement(openstudio.measure.ModelMeasure):
             factors.setFeature("door_enhancement_cost_source", cost_source_val)
             factors.setFeature("door_enhancement_cost_factor_basis", cost_factor_basis)
             factors.setFeature("door_enhancement_overhead_profit_percent", rsmeans_overhead_percent)
+            factors.setFeature("door_enhancement_custom_labor_cost_multiplier", labor_cost_multiplier)
+            factors.setFeature("door_enhancement_custom_door_cost_per_area", custom_door_cost_per_area)
+            factors.setFeature("door_enhancement_custom_bottom_seal_cost_per_m", custom_bottom_seal_cost)
+            factors.setFeature("door_enhancement_custom_top_side_seal_cost_per_m", custom_top_side_seal_cost)
 
             # -- SimulationControl (results) bucket: mirrored scalars + JSON --
             results.setFeature("door_enhancement_material_cost_$", rsmeans_material_cost)
@@ -1819,26 +1812,26 @@ class DoorEnhancement(openstudio.measure.ModelMeasure):
             # the three-payload pattern used by wall and roof insulation measures).
             #
             # 1. matches_json – all matched materials + search_log + slim catalog summary
-            matches_payload = {
-                "materials": matched_mats,
-                "search_log": rsmeans_results_dict.get("search_log", []),
-                "summary": {
-                    "release_id": rsmeans_summary_dict.get("release_id", ""),
-                    "location_id": rsmeans_summary_dict.get("location_id", ""),
-                    "labor_type": rsmeans_summary_dict.get("labor_type", ""),
-                    "measurement_system": rsmeans_summary_dict.get("measurement_system", ""),
-                    "catalogs_searched": rsmeans_summary_dict.get("catalogs_searched", []),
-                },
-            }
-            results.setFeature("door_enhancement_rsmeans_matches_json", json.dumps(matches_payload))
-            # 2. search_results_json – full results dict (materials, errors, search_log, catalogs)
-            results.setFeature("door_enhancement_rsmeans_search_results_json", json.dumps(rsmeans_results_dict))
-            # 3. summary_json – full financial and catalog metadata
-            results.setFeature("door_enhancement_rsmeans_summary_json", json.dumps(rsmeans_summary_dict))
+            # matches_payload = {
+            #     "materials": matched_mats,
+            #     "search_log": rsmeans_results_dict.get("search_log", []),
+            #     "summary": {
+            #         "release_id": rsmeans_summary_dict.get("release_id", ""),
+            #         "location_id": rsmeans_summary_dict.get("location_id", ""),
+            #         "labor_type": rsmeans_summary_dict.get("labor_type", ""),
+            #         "measurement_system": rsmeans_summary_dict.get("measurement_system", ""),
+            #         "catalogs_searched": rsmeans_summary_dict.get("catalogs_searched", []),
+            #     },
+            # }
+            # results.setFeature("door_enhancement_rsmeans_matches_json", json.dumps(matches_payload))
+            # # 2. search_results_json – full results dict (materials, errors, search_log, catalogs)
+            # results.setFeature("door_enhancement_rsmeans_search_results_json", json.dumps(rsmeans_results_dict))
+            # # 3. summary_json – full financial and catalog metadata
+            # results.setFeature("door_enhancement_rsmeans_summary_json", json.dumps(rsmeans_summary_dict))
             # retrofit_materials_json – the search inputs sent to the API (used by
             # standalone call_rsmeans_api.py to re-run a lookup without re-running
             # the full measure)
-            results.setFeature("door_enhancement_retrofit_materials_json", json.dumps(rsmeans_materials))
+            # results.setFeature("door_enhancement_retrofit_materials_json", json.dumps(rsmeans_materials))
 
             runner.registerInfo(
                 f"[INFO] RSMeans cost stored: source={cost_source_val}, "
@@ -1851,9 +1844,17 @@ class DoorEnhancement(openstudio.measure.ModelMeasure):
             factors.setFeature("door_enhancement_cost_source", "none")
             factors.setFeature("door_enhancement_cost_factor_basis", "not_calculated")
             factors.setFeature("door_enhancement_overhead_profit_percent", 0.0)
+            factors.setFeature("door_enhancement_custom_labor_cost_multiplier", labor_cost_multiplier)
+            factors.setFeature("door_enhancement_custom_door_cost_per_area", custom_door_cost_per_area)
+            factors.setFeature("door_enhancement_custom_bottom_seal_cost_per_m", custom_bottom_seal_cost)
+            factors.setFeature("door_enhancement_custom_top_side_seal_cost_per_m", custom_top_side_seal_cost)
 
         reno_detail.setFeature("total_doors_processed_count", len(sub_surfaces_to_change))
         reno_detail.setFeature("total_doors_with_r_value_change_count", doors_with_r_value_change)
+        
+        # Construction names for traceability
+        if construction_names:
+            basic_input.setFeature("door_enhancement_construction_names", ', '.join(construction_names))
         
         runner.registerInfo(f"\n✓ Door enhancement summary stored in organized additional properties")
         
