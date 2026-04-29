@@ -1,4 +1,4 @@
-Program Version,EnergyPlus, Version 25.2.0-cf7368216c, YMD=2026.04.28 22:34,
+Program Version,EnergyPlus, Version 25.2.0-cf7368216c, YMD=2026.04.29 09:52,
    ** Warning ** ProcessScheduleInput: Schedule:Day:Interval = ECONOMIZER MAX OA FRACTION 70 PCT DEFAULT
    **   ~~~   ** Schedule Type Limits Name is empty.
    **   ~~~   ** Schedule will not be validated.
@@ -196,4 +196,4 @@ Program Version,EnergyPlus, Version 25.2.0-cf7368216c, YMD=2026.04.28 22:34,
    *************
    ************* EnergyPlus Warmup Error Summary. During Warmup: 0 Warning; 0 Severe Errors.
    ************* EnergyPlus Sizing Error Summary. During Sizing: 22 Warning; 0 Severe Errors.
-   ************* EnergyPlus Completed Successfully-- 282881 Warning; 0 Severe Errors; Elapsed Time=00hr 00min  9.06sec
+   ************* EnergyPlus Completed Successfully-- 282881 Warning; 0 Severe Errors; Elapsed Time=00hr 00min  9.71sec

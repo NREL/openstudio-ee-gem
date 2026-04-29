@@ -170,7 +170,7 @@ class DoorEnhancement(openstudio.measure.ModelMeasure):
         if option == 'wooden door':
             door_product_url = generate_url_byname(name_like = 'wood door leaf')
         elif option == 'glass door':
-            door_product_url = generate_url_byname(name_like = 'sliding glass door', plant_geography = '150')
+            door_product_url = generate_url_byname(name_like = 'sliding glass door')
         elif option == 'garage door':
             door_product_url = generate_url_byname(name_like = 'garage door', plant_geography = '150')
         elif option == 'stiffened core steel door':

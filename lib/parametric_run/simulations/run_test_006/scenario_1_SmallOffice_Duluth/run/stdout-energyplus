@@ -1,8 +1,8 @@
 ExpandObjects Started.
 No expanded file generated.
-ExpandObjects Finished. Time:     0.094
+ExpandObjects Finished. Time:     0.109
 EnergyPlus Starting
-EnergyPlus, Version 25.2.0-cf7368216c, YMD=2026.04.28 22:34
+EnergyPlus, Version 25.2.0-cf7368216c, YMD=2026.04.29 09:52
 Initializing Response Factors
 Calculating CTFs for "INTERIORFURNISHINGS"
 Calculating CTFs for "TYPICAL ATTIC SOFFIT"
@@ -151,5 +151,5 @@ Continuing Simulation at 12/27/2006 for RUN PERIOD 1
 Writing tabular output file results using HTML format.
 Computing Life Cycle Costs and Reporting
 Writing final SQL reports
-EnergyPlus Run Time=00hr 00min  9.06sec
+EnergyPlus Run Time=00hr 00min  9.71sec
 EnergyPlus Completed Successfully.
