@@ -2,7 +2,7 @@ ExpandObjects Started.
 No expanded file generated.
 ExpandObjects Finished. Time:     0.078
 EnergyPlus Starting
-EnergyPlus, Version 25.2.0-cf7368216c, YMD=2026.04.27 14:49
+EnergyPlus, Version 25.2.0-cf7368216c, YMD=2026.04.28 13:50
 Initializing Response Factors
 Calculating CTFs for "INTERIORFURNISHINGS"
 Calculating CTFs for "TYPICAL ATTIC SOFFIT"
@@ -12,7 +12,6 @@ Calculating CTFs for "TYPICAL INSULATED WOOD FRAMED EXTERIOR WALL R-11.24 1"
 Calculating CTFs for "TYPICAL INTERIOR WALL"
 Calculating CTFs for "TYPICAL UNINSULATED WOOD JOIST ATTIC ROOF ADJ ROOF INSULATION"
 Calculating CTFs for "TYPICAL WOOD JOIST ATTIC FLOOR R-37.04 1"
-Calculating CTFs for "U 0.9 SHGC 0.25 SIMPLE GLAZING - WOODEN DOOR R-0.30"
 Calculating CTFs for "FOUNDATION F 1.26W/M*K PERIM 0.0M AREA 149.66M2"
 Calculating CTFs for "FOUNDATION F 1.26W/M*K PERIM 18.46M AREA 67.3M2"
 Calculating CTFs for "FOUNDATION F 1.26W/M*K PERIM 27.69M AREA 113.45M2"
@@ -154,5 +153,5 @@ Continuing Simulation at 12/27/2006 for RUN PERIOD 1
 Writing tabular output file results using HTML format.
 Computing Life Cycle Costs and Reporting
 Writing final SQL reports
-EnergyPlus Run Time=00hr 00min  9.75sec
+EnergyPlus Run Time=00hr 00min  9.32sec
 EnergyPlus Completed Successfully.

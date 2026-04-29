@@ -1181,16 +1181,20 @@ class IncreaseInsulationRValueForRoofs(openstudio.measure.ModelMeasure):
                 else:
                     total_added_volume_cf = sum(float(m.get("quantity_volume", 0.0)) for m in rsmeans_materials)
                     if total_added_volume_cf > 0.0:
-                        total_material_cost = custom_cost_per_cf * total_added_volume_cf
+                        _lc_mult = int(lifetime_multiplier(insulation_material_lifetime, analysis_period))
+                        total_material_cost = custom_cost_per_cf * total_added_volume_cf * _lc_mult
                         if labor_cost_multiplier > 1.0:
                             total_labor_cost = total_material_cost * (labor_cost_multiplier - 1.0)
+                        total_overhead_profit_cost = (total_material_cost + total_labor_cost) * (overhead_profit_percent / 100.0)
                         cost_source = "custom_input"
                         cost_factor_basis = "custom_cost_per_volume"
                         runner.registerInfo(
                             "Custom cost summary (cost_source=custom_input): "
-                            f"material_cost=${total_material_cost:,.2f}, labor_cost=${total_labor_cost:,.2f} "
+                            f"material_cost=${total_material_cost:,.2f} (lifetime_multiplier={_lc_mult}), "
+                            f"labor_cost=${total_labor_cost:,.2f} "
+                            f"overhead_profit_cost=${total_overhead_profit_cost:,.2f} "
                             f"(volume={total_added_volume_cf:.2f} CF × rate ${custom_cost_per_cf}/CF, "
-                            f"labor_multiplier={labor_cost_multiplier:.2f})"
+                            f"labor_multiplier={labor_cost_multiplier:.2f}, overhead_profit_percent={overhead_profit_percent:.1f}%)"
                         )
                     else:
                         runner.registerWarning("Custom cost mode enabled, but added volume is 0. Skipping cost calculation.")
@@ -1234,8 +1238,9 @@ class IncreaseInsulationRValueForRoofs(openstudio.measure.ModelMeasure):
                             # RSMeans summary "total_material_cost" currently
                             # represents direct cost from the RSMeans API response.
                             # Backward-compatible alias for downstream consumers.
-                            total_material_cost = float(summary.get("total_material_cost", 0.0))
-                            total_overhead_profit_cost = float(summary.get("total_overhead_profit_cost", 0.0))
+                            _lc_mult = int(lifetime_multiplier(insulation_material_lifetime, analysis_period))
+                            total_material_cost = float(summary.get("total_material_cost", 0.0)) * _lc_mult
+                            total_overhead_profit_cost = float(summary.get("total_overhead_profit_cost", 0.0)) * _lc_mult
                             cost_source = "rsmeans_api"
                             materials_results = rsmeans_lookup.get(
                                 "results", {}

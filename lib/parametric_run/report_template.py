@@ -173,6 +173,7 @@ def build_report_html(
     report_year,
     run_name,
     spider_chart_embed_html="",
+    result_summary_pie_charts_html="",
 ):
     return f"""
 <!DOCTYPE html>
@@ -234,6 +235,19 @@ def build_report_html(
         .stacked-value {{ font-size: 12px; color: #333; text-align: right; white-space: nowrap; }}
         .iframe-wrap {{ border: 1px solid #ddd; border-radius: 6px; overflow: hidden; background: #fff; margin-top: 10px; }}
         .iframe-wrap iframe {{ width: 100%; height: 520px; border: 0; }}
+        .scenario-pie-grid {{ display: grid; grid-template-columns: 1fr; gap: 16px; margin: 10px 0 16px 0; }}
+        .scenario-pie-card {{ border: 1px solid #ddd; border-radius: 6px; background: #fafafa; padding: 12px; }}
+        .scenario-pie-title {{ font-size: 14px; font-weight: 600; color: #1f4788; margin-bottom: 10px; }}
+        .scenario-pie-row {{ display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }}
+        .scenario-pie-panel {{ border: 1px solid #e4e4e4; border-radius: 6px; background: #fff; padding: 10px; }}
+        .scenario-pie-panel h4 {{ font-size: 12px; color: #1f4788; margin-bottom: 8px; }}
+        .scenario-pie-wrap {{ display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }}
+        .scenario-pie {{ width: 110px; height: 110px; border-radius: 50%; border: 1px solid #ddd; flex: 0 0 110px; }}
+        .scenario-pie-legend {{ flex: 1 1 180px; font-size: 12px; color: #333; display: grid; gap: 5px; }}
+        .scenario-pie-legend-item {{ display: inline-flex; align-items: center; gap: 6px; }}
+        .scenario-pie-swatch {{ width: 10px; height: 10px; border-radius: 2px; display: inline-block; }}
+        .scenario-pie-empty {{ font-size: 12px; color: #777; font-style: italic; }}
+        .scenario-pie-total {{ margin-top: 8px; font-size: 11px; color: #666; }}
         .footer {{ margin-top: 40px; padding-top: 20px; border-top: 1px solid #ddd; color: #999; font-size: 12px; text-align: center; }}
     </style>
 </head>
@@ -368,6 +382,7 @@ def build_report_html(
 
         <div class="section">
             <h2>Result Summary</h2>
+            {result_summary_pie_charts_html}
             </div>
             <table class="material-costs-table">
                 <tr><th>Scenario</th><th>Retrofit Embodied Carbon (kgCO2e)</th><th>Retrofit Construction Cost (USD)</th><th>Annual Operational Carbon (kgCO2e)</th><th>Annual Operational Cost (USD)</th></tr>

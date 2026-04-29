@@ -758,6 +758,7 @@ def create_simulation(
                 "custom_bottom_seal_cost": float(scenario_dict.get("custom_bottom_seal_cost") or 0.0),
                 "custom_top_side_seal_cost": float(scenario_dict.get("custom_top_side_seal_cost") or 0.0),
                 "labor_cost_multiplier": float(scenario_dict.get("labor_cost_multiplier") or 1.0),
+                "overhead_profit_percent": float(scenario_dict.get("overhead_profit_percent") or 0.0),
             }
             print(f"  Applying door enhancement (door={door_args['door_option']})...")
             if not apply_python_measure(model, Path(measure_dir_path) / "door_enhancement", "DoorEnhancement", door_args):
@@ -1354,7 +1355,7 @@ def generate_parametric_recap(target_path, city_climate_zones=None):
     print("=" * 80)
 
 # --- GLOBAL SETTINGS ---
-RUN_NAME = "run_test_005"
+RUN_NAME = "run_test_006"
 def detect_openstudio_cli_path():
     env_path = os.environ.get("OPENSTUDIO_PATH")
     candidates = [
@@ -1378,12 +1379,12 @@ base_weather_path = str(notebook_dir / "weather")
 measure_dir_path = str(notebook_dir.parent / "measures")
 base_run_dir = str(notebook_dir / "simulations" / RUN_NAME)
 city_climate_zones = {
-     "Amarillo":     "ASHRAE 169-2013-3B",
+    # "Amarillo":     "ASHRAE 169-2013-3B",
     # "Atlanta":      "ASHRAE 169-2013-3A",
     # "Baltimore":    "ASHRAE 169-2013-4A",
     # "Chicago":      "ASHRAE 169-2013-5A",
     # "Denver":       "ASHRAE 169-2013-5B",
-    # "Duluth":       "ASHRAE 169-2013-7A", ###
+    "Duluth":       "ASHRAE 169-2013-7A", 
     # "ElPaso":       "ASHRAE 169-2013-3B",
     # "Fairbanks":    "ASHRAE 169-2013-8A",
     # "Helena":       "ASHRAE 169-2013-6B",
@@ -1474,45 +1475,77 @@ CUSTOM_COMBOS = [
     #     "window_num_panes": None,
     #     "door_option":     None,
     # },
-    # # Scenario 7: All 4 measures  Wall + Door + Roof + Window
-    # {
-    #     "wall_r_value":    20,
-    #     "wall_insulation_material_type": "Extruded Polystyrene (XPS) Foam Board",
-    #     "roof_r_value":    20,
-    #     "roof_insulation_material_type": "Blown Mineral Wool",
-    #     "door_option":     "glass door",
-    #     "door_infiltration_reduction_percent": 20.0,
-    #     "door_bottom_seal_option": "none",
-    #     "door_top_side_seal_option": "none",
-    #     "window_num_panes": 1,
-    #     "window_infiltration_reduction_percent": 20.0,
-    #     "weatherstrip_option": "silicone adhesive smoke gasket",
-    #     "wf_option": "wood-aluminium window frame",
-    #     "film_option": "safety film",
-    #     "caulking_option": "none",
-    # },
-    # # Scenario 8: All 4 measures  Wall + Door + Roof + Window
-    # {
-    #     "wall_r_value":    25,
-    #     "wall_insulation_material_type": "Expanded Polystyrene (EPS) Foam Board",
-    #     "roof_r_value":    25,
-    #     "roof_insulation_material_type": "Polyiso Insulation Foam Board",
-    #     "door_option":     "polystyrene core steel door",
-    #     "door_infiltration_reduction_percent": 25.0,
-    #     "door_bottom_seal_option": "brush weatherstrip",
-    #     "door_top_side_seal_option": "silicone adhesive smoke gasket",
-    #     "window_num_panes": 2,
-    #     "window_infiltration_reduction_percent": 25.0,
-    #     "weatherstrip_option": "silicone adhesive smoke gasket",
-    #     "wf_option": "wood window frame",
-    #     "film_option": "anti-graffiti film",
-    #     "caulking_option": "polyurethane",
-    # },
-    # Scenario 9: All 4 measures  Wall + Door + Roof + Window
+    # Scenario 7: All 4 measures  Wall + Door + Roof + Window
     {
-        "wall_r_value":    13,
+        "wall_r_value":    10,
+        "wall_insulation_material_type": "Extruded Polystyrene (XPS) Foam Board",
+        "roof_r_value":    15,
+        "roof_insulation_material_type": "Blown Mineral Wool",
+        "door_option":     "glass door",
+        "door_infiltration_reduction_percent": 20.0,
+        "door_bottom_seal_option": "none",
+        "door_top_side_seal_option": "none",
+        "window_num_panes": 1,
+        "window_infiltration_reduction_percent": 20.0,
+        "weatherstrip_option": "silicone adhesive smoke gasket",
+        "wf_option": "wood-aluminium window frame",
+        "film_option": "safety film",
+        "caulking_option": "none",
+        "calculate_costs": True,
+        "use_custom_costs": True,
+
+        "custom_cost_per_cf": 35.0,
+        "labor_cost_multiplier": 1.35,
+        "overhead_profit_percent": 10.0,
+
+        "glass_cost_per_cf": 900.0,
+        "frame_cost_per_sf": 28.0,
+        "caulking_cost_per_cy": 150.0,
+        "film_cost_per_sf": 6.0,
+        "weatherstrip_cost_per_lf": 3.2,
+
+        "custom_door_cost_per_area": 120.0,
+        "custom_bottom_seal_cost": 9.0,
+        "custom_top_side_seal_cost": 6.0
+    },
+    # Scenario 8: All 4 measures  Wall + Door + Roof + Window
+    {
+        "wall_r_value":    30,
+        "wall_insulation_material_type": "Expanded Polystyrene (EPS) Foam Board",
+        "roof_r_value":    25,
+        "roof_insulation_material_type": "Polyiso Insulation Foam Board",
+        "door_option":     "polystyrene core steel door",
+        "door_infiltration_reduction_percent": 25.0,
+        "door_bottom_seal_option": "brush weatherstrip",
+        "door_top_side_seal_option": "silicone adhesive smoke gasket",
+        "window_num_panes": 2,
+        "window_infiltration_reduction_percent": 25.0,
+        "weatherstrip_option": "silicone adhesive smoke gasket",
+        "wf_option": "wood window frame",
+        "film_option": "anti-graffiti film",
+        "caulking_option": "polyurethane",
+        "calculate_costs": True,
+        "use_custom_costs": True,
+
+        "custom_cost_per_cf": 35.0,
+        "labor_cost_multiplier": 1.35,
+        "overhead_profit_percent": 10.0,
+
+        "glass_cost_per_cf": 900.0,
+        "frame_cost_per_sf": 28.0,
+        "caulking_cost_per_cy": 150.0,
+        "film_cost_per_sf": 6.0,
+        "weatherstrip_cost_per_lf": 3.2,
+
+        "custom_door_cost_per_area": 120.0,
+        "custom_bottom_seal_cost": 9.0,
+        "custom_top_side_seal_cost": 6.0
+    },
+    #Scenario 9: All 4 measures  Wall + Door + Roof + Window
+    {
+        "wall_r_value":    20.4,
         "wall_insulation_material_type": "Fiberglass Batts",
-        "roof_r_value":    24.4,
+        "roof_r_value":    34.5,
         "roof_insulation_material_type": "Blown Fiberglass",
         "door_option":     "wooden door",
         "door_infiltration_reduction_percent": 30.0,
@@ -2067,6 +2100,165 @@ def generate_html_report(df, html_report_path, run_name="run"):
     renovation_df[scenario_col] = renovation_df[scenario_col].astype(str)
     renovation_df["renovation_details"] = renovation_df["renovation_details"].fillna("Not specified").astype(str)
     renovation_df["renovation_type"] = "unknown"
+
+    scenario_config_map = {
+        generate_scenario_name(s): s
+        for s in generate_scenarios(cities=CITIES, building_types=BUILDING_TYPES, custom_combos=CUSTOM_COMBOS)
+    }
+
+    def _has_meaningful_value(raw):
+        if raw is None:
+            return False
+        val = str(raw).strip()
+        if val == "":
+            return False
+        return val.lower() not in {"nan", "null", "none", "not_applied", "not applied"}
+
+    def _as_float(raw):
+        try:
+            return float(str(raw).strip())
+        except Exception:
+            return None
+
+    def _clean_plain_text(raw):
+        if raw is None:
+            return ""
+        text = re.sub(r"<[^>]+>", " ", str(raw))
+        text = text.replace("&#59;", ";").replace("&#44;", ",")
+        return re.sub(r"\s+", " ", text).strip()
+
+    def _clean_summary_note(raw):
+        text = _clean_plain_text(raw)
+        if not text:
+            return None
+        text = text.replace(";", ". ")
+        text = re.sub(r"\s+", " ", text).strip()
+        if text and text[-1] not in ".!?":
+            text += "."
+        return text
+
+    def _friendly_option(raw):
+        if not _has_meaningful_value(raw):
+            return None
+        text = re.sub(r"\s+", " ", str(raw).replace("_", " ").strip())
+        mapped = {
+            "wf wood": "wood frame",
+            "wf vinyl": "vinyl frame",
+            "wf aluminum": "aluminum frame",
+            "provide user num panes": "custom pane count",
+        }
+        return mapped.get(text.lower(), text)
+
+    def _build_measure_section(label, bullets):
+        clean_bullets = [b for b in bullets if b]
+        if not clean_bullets:
+            return ""
+        bullet_html = "".join(f"<li>{b}</li>" for b in clean_bullets)
+        return (
+            f"<div><strong>{label}:</strong>"
+            + "<ul class='reno-action-list' style='margin:6px 0 6px 18px;padding:0;list-style-type:disc;'>"
+            + bullet_html
+            + "</ul></div>"
+        )
+
+    def _applied_action(action_label, detail=None):
+        if detail:
+            return f"{action_label}: {detail}"
+        return action_label
+
+    def _skipped_action(action_label, reason=None):
+        if reason:
+            return f"{action_label} (skipped: {reason})"
+        return f"{action_label} (skipped)"
+
+    def _format_requested_r_value(raw):
+        val = _as_float(raw)
+        if val is None:
+            return str(raw)
+        return f"{val:.1f}"
+
+    def _target_r_already_satisfied(note_text):
+        note = _clean_summary_note(note_text)
+        if not note:
+            return False
+        note_l = note.lower()
+        skips_match = re.search(r"target-already-met\s*skips\s*=\s*(\d+)", note_l)
+        if skips_match:
+            try:
+                return int(skips_match.group(1)) > 0
+            except Exception:
+                pass
+        return (
+            "already met or exceeded the target r-value" in note_l
+            or "target r-value already satisfied" in note_l
+        )
+
+    def _fallback_scenario_value(scenario_name, measure_name, argument_name):
+        scenario_cfg = scenario_config_map.get(str(scenario_name), {})
+        if not scenario_cfg:
+            return None
+
+        window_requested = any([
+            scenario_cfg.get("window_num_panes"),
+            scenario_cfg.get("window_enhancement_infiltration_reduction_percent") not in [None, "", 0, 0.0],
+            scenario_cfg.get("window_infiltration_reduction_percent") not in [None, "", 0, 0.0],
+            str(scenario_cfg.get("weatherstrip_option", "none")).strip().lower() != "none",
+            str(scenario_cfg.get("wf_option", "none")).strip().lower() != "none",
+            str(scenario_cfg.get("film_option", "none")).strip().lower() != "none",
+            str(scenario_cfg.get("caulking_option", "none")).strip().lower() != "none",
+            str(scenario_cfg.get("secondary_glazing_option", "none")).strip().lower() != "none",
+        ])
+        door_requested = any([
+            scenario_cfg.get("door_option"),
+            scenario_cfg.get("door_infiltration_reduction_percent") not in [None, "", 0, 0.0],
+            str(scenario_cfg.get("door_bottom_seal_option", "none")).strip().lower() != "none",
+            str(scenario_cfg.get("door_top_side_seal_option", "none")).strip().lower() != "none",
+        ])
+
+        fallback_map = {
+            "wall": {
+                "__status__": "applied" if scenario_cfg.get("wall_r_value") else None,
+                "r_value": scenario_cfg.get("wall_r_value"),
+                "insulation_material_type": scenario_cfg.get("wall_insulation_material_type"),
+            },
+            "roof": {
+                "__status__": "applied" if scenario_cfg.get("roof_r_value") else None,
+                "r_value": scenario_cfg.get("roof_r_value"),
+                "insulation_material_type": scenario_cfg.get("roof_insulation_material_type"),
+            },
+            "window": {
+                "__status__": "applied" if window_requested else None,
+                "user_num_panes": scenario_cfg.get("window_num_panes"),
+                "weatherstrip_option": scenario_cfg.get("weatherstrip_option"),
+                "film_option": scenario_cfg.get("film_option"),
+                "wf_option": scenario_cfg.get("wf_option"),
+                "caulking_option": scenario_cfg.get("caulking_option"),
+                "secondary_glazing_option": scenario_cfg.get("secondary_glazing_option"),
+            },
+            "door": {
+                "__status__": "applied" if door_requested else None,
+                "door_option": scenario_cfg.get("door_option"),
+                "door_bottom_seal_option": scenario_cfg.get("door_bottom_seal_option"),
+                "door_top_side_seal_option": scenario_cfg.get("door_top_side_seal_option"),
+            },
+        }
+
+        return fallback_map.get(measure_name, {}).get(argument_name)
+
+    def _arg_value(scenario_name, measure_name, argument_name):
+        if args_df_shared is not None:
+            subset = args_df_shared[
+                (args_df_shared["scenario"] == str(scenario_name))
+                & (args_df_shared["measure"] == str(measure_name))
+                & (args_df_shared["argument"] == str(argument_name))
+            ]
+            if not subset.empty:
+                return str(subset.iloc[0]["value"])
+        fallback = _fallback_scenario_value(scenario_name, measure_name, argument_name)
+        if fallback is None:
+            return None
+        return str(fallback)
+
     args_csv_path = html_report_path.parent / "scenario_user_arguments.csv"
     args_df_shared = None
     if args_csv_path.exists():
@@ -2075,279 +2267,179 @@ def generate_html_report(df, html_report_path, run_name="run"):
         args_df_shared["measure"] = args_df_shared["measure"].astype(str)
         args_df_shared["argument"] = args_df_shared["argument"].astype(str)
         args_df_shared["value"] = args_df_shared["value"].astype(str)
-        def _arg_value(scenario_name, measure_name, argument_name):
-            subset = args_df_shared[
-                (args_df_shared["scenario"] == scenario_name)
-                & (args_df_shared["measure"] == measure_name)
-                & (args_df_shared["argument"] == argument_name)
-            ]
-            if subset.empty:
-                return None
-            return str(subset.iloc[0]["value"])
 
-        def _has_meaningful_value(raw):
-            if raw is None:
-                return False
-            val = str(raw).strip()
-            if val == "":
-                return False
-            return val.lower() not in {"nan", "null", "none", "not_applied", "not applied"}
+    def _window_simple_glazing_blocked(row, scenario_summary):
+        total_count = _as_float(row.get("window_total_count"))
+        simple_count = _as_float(row.get("window_simple_glazing_count"))
+        if total_count is not None and total_count > 0 and simple_count is not None and simple_count >= total_count:
+            return True
+        note = _clean_summary_note(scenario_summary.get("window"))
+        return bool(note and "simpleglazing" in note.lower())
 
-        def _as_float(raw):
-            try:
-                return float(str(raw).strip())
-            except Exception:
-                return None
+    def _window_action_bullets(row, scenario_name, scenario_summary):
+        bullets = []
+        panes = _arg_value(scenario_name, "window", "user_num_panes")
+        weatherstrip_opt = _arg_value(scenario_name, "window", "weatherstrip_option")
+        film_opt = _arg_value(scenario_name, "window", "film_option")
+        frame_opt = _arg_value(scenario_name, "window", "wf_option")
+        caulking_opt = _arg_value(scenario_name, "window", "caulking_option")
+        secondary_opt = _arg_value(scenario_name, "window", "secondary_glazing_option")
+        frame_area = _as_float(row.get("window_enhancement_renovated_frame_area_m2"))
+        glazing_area = _as_float(row.get("window_enhancement_renovated_glazing_area_m2"))
+        caulking_volume = _as_float(row.get("window_enhancement_renovated_caulking_volume_m3"))
+        weatherstrip_length = _as_float(row.get("window_enhancement_renovated_weatherstrip_length_m"))
+        operable_count = _as_float(row.get("window_operable_count"))
+        simple_glazing_blocked = _window_simple_glazing_blocked(row, scenario_summary)
+        upgrade_status = str(row.get("window_upgrade_status") or "").strip().lower()
+        if upgrade_status in {"", "nan", "null", "none"}:
+            upgrade_status = None
 
-        def _clean_plain_text(raw):
-            if raw is None:
-                return ""
-            text = re.sub(r"<[^>]+>", " ", str(raw))
-            text = text.replace("&#59;", ";").replace("&#44;", ",")
-            return re.sub(r"\s+", " ", text).strip()
+        if _has_meaningful_value(panes):
+            if upgrade_status == "upgraded":
+                bullets.append(_applied_action(f"{panes}-pane replacement"))
+            elif simple_glazing_blocked:
+                bullets.append(_skipped_action(f"{panes}-pane replacement", "SimpleGlazing windows"))
+            else:
+                bullets.append(_skipped_action(f"{panes}-pane replacement"))
 
-        def _clean_summary_note(raw):
-            text = _clean_plain_text(raw)
-            if not text:
-                return None
-            text = text.replace(";", ". ")
-            text = re.sub(r"\s+", " ", text).strip()
-            if text and text[-1] not in ".!?":
-                text += "."
-            return text
+        if _has_meaningful_value(weatherstrip_opt):
+            if weatherstrip_length is not None and weatherstrip_length > 0:
+                bullets.append(_applied_action("Weatherstrip application", _friendly_option(weatherstrip_opt)))
+            elif operable_count is not None and operable_count <= 0:
+                bullets.append(_skipped_action("Weatherstrip application", "no OperableWindow"))
+            else:
+                bullets.append(_skipped_action("Weatherstrip application"))
 
-        def _is_not_fully_implemented(note):
-            text = str(note).lower()
-            failure_tokens = [
-                "failed",
-                "not applied",
-                "not implemented",
-                "unable",
-                "could not",
-                "not supported",
-                "skipped",
-                "requested but",
-                "conflict",
-                "partially",
-            ]
-            return any(tok in text for tok in failure_tokens)
+        if _has_meaningful_value(film_opt):
+            if simple_glazing_blocked:
+                bullets.append(_skipped_action("Glazing film application", "SimpleGlazing windows"))
+            elif glazing_area is not None and glazing_area > 0:
+                bullets.append(_applied_action("Glazing film application", _friendly_option(film_opt)))
+            else:
+                bullets.append(_skipped_action("Glazing film application"))
 
-        def _friendly_option(raw):
-            if not _has_meaningful_value(raw):
-                return None
-            text = re.sub(r"\s+", " ", str(raw).replace("_", " ").strip())
-            mapped = {
-                "wf wood": "wood frame",
-                "wf vinyl": "vinyl frame",
-                "wf aluminum": "aluminum frame",
-                "provide user num panes": "custom pane count",
-            }
-            return mapped.get(text.lower(), text)
+        if _has_meaningful_value(caulking_opt):
+            if caulking_volume is not None and caulking_volume > 0:
+                bullets.append(_applied_action("Caulking application", _friendly_option(caulking_opt)))
+            else:
+                bullets.append(_skipped_action("Caulking application"))
 
-        def _build_measure_section(label, bullets):
-            clean_bullets = [b for b in bullets if b]
-            if not clean_bullets:
-                return ""
-            bullet_html = "".join(f"<li>{b}</li>" for b in clean_bullets)
-            return (
-                f"<div><strong>{label}:</strong>"
-                + "<ul class='reno-action-list' style='margin:6px 0 6px 18px;padding:0;list-style-type:disc;'>"
-                + bullet_html
-                + "</ul></div>"
+        if _has_meaningful_value(frame_opt):
+            if frame_area is not None and frame_area > 0:
+                bullets.append(_applied_action("Window frame replacement", _friendly_option(frame_opt)))
+            else:
+                bullets.append(_skipped_action("Window frame replacement"))
+
+        if _has_meaningful_value(secondary_opt):
+            if simple_glazing_blocked:
+                bullets.append(_skipped_action("Secondary glazing application", "SimpleGlazing windows"))
+            elif glazing_area is not None and glazing_area > 0:
+                bullets.append(_applied_action("Secondary glazing application", _friendly_option(secondary_opt)))
+            else:
+                bullets.append(_skipped_action("Secondary glazing application"))
+
+        return bullets
+
+    summary_col_candidates = {
+        "wall": ["wall_summary_notes", "wall_insulation_summary_notes"],
+        "roof": ["roof_summary_notes", "roof_insulation_summary_notes"],
+        "window": ["window_summary_notes", "window_enhancement_summary_notes"],
+        "door": ["door_summary_notes", "door_enhancement_summary_notes"],
+    }
+    source_df = df.copy()
+    source_df[scenario_col] = source_df[scenario_col].astype(str)
+    source_rows_by_scenario = {str(src[scenario_col]): src for _, src in source_df.iterrows()}
+    summary_notes_by_scenario = {}
+    for _, src in source_df.iterrows():
+        scenario_name = str(src[scenario_col])
+        notes = {}
+        for measure, candidates in summary_col_candidates.items():
+            for col in candidates:
+                if col in source_df.columns:
+                    note = _clean_summary_note(src.get(col))
+                    if note:
+                        notes[measure] = note
+                    break
+        if notes:
+            summary_notes_by_scenario[scenario_name] = notes
+
+    for idx, row in renovation_df.iterrows():
+        scenario_name = str(row[scenario_col])
+        source_row = source_rows_by_scenario.get(scenario_name, row)
+        if "baseline" in scenario_name.lower():
+            renovation_df.at[idx, "renovation_type"] = "baseline"
+            renovation_df.at[idx, "renovation_details"] = "Baseline (no envelope renovation)"
+            continue
+
+        measure_flags = {}
+        for m in ["wall", "roof", "window", "door"]:
+            status_val = _arg_value(scenario_name, m, "__status__")
+            measure_flags[m] = (status_val == "applied")
+
+        reno_types = [m for m in ["wall", "roof", "window", "door"] if measure_flags[m]]
+        if reno_types:
+            renovation_df.at[idx, "renovation_type"] = " + ".join(reno_types)
+
+        details_parts = []
+        scenario_summary = summary_notes_by_scenario.get(scenario_name, {})
+
+        if measure_flags["wall"]:
+            wall_r = _arg_value(scenario_name, "wall", "r_value")
+            wall_mat = _arg_value(scenario_name, "wall", "insulation_material_type")
+            detail_parts = []
+            if _has_meaningful_value(wall_mat):
+                detail_parts.append(str(wall_mat))
+            if _has_meaningful_value(wall_r):
+                detail_parts.append(f"target R-{_format_requested_r_value(wall_r)}")
+            wall_note = scenario_summary.get("wall")
+            wall_target_already_met = _target_r_already_satisfied(wall_note)
+            wall_action = _applied_action("Exterior wall insulation", ", ".join(detail_parts) if detail_parts else None)
+            if wall_target_already_met:
+                wall_action = _skipped_action(wall_action, "target R-value already satisfied")
+            details_parts.append(_build_measure_section("Wall upgrade", [
+                wall_action
+            ]))
+
+        if measure_flags["roof"]:
+            roof_r = _arg_value(scenario_name, "roof", "r_value")
+            roof_mat = _arg_value(scenario_name, "roof", "insulation_material_type")
+            detail_parts = []
+            if _has_meaningful_value(roof_mat):
+                detail_parts.append(str(roof_mat))
+            if _has_meaningful_value(roof_r):
+                detail_parts.append(f"target R-{_format_requested_r_value(roof_r)}")
+            roof_note = scenario_summary.get("roof")
+            roof_target_already_met = _target_r_already_satisfied(roof_note)
+            roof_action = _applied_action("Roof insulation", ", ".join(detail_parts) if detail_parts else None)
+            if roof_target_already_met:
+                roof_action = _skipped_action(roof_action, "target R-value already satisfied")
+            details_parts.append(_build_measure_section("Roof upgrade", [
+                roof_action
+            ]))
+
+        if measure_flags["window"]:
+            details_parts.append(
+                _build_measure_section(
+                    "Window upgrade",
+                    _window_action_bullets(source_row, scenario_name, scenario_summary),
+                )
             )
 
-        def _applied_action(action_label, detail=None):
-            if detail:
-                return f"{action_label}: {detail}"
-            return action_label
+        if measure_flags["door"]:
+            door_opt = _arg_value(scenario_name, "door", "door_option")
+            bottom_seal = _arg_value(scenario_name, "door", "door_bottom_seal_option")
+            top_side_seal = _arg_value(scenario_name, "door", "door_top_side_seal_option")
+            door_lines = []
+            if _has_meaningful_value(door_opt):
+                door_lines.append(_applied_action("Door replacement", _friendly_option(door_opt)))
+            if _has_meaningful_value(bottom_seal):
+                door_lines.append(_applied_action("Bottom seal", _friendly_option(bottom_seal)))
+            if _has_meaningful_value(top_side_seal):
+                door_lines.append(_applied_action("Top/side seal", _friendly_option(top_side_seal)))
+            details_parts.append(_build_measure_section("Door upgrade", door_lines))
 
-        def _skipped_action(action_label, reason=None):
-            if reason:
-                return f"{action_label} (skipped: {reason})"
-            return f"{action_label} (skipped)"
-
-        def _window_simple_glazing_blocked(row):
-            total_count = _as_float(row.get("window_total_count"))
-            simple_count = _as_float(row.get("window_simple_glazing_count"))
-            if total_count is not None and total_count > 0 and simple_count is not None and simple_count >= total_count:
-                return True
-            note = _clean_summary_note(scenario_summary.get("window"))
-            return bool(note and "simpleglazing" in note.lower())
-
-        def _window_action_bullets(row, scenario_name):
-            bullets = []
-            panes = _arg_value(scenario_name, "window", "user_num_panes")
-            weatherstrip_opt = _arg_value(scenario_name, "window", "weatherstrip_option")
-            film_opt = _arg_value(scenario_name, "window", "film_option")
-            frame_opt = _arg_value(scenario_name, "window", "wf_option")
-            caulking_opt = _arg_value(scenario_name, "window", "caulking_option")
-            secondary_opt = _arg_value(scenario_name, "window", "secondary_glazing_option")
-            frame_area = _as_float(row.get("window_enhancement_renovated_frame_area_m2"))
-
-            glazing_area = _as_float(row.get("window_enhancement_renovated_glazing_area_m2"))
-
-            caulking_volume = _as_float(row.get("window_enhancement_renovated_caulking_volume_m3"))
-
-            weatherstrip_length = _as_float(row.get("window_enhancement_renovated_weatherstrip_length_m"))
-
-            operable_count = _as_float(row.get("window_operable_count"))
-            simple_glazing_blocked = _window_simple_glazing_blocked(row)
-            upgrade_status = str(row.get("window_upgrade_status") or "").strip().lower()
-            if upgrade_status in {"", "nan", "null", "none"}:
-                upgrade_status = None
-
-            if _has_meaningful_value(panes):
-                if upgrade_status == "upgraded":
-                    bullets.append(_applied_action(f"{panes}-pane replacement"))
-                elif simple_glazing_blocked:
-                    bullets.append(_skipped_action(f"{panes}-pane replacement", "SimpleGlazing windows"))
-                else:
-                    bullets.append(_skipped_action(f"{panes}-pane replacement"))
-
-            if _has_meaningful_value(weatherstrip_opt):
-                if weatherstrip_length is not None and weatherstrip_length > 0:
-                    bullets.append(_applied_action("Weatherstrip application", _friendly_option(weatherstrip_opt)))
-                elif operable_count is not None and operable_count <= 0:
-                    bullets.append(_skipped_action("Weatherstrip application", "no OperableWindow"))
-                else:
-                    bullets.append(_skipped_action("Weatherstrip application"))
-
-            if _has_meaningful_value(film_opt):
-                if simple_glazing_blocked:
-                    bullets.append(_skipped_action("Glazing film application", "SimpleGlazing windows"))
-                elif glazing_area is not None and glazing_area > 0:
-                    bullets.append(_applied_action("Glazing film application", _friendly_option(film_opt)))
-                else:
-                    bullets.append(_skipped_action("Glazing film application"))
-
-            if _has_meaningful_value(caulking_opt):
-                if caulking_volume is not None and caulking_volume > 0:
-                    bullets.append(_applied_action("Caulking application", _friendly_option(caulking_opt)))
-                else:
-                    bullets.append(_skipped_action("Caulking application"))
-
-            if _has_meaningful_value(frame_opt):
-                if frame_area is not None and frame_area > 0:
-                    bullets.append(_applied_action("Window frame replacement", _friendly_option(frame_opt)))
-                else:
-                    bullets.append(_skipped_action("Window frame replacement"))
-
-            if _has_meaningful_value(secondary_opt):
-                if simple_glazing_blocked:
-                    bullets.append(_skipped_action("Secondary glazing application", "SimpleGlazing windows"))
-                elif glazing_area is not None and glazing_area > 0:
-                    bullets.append(_applied_action("Secondary glazing application", _friendly_option(secondary_opt)))
-                else:
-                    bullets.append(_skipped_action("Secondary glazing application"))
-
-            return bullets
-
-        summary_col_candidates = {
-            "wall": ["wall_summary_notes"],
-            "roof": ["roof_summary_notes"],
-            "window": ["window_summary_notes"],
-            "door": ["door_summary_notes"],
-        }
-        source_df = df.copy()
-        source_df[scenario_col] = source_df[scenario_col].astype(str)
-        source_rows_by_scenario = {str(src[scenario_col]): src for _, src in source_df.iterrows()}
-        summary_notes_by_scenario = {}
-        for _, src in source_df.iterrows():
-            scenario_name = str(src[scenario_col])
-            notes = {}
-            for measure, candidates in summary_col_candidates.items():
-                for col in candidates:
-                    if col in source_df.columns:
-                        note = _clean_summary_note(src.get(col))
-                        if note:
-                            notes[measure] = note
-                        break
-            if notes:
-                summary_notes_by_scenario[scenario_name] = notes
-
-        for idx, row in renovation_df.iterrows():
-            scenario_name = str(row[scenario_col])
-            source_row = source_rows_by_scenario.get(scenario_name, row)
-            if "baseline" in scenario_name.lower():
-                renovation_df.at[idx, "renovation_type"] = "baseline"
-                renovation_df.at[idx, "renovation_details"] = "Baseline (no envelope renovation)"
-                continue
-
-            measure_flags = {}
-            for m in ["wall", "roof", "window", "door"]:
-                status_val = _arg_value(scenario_name, m, "__status__")
-                measure_flags[m] = (status_val == "applied")
-
-            reno_types = [m for m in ["wall", "roof", "window", "door"] if measure_flags[m]]
-            if reno_types:
-                renovation_df.at[idx, "renovation_type"] = " + ".join(reno_types)
-
-            details_parts = []
-            raw_legacy_details = _clean_plain_text(row.get("renovation_details", ""))
-            scenario_summary = summary_notes_by_scenario.get(scenario_name, {})
-            if measure_flags["wall"]:
-                wall_r = _arg_value(scenario_name, "wall", "r_value")
-                wall_mat = _arg_value(scenario_name, "wall", "insulation_material_type")
-                wall_lines = []
-                detail_parts = []
-                if _has_meaningful_value(wall_mat):
-                    detail_parts.append(str(wall_mat))
-                if _has_meaningful_value(wall_r):
-                    detail_parts.append(f"target R-{wall_r}")
-                wall_lines.append(_applied_action("Exterior wall insulation", ", ".join(detail_parts) if detail_parts else None))
-                details_parts.append(
-                    _build_measure_section(
-                        "Wall upgrade",
-                        wall_lines,
-                    )
-                )
-
-            if measure_flags["roof"]:
-                roof_r = _arg_value(scenario_name, "roof", "r_value")
-                roof_mat = _arg_value(scenario_name, "roof", "insulation_material_type")
-                roof_lines = []
-                detail_parts = []
-                if _has_meaningful_value(roof_mat):
-                    detail_parts.append(str(roof_mat))
-                if _has_meaningful_value(roof_r):
-                    detail_parts.append(f"target R-{roof_r}")
-                roof_lines.append(_applied_action("Roof insulation", ", ".join(detail_parts) if detail_parts else None))
-                details_parts.append(
-                    _build_measure_section(
-                        "Roof upgrade",
-                        roof_lines,
-                    )
-                )
-
-            if measure_flags["window"]:
-                details_parts.append(
-                    _build_measure_section(
-                        "Window upgrade",
-                        _window_action_bullets(source_row, scenario_name),
-                    )
-                )
-
-            if measure_flags["door"]:
-                door_opt = _arg_value(scenario_name, "door", "door_option")
-                bottom_seal = _arg_value(scenario_name, "door", "door_bottom_seal_option")
-                top_side_seal = _arg_value(scenario_name, "door", "door_top_side_seal_option")
-                door_lines = []
-                if _has_meaningful_value(door_opt):
-                    door_lines.append(_applied_action("Door replacement", _friendly_option(door_opt)))
-                if _has_meaningful_value(bottom_seal):
-                    door_lines.append(_applied_action("Bottom seal", _friendly_option(bottom_seal)))
-                if _has_meaningful_value(top_side_seal):
-                    door_lines.append(_applied_action("Top/side seal", _friendly_option(top_side_seal)))
-
-                details_parts.append(
-                    _build_measure_section(
-                        "Door upgrade",
-                        door_lines,
-                    )
-                )
-
-            if details_parts:
-                renovation_df.at[idx, "renovation_details"] = "".join(details_parts)
+        if details_parts:
+            renovation_df.at[idx, "renovation_details"] = "".join(details_parts)
 
     renovation_rows = "".join(
 
@@ -2359,20 +2451,15 @@ def generate_html_report(df, html_report_path, run_name="run"):
     material_list_rows = []
     args_df_material = args_df_shared
     def _arg_lookup_material(scenario_name, measure_name, argument_name):
-        if args_df_material is None:
-            return None
-
-        subset = args_df_material[
-
-            (args_df_material["scenario"] == str(scenario_name))
-            & (args_df_material["measure"] == str(measure_name))
-            & (args_df_material["argument"] == str(argument_name))
-
-        ]
-        if subset.empty:
-            return None
-
-        return str(subset.iloc[0]["value"])
+        if args_df_material is not None:
+            subset = args_df_material[
+                (args_df_material["scenario"] == str(scenario_name))
+                & (args_df_material["measure"] == str(measure_name))
+                & (args_df_material["argument"] == str(argument_name))
+            ]
+            if not subset.empty:
+                return str(subset.iloc[0]["value"])
+        return _arg_value(scenario_name, measure_name, argument_name)
 
     def _fmt_metric(value):
         val = _safe_float(value)
@@ -2583,51 +2670,40 @@ def generate_html_report(df, html_report_path, run_name="run"):
             )
 
         if window_status == "applied":
-            window_payload = parse_materials_payload(data_row.get("window_enhancement_retrofit_materials_json"))
-            if window_payload:
-                for entry in window_payload:
-                    if _window_entry_is_applied(entry, data_row, scenario_name):
-                        component = component_from_entry("window", entry)
-                        _add_material_entry_from_payload(
-                            scenario_name,
-                            "window",
-                            entry,
-                            lifetime_years=_window_component_lifetime(component, data_row),
-                        )
-            else:
-                frame_area, _ = _pick_first_numeric(data_row, [
-                    "window_enhancement_renovated_frame_area_m2",
-                ])
-                caulking_volume, _ = _pick_first_numeric(data_row, [
-                    "window_enhancement_renovated_caulking_volume_m3",
-                ])
-                weatherstrip_length, _ = _pick_first_numeric(data_row, [
-                    "window_enhancement_renovated_weatherstrip_length_m",
-                ])
-                if frame_area is not None and frame_area > 0:
-                    _add_material_row(
-                        scenario_name,
-                        "Window frame",
-                        _arg_lookup_material(scenario_name, "window", "wf_option"),
-                        area_m2=frame_area,
-                        lifetime_years=_safe_float(data_row.get("window_frame_lifetime_years")),
-                    )
-                if caulking_volume is not None and caulking_volume > 0:
-                    _add_material_row(
-                        scenario_name,
-                        "Window caulking",
-                        _arg_lookup_material(scenario_name, "window", "caulking_option"),
-                        volume_m3=caulking_volume,
-                        lifetime_years=_safe_float(data_row.get("window_caulking_lifetime_years")),
-                    )
-                if weatherstrip_length is not None and weatherstrip_length > 0:
-                    _add_material_row(
-                        scenario_name,
-                        "Window weatherstrip",
-                        _arg_lookup_material(scenario_name, "window", "weatherstrip_option"),
-                        length_m=weatherstrip_length,
-                        lifetime_years=_safe_float(data_row.get("window_weatherstrip_lifetime_years")),
-                    )
+            frame_area, _ = _pick_first_numeric(data_row, [
+                "window_enhancement_renovated_frame_area_m2",
+            ])
+            caulking_volume, _ = _pick_first_numeric(data_row, [
+                "window_enhancement_renovated_caulking_volume_m3",
+            ])
+            weatherstrip_length, _ = _pick_first_numeric(data_row, [
+                "window_enhancement_renovated_weatherstrip_length_m",
+            ])
+
+            if frame_area is not None and frame_area > 0:
+                _add_material_row(
+                    scenario_name,
+                    "Window frame",
+                    _arg_lookup_material(scenario_name, "window", "wf_option"),
+                    area_m2=frame_area,
+                    lifetime_years=_safe_float(data_row.get("window_frame_lifetime_years")),
+                )
+            if caulking_volume is not None and caulking_volume > 0:
+                _add_material_row(
+                    scenario_name,
+                    "Window caulking",
+                    _arg_lookup_material(scenario_name, "window", "caulking_option"),
+                    volume_m3=caulking_volume,
+                    lifetime_years=_safe_float(data_row.get("window_caulking_lifetime_years")),
+                )
+            if weatherstrip_length is not None and weatherstrip_length > 0:
+                _add_material_row(
+                    scenario_name,
+                    "Window weatherstrip",
+                    _arg_lookup_material(scenario_name, "window", "weatherstrip_option"),
+                    length_m=weatherstrip_length,
+                    lifetime_years=_safe_float(data_row.get("window_weatherstrip_lifetime_years")),
+                )
 
         if door_status == "applied":
             door_density, _ = _pick_first_numeric(data_row, [
@@ -2643,12 +2719,34 @@ def generate_html_report(df, html_report_path, run_name="run"):
             if door_area is not None and door_area > 0:
                 _add_material_row(
                     scenario_name,
-                    "Door panel",
+                    "Door",
                     _arg_lookup_material(scenario_name, "door", "door_option"),
                     area_m2=door_area,
                     thermal_conductivity=door_conductivity,
                     density=door_density,
                     lifetime_years=_safe_float(data_row.get("door_lifetime_years")),
+                )
+            door_bottom_length, _ = _pick_first_numeric(data_row, [
+                "door_sealing_bottom_length_m",
+            ])
+            if door_bottom_length is not None and door_bottom_length > 0:
+                _add_material_row(
+                    scenario_name,
+                    "Door bottom sealing",
+                    _arg_lookup_material(scenario_name, "door", "door_bottom_seal_option"),
+                    length_m=door_bottom_length,
+                    lifetime_years=_safe_float(data_row.get("door_strip_lifetime_years")),
+                )
+            door_top_side_length, _ = _pick_first_numeric(data_row, [
+                "door_sealing_side_length_m",
+            ])
+            if door_top_side_length is not None and door_top_side_length > 0:
+                _add_material_row(
+                    scenario_name,
+                    "Door top/side sealing",
+                    _arg_lookup_material(scenario_name, "door", "door_top_side_seal_option"),
+                    length_m=door_top_side_length,
+                    lifetime_years=_safe_float(data_row.get("door_strip_lifetime_years")),
                 )
 
     if material_list_rows:
@@ -2662,6 +2760,123 @@ def generate_html_report(df, html_report_path, run_name="run"):
 
     else:
         material_list_section_html = "<div class='section'><h2>Material List</h2><div class='summary-box'><p>No material consumption data found for renovation scenarios.</p></div></div>"
+
+    def _build_measure_pie_panel(panel_title, slices, formatter, total_suffix=""):
+        valid_slices = [(label, float(value), color) for label, value, color in slices if value is not None and float(value) > 0]
+        if not valid_slices:
+            return (
+                "<div class='scenario-pie-panel'>"
+                + f"<h4>{panel_title}</h4>"
+                + "<div class='scenario-pie-empty'>No retrofit measure contribution data.</div>"
+                + "</div>"
+            )
+
+        total_value = sum(value for _, value, _ in valid_slices)
+        if total_value <= 0:
+            return (
+                "<div class='scenario-pie-panel'>"
+                + f"<h4>{panel_title}</h4>"
+                + "<div class='scenario-pie-empty'>No retrofit measure contribution data.</div>"
+                + "</div>"
+            )
+
+        grad_parts = []
+        legend_items = []
+        start_pct = 0.0
+        for label, value, color in valid_slices:
+            pct = (value / total_value) * 100.0
+            end_pct = min(100.0, start_pct + pct)
+            grad_parts.append(f"{color} {start_pct:.4f}% {end_pct:.4f}%")
+            legend_items.append(
+                "<div class='scenario-pie-legend-item'>"
+                + f"<span class='scenario-pie-swatch' style='background:{color};'></span>"
+                + f"<span>{label}: {formatter(value)} ({pct:.1f}%)</span>"
+                + "</div>"
+            )
+            start_pct = end_pct
+
+        pie_style = f"background:conic-gradient({', '.join(grad_parts)});"
+        total_text = f"Total: {formatter(total_value)}{total_suffix}"
+        return (
+            "<div class='scenario-pie-panel'>"
+            + f"<h4>{panel_title}</h4>"
+            + "<div class='scenario-pie-wrap'>"
+            + f"<div class='scenario-pie' style='{pie_style}'></div>"
+            + f"<div class='scenario-pie-legend'>{''.join(legend_items)}</div>"
+            + "</div>"
+            + f"<div class='scenario-pie-total'>{total_text}</div>"
+            + "</div>"
+        )
+
+    measure_color_map = {
+        "Wall": "#1f77b4",
+        "Roof": "#ff7f0e",
+        "Window": "#2ca02c",
+        "Door": "#d62728",
+    }
+    pie_cards = []
+    for _, scenario_row in df.iterrows():
+        scenario_name = str(scenario_row[scenario_col])
+        if "baseline" in scenario_name.lower():
+            continue
+
+        wall_cost, _ = _pick_first_numeric(scenario_row, [
+            "wall_insulation_total_cost_with_overhead_and_profit_usd",
+            "wall_insulation_total_cost_with_overhead_and_profit_$",
+        ])
+        roof_cost, _ = _pick_first_numeric(scenario_row, [
+            "roof_insulation_total_cost_with_overhead_and_profit_usd",
+            "roof_insulation_total_cost_with_overhead_and_profit_$",
+        ])
+        window_cost, _ = _pick_first_numeric(scenario_row, [
+            "window_enhancement_total_cost_with_overhead_and_profit_usd",
+            "window_enhancement_total_cost_with_overhead_and_profit_$",
+        ])
+        door_cost, _ = _pick_first_numeric(scenario_row, [
+            "door_enhancement_total_cost_with_overhead_and_profit_usd",
+            "door_enhancement_total_cost_with_overhead_and_profit_$",
+        ])
+
+        wall_carbon, _ = _pick_first_numeric(scenario_row, ["wall_insulation_embodied_carbon_kgCO2eq"])
+        roof_carbon, _ = _pick_first_numeric(scenario_row, ["roof_insulation_embodied_carbon_kgCO2eq"])
+        window_carbon, _ = _pick_first_numeric(scenario_row, ["window_enhancement_embodied_carbon_kgCO2eq"])
+        door_carbon, _ = _pick_first_numeric(scenario_row, ["door_enhancement_embodied_carbon_kgCO2eq"])
+
+        cost_slices = [
+            ("Wall", wall_cost, measure_color_map["Wall"]),
+            ("Roof", roof_cost, measure_color_map["Roof"]),
+            ("Window", window_cost, measure_color_map["Window"]),
+            ("Door", door_cost, measure_color_map["Door"]),
+        ]
+        carbon_slices = [
+            ("Wall", wall_carbon, measure_color_map["Wall"]),
+            ("Roof", roof_carbon, measure_color_map["Roof"]),
+            ("Window", window_carbon, measure_color_map["Window"]),
+            ("Door", door_carbon, measure_color_map["Door"]),
+        ]
+
+        scenario_label = scenario_display_map.get(scenario_name, scenario_name)
+        pie_cards.append(
+            "<div class='scenario-pie-card'>"
+            + f"<div class='scenario-pie-title'>{scenario_label}</div>"
+            + "<div class='scenario-pie-row'>"
+            + _build_measure_pie_panel("Cost breakdown by retrofit measure", cost_slices, money)
+            + _build_measure_pie_panel("Carbon breakdown by retrofit measure", carbon_slices, num, " kg CO2e")
+            + "</div></div>"
+        )
+
+    if pie_cards:
+        result_summary_pie_charts_html = (
+            "<div class='summary-box'><p>Per-scenario retrofit contribution breakdown."
+            + " Each scenario includes two pie charts: cost and embodied carbon by retrofit measure.</p></div>"
+            + "<div class='scenario-pie-grid'>"
+            + "".join(pie_cards)
+            + "</div>"
+        )
+    else:
+        result_summary_pie_charts_html = (
+            "<div class='summary-box'><p>No non-baseline scenarios available for retrofit measure breakdown pie charts.</p></div>"
+        )
 
     energy_analysis_rows = []
     for _, row in comparison_df.iterrows():
@@ -2952,6 +3167,7 @@ def generate_html_report(df, html_report_path, run_name="run"):
         report_year=report_year,
         run_name=run_name,
         spider_chart_embed_html=spider_chart_html,
+        result_summary_pie_charts_html=result_summary_pie_charts_html,
 
     )
     # Normalize section order: keep a single Material List block and place it right before Result Summary.
@@ -3402,8 +3618,8 @@ def _collect_summary_notes_by_scenario(df):
     col_candidates = {
         "window": ["window_summary_notes"],
         "door": ["door_summary_notes"],
-        "roof": ["roof_summary_notes"],
-        "wall": ["wall_summary_notes"],
+        "roof": ["roof_summary_notes", "roof_insulation_summary_notes"],
+        "wall": ["wall_summary_notes", "wall_insulation_summary_notes"],
     }
     measure_cols = {}
     for measure, candidates in col_candidates.items():
