@@ -1355,7 +1355,7 @@ def generate_parametric_recap(target_path, city_climate_zones=None):
     print("=" * 80)
 
 # --- GLOBAL SETTINGS ---
-RUN_NAME = "run_test_006"
+RUN_NAME = "run_test_007"
 def detect_openstudio_cli_path():
     env_path = os.environ.get("OPENSTUDIO_PATH")
     candidates = [
@@ -1491,22 +1491,6 @@ CUSTOM_COMBOS = [
         "wf_option": "wood-aluminium window frame",
         "film_option": "safety film",
         "caulking_option": "none",
-        "calculate_costs": True,
-        "use_custom_costs": True,
-
-        "custom_cost_per_cf": 35.0,
-        "labor_cost_multiplier": 1.35,
-        "overhead_profit_percent": 10.0,
-
-        "glass_cost_per_cf": 900.0,
-        "frame_cost_per_sf": 28.0,
-        "caulking_cost_per_cy": 150.0,
-        "film_cost_per_sf": 6.0,
-        "weatherstrip_cost_per_lf": 3.2,
-
-        "custom_door_cost_per_area": 120.0,
-        "custom_bottom_seal_cost": 9.0,
-        "custom_top_side_seal_cost": 6.0
     },
     # Scenario 8: All 4 measures  Wall + Door + Roof + Window
     {
@@ -1524,22 +1508,6 @@ CUSTOM_COMBOS = [
         "wf_option": "wood window frame",
         "film_option": "anti-graffiti film",
         "caulking_option": "polyurethane",
-        "calculate_costs": True,
-        "use_custom_costs": True,
-
-        "custom_cost_per_cf": 35.0,
-        "labor_cost_multiplier": 1.35,
-        "overhead_profit_percent": 10.0,
-
-        "glass_cost_per_cf": 900.0,
-        "frame_cost_per_sf": 28.0,
-        "caulking_cost_per_cy": 150.0,
-        "film_cost_per_sf": 6.0,
-        "weatherstrip_cost_per_lf": 3.2,
-
-        "custom_door_cost_per_area": 120.0,
-        "custom_bottom_seal_cost": 9.0,
-        "custom_top_side_seal_cost": 6.0
     },
     #Scenario 9: All 4 measures  Wall + Door + Roof + Window
     {
@@ -1557,23 +1525,6 @@ CUSTOM_COMBOS = [
         "wf_option": "wood window frame",
         "film_option": "low-e film",
         "caulking_option": "acrylic",
-            
-        "calculate_costs": True,
-        "use_custom_costs": True,
-
-        "custom_cost_per_cf": 35.0,
-        "labor_cost_multiplier": 1.35,
-        "overhead_profit_percent": 10.0,
-
-        "glass_cost_per_cf": 900.0,
-        "frame_cost_per_sf": 28.0,
-        "caulking_cost_per_cy": 150.0,
-        "film_cost_per_sf": 6.0,
-        "weatherstrip_cost_per_lf": 3.2,
-
-        "custom_door_cost_per_area": 120.0,
-        "custom_bottom_seal_cost": 9.0,
-        "custom_top_side_seal_cost": 6.0
     },
 ]
 
