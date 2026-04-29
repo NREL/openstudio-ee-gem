@@ -50,8 +50,10 @@ DOOR_FALLBACK_RSMEANS_IDS = {
     "silicone adhesive smoke gasket": "087125105050",
     "brush weatherstrip": "087125103700",
     "automatic door bottom": "087125103650",
-    "jamb weatherstrip": "083323104000",
-    "jamb weatherstripping": "083323104000",
+    # 083323104000 was a rolling-service door line ($2.90) — replaced with a
+    # proper door weatherstrip (vinyl door sweep, flush mounted, $45.90).
+    "jamb weatherstrip": "087125103700",
+    "jamb weatherstripping": "087125103700",
     # Whole door components (from EC3 Query Strings sheet).
     "wood door leaf": "081416090025",
     "wooden door": "081416090025",
@@ -297,8 +299,18 @@ def _lookup_cost_item_by_rsmeans_id(
     if not cost_line or "items" not in cost_line:
         return None
 
-    for item in cost_line["items"]:
+    items = cost_line["items"]
+    # Exact match first.
+    for item in items:
         if item.get("id") == rsmeans_id:
+            return item
+
+    # If the exact sub-line ID was not found (the catalogue may not carry that
+    # specific 12-character variant), fall back to the first item in the same
+    # section that has a positive cost.  This handles cases like requesting
+    # "087125105050" when only "087125105000" is present in the catalogue.
+    for item in items:
+        if float(item.get("localizedCosts", {}).get("totalOpCost", 0.0)) > 0:
             return item
     return None
 
@@ -1249,6 +1261,52 @@ def search_materials_across_catalogs(
                 f"User-provided RSMeans ID {explicit_rsmeans_id} was not found; falling back to search logic for '{material_name}'"
             )
         
+        # For seal/weatherstrip materials, skip unreliable text search and go
+        # directly to the curated fallback ID.  Door-type materials (e.g. steel
+        # door, glass door) still go through the normal search path so that the
+        # best catalogue match can be found.
+        _seal_keywords = ("seal", "weatherstrip", "weatherstripping", "gasket")
+        _name_lower = material_name.lower()
+        if any(kw in _name_lower for kw in _seal_keywords):
+            _direct_fallback_id = _get_default_fallback_rsmeans_id(
+                material_name, material.get("description", "")
+            )
+            if _direct_fallback_id:
+                for _cat in catalogs:
+                    _fb_item = _lookup_cost_item_by_rsmeans_id(
+                        client=client,
+                        rsmeans_id=_direct_fallback_id,
+                        catalog=_cat,
+                        release_id=release_id,
+                        location_id=location_id,
+                        labor_type=labor_type,
+                        measurement_system=measurement_system,
+                    )
+                    if _fb_item:
+                        _uc = float(_fb_item.get("localizedCosts", {}).get("totalOpCost", 0.0))
+                        if _uc > 0:
+                            _tc = _uc * quantity
+                            all_results.append({
+                                **material,
+                                "catalog": _cat,
+                                "search_term_used": "seal_direct_fallback_id",
+                                "unit_cost": _uc,
+                                "total_cost": _tc,
+                                "rsmeans_id": _fb_item.get("id", _direct_fallback_id),
+                                "rsmeans_description": _fb_item.get("description", ""),
+                                "source": "rsmeans_fallback_id",
+                            })
+                            total_cost += _tc
+                            fallback_count += 1
+                            warnings.append(
+                                f"Used direct fallback RSMeans ID {_direct_fallback_id} for seal "
+                                f"material '{material_name}' (text search bypassed)"
+                            )
+                            best_match = _fb_item
+                            break
+                if best_match:
+                    continue
+
         # Generate alternative search terms
         search_alternatives = generate_search_term_alternatives(material_name)
         

@@ -116,7 +116,11 @@ def _get_double_pane_fallback_rsmeans_id(area_sf: float) -> str:
 def _get_default_fallback_rsmeans_id(material_name: str, material: Optional[Dict[str, Any]] = None) -> Optional[str]:
     name_norm = _normalize_search_text(material_name)
     description_norm = _normalize_search_text((material or {}).get("description", ""))
-    quantity_sf = float((material or {}).get("quantity", 0.0) or 0.0)
+    # Prefer explicit glazing_area_sf (preserved total area) over quantity, which may be an
+    # EA count when the material was built with num_windows-based pricing.
+    quantity_sf = float(
+        (material or {}).get("glazing_area_sf", (material or {}).get("quantity", 0.0)) or 0.0
+    )
 
     # Handle area-sensitive double-pane options before static lookups.
     if (
@@ -225,16 +229,23 @@ def _derive_frame_cost_from_window_minus_glass(
         return None
 
     frame_desc_norm = _normalize_search_text(material.get("description", ""))
-    quantity_sf = float(material.get("quantity", 0.0) or 0.0)
-    if quantity_sf <= 0.0:
+    # num_windows is the per-EA quantity for frame cost; quantity_sf is the glazing area used
+    # for fallback ID bin selection.  Both may be carried explicitly on the material dict.
+    num_windows = float(material.get("num_windows") or 0.0)
+    quantity_sf = float(material.get("glazing_area_sf", material.get("quantity", 0.0)) or 0.0)
+    if quantity_sf <= 0.0 and num_windows <= 0.0:
         return None
+    if num_windows <= 0.0:
+        num_windows = quantity_sf  # backward-compat fallback
 
     # Determine pane-count from glazing material description if available.
     pane_count = None
     glazing_area_sf = quantity_sf
     for m in all_materials:
         if _normalize_search_text(m.get("name", "")) == "window glazing":
-            glazing_area_sf = float(m.get("quantity", quantity_sf) or quantity_sf)
+            # Prefer the preserved glazing_area_sf over the quantity field, which may now
+            # hold the EA count when num_windows-based pricing is in use.
+            glazing_area_sf = float(m.get("glazing_area_sf", m.get("quantity", quantity_sf)) or quantity_sf)
             glazing_desc_norm = _normalize_search_text(m.get("description", ""))
             if "1 pane" in glazing_desc_norm or "1-pane" in glazing_desc_norm or "single" in glazing_desc_norm:
                 pane_count = 1
@@ -281,7 +292,8 @@ def _derive_frame_cost_from_window_minus_glass(
         return None
 
     frame_unit_cost = max(0.0, window_unit_cost - glazing_unit_cost)
-    frame_total_cost = frame_unit_cost * quantity_sf
+    # Use the per-EA window count for cost (not the glazing area in SF).
+    frame_total_cost = frame_unit_cost * num_windows
 
     return {
         "unit_cost": frame_unit_cost,

@@ -40,16 +40,32 @@ import openstudio
 import typing
 import json
 import re
-from resources.call_rsmeans_api import RSMeansAPIClient, run_rsmeans_cost_lookup
+import os as _os_door
+import importlib.util as _ilu_door
 import numpy as np
-from resources.EC3_lookup import (
-    calculate_geometry,
-    extract_numeric_value,
-    fetch_epd_data,
-    generate_url_byname,
-    lifetime_multiplier,
-    parse_product_epd,
-)
+
+# Load call_rsmeans_api and EC3_lookup from THIS measure's own resources directory,
+# regardless of what other measures may have added to sys.path earlier in the run.
+_DOOR_RESOURCES = _os_door.path.join(_os_door.path.dirname(_os_door.path.abspath(__file__)), "resources")
+
+def _load_door_resource_module(module_filename, unique_name):
+    _path = _os_door.path.join(_DOOR_RESOURCES, module_filename)
+    _spec = _ilu_door.spec_from_file_location(unique_name, _path)
+    _mod = _ilu_door.module_from_spec(_spec)
+    _spec.loader.exec_module(_mod)
+    return _mod
+
+_rsmeans_mod = _load_door_resource_module("call_rsmeans_api.py", "_door_enhancement_call_rsmeans_api")
+RSMeansAPIClient = _rsmeans_mod.RSMeansAPIClient
+run_rsmeans_cost_lookup = _rsmeans_mod.run_rsmeans_cost_lookup
+
+_ec3_mod = _load_door_resource_module("EC3_lookup.py", "_door_enhancement_EC3_lookup")
+calculate_geometry = _ec3_mod.calculate_geometry
+extract_numeric_value = _ec3_mod.extract_numeric_value
+fetch_epd_data = _ec3_mod.fetch_epd_data
+generate_url_byname = _ec3_mod.generate_url_byname
+lifetime_multiplier = _ec3_mod.lifetime_multiplier
+parse_product_epd = _ec3_mod.parse_product_epd
 
 # Start the measure
 class DoorEnhancement(openstudio.measure.ModelMeasure):
@@ -1482,6 +1498,37 @@ class DoorEnhancement(openstudio.measure.ModelMeasure):
                 rsmeans_door_thickness_m = rsmeans_parsed_props.get("thickness")
                 rsmeans_inferred_option = _infer_door_option_from_rsmeans(rsmeans_door_match_description)
 
+                # Check for door area mismatch between RSMeans and model geometry.
+                # If the user hasn't provided an explicit door_area_per_unit (i.e. still
+                # at the default 1.95 m2), correct rsmeans_door_area_per_unit_m2 to use
+                # the model's actual average door area and warn, rather than erroring out.
+                if rsmeans_door_area_per_unit_m2 is not None and rsmeans_door_area_per_unit_m2 > 0.0 and eligible_door_count > 0:
+                    model_avg_door_area_m2_early = total_eligible_door_area_m2 / float(eligible_door_count)
+                    if model_avg_door_area_m2_early > 0.0:
+                        area_delta = abs(rsmeans_door_area_per_unit_m2 - model_avg_door_area_m2_early)
+                        rel_area_delta = area_delta / model_avg_door_area_m2_early
+                        if rel_area_delta > 0.10:
+                            if abs(door_area_per_unit - 1.95) < 1e-9:
+                                runner.registerWarning(
+                                    f"RSMeans door opening area ({rsmeans_door_area_per_unit_m2:.3f} m2) "
+                                    f"differs from model average door area "
+                                    f"({model_avg_door_area_m2_early:.3f} m2) by "
+                                    f"{rel_area_delta*100:.1f}%. "
+                                    f"Using model door area for cost normalization. "
+                                    f"To override, provide an explicit 'door_area_per_unit' argument."
+                                )
+                                rsmeans_door_area_per_unit_m2 = model_avg_door_area_m2_early
+                            else:
+                                runner.registerWarning(
+                                    f"RSMeans door opening area ({rsmeans_door_area_per_unit_m2:.3f} m2) "
+                                    f"differs from model average door area "
+                                    f"({model_avg_door_area_m2_early:.3f} m2) by "
+                                    f"{rel_area_delta*100:.1f}%. "
+                                    f"Using user-provided door_area_per_unit "
+                                    f"({door_area_per_unit:.3f} m2) for cost normalization."
+                                )
+                                rsmeans_door_area_per_unit_m2 = door_area_per_unit
+
                 # Normalize RSMeans door costs to area-based totals.
                 if rsmeans_lookup and rsmeans_lookup.get("status") == "ok":
                     rsmeans_results_dict = rsmeans_lookup.get("results", {})
@@ -1567,22 +1614,6 @@ class DoorEnhancement(openstudio.measure.ModelMeasure):
                 model_avg_door_area_m2 = 0.0
                 if eligible_door_count > 0:
                     model_avg_door_area_m2 = total_eligible_door_area_m2 / float(eligible_door_count)
-
-                if rsmeans_door_area_per_unit_m2 is not None and model_avg_door_area_m2 > 0.0:
-                    area_delta = abs(rsmeans_door_area_per_unit_m2 - model_avg_door_area_m2)
-                    rel_area_delta = area_delta / model_avg_door_area_m2
-                    if rel_area_delta > 0.10:
-                        runner.registerWarning(
-                            "RSMeans door opening area differs from model door area by more than 10% "
-                            f"(RSMeans={rsmeans_door_area_per_unit_m2:.3f} m2, "
-                            f"model_avg={model_avg_door_area_m2:.3f} m2)."
-                        )
-                        if abs(door_area_per_unit - 1.95) < 1e-9:
-                            runner.registerError(
-                                "Door area mismatch detected between model geometry and RSMeans match. "
-                                "Please provide an explicit 'door_area_per_unit' argument and re-run the measure."
-                            )
-                            return False
 
                 if (
                     resolved_door_material_props.get('conductivity', 0.0) <= 0.0

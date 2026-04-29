@@ -1463,6 +1463,7 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
             rsmeans_id_film=rsmeans_id_film,
             rsmeans_id_weatherstrip=rsmeans_id_weatherstrip,
             rsmeans_id_secondary_glazing=rsmeans_id_secondary_glazing,
+            num_windows=total_window_constructions,
         )
 
         # Phase 3: Calculate capital cost using RSMeans or custom fallback inputs.
@@ -3417,6 +3418,7 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
         rsmeans_id_film,
         rsmeans_id_weatherstrip,
         rsmeans_id_secondary_glazing,
+        num_windows=1,
     ):
         materials = []
 
@@ -3443,12 +3445,14 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
                     f"single-pane thickness {effective_glass_pane_thickness*1000:.1f} mm; "
                     f"gap {effective_gap_thickness*1000:.1f} mm"
                 ),
-                "quantity": glazing_qty_sf,
-                "unit": "SF",
-                "quantity_volume": float(glazing_qty_sf * glass_thickness_ft * pane_count),
-                "unit_volume": "CF",
-                "rsmeans_thickness_ft": float(glass_thickness_ft),
-                "costing_mode": "volume_from_area",
+                # RSMeans glazing items are priced per EA (per window unit), not per SF.
+                # Use the window count as quantity so total_cost = unit_cost * num_windows.
+                "quantity": float(num_windows),
+                "unit": "EA",
+                # Preserve total glazing area (SF) for fallback-ID bin selection and
+                # for any caller that needs the physical area.
+                "glazing_area_sf": glazing_qty_sf,
+                "costing_mode": "area",
                 "quantity_si": total_glazing_area_m2,
                 "unit_si": "m2",
                 "division_code": "08",
@@ -3463,6 +3467,9 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
                 "description": f"{wf_option} frame replacement",
                 "quantity": _m2_to_sf(total_frame_area_m2),
                 "unit": "SF",
+                # num_windows lets _derive_frame_cost_from_window_minus_glass price per EA.
+                "num_windows": float(num_windows),
+                "glazing_area_sf": _m2_to_sf(total_frame_area_m2),
                 "quantity_si": total_frame_area_m2,
                 "unit_si": "m2",
                 "division_code": "08",
