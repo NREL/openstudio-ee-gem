@@ -1,4 +1,4 @@
-Program Version,EnergyPlus, Version 25.2.0-cf7368216c, YMD=2026.04.29 11:04,
+Program Version,EnergyPlus, Version 25.2.0-cf7368216c, YMD=2026.04.29 14:30,
    ** Warning ** ProcessScheduleInput: Schedule:Day:Interval = SCHEDULE DAY 1
    **   ~~~   ** Schedule Type Limits Name is empty.
    **   ~~~   ** Schedule will not be validated.
@@ -195,4 +195,4 @@ Program Version,EnergyPlus, Version 25.2.0-cf7368216c, YMD=2026.04.29 11:04,
    *************
    ************* EnergyPlus Warmup Error Summary. During Warmup: 4 Warning; 2 Severe Errors.
    ************* EnergyPlus Sizing Error Summary. During Sizing: 6 Warning; 0 Severe Errors.
-   ************* EnergyPlus Completed Successfully-- 23075 Warning; 2 Severe Errors; Elapsed Time=00hr 00min  1.71sec
+   ************* EnergyPlus Completed Successfully-- 23075 Warning; 2 Severe Errors; Elapsed Time=00hr 00min  1.72sec

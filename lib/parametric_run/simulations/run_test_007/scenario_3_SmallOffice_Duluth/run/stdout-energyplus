@@ -1,13 +1,13 @@
 ExpandObjects Started.
 No expanded file generated.
-ExpandObjects Finished. Time:     0.094
+ExpandObjects Finished. Time:     0.078
 EnergyPlus Starting
-EnergyPlus, Version 25.2.0-cf7368216c, YMD=2026.04.29 10:43
+EnergyPlus, Version 25.2.0-cf7368216c, YMD=2026.04.29 14:35
 Initializing Response Factors
 Calculating CTFs for "INTERIORFURNISHINGS"
 Calculating CTFs for "TYPICAL ATTIC SOFFIT"
-Calculating CTFs for "TYPICAL INSULATED METAL DOOR R-2.0 - WOODEN DOOR R-0.30 - RSMEANS GARAGE DOOR R-1.78"
-Calculating CTFs for "TYPICAL INSULATED METAL DOOR R-2.0 - WOODEN DOOR R-0.30 1 - RSMEANS GARAGE DOOR R-1.78"
+Calculating CTFs for "TYPICAL INSULATED METAL DOOR R-2.0 - WOODEN DOOR R-0.30 - RSMEANS WOODEN DOOR R-0.23"
+Calculating CTFs for "TYPICAL INSULATED METAL DOOR R-2.0 - WOODEN DOOR R-0.30 1 - RSMEANS WOODEN DOOR R-0.23"
 Calculating CTFs for "TYPICAL INSULATED WOOD FRAMED EXTERIOR WALL R-19.61 1"
 Calculating CTFs for "TYPICAL INTERIOR WALL"
 Calculating CTFs for "TYPICAL UNINSULATED WOOD JOIST ATTIC ROOF ADJ ROOF INSULATION"
@@ -122,7 +122,6 @@ Warming up {21}
 Warming up {22}
 Warming up {23}
 Warming up {24}
-Warming up {25}
 Starting Simulation at 01/01/2006 for RUN PERIOD 1
 Updating Shadowing Calculations, Start Date=01/31/2006
 Updating Detailed Daylighting Factors, Start Date=01/31
@@ -163,5 +162,5 @@ Continuing Simulation at 12/27/2006 for RUN PERIOD 1
 Writing tabular output file results using HTML format.
 Computing Life Cycle Costs and Reporting
 Writing final SQL reports
-EnergyPlus Run Time=00hr 00min 10.01sec
+EnergyPlus Run Time=00hr 00min  9.13sec
 EnergyPlus Completed Successfully.

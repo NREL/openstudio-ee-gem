@@ -1,11 +1,11 @@
 {
-  "weather_file": "C:\\All_repos\\openstudio-ee-gem\\lib\\parametric_run\\weather\\Duluth\\USA_MN_Duluth.Intl.AP-Duluth.ANGB.727450_TMYx.epw",
+  "weather_file": "c:\\All_repos\\openstudio-ee-gem\\lib\\parametric_run\\weather\\Duluth\\USA_MN_Duluth.Intl.AP-Duluth.ANGB.727450_TMYx.epw",
   "file_paths": [
-    "C:\\All_repos\\openstudio-ee-gem\\lib\\parametric_run\\weather",
-    "C:\\All_repos\\openstudio-ee-gem\\lib\\parametric_run\\weather\\Duluth"
+    "c:\\All_repos\\openstudio-ee-gem\\lib\\parametric_run\\weather",
+    "c:\\All_repos\\openstudio-ee-gem\\lib\\parametric_run\\weather\\Duluth"
   ],
   "measure_paths": [
-    "C:\\All_repos\\openstudio-ee-gem\\lib\\measures"
+    "c:\\All_repos\\openstudio-ee-gem\\lib\\measures"
   ],
   "steps": [
     {
