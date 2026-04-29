@@ -19,17 +19,62 @@ import csv
 import sqlite3
 
 # OpenStudio 3.11.0 Python bindings are built for Python 3.12.
-def _find_python312_executable():
-    candidates = [
-        os.environ.get("PYTHON312_PATH"),
-        "C:/Users/jhu1/AppData/Local/Programs/Python/Python312/python.exe",
-        "C:/Program Files/Python312/python.exe",
-        "C:/Program Files (x86)/Python312/python.exe",
-        shutil.which("python3.12"),
-    ]
+def _resolve_existing_path(candidates):
     for candidate in candidates:
-        if candidate and os.path.exists(candidate):
+        if not candidate:
+            continue
+        candidate = str(candidate)
+        if os.path.exists(candidate):
             return candidate
+        resolved = shutil.which(candidate)
+        if resolved:
+            return resolved
+    return None
+
+
+def _is_python312_command(cmd):
+    try:
+        probe = subprocess.run(
+            cmd + ["-c", "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')"],
+            check=False,
+            capture_output=True,
+            text=True,
+            timeout=10,
+        )
+        return probe.returncode == 0 and probe.stdout.strip() == "3.12"
+    except Exception:
+        return False
+
+
+def _find_python312_command():
+    candidates = [[p] for p in [os.environ.get("PYTHON312_PATH"), shutil.which("python3.12")] if p]
+
+    if os.name == "nt":
+        roots = [
+            Path(os.environ.get("LOCALAPPDATA", "")) / "Programs" / "Python",
+            Path(os.environ.get("ProgramFiles", "")),
+            Path(os.environ.get("ProgramFiles(x86)", "")),
+        ]
+        for root in roots:
+            if not str(root):
+                continue
+            candidates.extend([[str(p)] for p in sorted(root.glob("Python312*/python.exe"))])
+
+        py_launcher = shutil.which("py")
+        if py_launcher:
+            candidates.append([py_launcher, "-3.12"])
+
+    if sys.executable:
+        candidates.append([sys.executable])
+
+    seen = set()
+    for cmd in candidates:
+        key = tuple(cmd)
+        if key in seen:
+            continue
+        seen.add(key)
+        if _is_python312_command(cmd):
+            return cmd
     return None
 
 def _ensure_openstudio_python_compatibility():
@@ -39,9 +84,9 @@ def _ensure_openstudio_python_compatibility():
 
     detected = f"{sys.version_info.major}.{sys.version_info.minor}"
     required = f"{required_major}.{required_minor}"
-    python312_exe = _find_python312_executable()
+    python312_cmd = _find_python312_command()
     # Try seamless re-exec once when running as a script.
-    if __name__ == "__main__" and python312_exe and os.environ.get("OPENSTUDIO_SKIP_REEXEC") != "1":
+    if __name__ == "__main__" and python312_cmd and os.environ.get("OPENSTUDIO_SKIP_REEXEC") != "1":
         print(
             "Detected incompatible Python "
             + detected
@@ -51,12 +96,13 @@ def _ensure_openstudio_python_compatibility():
         )
         env = os.environ.copy()
         env["OPENSTUDIO_SKIP_REEXEC"] = "1"
-        completed = subprocess.run([python312_exe] + sys.argv, env=env)
+        completed = subprocess.run(python312_cmd + sys.argv, env=env)
         raise SystemExit(completed.returncode)
 
+    cmd_text = " ".join(f'"{part}"' if " " in str(part) else str(part) for part in (python312_cmd or []))
     command_hint = (
-        f'"{python312_exe}" "{Path(__file__).resolve()}"'
-        if python312_exe
+        f"{cmd_text} \"{Path(__file__).resolve()}\""
+        if python312_cmd
         else "<path-to-python-3.12> workflow.py"
     )
     raise RuntimeError(
@@ -74,11 +120,17 @@ _ensure_openstudio_python_compatibility()
 # Add OpenStudio 3.11.0 Python bindings to path BEFORE importing
 def detect_openstudio_python_path():
     env_path = os.environ.get("OPENSTUDIO_PYTHON_PATH")
-    candidates = [
-        env_path,
-        "C:/Program Files/openstudio-3.11.0/Python",
-        "/Applications/OpenStudio-3.11.0/Python",
-    ]
+    candidates = []
+    if env_path:
+        candidates.append(env_path)
+
+    # Infer OpenStudio Python bindings from CLI path if available.
+    cli_candidate = os.environ.get("OPENSTUDIO_PATH") or shutil.which("openstudio")
+    if cli_candidate and os.path.exists(cli_candidate):
+        cli_path = Path(cli_candidate).resolve()
+        inferred_python_dir = cli_path.parent.parent / "Python"
+        candidates.append(str(inferred_python_dir))
+
     for candidate in candidates:
         if candidate and os.path.exists(candidate):
             return candidate
@@ -1357,19 +1409,20 @@ def generate_parametric_recap(target_path, city_climate_zones=None):
 # --- GLOBAL SETTINGS ---
 RUN_NAME = "run_test_007"
 def detect_openstudio_cli_path():
-    env_path = os.environ.get("OPENSTUDIO_PATH")
-    candidates = [
-        env_path,
-        "C:/Program Files/openstudio-3.11.0/bin/openstudio.exe",
-        "/Applications/OpenStudio-3.11.0/bin/openstudio",
-        "openstudio",
-    ]
-    for candidate in candidates:
-        if not candidate:
-            continue
-        if candidate == "openstudio" or os.path.exists(candidate):
-            return candidate
-    return "openstudio"
+    candidates = [os.environ.get("OPENSTUDIO_PATH"), shutil.which("openstudio")]
+
+    # Windows fallback: scan common install roots for openstudio-*/bin/openstudio.exe.
+    if os.name == "nt":
+        for root in [os.environ.get("ProgramFiles"), os.environ.get("ProgramFiles(x86)")]:
+            if not root:
+                continue
+            candidates.extend(str(p) for p in sorted(Path(root).glob("openstudio-*/bin/openstudio.exe"), reverse=True))
+
+    # macOS fallback: scan /Applications/OpenStudio-*/bin/openstudio.
+    if sys.platform == "darwin":
+        candidates.extend(str(p) for p in sorted(Path("/Applications").glob("OpenStudio-*/bin/openstudio"), reverse=True))
+
+    return _resolve_existing_path(candidates)
 
 OPENSTUDIO_PATH = detect_openstudio_cli_path()
 OVERWRITE_EXISTING = False
@@ -1535,6 +1588,12 @@ def scenario_output_exists(base_run_dir, scenario_dict):
 
 # --- MAIN - RUN PARAMETRIC STUDY ---
 if __name__ == "__main__":
+    if not OPENSTUDIO_PATH:
+        raise RuntimeError(
+            "OpenStudio CLI not found. Set OPENSTUDIO_PATH to your openstudio executable, "
+            "or add openstudio to PATH."
+        )
+
     print("\n" + "=" * 70)
     print("PARAMETRIC STUDY: BUILDING ENERGY EFFICIENCY MEASURES")
     print(f"Using OpenStudio: {OPENSTUDIO_PATH}")
@@ -1640,12 +1699,23 @@ import pandas as pd
 import plotly.graph_objects as go
 
 base_dir = Path(base_run_dir)
-csv_candidates = [
-    base_dir / "parametric_results.csv",
-]
+def _find_or_build_parametric_csv(base_dir):
+    csv_path = base_dir / "parametric_results.csv"
+    if csv_path.exists():
+        return csv_path
+    print("Warning: parametric_results.csv not found; attempting to regenerate recap CSV.")
+    generate_parametric_recap(base_dir, city_climate_zones)
+    return csv_path if csv_path.exists() else None
 
-csv_path = next((p for p in csv_candidates if p.exists()), None)
+
+csv_candidates = [base_dir / "parametric_results.csv"]
+csv_path = _find_or_build_parametric_csv(base_dir)
+
 if csv_path is None:
+    print(f"Warning: Could not find CSV in: {csv_candidates}")
+    print("Skipping spider chart and summary table generation.")
+    if __name__ == "__main__":
+        raise SystemExit(0)
     raise FileNotFoundError(f"Could not find CSV in: {csv_candidates}")
 
 df = pd.read_csv(csv_path)
