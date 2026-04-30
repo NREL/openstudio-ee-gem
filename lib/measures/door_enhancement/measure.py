@@ -40,32 +40,16 @@ import openstudio
 import typing
 import json
 import re
-import os as _os_door
-import importlib.util as _ilu_door
+from resources.call_rsmeans_api import RSMeansAPIClient, run_rsmeans_cost_lookup
 import numpy as np
-
-# Load call_rsmeans_api and EC3_lookup from THIS measure's own resources directory,
-# regardless of what other measures may have added to sys.path earlier in the run.
-_DOOR_RESOURCES = _os_door.path.join(_os_door.path.dirname(_os_door.path.abspath(__file__)), "resources")
-
-def _load_door_resource_module(module_filename, unique_name):
-    _path = _os_door.path.join(_DOOR_RESOURCES, module_filename)
-    _spec = _ilu_door.spec_from_file_location(unique_name, _path)
-    _mod = _ilu_door.module_from_spec(_spec)
-    _spec.loader.exec_module(_mod)
-    return _mod
-
-_rsmeans_mod = _load_door_resource_module("call_rsmeans_api.py", "_door_enhancement_call_rsmeans_api")
-RSMeansAPIClient = _rsmeans_mod.RSMeansAPIClient
-run_rsmeans_cost_lookup = _rsmeans_mod.run_rsmeans_cost_lookup
-
-_ec3_mod = _load_door_resource_module("EC3_lookup.py", "_door_enhancement_EC3_lookup")
-calculate_geometry = _ec3_mod.calculate_geometry
-extract_numeric_value = _ec3_mod.extract_numeric_value
-fetch_epd_data = _ec3_mod.fetch_epd_data
-generate_url_byname = _ec3_mod.generate_url_byname
-lifetime_multiplier = _ec3_mod.lifetime_multiplier
-parse_product_epd = _ec3_mod.parse_product_epd
+from resources.EC3_lookup import (
+    calculate_geometry,
+    extract_numeric_value,
+    fetch_epd_data,
+    generate_url_byname,
+    lifetime_multiplier,
+    parse_product_epd,
+)
 
 # Start the measure
 class DoorEnhancement(openstudio.measure.ModelMeasure):
@@ -1498,37 +1482,6 @@ class DoorEnhancement(openstudio.measure.ModelMeasure):
                 rsmeans_door_thickness_m = rsmeans_parsed_props.get("thickness")
                 rsmeans_inferred_option = _infer_door_option_from_rsmeans(rsmeans_door_match_description)
 
-                # Check for door area mismatch between RSMeans and model geometry.
-                # If the user hasn't provided an explicit door_area_per_unit (i.e. still
-                # at the default 1.95 m2), correct rsmeans_door_area_per_unit_m2 to use
-                # the model's actual average door area and warn, rather than erroring out.
-                if rsmeans_door_area_per_unit_m2 is not None and rsmeans_door_area_per_unit_m2 > 0.0 and eligible_door_count > 0:
-                    model_avg_door_area_m2_early = total_eligible_door_area_m2 / float(eligible_door_count)
-                    if model_avg_door_area_m2_early > 0.0:
-                        area_delta = abs(rsmeans_door_area_per_unit_m2 - model_avg_door_area_m2_early)
-                        rel_area_delta = area_delta / model_avg_door_area_m2_early
-                        if rel_area_delta > 0.10:
-                            if abs(door_area_per_unit - 1.95) < 1e-9:
-                                runner.registerWarning(
-                                    f"RSMeans door opening area ({rsmeans_door_area_per_unit_m2:.3f} m2) "
-                                    f"differs from model average door area "
-                                    f"({model_avg_door_area_m2_early:.3f} m2) by "
-                                    f"{rel_area_delta*100:.1f}%. "
-                                    f"Using model door area for cost normalization. "
-                                    f"To override, provide an explicit 'door_area_per_unit' argument."
-                                )
-                                rsmeans_door_area_per_unit_m2 = model_avg_door_area_m2_early
-                            else:
-                                runner.registerWarning(
-                                    f"RSMeans door opening area ({rsmeans_door_area_per_unit_m2:.3f} m2) "
-                                    f"differs from model average door area "
-                                    f"({model_avg_door_area_m2_early:.3f} m2) by "
-                                    f"{rel_area_delta*100:.1f}%. "
-                                    f"Using user-provided door_area_per_unit "
-                                    f"({door_area_per_unit:.3f} m2) for cost normalization."
-                                )
-                                rsmeans_door_area_per_unit_m2 = door_area_per_unit
-
                 # Normalize RSMeans door costs to area-based totals.
                 if rsmeans_lookup and rsmeans_lookup.get("status") == "ok":
                     rsmeans_results_dict = rsmeans_lookup.get("results", {})
@@ -1614,6 +1567,22 @@ class DoorEnhancement(openstudio.measure.ModelMeasure):
                 model_avg_door_area_m2 = 0.0
                 if eligible_door_count > 0:
                     model_avg_door_area_m2 = total_eligible_door_area_m2 / float(eligible_door_count)
+
+                if rsmeans_door_area_per_unit_m2 is not None and model_avg_door_area_m2 > 0.0:
+                    area_delta = abs(rsmeans_door_area_per_unit_m2 - model_avg_door_area_m2)
+                    rel_area_delta = area_delta / model_avg_door_area_m2
+                    if rel_area_delta > 0.10:
+                        runner.registerWarning(
+                            "RSMeans door opening area differs from model door area by more than 10% "
+                            f"(RSMeans={rsmeans_door_area_per_unit_m2:.3f} m2, "
+                            f"model_avg={model_avg_door_area_m2:.3f} m2)."
+                        )
+                        if abs(door_area_per_unit - 1.95) < 1e-9:
+                            runner.registerError(
+                                "Door area mismatch detected between model geometry and RSMeans match. "
+                                "Please provide an explicit 'door_area_per_unit' argument and re-run the measure."
+                            )
+                            return False
 
                 if (
                     resolved_door_material_props.get('conductivity', 0.0) <= 0.0
@@ -1879,6 +1848,10 @@ class DoorEnhancement(openstudio.measure.ModelMeasure):
                     f"lifecycle material cost=${_adj_material:,.2f}"
                 )
 
+        door_rsmeans_cost_per_area_feature_value = "N/A"
+        door_rsmeans_bottom_seal_cost_per_m_feature_value = "N/A"
+        door_rsmeans_top_side_seal_cost_per_m_feature_value = "N/A"
+
         if rsmeans_lookup is not None and rsmeans_lookup.get("status") == "ok":
             rsmeans_summary_dict = rsmeans_lookup.get("summary", {})
             rsmeans_results_dict = rsmeans_lookup.get("results", {})
@@ -1898,6 +1871,27 @@ class DoorEnhancement(openstudio.measure.ModelMeasure):
                 u = str(mat.get("unit", "")).upper().strip()
                 if u:
                     unit_set.add(u)
+
+            if cost_source_val != "custom_input":
+                _door_cost_total = 0.0
+                _bottom_seal_cost_total = 0.0
+                _top_side_seal_cost_total = 0.0
+                for mat in matched_mats:
+                    _mat_name = str(mat.get("name", "")).lower()
+                    _mat_cost = float(mat.get("total_cost_area_adjusted", mat.get("total_cost", 0.0)) or 0.0)
+                    if "door" in _mat_name and "seal" not in _mat_name:
+                        _door_cost_total += _mat_cost
+                    elif "bottom seal" in _mat_name:
+                        _bottom_seal_cost_total += _mat_cost
+                    elif "top side seal" in _mat_name or "top/side" in _mat_name or "jamb" in _mat_name:
+                        _top_side_seal_cost_total += _mat_cost
+
+                if total_eligible_door_area_m2 > 0.0 and _door_cost_total > 0.0:
+                    door_rsmeans_cost_per_area_feature_value = _door_cost_total / float(total_eligible_door_area_m2)
+                if total_sealing_bottom_length_m > 0.0 and _bottom_seal_cost_total > 0.0:
+                    door_rsmeans_bottom_seal_cost_per_m_feature_value = _bottom_seal_cost_total / float(total_sealing_bottom_length_m)
+                if total_sealing_side_length_m > 0.0 and _top_side_seal_cost_total > 0.0:
+                    door_rsmeans_top_side_seal_cost_per_m_feature_value = _top_side_seal_cost_total / float(total_sealing_side_length_m)
 
             if cost_source_val == "custom_input":
                 cost_factor_basis = "custom_cost_per_area"
@@ -1923,6 +1917,9 @@ class DoorEnhancement(openstudio.measure.ModelMeasure):
             factors.setFeature("door_enhancement_custom_door_cost_per_area", custom_door_cost_per_area)
             factors.setFeature("door_enhancement_custom_bottom_seal_cost_per_m", custom_bottom_seal_cost)
             factors.setFeature("door_enhancement_custom_top_side_seal_cost_per_m", custom_top_side_seal_cost)
+            factors.setFeature("door_enhancement_rsmeans_door_cost_per_area", door_rsmeans_cost_per_area_feature_value)
+            factors.setFeature("door_enhancement_rsmeans_bottom_seal_cost_per_m", door_rsmeans_bottom_seal_cost_per_m_feature_value)
+            factors.setFeature("door_enhancement_rsmeans_top_side_seal_cost_per_m", door_rsmeans_top_side_seal_cost_per_m_feature_value)
 
             # -- SimulationControl (results) bucket: mirrored scalars + JSON --
             results.setFeature("door_enhancement_material_cost_$", rsmeans_material_cost)
@@ -1970,6 +1967,9 @@ class DoorEnhancement(openstudio.measure.ModelMeasure):
             factors.setFeature("door_enhancement_custom_door_cost_per_area", custom_door_cost_per_area)
             factors.setFeature("door_enhancement_custom_bottom_seal_cost_per_m", custom_bottom_seal_cost)
             factors.setFeature("door_enhancement_custom_top_side_seal_cost_per_m", custom_top_side_seal_cost)
+            factors.setFeature("door_enhancement_rsmeans_door_cost_per_area", door_rsmeans_cost_per_area_feature_value)
+            factors.setFeature("door_enhancement_rsmeans_bottom_seal_cost_per_m", door_rsmeans_bottom_seal_cost_per_m_feature_value)
+            factors.setFeature("door_enhancement_rsmeans_top_side_seal_cost_per_m", door_rsmeans_top_side_seal_cost_per_m_feature_value)
 
         reno_detail.setFeature("total_doors_processed_count", len(sub_surfaces_to_change))
         reno_detail.setFeature("total_doors_with_r_value_change_count", doors_with_r_value_change)

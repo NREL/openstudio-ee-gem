@@ -7,7 +7,7 @@ import json
 import os
 import subprocess
 import time
-from itertools import product
+from itertools import product, zip_longest
 import re
 import sys
 from pathlib import Path
@@ -1397,9 +1397,11 @@ def generate_parametric_recap(target_path, city_climate_zones=None):
     )
     csv_path = root_path / "parametric_results.csv"
     with open(csv_path, 'w', newline='') as f:
-        writer = csv.DictWriter(f, fieldnames=fieldnames, extrasaction='ignore')
-        writer.writeheader()
-        writer.writerows(all_data)
+        writer = csv.writer(f)
+        original_rows = [fieldnames]
+        original_rows.extend([[row.get(field, "") for field in fieldnames] for row in all_data])
+        transposed_rows = zip_longest(*original_rows, fillvalue="")
+        writer.writerows(transposed_rows)
 
     print("\n" + "=" * 80)
     print(f"COMPLETE: {len(all_data)} scenarios successfully processed.")
@@ -2452,7 +2454,16 @@ def generate_html_report(df, html_report_path, run_name="run"):
             top_side_seal = _arg_value(scenario_name, "door", "door_top_side_seal_option")
             door_lines = []
             if _has_meaningful_value(door_opt):
-                door_lines.append(_applied_action("Door replacement", _friendly_option(door_opt)))
+                total_doors = _as_float(source_row.get("total_doors_processed_count"))
+                changed_doors = _as_float(source_row.get("total_doors_with_r_value_change_count"))
+                friendly_opt = _friendly_option(door_opt)
+                if changed_doors is not None and changed_doors == 0:
+                    door_lines.append(_applied_action("Door replacement", f"{friendly_opt} (skipped due to door type incompatibility)"))
+                elif changed_doors is not None and total_doors is not None and changed_doors < total_doors:
+                    skipped = int(total_doors - changed_doors)
+                    door_lines.append(_applied_action("Door replacement", f"{friendly_opt} ({skipped} of {int(total_doors)} door(s) skipped: door type incompatibility)"))
+                else:
+                    door_lines.append(_applied_action("Door replacement", friendly_opt))
             if _has_meaningful_value(bottom_seal):
                 door_lines.append(_applied_action("Bottom seal", _friendly_option(bottom_seal)))
             if _has_meaningful_value(top_side_seal):

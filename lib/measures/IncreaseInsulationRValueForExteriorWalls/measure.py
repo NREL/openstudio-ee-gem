@@ -753,6 +753,7 @@ class IncreaseInsulationRValueForExteriorWalls(openstudio.measure.ModelMeasure):
         total_labor_cost = 0.0
         cost_source = "none"
         cost_factor_basis = "not_calculated"
+        rsmeans_cost_per_cf_feature_value = "N/A"
 
         rsmeans_materials = []
         if total_wall_area > 0.0:
@@ -834,6 +835,9 @@ class IncreaseInsulationRValueForExteriorWalls(openstudio.measure.ModelMeasure):
                             total_overhead_profit_cost = float(summary.get("total_overhead_profit_cost", 0.0)) * _lc_mult
                             cost_source = "rsmeans_api"
                             materials_results = rsmeans_lookup.get("results", {}).get("materials", [])
+                            total_added_volume_cf = float(rsmeans_materials[0].get("quantity_volume", 0.0))
+                            if total_added_volume_cf > 0.0:
+                                rsmeans_cost_per_cf_feature_value = float(summary.get("total_material_cost", 0.0)) / total_added_volume_cf
                             mode_values = {
                                 str(mat.get("costing_mode", "")).strip().lower()
                                 for mat in materials_results
@@ -1033,6 +1037,7 @@ class IncreaseInsulationRValueForExteriorWalls(openstudio.measure.ModelMeasure):
         factors.setFeature("wall_insulation_cost_factor_basis", cost_factor_basis)
         factors.setFeature("wall_insulation_custom_labor_cost_multiplier", labor_cost_multiplier)
         factors.setFeature("wall_insulation_custom_cost_per_cf", custom_cost_per_cf)
+        factors.setFeature("wall_insulation_material_rsmenas_cost_per_cf", rsmeans_cost_per_cf_feature_value)
         if material_gwp.get("gwp_per_kg", 0.0) > 0.0:
             factors.setFeature("wall_insulation_material_gwp_per_kg", material_gwp.get("gwp_per_kg", 0.0))
         if material_gwp.get("gwp_per_m2", 0.0) > 0.0:

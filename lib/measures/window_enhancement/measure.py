@@ -1463,7 +1463,6 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
             rsmeans_id_film=rsmeans_id_film,
             rsmeans_id_weatherstrip=rsmeans_id_weatherstrip,
             rsmeans_id_secondary_glazing=rsmeans_id_secondary_glazing,
-            num_windows=total_window_constructions,
         )
 
         # Phase 3: Calculate capital cost using RSMeans or custom fallback inputs.
@@ -1508,6 +1507,11 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
         total_cost_with_overhead_profit = cost_metrics["total_cost_with_overhead_profit"]
         cost_factor_basis = cost_metrics["cost_factor_basis"]
         rsmeans_material_features = cost_metrics["rsmeans_material_features"]
+        rsmeans_glass_cost_per_cf = cost_metrics["rsmeans_glass_cost_per_cf"]
+        rsmeans_frame_cost_per_sf = cost_metrics["rsmeans_frame_cost_per_sf"]
+        rsmeans_caulking_cost_per_cy = cost_metrics["rsmeans_caulking_cost_per_cy"]
+        rsmeans_film_cost_per_sf = cost_metrics["rsmeans_film_cost_per_sf"]
+        rsmeans_weatherstrip_cost_per_lf = cost_metrics["rsmeans_weatherstrip_cost_per_lf"]
 
         self._update_cost_and_rsmeans_feature_maps(
             results_features=results_features,
@@ -1526,6 +1530,11 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
             caulking_cost_per_cy=caulking_cost_per_cy,
             film_cost_per_sf=film_cost_per_sf,
             weatherstrip_cost_per_lf=weatherstrip_cost_per_lf,
+            rsmeans_glass_cost_per_cf=rsmeans_glass_cost_per_cf,
+            rsmeans_frame_cost_per_sf=rsmeans_frame_cost_per_sf,
+            rsmeans_caulking_cost_per_cy=rsmeans_caulking_cost_per_cy,
+            rsmeans_film_cost_per_sf=rsmeans_film_cost_per_sf,
+            rsmeans_weatherstrip_cost_per_lf=rsmeans_weatherstrip_cost_per_lf,
         )
 
         self._update_gwp_and_construction_feature_maps(
@@ -3418,7 +3427,6 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
         rsmeans_id_film,
         rsmeans_id_weatherstrip,
         rsmeans_id_secondary_glazing,
-        num_windows=1,
     ):
         materials = []
 
@@ -3445,14 +3453,12 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
                     f"single-pane thickness {effective_glass_pane_thickness*1000:.1f} mm; "
                     f"gap {effective_gap_thickness*1000:.1f} mm"
                 ),
-                # RSMeans glazing items are priced per EA (per window unit), not per SF.
-                # Use the window count as quantity so total_cost = unit_cost * num_windows.
-                "quantity": float(num_windows),
-                "unit": "EA",
-                # Preserve total glazing area (SF) for fallback-ID bin selection and
-                # for any caller that needs the physical area.
-                "glazing_area_sf": glazing_qty_sf,
-                "costing_mode": "area",
+                "quantity": glazing_qty_sf,
+                "unit": "SF",
+                "quantity_volume": float(glazing_qty_sf * glass_thickness_ft * pane_count),
+                "unit_volume": "CF",
+                "rsmeans_thickness_ft": float(glass_thickness_ft),
+                "costing_mode": "volume_from_area",
                 "quantity_si": total_glazing_area_m2,
                 "unit_si": "m2",
                 "division_code": "08",
@@ -3467,9 +3473,6 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
                 "description": f"{wf_option} frame replacement",
                 "quantity": _m2_to_sf(total_frame_area_m2),
                 "unit": "SF",
-                # num_windows lets _derive_frame_cost_from_window_minus_glass price per EA.
-                "num_windows": float(num_windows),
-                "glazing_area_sf": _m2_to_sf(total_frame_area_m2),
                 "quantity_si": total_frame_area_m2,
                 "unit_si": "m2",
                 "division_code": "08",
@@ -3590,6 +3593,11 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
         rsmeans_summary = {}
         rsmeans_totals_provided = False
         rsmeans_material_features = {}
+        rsmeans_glass_cost_per_cf = "N/A"
+        rsmeans_frame_cost_per_sf = "N/A"
+        rsmeans_caulking_cost_per_cy = "N/A"
+        rsmeans_film_cost_per_sf = "N/A"
+        rsmeans_weatherstrip_cost_per_lf = "N/A"
 
         if calculate_costs and materials:
             if use_custom_costs:
@@ -3726,6 +3734,48 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
                             f"Lifecycle material cost=${total_material_cost:,.2f}"
                         )
 
+                    if materials_results:
+                        _glass_cost_total = 0.0
+                        _frame_cost_total = 0.0
+                        _caulking_cost_total = 0.0
+                        _film_cost_total = 0.0
+                        _weatherstrip_cost_total = 0.0
+
+                        for _m in materials_results:
+                            _mn = str(_m.get("name", "")).strip().lower()
+                            _mc = float(_m.get("total_cost", 0.0) or 0.0)
+                            if _mn == "glazing film":
+                                _film_cost_total += _mc
+                            elif _mn in ["window glazing", "glazing", "secondary glazing"]:
+                                _glass_cost_total += _mc
+                            elif _mn == "window frame":
+                                _frame_cost_total += _mc
+                            elif _mn in ["sealant", "caulking"]:
+                                _caulking_cost_total += _mc
+                            elif _mn == "weatherstrip":
+                                _weatherstrip_cost_total += _mc
+
+                        _glass_volume_cf = (
+                            (float(total_glazing_area_m2) + float(total_secondary_glazing_area_m2))
+                            * float(effective_glass_pane_thickness)
+                            * 35.3146667
+                        )
+                        _frame_area_sf = float(total_frame_area_m2) * 10.7639
+                        _caulking_volume_cy = float(total_caulking_volume_m3) * 1.30795
+                        _film_area_sf = float(total_film_area_m2) * 10.7639
+                        _weatherstrip_length_lf = float(total_weatherstrip_length_m) * 3.28084
+
+                        if _glass_volume_cf > 0.0 and _glass_cost_total > 0.0:
+                            rsmeans_glass_cost_per_cf = _glass_cost_total / _glass_volume_cf
+                        if _frame_area_sf > 0.0 and _frame_cost_total > 0.0:
+                            rsmeans_frame_cost_per_sf = _frame_cost_total / _frame_area_sf
+                        if _caulking_volume_cy > 0.0 and _caulking_cost_total > 0.0:
+                            rsmeans_caulking_cost_per_cy = _caulking_cost_total / _caulking_volume_cy
+                        if _film_area_sf > 0.0 and _film_cost_total > 0.0:
+                            rsmeans_film_cost_per_sf = _film_cost_total / _film_area_sf
+                        if _weatherstrip_length_lf > 0.0 and _weatherstrip_cost_total > 0.0:
+                            rsmeans_weatherstrip_cost_per_lf = _weatherstrip_cost_total / _weatherstrip_length_lf
+
                     self.apply_rsmeans_glazing_updates_to_model(
                         runner,
                         subsurface_dict,
@@ -3783,6 +3833,11 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
             "total_cost_with_overhead_profit": total_cost_with_overhead_profit,
             "cost_factor_basis": cost_factor_basis,
             "rsmeans_material_features": rsmeans_material_features,
+            "rsmeans_glass_cost_per_cf": rsmeans_glass_cost_per_cf,
+            "rsmeans_frame_cost_per_sf": rsmeans_frame_cost_per_sf,
+            "rsmeans_caulking_cost_per_cy": rsmeans_caulking_cost_per_cy,
+            "rsmeans_film_cost_per_sf": rsmeans_film_cost_per_sf,
+            "rsmeans_weatherstrip_cost_per_lf": rsmeans_weatherstrip_cost_per_lf,
         }
 
     def _update_cost_and_rsmeans_feature_maps(
@@ -3803,6 +3858,11 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
         caulking_cost_per_cy,
         film_cost_per_sf,
         weatherstrip_cost_per_lf,
+        rsmeans_glass_cost_per_cf,
+        rsmeans_frame_cost_per_sf,
+        rsmeans_caulking_cost_per_cy,
+        rsmeans_film_cost_per_sf,
+        rsmeans_weatherstrip_cost_per_lf,
     ):
         results_features.update({
             "window_enhancement_material_cost_$": total_material_cost,
@@ -3821,6 +3881,11 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
             "window_custom_caulking_cost_per_cy": caulking_cost_per_cy,
             "window_custom_film_cost_per_sf": film_cost_per_sf,
             "window_custom_weatherstrip_cost_per_lf": weatherstrip_cost_per_lf,
+            "window_enhancement_glass_cost_per_cf": rsmeans_glass_cost_per_cf,
+            "window_enhancement_frame_cost_per_sf": rsmeans_frame_cost_per_sf,
+            "window_enhancement_caulking_cost_per_cy": rsmeans_caulking_cost_per_cy,
+            "window_enhancement_film_cost_per_sf": rsmeans_film_cost_per_sf,
+            "window_enhancement_weatherstrip_cost_per_lf": rsmeans_weatherstrip_cost_per_lf,
         })
         mtrl_prop_features.update(rsmeans_material_features)
 
