@@ -1409,7 +1409,7 @@ def generate_parametric_recap(target_path, city_climate_zones=None):
     print("=" * 80)
 
 # --- GLOBAL SETTINGS ---
-RUN_NAME = "run_test_007"
+RUN_NAME = "run_test_008"
 def detect_openstudio_cli_path():
     candidates = [os.environ.get("OPENSTUDIO_PATH"), shutil.which("openstudio")]
 
@@ -1543,7 +1543,7 @@ CUSTOM_COMBOS = [
         "window_num_panes": 1,
         "window_infiltration_reduction_percent": 20.0,
         "weatherstrip_option": "silicone adhesive smoke gasket",
-        "wf_option": "wood-aluminium window frame",
+        "wf_option": "none",
         "film_option": "safety film",
         "caulking_option": "none",
     },
@@ -1560,7 +1560,7 @@ CUSTOM_COMBOS = [
         "window_num_panes": 2,
         "window_infiltration_reduction_percent": 25.0,
         "weatherstrip_option": "silicone adhesive smoke gasket",
-        "wf_option": "wood window frame",
+        "wf_option": "none",
         "film_option": "anti-graffiti film",
         "caulking_option": "polyurethane",
     },
@@ -1577,7 +1577,7 @@ CUSTOM_COMBOS = [
         "window_num_panes": 3,
         "window_enhancement_infiltration_reduction_percent": 30.0,
         "weatherstrip_option": "silicone adhesive smoke gasket",
-        "wf_option": "wood window frame",
+        "wf_option": "none",
         "film_option": "low-e film",
         "caulking_option": "acrylic",
     },
