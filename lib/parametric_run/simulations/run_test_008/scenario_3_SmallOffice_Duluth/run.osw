@@ -1,0 +1,13 @@
+{
+  "weather_file": "C:\\All_repos\\openstudio-ee-gem\\lib\\parametric_run\\weather\\Duluth\\USA_MN_Duluth.Intl.AP-Duluth.ANGB.727450_TMYx.epw",
+  "seed_file": "C:\\All_repos\\openstudio-ee-gem\\lib\\parametric_run\\simulations\\run_test_008\\scenario_3_SmallOffice_Duluth\\model_to_run.osm",
+  "file_paths": [
+    "C:\\All_repos\\openstudio-ee-gem\\lib\\parametric_run\\weather",
+    "C:\\All_repos\\openstudio-ee-gem\\lib\\parametric_run\\weather\\Duluth"
+  ],
+  "measure_paths": [
+    "C:\\All_repos\\openstudio-ee-gem\\lib\\measures"
+  ],
+  "steps": [],
+  "name": "scenario_3_SmallOffice_Duluth"
+}
