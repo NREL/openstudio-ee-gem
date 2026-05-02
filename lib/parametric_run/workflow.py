@@ -1720,7 +1720,14 @@ if csv_path is None:
         raise SystemExit(0)
     raise FileNotFoundError(f"Could not find CSV in: {csv_candidates}")
 
-df = pd.read_csv(csv_path)
+df = pd.read_csv(csv_path, header=None, dtype=str)
+# parametric_results.csv is written in transposed form (fields as rows, scenarios as columns).
+# Restore the conventional orientation: scenarios as rows, fields as columns.
+if not df.empty and str(df.iloc[0, 0]).strip().lower() == "scenario":
+    df = df.T
+    df.columns = df.iloc[0]
+    df = df.iloc[1:].reset_index(drop=True)
+    df.columns.name = None
 baseline_first_mask = df["scenario"].astype(str).str.contains("baseline", case=False, na=False)
 df = pd.concat([df[baseline_first_mask], df[~baseline_first_mask]], ignore_index=True)
 scenario_values = df["scenario"].astype(str).tolist()

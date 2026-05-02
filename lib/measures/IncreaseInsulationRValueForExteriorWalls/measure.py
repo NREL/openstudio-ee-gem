@@ -1037,7 +1037,7 @@ class IncreaseInsulationRValueForExteriorWalls(openstudio.measure.ModelMeasure):
         factors.setFeature("wall_insulation_cost_factor_basis", cost_factor_basis)
         factors.setFeature("wall_insulation_custom_labor_cost_multiplier", labor_cost_multiplier)
         factors.setFeature("wall_insulation_custom_cost_per_cf", custom_cost_per_cf)
-        factors.setFeature("wall_insulation_material_rsmenas_cost_per_cf", rsmeans_cost_per_cf_feature_value)
+        factors.setFeature("wall_insulation_material_rsmeans_cost_per_cf", rsmeans_cost_per_cf_feature_value)
         if material_gwp.get("gwp_per_kg", 0.0) > 0.0:
             factors.setFeature("wall_insulation_material_gwp_per_kg", material_gwp.get("gwp_per_kg", 0.0))
         if material_gwp.get("gwp_per_m2", 0.0) > 0.0:

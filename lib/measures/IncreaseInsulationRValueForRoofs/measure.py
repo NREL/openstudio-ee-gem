@@ -1352,22 +1352,13 @@ class IncreaseInsulationRValueForRoofs(openstudio.measure.ModelMeasure):
                                             f"'{auto_desc}' "
                                             f"(ID: {auto_id}). "
                                             f"All tied candidates: "
-                                            f"{tied_descs}."
+                                            f"{tied_descs}. "
+                                            f"To pin a specific entry, rerun with "
+                                            f"`use_exact_costline_id=True` and "
+                                            f"`exact_costline_id` set to the desired ID, "
+                                            f"or set `use_custom_costs=True` with "
+                                            f"`custom_cost_per_cf`."
                                         )
-                                    runner.registerError(
-                                        "RSMeans auto-selection is ambiguous: "
-                                        "multiple candidates share the same "
-                                        "score for the requested insulation "
-                                        "material. Review the warnings above "
-                                        "and rerun with "
-                                        "`use_exact_costline_id=True` and "
-                                        "`exact_costline_id` set to the ID "
-                                        "shown for the desired entry. "
-                                        "Alternatively, set "
-                                        "`use_custom_costs=True` and provide "
-                                        "a `custom_cost_per_cf` value."
-                                    )
-                                    return False
 
                             # Persist compact RSMeans material detail JSON for downstream inspection.
                             try:
@@ -1492,7 +1483,7 @@ class IncreaseInsulationRValueForRoofs(openstudio.measure.ModelMeasure):
         factors.setFeature("roof_insulation_cost_factor_basis", cost_factor_basis)
         factors.setFeature("roof_insulation_custom_labor_cost_multiplier", labor_cost_multiplier)
         factors.setFeature("roof_insulation_custom_cost_per_cf", custom_cost_per_cf)
-        factors.setFeature("roof_insulation_material_rsmenas_cost_per_cf", rsmeans_cost_per_cf_feature_value)
+        factors.setFeature("roof_insulation_material_rsmeans_cost_per_cf", rsmeans_cost_per_cf_feature_value)
         
 
         # Emission factors aggregated from selected statistic lists

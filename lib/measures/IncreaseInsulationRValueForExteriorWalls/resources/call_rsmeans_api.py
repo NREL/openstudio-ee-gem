@@ -65,6 +65,19 @@ DEFAULT_FEATURE_KEYS = {
 # a hardcoded fallback ID is used instead (see INSULATION_FALLBACK_IDS below).
 MIN_ACCEPTABLE_MATCH_SCORE = 50.0
 
+
+def _id_matches_division(item_id, division_code) -> bool:
+    """Return True if ``item_id`` (RSMeans line number) starts with
+    ``division_code`` prefix. Empty division means no constraint.
+    Defense-in-depth so a wall-insulation lookup never accepts a match
+    from an unrelated MasterFormat division.
+    """
+    if not division_code:
+        return True
+    if not item_id:
+        return False
+    return str(item_id).strip().startswith(str(division_code).strip())
+
 # Hardcoded RSMeans costline IDs used when the text-matching score falls below
 # MIN_ACCEPTABLE_MATCH_SCORE.  These are verified 2024-an catalog IDs.
 INSULATION_FALLBACK_IDS = {
@@ -127,13 +140,33 @@ def _extract_search_items(search_results: Dict[str, Any]) -> List[Dict[str, Any]
 
 
 def _filter_demo_items(items: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    """Reject demolition / removal cost-lines.
+
+    Excludes any item that:
+    - has an ``id`` starting with ``0805`` (MasterFormat Demolition for
+      Openings — relevant when this helper is loaded in place of the door
+      helper due to Python module-name caching across measures), or
+    - whose description mentions demolition / demo / remove (without an
+      "and replace" qualifier).
+
+    Important: returns an empty list if everything was filtered out, so the
+    caller can fall through to other catalogs / fallback IDs instead of
+    silently accepting a demolition match.
+    """
     filtered = []
     for item in items:
+        item_id = str(item.get("id", "")).strip()
+        if item_id.startswith("0805"):
+            continue
         description = str(item.get("description", "")).lower()
-        if "demolition" in description or "demo" in description:
+        if "demolition" in description:
+            continue
+        if re.search(r"\bremove\b", description) and "replace" not in description:
+            continue
+        if re.search(r"\bdemo\b", description):
             continue
         filtered.append(item)
-    return filtered or items
+    return filtered
 
 
 # _normalize_search_text / _tokenize_search_text: pre-process strings before
@@ -1314,6 +1347,15 @@ def search_materials_across_catalogs(
         best_costing_mode = "area"
         
         # If a specific RSMeans line item ID is provided, attempt exact match first
+        if specified_id and division_code and not _id_matches_division(specified_id, division_code):
+            search_log.append({
+                "material": material_name,
+                "search_term": specified_id,
+                "status": "explicit_id_division_mismatch_rejected",
+                "requested_division": division_code,
+            })
+            specified_id = None
+
         if specified_id:
             for catalog in catalogs:
                 try:
@@ -1425,6 +1467,18 @@ def search_materials_across_catalogs(
                         if cost_line and "items" in cost_line:
                             for item in cost_line["items"]:
                                 if item.get("id") == division_id:
+                                    if division_code and not _id_matches_division(division_id, division_code):
+                                        search_log.append({
+                                            "material": material_name,
+                                            "search_term": alt_term,
+                                            "catalog": catalog,
+                                            "division": alt_division,
+                                            "status": "division_mismatch_rejected",
+                                            "requested_division": division_code,
+                                            "rsmeans_id": division_id,
+                                            "rsmeans_description": item.get("description", ""),
+                                        })
+                                        break
                                     unit_cost = item.get("localizedCosts", {}).get("totalOpCost", 0.0)
                                     
                                     if unit_cost > 0:

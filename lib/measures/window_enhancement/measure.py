@@ -1508,6 +1508,7 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
         cost_factor_basis = cost_metrics["cost_factor_basis"]
         rsmeans_material_features = cost_metrics["rsmeans_material_features"]
         rsmeans_glass_cost_per_cf = cost_metrics["rsmeans_glass_cost_per_cf"]
+        rsmeans_glass_cost_per_sf = cost_metrics.get("rsmeans_glass_cost_per_sf", "N/A")
         rsmeans_frame_cost_per_sf = cost_metrics["rsmeans_frame_cost_per_sf"]
         rsmeans_caulking_cost_per_cy = cost_metrics["rsmeans_caulking_cost_per_cy"]
         rsmeans_film_cost_per_sf = cost_metrics["rsmeans_film_cost_per_sf"]
@@ -1531,6 +1532,7 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
             film_cost_per_sf=film_cost_per_sf,
             weatherstrip_cost_per_lf=weatherstrip_cost_per_lf,
             rsmeans_glass_cost_per_cf=rsmeans_glass_cost_per_cf,
+            rsmeans_glass_cost_per_sf=rsmeans_glass_cost_per_sf,
             rsmeans_frame_cost_per_sf=rsmeans_frame_cost_per_sf,
             rsmeans_caulking_cost_per_cy=rsmeans_caulking_cost_per_cy,
             rsmeans_film_cost_per_sf=rsmeans_film_cost_per_sf,
@@ -1807,7 +1809,15 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
         Returns (number_of_panes, True) if successful, or (0, False) if error.
         """
         num_panes = 0
-        
+
+        # If glass replacement is disabled (e.g. user selected 'none' or this
+        # subsurface is SimpleGlazing and glass replacement was demoted), then
+        # no panes are installed -- regardless of any non-zero user_num_panes.
+        # This prevents glass cost/embodied carbon from being billed for a
+        # window where glass was never actually replaced.
+        if glass_option == "none":
+            return 0, True
+
         if user_num_panes > 0 and user_num_panes <= 3:
             num_panes = user_num_panes
             runner.registerInfo(f"  ℹ Number of panes: {num_panes} (user-specified, applied to all windows)")
@@ -3503,7 +3513,7 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
                 "unit": "CY",
                 "quantity_si": total_caulking_volume_m3,
                 "unit_si": "m3",
-                "division_code": "07",
+                "division_code": "0792",  # Joint Sealants (MasterFormat); avoid stray matches in 0701 concrete maintenance
             }
             if use_specific_rsmeans_line_item_ids and rsmeans_id_caulking:
                 caulking_material["rsmeans_id"] = rsmeans_id_caulking
@@ -3594,6 +3604,7 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
         rsmeans_totals_provided = False
         rsmeans_material_features = {}
         rsmeans_glass_cost_per_cf = "N/A"
+        rsmeans_glass_cost_per_sf = "N/A"
         rsmeans_frame_cost_per_sf = "N/A"
         rsmeans_caulking_cost_per_cy = "N/A"
         rsmeans_film_cost_per_sf = "N/A"
@@ -3767,6 +3778,17 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
 
                         if _glass_volume_cf > 0.0 and _glass_cost_total > 0.0:
                             rsmeans_glass_cost_per_cf = _glass_cost_total / _glass_volume_cf
+                        # Companion $/SF metric: RSMeans glass cost-lines are
+                        # priced per square foot of glazing area, so reporting
+                        # per-CF (which divides by pane thickness in feet,
+                        # ~0.02 ft) inflates the number by ~50x. Provide an
+                        # intuitive $/SF figure alongside.
+                        _glass_area_sf_total = (
+                            (float(total_glazing_area_m2) + float(total_secondary_glazing_area_m2))
+                            * 10.7639
+                        )
+                        if _glass_area_sf_total > 0.0 and _glass_cost_total > 0.0:
+                            rsmeans_glass_cost_per_sf = _glass_cost_total / _glass_area_sf_total
                         if _frame_area_sf > 0.0 and _frame_cost_total > 0.0:
                             rsmeans_frame_cost_per_sf = _frame_cost_total / _frame_area_sf
                         if _caulking_volume_cy > 0.0 and _caulking_cost_total > 0.0:
@@ -3834,6 +3856,7 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
             "cost_factor_basis": cost_factor_basis,
             "rsmeans_material_features": rsmeans_material_features,
             "rsmeans_glass_cost_per_cf": rsmeans_glass_cost_per_cf,
+            "rsmeans_glass_cost_per_sf": rsmeans_glass_cost_per_sf,
             "rsmeans_frame_cost_per_sf": rsmeans_frame_cost_per_sf,
             "rsmeans_caulking_cost_per_cy": rsmeans_caulking_cost_per_cy,
             "rsmeans_film_cost_per_sf": rsmeans_film_cost_per_sf,
@@ -3859,6 +3882,7 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
         film_cost_per_sf,
         weatherstrip_cost_per_lf,
         rsmeans_glass_cost_per_cf,
+        rsmeans_glass_cost_per_sf,
         rsmeans_frame_cost_per_sf,
         rsmeans_caulking_cost_per_cy,
         rsmeans_film_cost_per_sf,
@@ -3882,6 +3906,7 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
             "window_custom_film_cost_per_sf": film_cost_per_sf,
             "window_custom_weatherstrip_cost_per_lf": weatherstrip_cost_per_lf,
             "window_enhancement_glass_cost_per_cf": rsmeans_glass_cost_per_cf,
+            "window_enhancement_glass_cost_per_sf": rsmeans_glass_cost_per_sf,
             "window_enhancement_frame_cost_per_sf": rsmeans_frame_cost_per_sf,
             "window_enhancement_caulking_cost_per_cy": rsmeans_caulking_cost_per_cy,
             "window_enhancement_film_cost_per_sf": rsmeans_film_cost_per_sf,

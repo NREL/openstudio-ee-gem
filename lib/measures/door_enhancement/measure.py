@@ -1173,9 +1173,9 @@ class DoorEnhancement(openstudio.measure.ModelMeasure):
         def _parse_rsmeans_opening_area_m2(text: str):
             desc = str(text or "")
 
-            # Pattern: 3'-0" x 7'-0" opening
+            # Pattern A: 3'-0" x 7'-0"  or  3' x 7'  (inch marks optional)
             ft_in_match = re.search(
-                r"(\d+)\s*'\s*-?\s*(\d+(?:\.\d+)?)?\s*\"\s*[xX]\s*(\d+)\s*'\s*-?\s*(\d+(?:\.\d+)?)?\s*\"",
+                r"(\d+(?:\.\d+)?)\s*'\s*(?:-?\s*(\d+(?:\.\d+)?)\s*\")?\s*[xX]\s*(\d+(?:\.\d+)?)\s*'\s*(?:-?\s*(\d+(?:\.\d+)?)\s*\")?",
                 desc,
             )
             if ft_in_match:
@@ -1338,7 +1338,7 @@ class DoorEnhancement(openstudio.measure.ModelMeasure):
                         "description": f"Bottom seal material ({door_bottom_seal_option})",
                         "quantity": float(total_sealing_bottom_length_m * 3.28084),
                         "unit": "LF",
-                        "division_code": "08",
+                        "division_code": "0871",  # Door Hardware (incl. weatherstripping); avoid stray door/glass matches
                     }
                 )
 
@@ -1349,7 +1349,7 @@ class DoorEnhancement(openstudio.measure.ModelMeasure):
                         "description": f"Top/side seal material ({door_top_side_seal_option})",
                         "quantity": float(total_sealing_side_length_m * 3.28084),
                         "unit": "LF",
-                        "division_code": "08",
+                        "division_code": "0871",  # Door Hardware (incl. weatherstripping); avoid stray door/glass matches
                     }
                 )
 
@@ -1482,6 +1482,17 @@ class DoorEnhancement(openstudio.measure.ModelMeasure):
                 rsmeans_door_thickness_m = rsmeans_parsed_props.get("thickness")
                 rsmeans_inferred_option = _infer_door_option_from_rsmeans(rsmeans_door_match_description)
 
+                # If we couldn't parse a door opening area from the RSMeans
+                # description, fall back to the user-supplied EPD reference
+                # area so that per-EACH costs still get normalized to per-m2.
+                if (rsmeans_door_area_per_unit_m2 is None or rsmeans_door_area_per_unit_m2 <= 0.0) and door_area_per_unit > 0.0:
+                    rsmeans_door_area_per_unit_m2 = float(door_area_per_unit)
+                    runner.registerWarning(
+                        "Could not parse door opening area from RSMeans description "
+                        f"'{rsmeans_door_match_description}'. Falling back to "
+                        f"door_area_per_unit={door_area_per_unit:.3f} m2 for cost normalization."
+                    )
+
                 # Normalize RSMeans door costs to area-based totals.
                 if rsmeans_lookup and rsmeans_lookup.get("status") == "ok":
                     rsmeans_results_dict = rsmeans_lookup.get("results", {})
@@ -1575,14 +1586,13 @@ class DoorEnhancement(openstudio.measure.ModelMeasure):
                         runner.registerWarning(
                             "RSMeans door opening area differs from model door area by more than 10% "
                             f"(RSMeans={rsmeans_door_area_per_unit_m2:.3f} m2, "
-                            f"model_avg={model_avg_door_area_m2:.3f} m2)."
+                            f"model_avg={model_avg_door_area_m2:.3f} m2). "
+                            f"Costs were normalized to the model area via per-m2 conversion. "
+                            f"GWP per-m2 conversion uses the EPD reference area "
+                            f"`door_area_per_unit`={door_area_per_unit:.3f} m2 "
+                            f"(default 1.95 m2 per door-leaf PCR). "
+                            f"If the EPD basis differs, set `door_area_per_unit` explicitly."
                         )
-                        if abs(door_area_per_unit - 1.95) < 1e-9:
-                            runner.registerError(
-                                "Door area mismatch detected between model geometry and RSMeans match. "
-                                "Please provide an explicit 'door_area_per_unit' argument and re-run the measure."
-                            )
-                            return False
 
                 if (
                     resolved_door_material_props.get('conductivity', 0.0) <= 0.0
