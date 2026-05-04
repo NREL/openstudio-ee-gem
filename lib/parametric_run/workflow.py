@@ -508,6 +508,52 @@ def enforce_weather_url_in_osm(osm_path, epw_path):
         print(f"    Failed to enforce weather URL in {osm_path}: {e}")
         return False
 
+def apply_ddy_design_days_to_model(osm_path, ddy_path, replace_existing=True):
+    """Load DDY and write its DesignDay objects into model_to_run OSM."""
+    if not ddy_path:
+        return False
+    try:
+        osm_path = os.path.abspath(str(osm_path))
+        ddy_path = os.path.abspath(str(ddy_path))
+        if not os.path.exists(ddy_path):
+            print(f"    DDY file not found: {ddy_path}")
+            return False
+
+        translator = openstudio.osversion.VersionTranslator()
+        loaded_model = translator.loadModel(openstudio.toPath(osm_path))
+        if not loaded_model.is_initialized():
+            print(f"    Failed to load model for DDY injection: {osm_path}")
+            return False
+        model = loaded_model.get()
+
+        loaded_idf = openstudio.IdfFile.load(openstudio.toPath(ddy_path))
+        if not loaded_idf.is_initialized():
+            print(f"    Failed to load DDY file: {ddy_path}")
+            return False
+
+        ddy_workspace = openstudio.Workspace(loaded_idf.get())
+        reverse_translator = openstudio.energyplus.ReverseTranslator()
+        ddy_model = reverse_translator.translateWorkspace(ddy_workspace)
+        ddy_design_days = list(ddy_model.getDesignDays())
+        if not ddy_design_days:
+            print(f"    No DesignDay objects found in DDY: {ddy_path}")
+            return False
+
+        if replace_existing:
+            for design_day in list(model.getDesignDays()):
+                design_day.remove()
+
+        for design_day in ddy_design_days:
+            design_day.clone(model)
+
+        model.save(openstudio.toPath(osm_path), True)
+        print(f"    Applied {len(ddy_design_days)} DDY design days to model_to_run")
+        del model
+        return True
+    except Exception as e:
+        print(f"    Failed to apply DDY design days from {ddy_path}: {e}")
+        return False
+
 # --- CORE: SINGLE SCENARIO CREATION/RUN ---
 def create_simulation(
     city,
@@ -529,6 +575,7 @@ def create_simulation(
         return None
 
     epw_path = os.path.abspath(wf["epw"])
+    ddy_path = os.path.abspath(wf["ddy"]) if wf.get("ddy") else None
     scenario_name = generate_scenario_name(scenario_dict)
     scenario_run_dir = os.path.abspath(os.path.join(base_run_dir, scenario_name))
     os.makedirs(scenario_run_dir, exist_ok=True)
@@ -583,6 +630,7 @@ def create_simulation(
         final_model_path = os.path.join(scenario_run_dir, "model_to_run.osm")
         shutil.copy2(proto_model_path, final_model_path)
         enforce_weather_url_in_osm(final_model_path, epw_path)
+        apply_ddy_design_days_to_model(final_model_path, ddy_path)
         # --- Phase 2: run simulation from seeded model ---
         sim_osw = {
             "weather_file": epw_path,
@@ -633,6 +681,7 @@ def create_simulation(
 
         final_model_path = os.path.join(scenario_run_dir, "model_to_run.osm")
         shutil.copy2(proto_model_path, final_model_path)
+        apply_ddy_design_days_to_model(final_model_path, ddy_path)
         # --- Phase 2: apply Python model measures ---
         translator = openstudio.osversion.VersionTranslator()
         loaded_model = translator.loadModel(openstudio.toPath(final_model_path))
@@ -1409,7 +1458,7 @@ def generate_parametric_recap(target_path, city_climate_zones=None):
     print("=" * 80)
 
 # --- GLOBAL SETTINGS ---
-RUN_NAME = "run_test_008"
+RUN_NAME = "run_test_009"
 def detect_openstudio_cli_path():
     candidates = [os.environ.get("OPENSTUDIO_PATH"), shutil.which("openstudio")]
 
@@ -1439,7 +1488,8 @@ city_climate_zones = {
     # "Baltimore":    "ASHRAE 169-2013-4A",
     # "Chicago":      "ASHRAE 169-2013-5A",
     # "Denver":       "ASHRAE 169-2013-5B",
-    "Duluth":       "ASHRAE 169-2013-7A", 
+    "Buffalo":      "ASHRAE 169-2013-5A",
+    # "Duluth":       "ASHRAE 169-2013-7A",
     # "ElPaso":       "ASHRAE 169-2013-3B",
     # "Fairbanks":    "ASHRAE 169-2013-8A",
     # "Helena":       "ASHRAE 169-2013-6B",
@@ -1455,9 +1505,9 @@ city_climate_zones = {
 # --- PARAMETRIC STUDY CONFIGURATION ---
 CITIES = list(city_climate_zones.keys())
 BUILDING_TYPES = [
-    "SmallOffice",
-    # "MediumOffice",
     # "LargeOffice",
+    # "MediumOffice",
+     "SmallOffice",
     # "SmallHotel",
     # "LargeHotel",
     # "Warehouse",
@@ -1467,7 +1517,8 @@ BUILDING_TYPES = [
     # "SecondarySchool",
 ]
 
-TEMPLATE = "90.1-2010"
+#TEMPLATE = "90.1-2004"
+TEMPLATE = "DOE Ref 1980-2004"
 
 # --- CUSTOM COMBINATION SCENARIOS ---
 # Supported optional keys in each combo:
@@ -1478,92 +1529,40 @@ TEMPLATE = "90.1-2010"
 # - roof_insulation_material_type, roof_insulation_material_lifetime
 
 CUSTOM_COMBOS = [
-    # Scenario 1: Wall + Roof
+    # Scenario 7: All 4 measures  Wall + Door + Roof + Window
     # {
     #     "wall_r_value":    10,
-    #     "wall_insulation_material_type": "Fiberglass Batts",
-    #     "roof_r_value":    20,
-    #     "roof_insulation_material_type": "Blown Fiberglass",
-    #     "window_num_panes": None,
-    #     "door_option":     None,
+    #     "wall_insulation_material_type": "Extruded Polystyrene (XPS) Foam Board",
+    #     "roof_r_value":    15,
+    #     "roof_insulation_material_type": "Blown Mineral Wool",
+    #     "door_option":     "glass door",
+    #     "door_infiltration_reduction_percent": 20.0,
+    #     "door_bottom_seal_option": "none",
+    #     "door_top_side_seal_option": "none",
+    #     "window_num_panes": 1,
+    #     "window_infiltration_reduction_percent": 20.0,
+    #     "weatherstrip_option": "silicone adhesive smoke gasket",
+    #     "wf_option": "none",
+    #     "film_option": "safety film",
+    #     "caulking_option": "none",
     # },
-    # # Scenario 2: Wall + Roof
-    # {
-    #     "wall_r_value":    13,
-    #     "wall_insulation_material_type": "Fiberglass Batts",
-    #     "roof_r_value":    24.4,
-    #     "roof_insulation_material_type": "Blown Fiberglass",
-    #     "window_num_panes": None,
-    #     "door_option":     None,
-    # },
-    # # Scenario 3: Wall + Roof
-    # {
-    #     "wall_r_value":    13,
-    #     "wall_insulation_material_type": "Expanded Polystyrene (EPS) Foam Board",
-    #     "roof_r_value":    24.4,
-    #     "roof_insulation_material_type": "Extruded Polystyrene (XPS) Foam Board",
-    #     "window_num_panes": None,
-    #     "door_option":     None,
-    # },
-    # # Scenario 4: Wall + Roof
-    # {
-    #     "wall_r_value":    20,
-    #     "wall_insulation_material_type": "Fiberglass Batts",
-    #     "roof_r_value":    30,
-    #     "roof_insulation_material_type": "Blown Fiberglass",
-    #     "window_num_panes": None,
-    #     "door_option":     None,
-    # },
-    # # Scenario 5: Wall only, EPS foam board
+    # # Scenario 8: All 4 measures  Wall + Door + Roof + Window
     # {
     #     "wall_r_value":    30,
     #     "wall_insulation_material_type": "Expanded Polystyrene (EPS) Foam Board",
-    #     "roof_r_value":    None,
-    #     "window_num_panes": None,
-    #     "door_option":     None,
+    #     "roof_r_value":    25,
+    #     "roof_insulation_material_type": "Polyiso Insulation Foam Board",
+    #     "door_option":     "polystyrene core steel door",
+    #     "door_infiltration_reduction_percent": 25.0,
+    #     "door_bottom_seal_option": "brush weatherstrip",
+    #     "door_top_side_seal_option": "silicone adhesive smoke gasket",
+    #     "window_num_panes": 2,
+    #     "window_infiltration_reduction_percent": 25.0,
+    #     "weatherstrip_option": "silicone adhesive smoke gasket",
+    #     "wf_option": "none",
+    #     "film_option": "anti-graffiti film",
+    #     "caulking_option": "polyurethane",
     # },
-    # # Scenario 6: Roof only
-    # {
-    #     "wall_r_value":    None,
-    #     "roof_r_value":    30,
-    #     "roof_insulation_material_type": "Blown Fiberglass",
-    #     "window_num_panes": None,
-    #     "door_option":     None,
-    # },
-    # Scenario 7: All 4 measures  Wall + Door + Roof + Window
-    {
-        "wall_r_value":    10,
-        "wall_insulation_material_type": "Extruded Polystyrene (XPS) Foam Board",
-        "roof_r_value":    15,
-        "roof_insulation_material_type": "Blown Mineral Wool",
-        "door_option":     "glass door",
-        "door_infiltration_reduction_percent": 20.0,
-        "door_bottom_seal_option": "none",
-        "door_top_side_seal_option": "none",
-        "window_num_panes": 1,
-        "window_infiltration_reduction_percent": 20.0,
-        "weatherstrip_option": "silicone adhesive smoke gasket",
-        "wf_option": "none",
-        "film_option": "safety film",
-        "caulking_option": "none",
-    },
-    # Scenario 8: All 4 measures  Wall + Door + Roof + Window
-    {
-        "wall_r_value":    30,
-        "wall_insulation_material_type": "Expanded Polystyrene (EPS) Foam Board",
-        "roof_r_value":    25,
-        "roof_insulation_material_type": "Polyiso Insulation Foam Board",
-        "door_option":     "polystyrene core steel door",
-        "door_infiltration_reduction_percent": 25.0,
-        "door_bottom_seal_option": "brush weatherstrip",
-        "door_top_side_seal_option": "silicone adhesive smoke gasket",
-        "window_num_panes": 2,
-        "window_infiltration_reduction_percent": 25.0,
-        "weatherstrip_option": "silicone adhesive smoke gasket",
-        "wf_option": "none",
-        "film_option": "anti-graffiti film",
-        "caulking_option": "polyurethane",
-    },
     #Scenario 9: All 4 measures  Wall + Door + Roof + Window
     {
         "wall_r_value":    20.4,
