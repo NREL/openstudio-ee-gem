@@ -3275,7 +3275,14 @@ csv_path = next((p for p in csv_candidates if p.exists()), None)
 if csv_path is None:
     raise FileNotFoundError(f"Could not find CSV in: {csv_candidates}")
 
-df_report = pd.read_csv(csv_path)
+df_report = pd.read_csv(csv_path, header=None, dtype=str)
+# parametric_results.csv is written in transposed form (fields as rows, scenarios as columns).
+# Restore the conventional orientation: scenarios as rows, fields as columns.
+if not df_report.empty and str(df_report.iloc[0, 0]).strip().lower() == "scenario":
+    df_report = df_report.T
+    df_report.columns = df_report.iloc[0]
+    df_report = df_report.iloc[1:].reset_index(drop=True)
+    df_report.columns.name = None
 html_output_path = base_dir / "SCOPE_retrofit_measure_analysis_report.html"
 out = generate_html_report(df_report, html_output_path, run_name=RUN_NAME)
 legacy_main_html = base_dir / 'parametric_report.html'
