@@ -1,5 +1,27 @@
 #!/usr/bin/env python3
 # Auto-generated from workflow.ipynb
+"""Parametric retrofit study driver for the openstudio-ee-gem measures.
+
+End-to-end pipeline (executed when this file is run as a script):
+  1. Detect the OpenStudio CLI + 3.11.0 Python bindings (Python 3.12 required).
+  2. Build a list of retrofit scenarios for each (city, building_type) pair,
+     drawing from CUSTOM_COMBOS or the JSON override env var.
+  3. For each scenario, write an OSW that creates a DOE prototype building,
+     applies up to four envelope measures (wall insulation, roof insulation,
+     window enhancement, door enhancement), and runs EnergyPlus.
+  4. Postprocess: open every result OSM and pull retrofit/cost/embodied-carbon
+     properties from the model's AdditionalProperties into parametric_results.csv.
+  5. Render an interactive HTML report (and PDF via Edge) summarising scenarios.
+
+Environment variables (used by lib/parametric_run/run_all_tests.py to drive
+multiple sequential runs without editing this file):
+  - WORKFLOW_RUN_NAME           Override the output folder name (RUN_NAME).
+  - WORKFLOW_OVERWRITE_EXISTING Force re-simulation even if eplusout.sql exists.
+  - WORKFLOW_CUSTOM_COMBOS_JSON JSON list of combo dicts replacing CUSTOM_COMBOS.
+  - OPENSTUDIO_PATH             Path to the openstudio CLI executable.
+  - OPENSTUDIO_PYTHON_PATH      Path to the OpenStudio Python bindings folder.
+  - EC3_API_TOKEN               Read from config.ini if not in env.
+"""
 
 # Standard library
 
@@ -18,7 +40,10 @@ urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 import csv
 import sqlite3
 
-# OpenStudio 3.11.0 Python bindings are built for Python 3.12.
+# --- ENVIRONMENT / PYTHON 3.12 + OPENSTUDIO 3.11.0 BINDINGS DETECTION ---
+# OpenStudio 3.11.0 Python bindings are built for Python 3.12, so the helpers
+# below locate (or re-launch under) a compatible interpreter and add the
+# OpenStudio Python folder to sys.path before `import openstudio`.
 def _resolve_existing_path(candidates):
     for candidate in candidates:
         if not candidate:
@@ -119,6 +144,12 @@ _ensure_openstudio_python_compatibility()
 
 # Add OpenStudio 3.11.0 Python bindings to path BEFORE importing
 def detect_openstudio_python_path():
+    """Locate the OpenStudio 3.11.0 Python bindings folder.
+
+    Order of preference: OPENSTUDIO_PYTHON_PATH env var, then the Python/
+    sibling folder of the detected OpenStudio CLI install. Returns None if
+    nothing is found (caller falls back to a system-installed `openstudio`).
+    """
     env_path = os.environ.get("OPENSTUDIO_PYTHON_PATH")
     candidates = []
     if env_path:
@@ -389,12 +420,52 @@ def load_measure_module_from_folder(measure_folder, module_tag):
     spec.loader.exec_module(measure_module)
     return measure_module
 
+def _isolate_measure_resources_imports(measure_folder_str):
+    """Prepare sys.path / sys.modules so each measure imports its OWN
+    resources/* modules instead of reusing a sibling measure's cached copy.
+
+    Each measure does ``from resources.call_rsmeans_api import ...`` (and
+    similar for ``resources.EC3_lookup``).  Python caches these under the
+    bare names ``resources.call_rsmeans_api`` etc. in ``sys.modules``, so the
+    first measure to load wins and every later measure silently reuses the
+    earlier copy.  Because each measure has its OWN ``resources/`` folder
+    with measure-specific fallback ID dicts and helpers, this shadowing
+    causes wrong RSMeans/EC3 lookups (e.g. door measure receiving wall
+    measure's fallback dict).
+
+    Returns a callable that restores the previous sys.path / sys.modules
+    state when invoked.
+    """
+    saved_sys_path = list(sys.path)
+    saved_modules = {
+        name: mod for name, mod in sys.modules.items()
+        if name == "resources" or name.startswith("resources.")
+    }
+    # Drop any cached resources.* so the next import resolves to this
+    # measure's folder.
+    for name in list(sys.modules):
+        if name == "resources" or name.startswith("resources."):
+            del sys.modules[name]
+    if measure_folder_str not in sys.path:
+        sys.path.insert(0, measure_folder_str)
+
+    def _restore():
+        sys.path[:] = saved_sys_path
+        for name in list(sys.modules):
+            if name == "resources" or name.startswith("resources."):
+                del sys.modules[name]
+        sys.modules.update(saved_modules)
+
+    return _restore
+
+
 def apply_python_measure(model, measure_folder, measure_class_name, arguments_dict):
     """
     Apply a Python OpenStudio ModelMeasure directly to a model in-process.
     Returns True if successful, False otherwise.
     """
     measure_folder_str = str(measure_folder)
+    restore_imports = _isolate_measure_resources_imports(measure_folder_str)
     try:
         measure_module = load_measure_module_from_folder(measure_folder_str, measure_class_name)
         measure_class = getattr(measure_module, measure_class_name)
@@ -421,6 +492,8 @@ def apply_python_measure(model, measure_folder, measure_class_name, arguments_di
         import traceback
         traceback.print_exc()
         return False
+    finally:
+        restore_imports()
 
 def apply_reporting_measure(model_path, sql_file_path, measure_dir_path, label):
     """
@@ -431,6 +504,7 @@ def apply_reporting_measure(model_path, sql_file_path, measure_dir_path, label):
     """
     measure_folder = os.path.join(measure_dir_path, "OperatingCostCarbonReportingMeasure")
     measure_folder_str = str(measure_folder)
+    restore_imports = _isolate_measure_resources_imports(measure_folder_str)
     try:
         # Load model
         translator = openstudio.osversion.VersionTranslator()
@@ -472,6 +546,8 @@ def apply_reporting_measure(model_path, sql_file_path, measure_dir_path, label):
         import traceback
         traceback.print_exc()
         return False
+    finally:
+        restore_imports()
 
 def enforce_weather_url_in_osm(osm_path, epw_path):
     """Force OS:WeatherFile URL in an OSM to the selected EPW path."""
@@ -567,6 +643,21 @@ def create_simulation(
     climate_zone="ASHRAE 169-2013-5A",
     openstudio_path="openstudio",
 ):
+    """Build, apply measures to, and simulate one scenario via OpenStudio CLI.
+
+    Stages performed for each scenario_dict:
+      1. Resolve EPW/DDY for `city` and create the per-scenario run folder.
+      2. Skip-if-already-done (unless overwrite_existing=True).
+      3. Step 1 OSW -> create_DOE_prototype_building (writes in.osm).
+      4. Apply Python measures in-process for any non-baseline scenario:
+         IncreaseInsulationRValueForExteriorWalls / ...ForRoofs /
+         window_enhancement / door_enhancement; save in_modified.osm.
+      5. Step 2 OSW -> run EnergyPlus (and the ReportRetrofitImpacts
+         reporting measure) on the modified model.
+
+    Returns the scenario_name on success, or None on any failure (a
+    scenario_failure.log is written into the scenario run folder).
+    """
     # --- Weather ---
     wf = get_city_weather_files(city, base_weather_path)
     if wf is None or wf["epw"] is None:
@@ -1128,6 +1219,7 @@ def extract_scenario_data(osm_path, scenario_name):
         "wall_insulation_total_cost_with_overhead_and_profit_$": "wall_insulation_total_cost_with_overhead_and_profit_usd",
         "roof_insulation_material_cost_$": "roof_insulation_material_cost_usd",
         "roof_insulation_labor_cost_$": "roof_insulation_labor_cost_usd",
+        "roof_insulation_equipment_cost_$": "roof_insulation_equipment_cost_usd",
         "roof_insulation_overhead_profit_cost_$": "roof_insulation_overhead_profit_cost_usd",
         "roof_insulation_total_cost_with_overhead_and_profit_$": "roof_insulation_total_cost_with_overhead_and_profit_usd",
         "window_enhancement_material_cost_$": "window_enhancement_material_cost_usd",
@@ -1228,6 +1320,7 @@ def extract_scenario_data(osm_path, scenario_name):
         roof_total = (
             float(results.get("roof_insulation_material_cost_usd", 0.0) or 0.0)
             + float(results.get("roof_insulation_labor_cost_usd", 0.0) or 0.0)
+            + float(results.get("roof_insulation_equipment_cost_usd", 0.0) or 0.0)
             + float(results.get("roof_insulation_overhead_profit_cost_usd", 0.0) or 0.0)
         )
 
@@ -1423,6 +1516,7 @@ def generate_parametric_recap(target_path, city_climate_zones=None):
         "wall_insulation_overhead_profit_cost_usd",
         "roof_insulation_material_cost_usd",
         "roof_insulation_labor_cost_usd",
+        "roof_insulation_equipment_cost_usd",
         "roof_insulation_overhead_profit_cost_usd",
         "window_enhancement_material_cost_usd",
         "window_enhancement_labor_cost_usd",
@@ -1458,8 +1552,18 @@ def generate_parametric_recap(target_path, city_climate_zones=None):
     print("=" * 80)
 
 # --- GLOBAL SETTINGS ---
-RUN_NAME = "run_test_009"
+# RUN_NAME, OVERWRITE_EXISTING, and CUSTOM_COMBOS can be overridden via env vars
+# (used by run_all_tests.py to drive multiple sequential runs without editing this file).
+# RUN_NAME is purely a folder label under simulations/ -- it has no effect on
+# the model itself. Defaults to "run_test_009" for this branch's ad-hoc standalone runs.
+RUN_NAME = os.environ.get("WORKFLOW_RUN_NAME", "run_test_009")
 def detect_openstudio_cli_path():
+    """Find the OpenStudio CLI executable on this machine.
+
+    Tries OPENSTUDIO_PATH, then PATH lookup, then platform-specific install
+    folders (Program Files on Windows, /Applications on macOS). Returns the
+    first existing path or None.
+    """
     candidates = [os.environ.get("OPENSTUDIO_PATH"), shutil.which("openstudio")]
 
     # Windows fallback: scan common install roots for openstudio-*/bin/openstudio.exe.
@@ -1476,12 +1580,15 @@ def detect_openstudio_cli_path():
     return _resolve_existing_path(candidates)
 
 OPENSTUDIO_PATH = detect_openstudio_cli_path()
-OVERWRITE_EXISTING = False
+# OVERWRITE_EXISTING=True forces every selected scenario to re-simulate even
+# if its eplusout.sql already exists. Defaults to skipping completed runs.
+OVERWRITE_EXISTING = os.environ.get("WORKFLOW_OVERWRITE_EXISTING", "0").lower() in ("1", "true", "yes")
 
-notebook_dir = Path(__file__).parent
-base_weather_path = str(notebook_dir / "weather")
-measure_dir_path = str(notebook_dir.parent / "measures")
-base_run_dir = str(notebook_dir / "simulations" / RUN_NAME)
+# Project layout: this script lives in lib/parametric_run/.
+notebook_dir = Path(__file__).parent                       # lib/parametric_run/
+base_weather_path = str(notebook_dir / "weather")          # EPW/DDY per city
+measure_dir_path = str(notebook_dir.parent / "measures")   # lib/measures/
+base_run_dir = str(notebook_dir / "simulations" / RUN_NAME)  # this run's outputs
 city_climate_zones = {
     # "Amarillo":     "ASHRAE 169-2013-3B",
     # "Atlanta":      "ASHRAE 169-2013-3A",
@@ -1521,12 +1628,26 @@ BUILDING_TYPES = [
 TEMPLATE = "DOE Ref 1980-2004"
 
 # --- CUSTOM COMBINATION SCENARIOS ---
-# Supported optional keys in each combo:
-# - window_infiltration_reduction_percent, door_infiltration_reduction_percent
-# - weatherstrip_option, wf_option, film_option, caulking_option, secondary_glazing_option
-# - door_bottom_seal_option, door_top_side_seal_option
-# - wall_insulation_material_type, wall_insulation_material_lifetime
-# - roof_insulation_material_type, roof_insulation_material_lifetime
+# Each entry in CUSTOM_COMBOS is a retrofit "recipe" applied on top of the
+# baseline DOE prototype. A baseline scenario is generated automatically and
+# does NOT need to be listed here. Set a measure key to None (or omit it) to
+# skip that measure for the scenario.
+#
+# Required-ish core keys:
+#   wall_r_value           Target R-value (h*ft^2*F/Btu) for wall measure, or None.
+#   roof_r_value           Target R-value for roof measure, or None.
+#   window_num_panes       1, 2, or 3 to upgrade glazing (None = no glazing change).
+#   door_option            "glass door" / "wooden door" / "polystyrene core steel door" / etc.
+#
+# Supported optional keys (all envelope-measure tuning):
+#   - window_infiltration_reduction_percent, door_infiltration_reduction_percent
+#   - weatherstrip_option, wf_option, film_option, caulking_option, secondary_glazing_option
+#   - door_bottom_seal_option, door_top_side_seal_option
+#   - wall_insulation_material_type, wall_insulation_material_lifetime
+#   - roof_insulation_material_type, roof_insulation_material_lifetime
+#
+# When run_all_tests.py drives this script, WORKFLOW_CUSTOM_COMBOS_JSON
+# (set near the bottom of this section) replaces the literal list below.
 
 CUSTOM_COMBOS = [
     # Scenario 7: All 4 measures  Wall + Door + Roof + Window
@@ -1582,13 +1703,25 @@ CUSTOM_COMBOS = [
     },
 ]
 
+# Optional override via env var (JSON-encoded list of combo dicts) so that
+# run_all_tests.py can drive multiple sequential runs.
+_combos_override_json = os.environ.get("WORKFLOW_CUSTOM_COMBOS_JSON")
+if _combos_override_json:
+    import json as _json
+    CUSTOM_COMBOS = _json.loads(_combos_override_json)
+
 def scenario_output_exists(base_run_dir, scenario_dict):
+    """Return True if this scenario's EnergyPlus SQL output already exists."""
     scenario_name = generate_scenario_name(scenario_dict)
     sql_path = os.path.join(base_run_dir, scenario_name, "run", "eplusout.sql")
     return os.path.exists(sql_path)
 
 # --- MAIN - RUN PARAMETRIC STUDY ---
+# Pipeline: validate CLI -> generate scenarios -> run sims -> recap CSV
+# -> HTML/PDF report (the report stage lives further down, after the spider
+# chart helpers; it runs against parametric_results.csv produced here).
 if __name__ == "__main__":
+    # Phase 0: sanity-check that the OpenStudio CLI was found.
     if not OPENSTUDIO_PATH:
         raise RuntimeError(
             "OpenStudio CLI not found. Set OPENSTUDIO_PATH to your openstudio executable, "
@@ -1601,6 +1734,8 @@ if __name__ == "__main__":
     print(f"Run Name: {RUN_NAME}")
     print(f"Output Directory: {base_run_dir}")
     print("=" * 70)
+    # Phase 1: build the full scenario list (baseline + each custom combo per
+    # city / building type).
     print("\n Generating scenarios...")
     scenarios = generate_scenarios(
         cities=CITIES,
@@ -1625,6 +1760,8 @@ if __name__ == "__main__":
     print(f"   - Door only: {individual_door}")
     print(f"   - Combined (2 measures): {all_measures}")
     print("=" * 70)
+    # Phase 2: run EnergyPlus for each scenario (or skip if all outputs exist
+    # and the user did not request OVERWRITE_EXISTING).
     sim_count = 0
     start_time = time.time()
     successful_scenarios = []
@@ -1632,6 +1769,7 @@ if __name__ == "__main__":
     all_selected_have_results = all(scenario_output_exists(base_run_dir, s) for s in scenarios)
     skip_simulation_run = all_selected_have_results and CUSTOM_COMBOS and not OVERWRITE_EXISTING
     if skip_simulation_run:
+        # Fast path: only re-run postprocessing/reporting against existing OSMs.
         print("\n  Existing simulation outputs detected for selected scenarios.")
         print("   Skipping simulation run and regenerating CSV only.")
         successful_scenarios = [generate_scenario_name(s) for s in scenarios]
@@ -1685,7 +1823,10 @@ if __name__ == "__main__":
         for failed in failed_scenarios:
             print(f"  - {failed}")
 
-    # Collect results
+    # Phase 3: postprocess -- read each scenario's modified OSM and pull
+    # AdditionalProperties (cost, embodied carbon, retrofit settings, etc.)
+    # into simulations/<RUN_NAME>/parametric_results.csv. The HTML/PDF
+    # report is rendered later by the report-generation block below.
     print("\n" + "=" * 70)
     print("COLLECTING RESULTS FROM OSM FILES")
     print("=" * 70)
@@ -1913,6 +2054,14 @@ def _to_num(df, col):
     return pd.Series([0.0] * len(df), index=df.index)
 
 def generate_html_report(df, html_report_path, run_name="run"):
+    """Render the interactive HTML retrofit report from parametric_results.csv.
+
+    Inputs the recap DataFrame (one row per scenario, baseline first) and
+    writes the HTML file at html_report_path. The report includes a building
+    info card, scenario comparison tables, embodied/operational charts, and
+    a spider chart. Downstream patch helpers (_patch_*) refine the page after
+    this function returns.
+    """
     scenario_col = "scenario" if "scenario" in df.columns else "scenario_name"
     if scenario_col not in df.columns:
         raise ValueError("CSV must include 'scenario' or 'scenario_name' column.")

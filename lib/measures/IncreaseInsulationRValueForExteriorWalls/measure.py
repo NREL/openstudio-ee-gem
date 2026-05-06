@@ -255,6 +255,17 @@ class IncreaseInsulationRValueForExteriorWalls(openstudio.measure.ModelMeasure):
             runner.registerError("use_exact_costline_id is enabled, but exact_costline_id is empty.")
             return False
 
+        # Pre-flight warning: if RSMeans is the active path and the user has
+        # not supplied a fallback custom rate, the measure will hard-error if
+        # RSMeans returns nothing. Surface this risk up front.
+        if calculate_costs and (not use_custom_costs) and float(custom_cost_per_cf) <= 0.0:
+            runner.registerWarning(
+                "RSMeans cost lookup is the active cost source (use_custom_costs=false) "
+                "but no fallback 'custom_cost_per_cf' value has been provided. "
+                "If RSMeans returns no match for this insulation material, the measure "
+                "will fail. Consider setting a non-zero 'custom_cost_per_cf' as a safety net."
+            )
+
         # Check if numeric values are reasonable
         if analysis_period <= 0:
             runner.registerError("Analysis period must be greater than 0 years.")
@@ -751,6 +762,7 @@ class IncreaseInsulationRValueForExteriorWalls(openstudio.measure.ModelMeasure):
         total_material_cost = 0.0
         total_overhead_profit_cost = 0.0
         total_labor_cost = 0.0
+        total_equipment_cost = 0.0
         cost_source = "none"
         cost_factor_basis = "not_calculated"
         rsmeans_cost_per_cf_feature_value = "N/A"
@@ -828,10 +840,12 @@ class IncreaseInsulationRValueForExteriorWalls(openstudio.measure.ModelMeasure):
                         )
                         if rsmeans_lookup and rsmeans_lookup.get("status") == "ok":
                             summary = rsmeans_lookup.get("summary", {})
-                            # Note: total_material_cost from RSMeans already includes labor
-                            # RSMeans totalOpCost combines material + labor costs.
+                            # RSMeans summary now provides bare component split:
+                            # material/labor/equipment are without OHP; OHP is applied once.
                             _lc_mult = int(lifetime_multiplier(insulation_material_lifetime, analysis_period))
                             total_material_cost = float(summary.get("total_material_cost", 0.0)) * _lc_mult
+                            total_labor_cost = float(summary.get("total_labor_cost", 0.0)) * _lc_mult
+                            total_equipment_cost = float(summary.get("total_equipment_cost", 0.0)) * _lc_mult
                             total_overhead_profit_cost = float(summary.get("total_overhead_profit_cost", 0.0)) * _lc_mult
                             cost_source = "rsmeans_api"
                             materials_results = rsmeans_lookup.get("results", {}).get("materials", [])
@@ -1028,8 +1042,9 @@ class IncreaseInsulationRValueForExteriorWalls(openstudio.measure.ModelMeasure):
         results.setFeature("wall_insulation_embodied_carbon_kgCO2eq", total_embodied_carbon)
         results.setFeature("wall_insulation_labor_cost_$", total_labor_cost)
         results.setFeature("wall_insulation_material_cost_$", total_material_cost)
+        results.setFeature("wall_insulation_equipment_cost_$", total_equipment_cost)
         results.setFeature("wall_insulation_overhead_profit_cost_$", total_overhead_profit_cost)
-        results.setFeature("wall_insulation_total_cost_with_overhead_and_profit_$", total_material_cost + total_labor_cost + total_overhead_profit_cost)
+        results.setFeature("wall_insulation_total_cost_with_overhead_and_profit_$", total_material_cost + total_labor_cost + total_equipment_cost + total_overhead_profit_cost)
         
         # Facility bucket: emission/cost factors
         factors.setFeature("wall_insulation_cost_source", cost_source)

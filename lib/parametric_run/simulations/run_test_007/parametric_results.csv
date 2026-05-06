@@ -30,7 +30,7 @@ window_glass_pane_thickness_m,,0.003,0.003,0.003
 window_glass_gap_thickness_m,,0.013,0.013,0.013
 window_enhancement_renovated_area_m2,,55.778400000000005,55.778400000000005,55.778400000000005
 window_enhancement_renovated_glazing_area_m2,,55.778400000000005,55.778400000000005,55.778400000000005
-window_enhancement_renovated_frame_area_m2,,55.778400000000005,55.778400000000005,55.778400000000005
+window_enhancement_renovated_frame_area_m2,,0.0,0.0,0.0
 window_enhancement_renovated_perimeter_m,,134.16,134.16,134.16
 window_enhancement_renovated_caulking_volume_m3,,0.003371808563244853,0.003371808563244853,0.003371808563244853
 window_enhancement_renovated_weatherstrip_length_m,,0.0,0.0,0.0
@@ -59,50 +59,53 @@ door_enhancement_custom_bottom_seal_cost_per_m,,0.0,0.0,0.0
 door_enhancement_custom_top_side_seal_cost_per_m,,0.0,0.0,0.0
 wall_insulation_embodied_carbon_kgCO2eq,,0,1576.5533224644719,21.45951330980816
 roof_insulation_embodied_carbon_kgCO2eq,,19122.30283296266,10008.092585556818,9669.134340905968
-window_enhancement_embodied_carbon_kgCO2eq,,12160.248984,11488.776193193858,11436.803136000002
+window_enhancement_embodied_carbon_kgCO2eq,,0.0,51.973057193856164,0.0
 door_enhancement_embodied_carbon_kgCO2eq,,972.339193309465,265.3907868475858,241.0280261254377
 wall_insulation_custom_labor_cost_multiplier,,1.0,1.0,1.0
 wall_insulation_custom_cost_per_cf,,0.0,0.0,0.0
 roof_insulation_custom_labor_cost_multiplier,,1.0,1.0,1.0
 roof_insulation_custom_cost_per_cf,,0.0,0.0,0.0
-wall_insulation_total_cost_with_overhead_and_profit_usd,,0.0,14026.62273332658,718.6057765762336
-roof_insulation_total_cost_with_overhead_and_profit_usd,,32469.996135584828,93306.16791198999,11440.774677415679
-window_enhancement_total_cost_with_overhead_and_profit_usd,,39801.52,39346.12480266098,39801.524802660984
-door_enhancement_total_cost_with_overhead_and_profit_usd,,1716.622209025668,11162.726120666557,8055.4964228006365
-wall_insulation_material_cost_usd,,0.0,12751.475212115072,653.2779787056669
-wall_insulation_labor_cost_usd,,0.0,0.0,0.0
-wall_insulation_overhead_profit_cost_usd,,0.0,1275.1475212115074,65.3277978705667
-roof_insulation_material_cost_usd,,29518.178305077116,84823.7890109,10400.704252196072
-roof_insulation_labor_cost_usd,,0.0,0.0,0.0
-roof_insulation_overhead_profit_cost_usd,,2951.8178305077117,8482.37890109,1040.0704252196072
-window_enhancement_material_cost_usd,,36183.2,35769.20436605544,36183.20436605544
-window_enhancement_labor_cost_usd,,0.0,0.0,0.0
-window_enhancement_overhead_profit_cost_usd,,3618.32,3576.920436605544,3618.320436605544
-door_enhancement_material_cost_usd,,1560.5656445687891,10147.932836969598,7323.178566182397
-door_enhancement_labor_cost_usd,,0.0,0.0,0.0
-door_enhancement_overhead_profit_cost_usd,,156.05656445687893,1014.7932836969599,732.3178566182397
-total_additional_construction_cost_usd,0.0,73988.13834461049,157841.6415686441,60016.401679453535
-total_construction_cost_usd,0.0,73988.13834461049,157841.6415686441,60016.401679453535
+wall_insulation_total_cost_with_overhead_and_profit_usd,,0.0,10371.798499995006,576.1794064440071
+roof_insulation_total_cost_with_overhead_and_profit_usd,,23537.20243889555,77862.38839552269,9128.27766815081
+window_enhancement_total_cost_with_overhead_and_profit_usd,,0.0,4953.092284483199,5229.071033472001
+door_enhancement_total_cost_with_overhead_and_profit_usd,,1730.8197567915968,1695.402499999998,536.5799999999994
+wall_insulation_material_cost_usd,,0.0,3053.1701212106514,311.92552136396705
+wall_insulation_labor_cost_usd,,0.0,6375.737606057536,211.87393903967572
+wall_insulation_overhead_profit_cost_usd,,0.0,942.8907727268188,52.37994604036428
+roof_insulation_material_cost_usd,,5800.5153874605685,57914.173186752414,2987.436327758446
+roof_insulation_labor_cost_usd,,15596.941375171751,12869.816263722758,3430.0194874263643
+roof_insulation_equipment_cost_usd,,0.0,0.0,1880.9784285886517
+roof_insulation_overhead_profit_cost_usd,,2139.745676263232,7078.398945047517,829.8434243773463
+window_enhancement_material_cost_usd,,0.0,2403.259919424,2561.716617408
+window_enhancement_labor_cost_usd,,0.0,2099.551248288,2191.984322112
+window_enhancement_overhead_profit_cost_usd,,0.0,450.28111677119995,475.37009395200005
+door_enhancement_material_cost_usd,,1331.472506174179,1444.2749999999983,373.79999999999944
+door_enhancement_labor_cost_usd,,242.0,97.0,114.0
+door_enhancement_overhead_profit_cost_usd,,157.3472506174179,154.12749999999983,48.779999999999944
+total_additional_construction_cost_usd,0.0,25268.022195687146,94882.68168000088,15470.108108066817
+total_construction_cost_usd,0.0,25268.022195687146,94882.68168000088,15470.108108066817
 door_bottom_seal_gwp_per_m_kgCO2eq,,,1.968503937007874,5.796150481189851
 door_bottom_seal_length_per_unit_m,,,0.9144,0.9144
 door_bottom_seal_option,,none,brush weatherstrip,automatic door bottom
-door_bottom_seal_rsmeans_description,,,"Weatherstripping, for thresholds, door sweep, flush mounted, vinyl","Weatherstripping, for thresholds, door sweep, flush mounted, aluminum"
-door_bottom_seal_rsmeans_id,,,087125103700,087125103650
 door_enhancement_analysis_period_years,,30,30,30
 door_enhancement_construction_names,,"U 0.8 SHGC 0.45 Simple Glazing - glass door R-0.50, Typical Insulated Metal Door R-2.0, Typical Insulated Metal Door R-2.0","U 0.8 SHGC 0.45 Simple Glazing, Typical Insulated Metal Door R-2.0 - polystyrene core steel door R-0.43, Typical Insulated Metal Door R-2.0 - polystyrene core steel door R-0.43 1","U 0.8 SHGC 0.45 Simple Glazing, Typical Insulated Metal Door R-2.0 - wooden door R-0.30, Typical Insulated Metal Door R-2.0 - wooden door R-0.30 1"
-door_enhancement_cost_factor_basis,,cost_per_area,mixed_area_length,mixed_area_length
+door_enhancement_cost_factor_basis,,cost_per_area,cost_per_area,cost_per_area
 door_enhancement_cost_source,,rsmeans_api,rsmeans_api,rsmeans_api
 door_enhancement_door_area_per_unit_m2,,1.95,1.95,1.95
+door_enhancement_equipment_cost_$,,0.0,0.0,0.0
 door_enhancement_gwp_statistic,,median,median,median
 door_enhancement_infiltration_reduction_percent,,20.0,25.0,30.0
-door_enhancement_labor_cost_$,,0.0,0.0,0.0
-door_enhancement_material_cost_$,,1560.5656445687891,10147.932836969598,7323.178566182397
+door_enhancement_labor_cost_$,,242.0,97.0,114.0
+door_enhancement_material_cost_$,,1331.472506174179,1444.2749999999983,373.79999999999944
 door_enhancement_measure_name,,Door Enhancement,Door Enhancement,Door Enhancement
-door_enhancement_overhead_profit_cost_$,,156.05656445687893,1014.7932836969599,732.3178566182397
+door_enhancement_overhead_profit_cost_$,,157.3472506174179,154.12749999999983,48.779999999999944
 door_enhancement_overhead_profit_percent,,10.0,10.0,10.0
 door_enhancement_processed_door_count,,3,3,3
+door_enhancement_rsmeans_bottom_seal_cost_per_m,,N/A,N/A,N/A
+door_enhancement_rsmeans_door_cost_per_area,,340.94686244928045,370.1439694546056,95.79880270871652
+door_enhancement_rsmeans_top_side_seal_cost_per_m,,N/A,N/A,N/A
 door_enhancement_summary_notes,,door enhancement successfully completed!,door enhancement successfully completed!,door enhancement successfully completed!
-door_enhancement_total_cost_with_overhead_and_profit_$,,1716.622209025668,11162.726120666557,8055.4964228006365
+door_enhancement_total_cost_with_overhead_and_profit_$,,1730.8197567915968,1695.402499999998,536.5799999999994
 door_enhancement_total_processed_area_m2,,7.807147679999995,7.807147679999995,7.807147679999995
 door_gwp_per_m2_kgCO2eq,,248.98448571641677,58.46153846153846,42.205128205128204
 door_gwp_per_unit_kgCO2eq,,,114.0,82.3
@@ -114,88 +117,93 @@ door_side_seal_gwp_per_m_kgCO2eq,,,0.6947660954145437,1.0306890561667632
 door_thickness_m,,0.015875,0.034925,0.034925
 door_top_side_seal_length_per_unit_m,,,5.1816,5.181
 door_top_side_seal_option,,none,silicone adhesive smoke gasket,jamb weatherstrip
-door_top_side_seal_rsmeans_description,,,"Weatherstripping, for garage door bottom, rubber","Weatherstripping, for thresholds, door sweep, flush mounted, vinyl"
-door_top_side_seal_rsmeans_id,,,087125105050,087125103700
 lpd_fraction_linear_fluorescent,1.0,1.0,1.0,1.0
 measure_name,Operating Cost Carbon Reporting Measure,Operating Cost Carbon Reporting Measure,Operating Cost Carbon Reporting Measure,Operating Cost Carbon Reporting Measure
 roof_insulation_analysis_period_years,,30,30,30
 roof_insulation_cost_factor_basis,,cost_per_volume,cost_per_volume,cost_per_volume
 roof_insulation_cost_source,,rsmeans_api,rsmeans_api,rsmeans_api
+roof_insulation_equipment_cost_$,,0.0,0.0,1880.9784285886517
 roof_insulation_gwp_statistic,,median,median,median
-roof_insulation_labor_cost_$,,0.0,0.0,0.0
-roof_insulation_material_cost_$,,29518.178305077116,84823.7890109,10400.704252196072
+roof_insulation_labor_cost_$,,15596.941375171751,12869.816263722758,3430.0194874263643
+roof_insulation_material_cost_$,,5800.5153874605685,57914.173186752414,2987.436327758446
 roof_insulation_material_gwp_per_kg,,3.463087248,3.3333333329999997,2.2404694902499998
 roof_insulation_material_gwp_per_m2,,5.16,2.41,1.1476000000000002
 roof_insulation_material_gwp_per_m3,,,96.66666665700001,
+roof_insulation_material_rsmeans_cost_per_cf,,9.875811601827838,19.36,1.6363636363636367
 roof_insulation_material_rsmeans_description,,"Mineral wool insulation, R3 per inch, poured in","Polyisocyanurate insulation, for roof decks, 3/4"" thick, 2#/CF density, fastening excluded","Blown-in insulation, ceilings, with open access, fiberglass, 5.5"" thick, R11"
 roof_insulation_material_rsmeans_id,,072123100100,072216101700,072126101000
 roof_insulation_material_type,,Blown Mineral Wool,Polyiso Insulation Foam Board,Blown Fiberglass
 roof_insulation_measure_name,,Increase Insulation R-Value for Roofs,Increase Insulation R-Value for Roofs,Increase Insulation R-Value for Roofs
 roof_insulation_modified_constructions_count,,1,1,1
-roof_insulation_overhead_profit_cost_$,,2951.8178305077117,8482.37890109,1040.0704252196072
+roof_insulation_overhead_profit_cost_$,,2139.745676263232,7078.398945047517,829.8434243773463
 roof_insulation_overhead_profit_percent,,10.0,10.0,10.0
 roof_insulation_renovated_construction_names,,Typical Uninsulated Wood Joist Attic Roof adj roof insulation,Typical Uninsulated Wood Joist Attic Roof adj roof insulation,Typical Uninsulated Wood Joist Attic Roof adj roof insulation
 roof_insulation_renovated_embodied_carbon_kgCO2eq,,19122.30283296266,10008.092585556818,9669.134340905968
 roof_insulation_renovated_exterior_roof_area_m2,,598.7616811798497,598.7616811798497,598.7616811798497
 roof_insulation_retrofit_materials_json,,"[{""name"": ""Blown Mineral Wool roof insulation (Typical Uninsulated Wood Joist Attic Roof)"", ""description"": ""Added insulation to reach R-15.0; actual added thickness 4.03 in"", ""quantity"": 6445.017097178409, ""unit"": ""SF"", ""quantity_volume"": 2166.652992719305, ""unit_volume"": ""CF"", ""rsmeans_thickness_ft"": 0.33617490226175706, ""costing_mode"": ""volume_from_area"", ""quantity_si"": 598.7616811798497, ""unit_si"": ""m2"", ""division_code"": ""07"", ""rsmeans_id"": null}]","[{""name"": ""Polyiso Insulation Foam Board roof insulation (Typical Uninsulated Wood Joist Attic Roof)"", ""description"": ""Added insulation to reach R-25.0; actual added thickness 6.81 in"", ""quantity"": 6445.017097178409, ""unit"": ""SF"", ""quantity_volume"": 3656.1978021939653, ""unit_volume"": ""CF"", ""rsmeans_thickness_ft"": 0.5672906288789563, ""costing_mode"": ""volume_from_area"", ""quantity_si"": 598.7616811798497, ""unit_si"": ""m2"", ""division_code"": ""07"", ""rsmeans_id"": null}]","[{""name"": ""Blown Fiberglass roof insulation (Typical Uninsulated Wood Joist Attic Roof)"", ""description"": ""Added insulation to reach R-34.5; actual added thickness 9.44 in"", ""quantity"": 6445.017097178409, ""unit"": ""SF"", ""quantity_volume"": 5071.265371194893, ""unit_volume"": ""CF"", ""rsmeans_thickness_ft"": 0.7868505691652957, ""costing_mode"": ""volume_from_area"", ""quantity_si"": 598.7616811798497, ""unit_si"": ""m2"", ""division_code"": ""07"", ""rsmeans_id"": null}]"
-roof_insulation_rsmeans_materials_detail_json,,"[{""name"": ""Blown Mineral Wool roof insulation (Typical Uninsulated Wood Joist Attic Roof)"", ""description"": ""Added insulation to reach R-15.0; actual added thickness 4.03 in"", ""quantity"": 6445.017097178409, ""unit"": ""SF"", ""division_code"": ""07"", ""rsmeans_id"": ""072123100100"", ""rsmeans_description"": ""Mineral wool insulation, R3 per inch, poured in"", ""unit_cost"": 13.623860583244428, ""total_cost"": 29518.178305077116, ""unit_cost_basis"": ""CF"", ""costing_mode"": ""volume_from_area"", ""match_type"": ""fallback_id"", ""catalog"": ""bc-mf"", ""search_term_used"": ""fallback:072123100100"", ""source"": """"}]","[{""name"": ""Polyiso Insulation Foam Board roof insulation (Typical Uninsulated Wood Joist Attic Roof)"", ""description"": ""Added insulation to reach R-25.0; actual added thickness 6.81 in"", ""quantity"": 6445.017097178409, ""unit"": ""SF"", ""division_code"": ""07"", ""rsmeans_id"": ""072216101700"", ""rsmeans_description"": ""Polyisocyanurate insulation, for roof decks, 3/4\"" thick, 2#/CF density, fastening excluded"", ""unit_cost"": 23.2, ""total_cost"": 84823.7890109, ""unit_cost_basis"": ""CF"", ""costing_mode"": ""volume_from_area"", ""match_type"": ""exact_id_match"", ""catalog"": ""bc-mf"", ""search_term_used"": ""rsmeans_id:072216101700"", ""source"": """"}]","[{""name"": ""Blown Fiberglass roof insulation (Typical Uninsulated Wood Joist Attic Roof)"", ""description"": ""Added insulation to reach R-34.5; actual added thickness 9.44 in"", ""quantity"": 6445.017097178409, ""unit"": ""SF"", ""division_code"": ""07"", ""rsmeans_id"": ""072126101000"", ""rsmeans_description"": ""Blown-in insulation, ceilings, with open access, fiberglass, 5.5\"" thick, R11"", ""unit_cost"": 2.050909090909091, ""total_cost"": 10400.704252196072, ""unit_cost_basis"": ""CF"", ""costing_mode"": ""volume_from_area"", ""match_type"": ""fallback_id"", ""catalog"": ""bc-mf"", ""search_term_used"": ""fallback:072126101000"", ""source"": """"}]"
+roof_insulation_rsmeans_materials_detail_json,,"[{""name"": ""Blown Mineral Wool roof insulation (Typical Uninsulated Wood Joist Attic Roof)"", ""description"": ""Added insulation to reach R-15.0; actual added thickness 4.03 in"", ""quantity"": 6445.017097178409, ""unit"": ""SF"", ""division_code"": ""07"", ""rsmeans_id"": ""072123100100"", ""rsmeans_description"": ""Mineral wool insulation, R3 per inch, poured in"", ""unit_cost"": 9.875811601827838, ""total_cost"": 21397.45676263232, ""unit_cost_basis"": ""CF"", ""costing_mode"": ""volume_from_area"", ""match_type"": ""fallback_id"", ""catalog"": ""bc-mf"", ""search_term_used"": ""fallback:072123100100"", ""source"": """"}]","[{""name"": ""Polyiso Insulation Foam Board roof insulation (Typical Uninsulated Wood Joist Attic Roof)"", ""description"": ""Added insulation to reach R-25.0; actual added thickness 6.81 in"", ""quantity"": 6445.017097178409, ""unit"": ""SF"", ""division_code"": ""07"", ""rsmeans_id"": ""072216101700"", ""rsmeans_description"": ""Polyisocyanurate insulation, for roof decks, 3/4\"" thick, 2#/CF density, fastening excluded"", ""unit_cost"": 19.36, ""total_cost"": 70783.98945047517, ""unit_cost_basis"": ""CF"", ""costing_mode"": ""volume_from_area"", ""match_type"": ""exact_id_match"", ""catalog"": ""bc-mf"", ""search_term_used"": ""rsmeans_id:072216101700"", ""source"": """"}]","[{""name"": ""Blown Fiberglass roof insulation (Typical Uninsulated Wood Joist Attic Roof)"", ""description"": ""Added insulation to reach R-34.5; actual added thickness 9.44 in"", ""quantity"": 6445.017097178409, ""unit"": ""SF"", ""division_code"": ""07"", ""rsmeans_id"": ""072126101000"", ""rsmeans_description"": ""Blown-in insulation, ceilings, with open access, fiberglass, 5.5\"" thick, R11"", ""unit_cost"": 1.6363636363636367, ""total_cost"": 8298.434243773463, ""unit_cost_basis"": ""CF"", ""costing_mode"": ""volume_from_area"", ""match_type"": ""fallback_id"", ""catalog"": ""bc-mf"", ""search_term_used"": ""fallback:072126101000"", ""source"": """"}]"
 roof_insulation_summary_notes,,"Roof insulation renovation completed. Modified constructions=1, target-already-met skips=0.","Roof insulation renovation completed. Modified constructions=1, target-already-met skips=0.","Roof insulation renovation completed. Modified constructions=1, target-already-met skips=0."
 roof_insulation_target_r_value_ip,,15.0,25.0,34.5
-roof_insulation_total_cost_with_overhead_and_profit_$,,32469.996135584828,93306.16791198999,11440.774677415679
-rsmeans_door_area_per_unit_m2,,3.7161216,1.9509638399999973,1.8580608
+roof_insulation_total_cost_with_overhead_and_profit_$,,23537.20243889555,77862.38839552269,9128.27766815081
+rsmeans_door_area_per_unit_m2,,3.7161216,1.2387072,1.8580608
 rsmeans_door_thickness_m,,0.015875,0.034925,0.034925
 rsmeans_unit_cost_description,,"Doors, glass, sliding, aluminum, economy, 5/8"" tempered insulated glass, 6'-0"" x 6'-8""","Doors, hollow metal, commercial, steel, flush, full panel, hollow core, 1-3/8"" thick, 20 ga., 2'-0"" x 6'-8""","Door, wood, architectural, flush, interior, hollow core, luan face, 3'-0"" x 6'-8"" x 1-3/8"" thick"
 rsmeans_unit_cost_line_id,,083213100450,081313130020,081416090025
-total_additional_embodied_carbon_kg,0.0,32254.891010272124,23338.812888062734,21368.425016341214
+total_additional_embodied_carbon_kg,0.0,20094.642026272126,11902.009752062731,9931.621880341214
 total_doors_processed_count,,3,3,3
 total_doors_with_r_value_change_count,,1,2,2
 wall_insulation_analysis_period_years,,30,30,30
 wall_insulation_cost_factor_basis,,not_calculated,cost_per_volume,cost_per_volume
 wall_insulation_cost_source,,none,rsmeans_api,rsmeans_api
+wall_insulation_equipment_cost_$,,0.0,0.0,0.0
 wall_insulation_gwp_statistic,,median,median,median
-wall_insulation_labor_cost_$,,0.0,0.0,0.0
-wall_insulation_material_cost_$,,0.0,12751.475212115072,653.2779787056669
+wall_insulation_labor_cost_$,,0.0,6375.737606057536,211.87393903967572
+wall_insulation_material_cost_$,,0.0,3053.1701212106514,311.92552136396705
 wall_insulation_material_gwp_per_kg,,11.72859799,3.72,0.8125334259000001
 wall_insulation_material_gwp_per_m2,,8.96707704,2.79,0.9445
 wall_insulation_material_gwp_per_m3,,291.20554769936325,,4.414821428220001
+wall_insulation_material_rsmeans_cost_per_cf,,N/A,4.08,1.817142857142857
 wall_insulation_material_rsmeans_description,,,"Foam board insulation, polystyrene, expanded, 1"" thick, R4","Blanket insulation, for walls or ceilings, kraft faced fiberglass, 3-1/2"" thick, R11, 15"" wide"
 wall_insulation_material_rsmeans_id,,,072113130600,072116200020
 wall_insulation_material_type,,Extruded Polystyrene (XPS) Foam Board,Expanded Polystyrene (EPS) Foam Board,Fiberglass Batts
 wall_insulation_measure_name,,Increase Insulation R-Value for Exterior Walls,Increase Insulation R-Value for Exterior Walls,Increase Insulation R-Value for Exterior Walls
 wall_insulation_modified_constructions_count,,0,1,1
-wall_insulation_overhead_profit_cost_$,,0.0,1275.1475212115074,65.3277978705667
+wall_insulation_overhead_profit_cost_$,,0.0,942.8907727268188,52.37994604036428
 wall_insulation_overhead_profit_percent,,10.0,10.0,10.0
 wall_insulation_renovated_construction_names,,,Typical Insulated Wood Framed Exterior Wall R-19.61 1,Typical Insulated Wood Framed Exterior Wall R-19.61 1
 wall_insulation_renovated_embodied_carbon_kgCO2eq,,,1576.5533224644719,21.45951330980816
 wall_insulation_renovated_exterior_wall_area_m2,,,281.515,281.515
 wall_insulation_retrofit_materials_json,,,"[{""name"": ""Expanded Polystyrene (EPS) Foam Board insulation"", ""description"": ""Added insulation to reach R-30.0; avg added thickness 2.96 in"", ""quantity"": 3030.202240960037, ""unit"": ""SF"", ""quantity_volume"": 748.3260101006498, ""unit_volume"": ""CF"", ""rsmeans_thickness_ft"": 0.24695580510494095, ""costing_mode"": ""volume_from_area"", ""quantity_si"": 281.515, ""unit_si"": ""m2"", ""division_code"": ""07""}]","[{""name"": ""Fiberglass Batts insulation"", ""description"": ""Added insulation to reach R-20.4; avg added thickness 0.68 in"", ""quantity"": 3030.202240960037, ""unit"": ""SF"", ""quantity_volume"": 171.65712653677434, ""unit_volume"": ""CF"", ""rsmeans_thickness_ft"": 0.05664873773422382, ""costing_mode"": ""volume_from_area"", ""quantity_si"": 281.515, ""unit_si"": ""m2"", ""division_code"": ""07""}]"
-wall_insulation_rsmeans_materials_detail_json,,,"[{""name"": ""Expanded Polystyrene (EPS) Foam Board insulation"", ""description"": ""Added insulation to reach R-30.0; avg added thickness 2.96 in"", ""quantity"": 3030.202240960037, ""unit"": ""SF"", ""division_code"": ""07"", ""rsmeans_id"": ""072113130600"", ""rsmeans_description"": ""Foam board insulation, polystyrene, expanded, 1\"" thick, R4"", ""unit_cost"": 17.04, ""total_cost"": 12751.475212115072, ""unit_cost_basis"": ""CF"", ""costing_mode"": ""volume_from_area"", ""match_type"": ""closest_match"", ""catalog"": ""bc-mf"", ""search_term_used"": ""Expanded Polystyrene (EPS) Foam Board insulation"", ""source"": """"}]","[{""name"": ""Fiberglass Batts insulation"", ""description"": ""Added insulation to reach R-20.4; avg added thickness 0.68 in"", ""quantity"": 3030.202240960037, ""unit"": ""SF"", ""division_code"": ""07"", ""rsmeans_id"": ""072116200020"", ""rsmeans_description"": ""Blanket insulation, for walls or ceilings, kraft faced fiberglass, 3-1/2\"" thick, R11, 15\"" wide"", ""unit_cost"": 3.8057142857142856, ""total_cost"": 653.2779787056669, ""unit_cost_basis"": ""CF"", ""costing_mode"": ""volume_from_area"", ""match_type"": ""closest_match"", ""catalog"": ""bc-mf"", ""search_term_used"": ""Fiberglass Batts insulation"", ""source"": """"}]"
+wall_insulation_rsmeans_materials_detail_json,,,"[{""name"": ""Expanded Polystyrene (EPS) Foam Board insulation"", ""description"": ""Added insulation to reach R-30.0; avg added thickness 2.96 in"", ""quantity"": 3030.202240960037, ""unit"": ""SF"", ""division_code"": ""07"", ""rsmeans_id"": ""072113130600"", ""rsmeans_description"": ""Foam board insulation, polystyrene, expanded, 1\"" thick, R4"", ""unit_cost"": 12.600000000000001, ""total_cost"": 9428.907727268188, ""unit_cost_basis"": ""CF"", ""costing_mode"": ""volume_from_area"", ""match_type"": ""closest_match"", ""catalog"": ""bc-mf"", ""search_term_used"": ""Expanded Polystyrene (EPS) Foam Board insulation"", ""source"": """"}]","[{""name"": ""Fiberglass Batts insulation"", ""description"": ""Added insulation to reach R-20.4; avg added thickness 0.68 in"", ""quantity"": 3030.202240960037, ""unit"": ""SF"", ""division_code"": ""07"", ""rsmeans_id"": ""072116200020"", ""rsmeans_description"": ""Blanket insulation, for walls or ceilings, kraft faced fiberglass, 3-1/2\"" thick, R11, 15\"" wide"", ""unit_cost"": 3.051428571428571, ""total_cost"": 523.7994604036428, ""unit_cost_basis"": ""CF"", ""costing_mode"": ""volume_from_area"", ""match_type"": ""closest_match"", ""catalog"": ""bc-mf"", ""search_term_used"": ""Fiberglass Batts insulation"", ""source"": """"}]"
 wall_insulation_summary_notes,,"Requested: wall insulation upgrade to target R-10.00 using 'Extruded Polystyrene (XPS) Foam Board'. Outcome: Not implemented. Reason: All eligible wall constructions already met or exceeded the target R-value. Context: modified constructions=0, target-already-met skips=1, renovated area=0.000 m2, added volume=0.000 m3.","Requested: wall insulation upgrade to target R-30.00 using 'Expanded Polystyrene (EPS) Foam Board'. Outcome: Implemented. Details: Exterior wall insulation layers were updated to meet the target R-value where needed. Context: modified constructions=1, target-already-met skips=0, renovated area=281.515 m2, added volume=21.190 m3.","Requested: wall insulation upgrade to target R-20.40 using 'Fiberglass Batts'. Outcome: Implemented. Details: Exterior wall insulation layers were updated to meet the target R-value where needed. Context: modified constructions=1, target-already-met skips=0, renovated area=281.515 m2, added volume=4.861 m3."
 wall_insulation_target_r_value_ip,,10.0,30.0,20.4
-wall_insulation_total_cost_with_overhead_and_profit_$,,0.0,14026.62273332658,718.6057765762336
+wall_insulation_total_cost_with_overhead_and_profit_$,,0.0,10371.798499995006,576.1794064440071
 window_caulking_gwp_per_m3_kgCO2eq,,,5138.0,
 window_caulking_option,,none,polyurethane,acrylic
-window_caulking_rsmeans_description,,,"Joint sealant replacement, joints in concrete floors/slabs, option 1 for hard dry sealant, step 1: sawcut to remove 95% of old sealant, 1/4"" x 1/2"" deep, with single saw blade","Joint sealant replacement, joints in concrete floors/slabs, option 1 for hard dry sealant, step 1: sawcut to remove 95% of old sealant, 1/4"" x 1/2"" deep, with single saw blade"
-window_caulking_rsmeans_id,,,070190810112,070190810112
+window_caulking_rsmeans_description,,,"Joint sealants, caulking and sealants, polyurethane, bulk, in place, 1 or 2 component, 1/4"" x 1/4""","Joint sealants, caulking and sealants, bulk acrylic latex, 1/4"" x 1/2"", in place"
+window_caulking_rsmeans_id,,,079213203500,079213200065
 window_enhancement_analysis_period_years,,30,30,30
-window_enhancement_cost_factor_basis,,rsmeans_api,rsmeans_api,rsmeans_api
+window_enhancement_caulking_cost_per_cy,,N/A,544937.496287154,580867.441097296
+window_enhancement_caulking_cost_per_lf,,N/A,5.460000000000001,5.82
+window_enhancement_cost_factor_basis,,not_calculated,rsmeans_api,rsmeans_api
+window_enhancement_equipment_cost_$,,0.0,0.0,0.0
+window_enhancement_film_cost_per_sf,,N/A,N/A,N/A
+window_enhancement_frame_cost_per_sf,,N/A,N/A,N/A
+window_enhancement_glass_cost_per_cf,,N/A,N/A,N/A
+window_enhancement_glass_cost_per_sf,,N/A,N/A,N/A
 window_enhancement_gwp_statistic,,median,median,median
-window_enhancement_labor_cost_$,,0.0,0.0,0.0
-window_enhancement_material_cost_$,,36183.2,35769.20436605544,36183.20436605544
+window_enhancement_labor_cost_$,,0.0,2099.551248288,2191.984322112
+window_enhancement_material_cost_$,,0.0,2403.259919424,2561.716617408
 window_enhancement_measure_name,,Window Enhancement,Window Enhancement,Window Enhancement
-window_enhancement_overhead_profit_cost_$,,3618.32,3576.920436605544,3618.320436605544
+window_enhancement_overhead_profit_cost_$,,0.0,450.28111677119995,475.37009395200005
 window_enhancement_overhead_profit_percent,,10.0,10.0,10.0
 window_enhancement_simple_glazing_objects_count,,20,20,20
-window_enhancement_summary_notes,,"Requested: glass upgrade (provide user_num_panes), frame upgrade (wood-aluminium window frame), film (safety film), weatherstrip (silicone adhesive smoke gasket). Outcome: Completed with option conflicts; one or more requested actions were skipped or partially applied. Reason(s): Weatherstrip selected but no OperableWindow subsurfaces found | Film selected but all window constructions are SimpleGlazing | Glass replacement selected but all window constructions are SimpleGlazing. Context: window constructions=20, simple glazing objects=20; available subsurface counts -> FixedWindow=20, OperableWindow=0, Skylight=0.","Requested: glass upgrade (provide user_num_panes), frame upgrade (wood window frame), caulking (polyurethane), film (anti-graffiti film), weatherstrip (silicone adhesive smoke gasket). Outcome: Completed with option conflicts; one or more requested actions were skipped or partially applied. Reason(s): Weatherstrip selected but no OperableWindow subsurfaces found | Film selected but all window constructions are SimpleGlazing | Glass replacement selected but all window constructions are SimpleGlazing. Context: window constructions=20, simple glazing objects=20; available subsurface counts -> FixedWindow=20, OperableWindow=0, Skylight=0.","Requested: glass upgrade (provide user_num_panes), frame upgrade (wood window frame), caulking (acrylic), film (low-e film), weatherstrip (silicone adhesive smoke gasket). Outcome: Completed with option conflicts; one or more requested actions were skipped or partially applied. Reason(s): Weatherstrip selected but no OperableWindow subsurfaces found | Film selected but all window constructions are SimpleGlazing | Glass replacement selected but all window constructions are SimpleGlazing. Context: window constructions=20, simple glazing objects=20; available subsurface counts -> FixedWindow=20, OperableWindow=0, Skylight=0."
-window_enhancement_total_cost_with_overhead_and_profit_$,,39801.52,39346.12480266098,39801.524802660984
+window_enhancement_summary_notes,,"Requested: glass upgrade (provide user_num_panes), film (safety film), weatherstrip (silicone adhesive smoke gasket). Outcome: Completed with option conflicts; one or more requested actions were skipped or partially applied. Reason(s): Weatherstrip selected but no OperableWindow subsurfaces found | Film selected but all window constructions are SimpleGlazing | Glass replacement selected but all window constructions are SimpleGlazing. Context: window constructions=20, simple glazing objects=20; available subsurface counts -> FixedWindow=20, OperableWindow=0, Skylight=0.","Requested: glass upgrade (provide user_num_panes), caulking (polyurethane), film (anti-graffiti film), weatherstrip (silicone adhesive smoke gasket). Outcome: Completed with option conflicts; one or more requested actions were skipped or partially applied. Reason(s): Weatherstrip selected but no OperableWindow subsurfaces found | Film selected but all window constructions are SimpleGlazing | Glass replacement selected but all window constructions are SimpleGlazing. Context: window constructions=20, simple glazing objects=20; available subsurface counts -> FixedWindow=20, OperableWindow=0, Skylight=0.","Requested: glass upgrade (provide user_num_panes), caulking (acrylic), film (low-e film), weatherstrip (silicone adhesive smoke gasket). Outcome: Completed with option conflicts; one or more requested actions were skipped or partially applied. Reason(s): Weatherstrip selected but no OperableWindow subsurfaces found | Film selected but all window constructions are SimpleGlazing | Glass replacement selected but all window constructions are SimpleGlazing. Context: window constructions=20, simple glazing objects=20; available subsurface counts -> FixedWindow=20, OperableWindow=0, Skylight=0."
+window_enhancement_total_cost_with_overhead_and_profit_$,,0.0,4953.092284483199,5229.071033472001
+window_enhancement_weatherstrip_cost_per_lf,,N/A,N/A,N/A
 window_enhancement_windows_processed_count,,20,20,20
 window_film_option,,safety film,anti-graffiti film,low-e film
-window_frame_gwp_per_m2_kgCO2eq,,109.00500000000002,102.52000000000001,102.52000000000001
-window_frame_option,,wood-aluminium window frame,wood window frame,wood window frame
-window_frame_rsmeans_description,,window frame (derived from window unit - glazing),window frame (derived from window unit - glazing),window frame (derived from window unit - glazing)
-window_frame_rsmeans_id,,derived_window_frame,derived_window_frame,derived_window_frame
+window_frame_option,,none,none,none
 window_glass_option,,provide user_num_panes,provide user_num_panes,provide user_num_panes
-window_glass_rsmeans_description,,"Windows, aluminum sash, stock, grade C, projected window, excl. glazing and trim","Insulating glass, double glazed, clear, 1/4"" float, for 1"" thick unit, 30-70 SF","Windows, aluminum sash, stock, grade C, projected window, excl. glazing and trim"
-window_glass_rsmeans_id,,085113100200,088130100400,085113100200
 window_secondary_glazing_option,,none,none,none
 window_weatherstrip_option,,silicone adhesive smoke gasket,silicone adhesive smoke gasket,silicone adhesive smoke gasket

@@ -83,3 +83,24 @@ lib/measures/ReportRetrofitImpacts/venv
 # Act configuration file
 .actrc
 node_modules
+
+
+# --- Parametric run simulation outputs ---
+# Keep only meaningful artifacts (CSVs, summary HTML reports, OSMs, OSWs, results.json).
+# Exclude bulky EnergyPlus runtime artifacts; they are regenerable from the OSM + EPW.
+lib/parametric_run/simulations/**/_proto/
+lib/parametric_run/simulations/**/run/data_point.zip
+lib/parametric_run/simulations/**/run/data_point_out.json
+lib/parametric_run/simulations/**/run/eplusout.*
+lib/parametric_run/simulations/**/run/eplusssz.csv
+lib/parametric_run/simulations/**/run/eplustbl.htm
+lib/parametric_run/simulations/**/run/epluszsz.csv
+lib/parametric_run/simulations/**/run/in.idf
+lib/parametric_run/simulations/**/run/pre-preprocess.idf
+lib/parametric_run/simulations/**/run/measure_attributes.json
+lib/parametric_run/simulations/**/run/sqlite.err
+lib/parametric_run/simulations/**/run/finished.job
+lib/parametric_run/simulations/**/run/started.job
+lib/parametric_run/simulations/**/run/stdout-energyplus
+lib/parametric_run/simulations/**/run/run.log
+lib/parametric_run/simulations/**/run/000_create_DOE_prototype_building/

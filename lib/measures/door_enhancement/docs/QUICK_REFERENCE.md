@@ -24,7 +24,7 @@ python apply_measure.py
 
 - `use_custom_costs = false`: RSMeans lookup across `bc-mf`, `gb-mf`, `rp-mf`
 - `use_custom_costs = true`: custom cost inputs only
-- Minimum acceptable RSMeans match score: **50.0**
+- Minimum acceptable RSMeans match score: **70.0**
 - Lower scores trigger fallback ID lookup
 
 ## Cost Metadata Written
