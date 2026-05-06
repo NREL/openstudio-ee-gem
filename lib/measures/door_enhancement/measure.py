@@ -463,8 +463,23 @@ class DoorEnhancement(openstudio.measure.ModelMeasure):
             runner.registerInfo(f"  Overhead + profit percent: {overhead_profit_percent}%")
             if rsmeans_unit_costline_id:
                 runner.registerInfo("  RSMeans Unit Cost Line ID override ignored because custom cost mode is enabled.")
-        elif rsmeans_unit_costline_id:
-            runner.registerInfo(f"RSMeans Unit Cost Line ID override requested: {rsmeans_unit_costline_id}")
+        else:
+            # Pre-flight warning: RSMeans is the active path. If the user has
+            # not supplied any fallback custom rates, the measure will hard-error
+            # when RSMeans returns no match. Surface this risk up front.
+            if (float(custom_door_cost_per_area) <= 0.0
+                    and float(custom_bottom_seal_cost) <= 0.0
+                    and float(custom_top_side_seal_cost) <= 0.0):
+                runner.registerWarning(
+                    "RSMeans cost lookup is the active cost source (use_custom_costs=false) "
+                    "but no fallback custom rates have been provided. If RSMeans returns no "
+                    "match for the selected door/seal options, the measure will fail. "
+                    "Consider setting non-zero values for the relevant "
+                    "'custom_door_cost_per_area', 'custom_bottom_seal_cost', or "
+                    "'custom_top_side_seal_cost' arguments as a safety net."
+                )
+            if rsmeans_unit_costline_id:
+                runner.registerInfo(f"RSMeans Unit Cost Line ID override requested: {rsmeans_unit_costline_id}")
         length_per_unit_dict = {
             "brush weatherstrip": 0.9144,  # 36" = 0.9144 m, source: https://www.pemko.com/en/view-pdf?id=AADSS1046707&page=1
             "silicone adhesive smoke gasket": 5.1816,  # 17' = 5.1816 m, source: https://buildingtransparency.org/ec3/epds/ec327rq0
@@ -849,11 +864,20 @@ class DoorEnhancement(openstudio.measure.ModelMeasure):
                         gwp_values["gwp_per_m2"].append(float(gwp_per_m2))
 
                     # per length
+                    # Guard against division-by-zero: length_per_unit_dict["none"] == 0.0,
+                    # so skip the per-length conversion when the corresponding seal option
+                    # is disabled.
                     gwp_per_m = 0.0
-                    if gwp_per_unit!= 0 and material_name == "door_bottom_sealing":
+                    if (gwp_per_unit != 0
+                            and material_name == "door_bottom_sealing"
+                            and door_bottom_seal_option != "none"
+                            and length_per_unit_dict.get(door_bottom_seal_option, 0.0) > 0.0):
                         gwp_per_m = gwp_per_unit / length_per_unit_dict[door_bottom_seal_option]
                         gwp_values["gwp_per_m"].append(float(gwp_per_m))
-                    elif gwp_per_unit != 0 and material_name == "door_side_sealing":
+                    elif (gwp_per_unit != 0
+                            and material_name == "door_side_sealing"
+                            and door_top_side_seal_option != "none"
+                            and length_per_unit_dict.get(door_top_side_seal_option, 0.0) > 0.0):
                         gwp_per_m = gwp_per_unit / length_per_unit_dict[door_top_side_seal_option]
                         gwp_values["gwp_per_m"].append(float(gwp_per_m))
                     
@@ -1468,6 +1492,103 @@ class DoorEnhancement(openstudio.measure.ModelMeasure):
             except Exception as e:
                 runner.registerWarning(f"Cost lookup failed: {e}")
 
+            # Fallback: if RSMeans was attempted (use_custom_costs=False) but did
+            # not return usable cost data, automatically try user-provided custom
+            # rates. If those are also zero/unset, raise a hard error so the user
+            # knows to supply them rather than silently recording $0 costs.
+            if (not use_custom_costs) and (
+                rsmeans_lookup is None
+                or rsmeans_lookup.get("status") != "ok"
+                or float(rsmeans_lookup.get("summary", {}).get("total_cost_with_overhead_profit", 0.0)) <= 0.0
+            ):
+                _need_door_rate = (door_option != 'none' and eligible_door_count > 0
+                                   and total_eligible_door_area_m2 > 0.0)
+                _need_bottom_rate = (door_bottom_seal_option != 'none'
+                                     and total_sealing_bottom_length_m > 0.0)
+                _need_top_side_rate = (door_top_side_seal_option != 'none'
+                                       and total_sealing_side_length_m > 0.0)
+
+                _missing = []
+                if _need_door_rate and float(custom_door_cost_per_area) <= 0.0:
+                    _missing.append("'custom_door_cost_per_area' ($/m²)")
+                if _need_bottom_rate and float(custom_bottom_seal_cost) <= 0.0:
+                    _missing.append("'custom_bottom_seal_cost_per_m' ($/m)")
+                if _need_top_side_rate and float(custom_top_side_seal_cost) <= 0.0:
+                    _missing.append("'custom_top_side_seal_cost_per_m' ($/m)")
+
+                if _missing:
+                    runner.registerError(
+                        "RSMeans lookup failed/returned no costs AND no custom cost rates "
+                        "were provided for: " + ", ".join(_missing) + ".\n"
+                        "SOLUTION: Retry the measure with custom cost input:\n"
+                        "  1. Set 'Use Custom Cost Inputs?' = true\n"
+                        "  2. Provide non-zero values for the rates listed above. "
+                        "(Only components matching your selected door/seal options need values.)"
+                    )
+                else:
+                    runner.registerWarning(
+                        "RSMeans lookup failed/returned no costs. Falling back to "
+                        "user-provided custom cost rates."
+                    )
+                    _mult_door = int(lifetime_multiplier(door_lifetime, analysis_period))
+                    _mult_seal = int(lifetime_multiplier(strip_lifetime, analysis_period))
+                    door_cost_total = (float(custom_door_cost_per_area)
+                                       * float(total_eligible_door_area_m2) * _mult_door
+                                       if _need_door_rate else 0.0)
+                    bottom_seal_cost_total = (float(custom_bottom_seal_cost)
+                                              * float(total_sealing_bottom_length_m) * _mult_seal
+                                              if _need_bottom_rate else 0.0)
+                    top_side_seal_cost_total = (float(custom_top_side_seal_cost)
+                                                * float(total_sealing_side_length_m) * _mult_seal
+                                                if _need_top_side_rate else 0.0)
+                    total_custom_material_cost = (door_cost_total
+                                                  + bottom_seal_cost_total
+                                                  + top_side_seal_cost_total)
+                    total_custom_labor_cost = (
+                        total_custom_material_cost * (labor_cost_multiplier - 1.0)
+                        if labor_cost_multiplier > 1.0 else 0.0
+                    )
+                    total_custom_overhead_cost = (
+                        (total_custom_material_cost + total_custom_labor_cost)
+                        * (overhead_profit_percent / 100.0)
+                        if overhead_profit_percent > 0.0 else 0.0
+                    )
+                    total_custom_installed_cost = (
+                        total_custom_material_cost
+                        + total_custom_labor_cost
+                        + total_custom_overhead_cost
+                    )
+                    rsmeans_lookup = {
+                        "status": "ok",
+                        "cost_source": "custom_input_fallback",
+                        "summary": {
+                            "materials_count": len(rsmeans_materials),
+                            "total_material_cost": total_custom_material_cost,
+                            "total_labor_cost": total_custom_labor_cost,
+                            "overhead_profit_percent": overhead_profit_percent,
+                            "total_overhead_profit_cost": total_custom_overhead_cost,
+                            "total_cost_with_overhead_profit": total_custom_installed_cost,
+                            "release_id": "custom_fallback",
+                            "location_id": "custom_fallback",
+                            "labor_type": "custom_fallback",
+                            "measurement_system": "custom_fallback",
+                            "catalogs_searched": [],
+                        },
+                    }
+                    runner.registerInfo(
+                        "Custom-rate fallback summary "
+                        "(cost_source=custom_input_fallback): "
+                        f"door=${door_cost_total:,.2f}, "
+                        f"bottom_seal=${bottom_seal_cost_total:,.2f}, "
+                        f"top_side_seal=${top_side_seal_cost_total:,.2f}, "
+                        f"material=${total_custom_material_cost:,.2f}, "
+                        f"labor=${total_custom_labor_cost:,.2f} "
+                        f"(multiplier={labor_cost_multiplier}), "
+                        f"overhead=${total_custom_overhead_cost:,.2f} "
+                        f"({overhead_profit_percent}%), "
+                        f"total=${total_custom_installed_cost:,.2f}"
+                    )
+
         # Use closest RSMeans door hit to refine replacement material properties.
         if (not use_custom_costs) and door_option != 'none' and eligible_door_count > 0:
             rsmeans_door_hit = _select_rsmeans_door_hit(rsmeans_lookup)
@@ -1537,7 +1658,24 @@ class DoorEnhancement(openstudio.measure.ModelMeasure):
                             "rsmeans_door_area_per_unit_m2 or total_eligible_door_area_m2 is missing/invalid."
                         )
 
-                if rsmeans_inferred_option in self.door_material_properties():
+                # The user-supplied ``door_option`` is authoritative for material
+                # properties — never let an inferred option from a (possibly
+                # poorly matched) RSMeans description silently override it.
+                # Inference is still useful for the legacy default door_option,
+                # so only use it when the user did not pick one explicitly.
+                if door_option and door_option != 'none':
+                    rsmeans_applied_door_option = door_option
+                    if (
+                        rsmeans_inferred_option
+                        and rsmeans_inferred_option in self.door_material_properties()
+                        and rsmeans_inferred_option != door_option
+                    ):
+                        runner.registerWarning(
+                            f"RSMeans description suggests '{rsmeans_inferred_option}' but user "
+                            f"requested '{door_option}'. Honoring user-specified door_option for "
+                            f"material properties; cost reflects the matched RSMeans line."
+                        )
+                elif rsmeans_inferred_option in self.door_material_properties():
                     rsmeans_applied_door_option = rsmeans_inferred_option
                 else:
                     rsmeans_applied_door_option = door_option
@@ -1834,28 +1972,41 @@ class DoorEnhancement(openstudio.measure.ModelMeasure):
         # For RSMeans, iterate over per-material costs and scale by replacement count.
         if (rsmeans_lookup is not None
                 and rsmeans_lookup.get("status") == "ok"
-                and rsmeans_lookup.get("cost_source", "rsmeans_api") != "custom_input"):
+                and rsmeans_lookup.get("cost_source", "rsmeans_api") not in ("custom_input", "custom_input_fallback")):
             _lc_summary = rsmeans_lookup.get("summary", {})
             _lc_materials = rsmeans_lookup.get("results", {}).get("materials", [])
             _mult_door_lc = int(lifetime_multiplier(door_lifetime, analysis_period))
             _mult_seal_lc = int(lifetime_multiplier(strip_lifetime, analysis_period))
             if _mult_door_lc != 1 or _mult_seal_lc != 1:
                 _adj_material = 0.0
+                _adj_labor = 0.0
+                _adj_equipment = 0.0
                 for _m in _lc_materials:
                     _mn = str(_m.get("name", "")).lower()
                     _mc = float(_m.get("total_cost_area_adjusted", _m.get("total_cost", 0.0)))
+                    _ml = float(_m.get("total_labor_cost", 0.0))
+                    _me = float(_m.get("total_equipment_cost", 0.0))
                     _mult_for_mat = _mult_seal_lc if "seal" in _mn else _mult_door_lc
                     _m["total_cost"] = _mc * _mult_for_mat
+                    _m["total_labor_cost"] = _ml * _mult_for_mat
+                    _m["total_equipment_cost"] = _me * _mult_for_mat
                     _adj_material += _m["total_cost"]
+                    _adj_labor += _m["total_labor_cost"]
+                    _adj_equipment += _m["total_equipment_cost"]
                 _ohp_pct = float(_lc_summary.get("overhead_profit_percent", 0.0))
-                _adj_overhead = _adj_material * _ohp_pct * 0.01
+                _adj_overhead = (_adj_material + _adj_labor + _adj_equipment) * _ohp_pct * 0.01
                 _lc_summary["total_material_cost"] = _adj_material
+                _lc_summary["total_labor_cost"] = _adj_labor
+                _lc_summary["total_equipment_cost"] = _adj_equipment
                 _lc_summary["total_overhead_profit_cost"] = _adj_overhead
-                _lc_summary["total_cost_with_overhead_profit"] = _adj_material + _adj_overhead
+                _lc_summary["total_cost_with_overhead_profit"] = (
+                    _adj_material + _adj_labor + _adj_equipment + _adj_overhead
+                )
                 runner.registerInfo(
                     f"RSMeans costs scaled by lifetime multipliers: "
                     f"door_multiplier={_mult_door_lc}, seal_multiplier={_mult_seal_lc}; "
-                    f"lifecycle material cost=${_adj_material:,.2f}"
+                    f"lifecycle material=${_adj_material:,.2f} "
+                    f"labor=${_adj_labor:,.2f} equipment=${_adj_equipment:,.2f}"
                 )
 
         door_rsmeans_cost_per_area_feature_value = "N/A"
@@ -1868,6 +2019,7 @@ class DoorEnhancement(openstudio.measure.ModelMeasure):
             cost_source_val = rsmeans_lookup.get("cost_source", "rsmeans_api")
             rsmeans_material_cost = float(rsmeans_summary_dict.get("total_material_cost", 0.0))
             rsmeans_labor_cost = float(rsmeans_summary_dict.get("total_labor_cost", 0.0))
+            rsmeans_equipment_cost = float(rsmeans_summary_dict.get("total_equipment_cost", 0.0))
             rsmeans_overhead_percent = float(rsmeans_summary_dict.get("overhead_profit_percent", 0.0))
             rsmeans_overhead_cost = float(rsmeans_summary_dict.get("total_overhead_profit_cost", 0.0))
             rsmeans_total_cost = float(rsmeans_summary_dict.get("total_cost_with_overhead_profit", 0.0))
@@ -1934,6 +2086,7 @@ class DoorEnhancement(openstudio.measure.ModelMeasure):
             # -- SimulationControl (results) bucket: mirrored scalars + JSON --
             results.setFeature("door_enhancement_material_cost_$", rsmeans_material_cost)
             results.setFeature("door_enhancement_labor_cost_$", rsmeans_labor_cost)
+            results.setFeature("door_enhancement_equipment_cost_$", rsmeans_equipment_cost)
             results.setFeature("door_enhancement_overhead_profit_cost_$", rsmeans_overhead_cost)
             results.setFeature("door_enhancement_total_cost_with_overhead_and_profit_$", rsmeans_total_cost)
 

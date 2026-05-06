@@ -25,8 +25,8 @@ Lookup order per material:
 
 Candidate acceptance threshold:
 
-- `MIN_ACCEPTABLE_MATCH_SCORE = 50.0`
-- Best scored candidate below 50.0 triggers fallback-ID path
+- `MIN_ACCEPTABLE_MATCH_SCORE = 70.0`
+- Best scored candidate below 70.0 triggers fallback-ID path
 
 ## Cost Basis Derivation
 

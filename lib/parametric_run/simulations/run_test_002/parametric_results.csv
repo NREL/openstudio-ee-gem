@@ -1,11 +1,98 @@
-scenario,city,building_type,climate_zone,building_area_m2,renovation_details,annual_electricity_cost_usd,annual_gas_cost_usd,annual_electricity_operating_emissions_kg_co2e,annual_gas_operating_emissions_kg_co2e,total_site_energy_gj,wall_insulation_renovated_area_m2,roof_insulation_renovated_area_m2,total_renovated_window_area_m2,total_renovated_glazing_area_m2,total_renovated_frame_area_m2,total_renovated_perimeter_m,total_renovated_caulking_volume_m3,total_renovated_weatherstrip_length_m,total_renovated_door_area_m2,total_renovated_sealing_bottom_length_m,total_renovated_sealing_side_length_m,wall_insulation_total_additional_embodied_carbon_kg,roof_insulation_total_additional_embodied_carbon_kg,window_enhancement_total_additional_embodied_carbon_kg,door_enhancement_total_additional_embodied_carbon_kg,wall_insulation_total_cost_with_overhead_and_profit_usd,roof_insulation_total_cost_with_overhead_and_profit_usd,window_enhancement_total_additional_material_cost_usd,window_enhancement_total_additional_labour_cost_usd,window_enhancement_total_additional_overhead_profit_cost_usd,door_enhancement_total_additional_material_cost_usd,door_enhancement_total_additional_labour_cost_usd,door_enhancement_total_additional_overhead_profit_cost_usd,total_additional_construction_cost_usd,total_construction_cost_usd,roof_insulation_total_additional_installed_cost_usd,roof_insulation_total_additional_material_cost_usd,roof_insulation_total_additional_overhead_profit_cost_usd,wall_insulation_total_additional_labour_cost_usd,wall_insulation_total_additional_material_cost_usd,wall_insulation_total_additional_overhead_profit_cost_usd
-baseline_SmallOffice_Amarillo,Amarillo,SmallOffice,ASHRAE 169-2013-3B,511.15740000000005,Baseline (no envelope renovation),9658.576463958037,8.898558360972991,18896.312963064043,46.893281753979466,195.48,,,,,,,,,,,,,,,,,,,,,,,,0.0,0.0,,,,,,
-scenario_1_SmallOffice_Amarillo,Amarillo,SmallOffice,ASHRAE 169-2013-3B,511.15740000000005,Wall insulation improved to R-10.0 using Fiberglass Batts,9641.688863692132,8.73771998057537,18862.710936365424,46.04570182216513,195.12,281.515,,,,,,,,,,,6.8106134739344295,,,,228.0641743240431,,,,,,,,228.0641743240431,228.0641743240431,,,,0.0,207.33106756731192,20.733106756731193
-scenario_2_SmallOffice_Amarillo,Amarillo,SmallOffice,ASHRAE 169-2013-3B,511.15740000000005,Wall insulation improved to R-13.0 using Fiberglass Batts,9562.628929346141,8.354781532733359,18784.045926914303,44.02770746840067,194.27,281.515,,,,,,,,,,,28.479387814020267,,,,953.6773877884706,,,,,,,,953.6773877884706,953.6773877884706,,,,0.0,866.9794434440641,86.69794434440642
-scenario_3_SmallOffice_Amarillo,Amarillo,SmallOffice,ASHRAE 169-2013-3B,511.15740000000005,Wall insulation improved to R-13.0 using Expanded Polystyrene (EPS) Foam Board,9562.628929346141,8.354781532733359,18784.045926914303,44.02770746840067,194.27,281.515,,,,,,,,,,,494.48761704222136,,,,4399.46505565099,,,,,,,,4399.46505565099,4399.46505565099,,,,0.0,3999.5136869554453,399.95136869554455
-scenario_4_SmallOffice_Amarillo,Amarillo,SmallOffice,ASHRAE 169-2013-3B,511.15740000000005,Wall insulation improved to R-20.0 using Fiberglass Batts,9472.950780440291,7.808985760181472,18684.613808672537,41.15149382747468,193.19,281.515,,,,,,,,,,,79.03986127422056,,,,2646.7748858721347,,,,,,,,2646.7748858721347,2646.7748858721347,,,,0.0,2406.158987156486,240.61589871564863
-scenario_5_SmallOffice_Amarillo,Amarillo,SmallOffice,ASHRAE 169-2013-3B,511.15740000000005,Wall insulation improved to R-30.0 using Expanded Polystyrene (EPS) Foam Board,9436.307131838825,7.42960274733436,18619.345473361365,39.15223576876055,192.47,281.515,,,,,,,,,,,2626.485574999918,,,,23367.88851357002,,,,,,,,23367.88851357002,23367.88851357002,,,,0.0,21243.53501233638,2124.353501233638
-scenario_6_SmallOffice_Amarillo,Amarillo,SmallOffice,ASHRAE 169-2013-3B,511.15740000000005,Roof insulation improved to R-30.0 using Blown Fiberglass,9506.25158005728,9.077744758411036,18714.69495257947,47.837551362683136,193.63,,598.7616811798497,,,,,,,,,,,8391.115243712233,,,,68549.51194316185,,,,,,,68549.51194316185,68549.51194316185,62317.73813014714,62317.73813014714,6231.7738130147145,,,
-scenario_7_SmallOffice_Amarillo,Amarillo,SmallOffice,ASHRAE 169-2013-3B,511.15740000000005,"Wall insulation improved to R-20.0 using Extruded Polystyrene (XPS) Foam Board; Roof insulation improved to R-20.0 using Blown Mineral Wool; Window system failed to upgrade to 1-pane because all window constructions are simple glazing objects; infiltration reduction set to 20.0%; parameters: glass_option=provide user_num_panes, wf_option=wood-aluminium window frame, film_option=safety film, weatherstrip_option=silicone adhesive smoke gasket, caulking_thickness=0 m, glass_pane_thickness=0 m, gap_thickness=0 m; Door system upgraded (glass door) with 20.0% infiltration reduction",9202.690667619498,6.016506784297963,18355.532311016028,31.705556829091144,189.61,281.515,598.7616811798497,55.778400000000005,55.778400000000005,55.778400000000005,134.16,0.003371808563244853,0.0,7.807147679999995,0.0,0.0,5213.539543256495,25695.465915781304,12699.905004,0.0,11850.874939445504,14699.786831758553,67813.20209065248,0.0,0.0,0.0,0.0,0.0,94363.86386185655,94363.86386185655,13363.442574325956,13363.442574325956,1336.3442574325957,0.0,10773.522672223186,1077.3522672223187
-scenario_8_SmallOffice_Amarillo,Amarillo,SmallOffice,ASHRAE 169-2013-3B,511.15740000000005,"Wall insulation improved to R-25.0 using Expanded Polystyrene (EPS) Foam Board; Roof insulation improved to R-25.0 using Polyiso Insulation Foam Board; Window system failed to upgrade to 2-pane because all window constructions are simple glazing objects; infiltration reduction set to 25.0%; parameters: glass_option=provide user_num_panes, wf_option=wood window frame, caulking_option=polyurethane, film_option=anti-graffiti film, weatherstrip_option=silicone adhesive smoke gasket, caulking_thickness=0 m, glass_pane_thickness=0 m, gap_thickness=0 m; Door system upgraded (polystyrene core steel door) with 25.0% infiltration reduction; parameters: door_bottom_seal_option=brush weatherstrip, door_top_side_seal_option=silicone adhesive smoke gasket",9157.378918657654,5.353958501651605,18308.877342209267,28.21408528578896,189.06,281.515,598.7616811798497,55.778400000000005,55.778400000000005,55.778400000000005,134.16,0.003371808563244853,0.0,7.807147679999995,3.6587999999999976,16.461199999999998,1999.427352071183,10008.092585556818,11810.05977719386,470.8225887786793,17788.940437711473,93306.16791198999,67813.20369153947,0.0,0.0,0.0,0.0,0.0,178908.31204124092,178908.31204124092,84823.7890109,84823.7890109,8482.37890109,0.0,16171.764034283158,1617.176403428316
-scenario_9_SmallOffice_Amarillo,Amarillo,SmallOffice,ASHRAE 169-2013-3B,511.15740000000005,"Wall insulation improved to R-30.0 using Fiberglass Batts; Roof insulation improved to R-30.0 using Blown Fiberglass; Window system failed to upgrade to 3-pane because all window constructions are simple glazing objects; infiltration reduction set to 30.0%; parameters: glass_option=provide user_num_panes, wf_option=wood window frame, caulking_option=acrylic, film_option=low-e film, weatherstrip_option=silicone adhesive smoke gasket, caulking_thickness=0 m, glass_pane_thickness=0 m, gap_thickness=0 m; Door system upgraded (wooden door) with 30.0% infiltration reduction; parameters: door_bottom_seal_option=automatic door bottom, door_top_side_seal_option=jamb weatherstrip",9105.012092465002,4.776418379392841,18271.131121813865,25.170586487591876,188.61,281.515,598.7616811798497,55.778400000000005,55.778400000000005,55.778400000000005,134.16,0.003371808563244853,0.0,7.807147679999995,3.6587999999999976,16.461199999999998,151.26910907450667,8391.115243712233,12092.553840112805,423.05397993928784,5065.4855974202255,68549.51194316185,67813.20369153947,0.0,0.0,0.0,0.0,0.0,141428.20123212156,141428.20123212156,62317.73813014714,62317.73813014714,6231.7738130147145,0.0,4604.986906745659,460.498690674566
+scenario,baseline_SmallOffice_Duluth,scenario_1_SmallOffice_Duluth,scenario_2_SmallOffice_Duluth,scenario_3_SmallOffice_Duluth
+city,Duluth,Duluth,Duluth,Duluth
+building_type,SmallOffice,SmallOffice,SmallOffice,SmallOffice
+climate_zone,ASHRAE 169-2013-7A,ASHRAE 169-2013-7A,ASHRAE 169-2013-7A,ASHRAE 169-2013-7A
+building_area_m2,511.15740000000005,511.15740000000005,511.15740000000005,511.15740000000005
+renovation_details,Baseline (no envelope renovation),Envelope renovation applied (details generated at report time),Envelope renovation applied (details generated at report time),Envelope renovation applied (details generated at report time)
+annual_electricity_cost_usd,9416.858076153963,9333.262976237858,9292.336641658849,9329.886782393276
+annual_gas_cost_usd,424.25291824792123,416.80378591148474,410.7708092313769,406.13044219515814
+annual_electricity_operating_emissions_kg_co2e,18658.320050471153,18545.079664039884,18495.559228115446,18543.29734565571
+annual_gas_operating_emissions_kg_co2e,2235.711766256535,2196.456614207726,2164.664264953015,2140.2106366186053
+total_site_energy_gj,236.54,234.6,233.46,233.46
+wall_insulation_renovated_area_m2,,0,281.515,281.515
+wall_insulation_added_volume_m3,,0,4.206363428222297,21.190232828823547
+roof_insulation_renovated_area_m2,,598.7616811798497,598.7616811798497,
+roof_insulation_added_volume_m3,,82.44238634383217,124.621598205636,
+wall_insulation_material_thermal_conductivity_W_per_mK,,0.033,0.033,0.034
+wall_insulation_material_density_kg_per_m3,,30,30,20
+wall_insulation_material_lifetime_years,,60.0,60.0,60.0
+roof_insulation_material_thermal_conductivity_W_per_mK,,0.033,0.033,
+roof_insulation_material_density_kg_per_m3,,30,30,
+roof_insulation_material_lifetime_years,,67.5,67.5,
+window_total_count,20,20,20,20
+window_fixed_count,20,20,20,20
+window_operable_count,0,0,0,0
+window_skylight_count,0,0,0,0
+window_simple_glazing_count,20,20,20,20
+window_upgrade_status,,,,
+wall_insulation_embodied_carbon_kgCO2eq,,0,18.57034339779674,1576.5533224644719
+roof_insulation_embodied_carbon_kgCO2eq,,5551.072805503929,8391.115243712233,
+wall_insulation_custom_labor_cost_multiplier,,1.0,1.0,1.0
+wall_insulation_custom_cost_per_cf,,0.0,0.0,0.0
+roof_insulation_custom_labor_cost_multiplier,,1.0,1.0,
+roof_insulation_custom_cost_per_cf,,0.0,0.0,
+wall_insulation_total_cost_with_overhead_and_profit_usd,,0.0,498.60634218174465,10371.798499995006
+roof_insulation_total_cost_with_overhead_and_profit_usd,,5240.5657154219425,7921.746372476332,
+wall_insulation_material_cost_usd,,0.0,269.9298890258679,3053.1701212106514
+wall_insulation_labor_cost_usd,,0.0,183.34860386662726,6375.737606057536
+wall_insulation_overhead_profit_cost_usd,,0.0,45.327849289249514,942.8907727268188
+roof_insulation_material_cost_usd,,1715.0942341380905,2592.571540083163,
+roof_insulation_labor_cost_usd,,1969.182268825215,2976.6562126880763,
+roof_insulation_equipment_cost_usd,,1079.8741474202793,1632.3598585708808,
+roof_insulation_overhead_profit_cost_usd,,476.4150650383585,720.158761134212,
+total_additional_construction_cost_usd,0.0,5240.5657154219425,8420.352714658076,10371.798499995006
+total_construction_cost_usd,0.0,5240.5657154219425,8420.352714658076,10371.798499995006
+lpd_fraction_linear_fluorescent,1.0,1.0,1.0,1.0
+measure_name,Operating Cost Carbon Reporting Measure,Operating Cost Carbon Reporting Measure,Operating Cost Carbon Reporting Measure,Operating Cost Carbon Reporting Measure
+roof_insulation_analysis_period_years,,30,30,
+roof_insulation_cost_factor_basis,,cost_per_volume,cost_per_volume,
+roof_insulation_cost_source,,rsmeans_api,rsmeans_api,
+roof_insulation_equipment_cost_$,,1079.8741474202793,1632.3598585708808,
+roof_insulation_gwp_statistic,,median,median,
+roof_insulation_labor_cost_$,,1969.182268825215,2976.6562126880763,
+roof_insulation_material_cost_$,,1715.0942341380905,2592.571540083163,
+roof_insulation_material_gwp_per_kg,,2.2404694902499998,2.2404694902499998,
+roof_insulation_material_gwp_per_m2,,1.1476000000000002,1.1476000000000002,
+roof_insulation_material_rsmeans_cost_per_cf,,1.6363636363636362,1.6363636363636365,
+roof_insulation_material_rsmeans_description,,"Blown-in insulation, ceilings, with open access, fiberglass, 5.5"" thick, R11","Blown-in insulation, ceilings, with open access, fiberglass, 5.5"" thick, R11",
+roof_insulation_material_rsmeans_id,,072126101000,072126101000,
+roof_insulation_material_type,,Blown Fiberglass,Blown Fiberglass,
+roof_insulation_measure_name,,Increase Insulation R-Value for Roofs,Increase Insulation R-Value for Roofs,
+roof_insulation_modified_constructions_count,,1,1,
+roof_insulation_overhead_profit_cost_$,,476.4150650383585,720.158761134212,
+roof_insulation_overhead_profit_percent,,10.0,10.0,
+roof_insulation_renovated_construction_names,,Typical Uninsulated Wood Joist Attic Roof adj roof insulation,Typical Uninsulated Wood Joist Attic Roof adj roof insulation,
+roof_insulation_renovated_embodied_carbon_kgCO2eq,,5551.072805503929,8391.115243712233,
+roof_insulation_renovated_exterior_roof_area_m2,,598.7616811798497,598.7616811798497,
+roof_insulation_retrofit_materials_json,,"[{""name"": ""Blown Fiberglass roof insulation (Typical Uninsulated Wood Joist Attic Roof)"", ""description"": ""Added insulation to reach R-20.0; actual added thickness 5.42 in"", ""quantity"": 6445.017097178409, ""unit"": ""SF"", ""quantity_volume"": 2911.425397456635, ""unit_volume"": ""CF"", ""rsmeans_thickness_ft"": 0.4517327655703567, ""costing_mode"": ""volume_from_area"", ""quantity_si"": 598.7616811798497, ""unit_si"": ""m2"", ""division_code"": ""07"", ""rsmeans_id"": null}]","[{""name"": ""Blown Fiberglass roof insulation (Typical Uninsulated Wood Joist Attic Roof)"", ""description"": ""Added insulation to reach R-30.0; actual added thickness 8.19 in"", ""quantity"": 6445.017097178409, ""unit"": ""SF"", ""quantity_volume"": 4400.970206931295, ""unit_volume"": ""CF"", ""rsmeans_thickness_ft"": 0.6828484921875559, ""costing_mode"": ""volume_from_area"", ""quantity_si"": 598.7616811798497, ""unit_si"": ""m2"", ""division_code"": ""07"", ""rsmeans_id"": null}]",
+roof_insulation_rsmeans_materials_detail_json,,"[{""name"": ""Blown Fiberglass roof insulation (Typical Uninsulated Wood Joist Attic Roof)"", ""description"": ""Added insulation to reach R-20.0; actual added thickness 5.42 in"", ""quantity"": 6445.017097178409, ""unit"": ""SF"", ""division_code"": ""07"", ""rsmeans_id"": ""072126101000"", ""rsmeans_description"": ""Blown-in insulation, ceilings, with open access, fiberglass, 5.5\"" thick, R11"", ""unit_cost"": 1.6363636363636367, ""total_cost"": 4764.150650383584, ""unit_cost_basis"": ""CF"", ""costing_mode"": ""volume_from_area"", ""match_type"": ""fallback_id"", ""catalog"": ""bc-mf"", ""search_term_used"": ""fallback:072126101000"", ""source"": """"}]","[{""name"": ""Blown Fiberglass roof insulation (Typical Uninsulated Wood Joist Attic Roof)"", ""description"": ""Added insulation to reach R-30.0; actual added thickness 8.19 in"", ""quantity"": 6445.017097178409, ""unit"": ""SF"", ""division_code"": ""07"", ""rsmeans_id"": ""072126101000"", ""rsmeans_description"": ""Blown-in insulation, ceilings, with open access, fiberglass, 5.5\"" thick, R11"", ""unit_cost"": 1.6363636363636367, ""total_cost"": 7201.58761134212, ""unit_cost_basis"": ""CF"", ""costing_mode"": ""volume_from_area"", ""match_type"": ""fallback_id"", ""catalog"": ""bc-mf"", ""search_term_used"": ""fallback:072126101000"", ""source"": """"}]",
+roof_insulation_summary_notes,,"Roof insulation renovation completed. Modified constructions=1, target-already-met skips=0.","Roof insulation renovation completed. Modified constructions=1, target-already-met skips=0.",
+roof_insulation_target_r_value_ip,,20.0,30.0,
+roof_insulation_total_cost_with_overhead_and_profit_$,,5240.5657154219425,7921.746372476332,
+total_additional_embodied_carbon_kg,0.0,5551.072805503929,8409.685587110029,1576.5533224644719
+wall_insulation_analysis_period_years,,30,30,30
+wall_insulation_cost_factor_basis,,not_calculated,cost_per_volume,cost_per_volume
+wall_insulation_cost_source,,none,rsmeans_api,rsmeans_api
+wall_insulation_equipment_cost_$,,0.0,0.0,0.0
+wall_insulation_gwp_statistic,,median,median,median
+wall_insulation_labor_cost_$,,0.0,183.34860386662726,6375.737606057536
+wall_insulation_material_cost_$,,0.0,269.9298890258679,3053.1701212106514
+wall_insulation_material_gwp_per_kg,,0.8125334259000001,0.8125334259000001,3.72
+wall_insulation_material_gwp_per_m2,,0.9445,0.9445,2.79
+wall_insulation_material_gwp_per_m3,,4.414821428220001,4.414821428220001,
+wall_insulation_material_rsmeans_cost_per_cf,,N/A,1.8171428571428567,4.08
+wall_insulation_material_rsmeans_description,,,"Blanket insulation, for walls or ceilings, kraft faced fiberglass, 3-1/2"" thick, R11, 15"" wide","Foam board insulation, polystyrene, expanded, 1"" thick, R4"
+wall_insulation_material_rsmeans_id,,,072116200020,072113130600
+wall_insulation_material_type,,Fiberglass Batts,Fiberglass Batts,Expanded Polystyrene (EPS) Foam Board
+wall_insulation_measure_name,,Increase Insulation R-Value for Exterior Walls,Increase Insulation R-Value for Exterior Walls,Increase Insulation R-Value for Exterior Walls
+wall_insulation_modified_constructions_count,,0,1,1
+wall_insulation_overhead_profit_cost_$,,0.0,45.327849289249514,942.8907727268188
+wall_insulation_overhead_profit_percent,,10.0,10.0,10.0
+wall_insulation_renovated_construction_names,,,Typical Insulated Wood Framed Exterior Wall R-19.61 1,Typical Insulated Wood Framed Exterior Wall R-19.61 1
+wall_insulation_renovated_embodied_carbon_kgCO2eq,,,18.57034339779674,1576.5533224644719
+wall_insulation_renovated_exterior_wall_area_m2,,,281.515,281.515
+wall_insulation_retrofit_materials_json,,,"[{""name"": ""Fiberglass Batts insulation"", ""description"": ""Added insulation to reach R-20.0; avg added thickness 0.59 in"", ""quantity"": 3030.202240960037, ""unit"": ""SF"", ""quantity_volume"": 148.5463225771286, ""unit_volume"": ""CF"", ""rsmeans_thickness_ft"": 0.0490219185117981, ""costing_mode"": ""volume_from_area"", ""quantity_si"": 281.515, ""unit_si"": ""m2"", ""division_code"": ""07""}]","[{""name"": ""Expanded Polystyrene (EPS) Foam Board insulation"", ""description"": ""Added insulation to reach R-30.0; avg added thickness 2.96 in"", ""quantity"": 3030.202240960037, ""unit"": ""SF"", ""quantity_volume"": 748.3260101006498, ""unit_volume"": ""CF"", ""rsmeans_thickness_ft"": 0.24695580510494095, ""costing_mode"": ""volume_from_area"", ""quantity_si"": 281.515, ""unit_si"": ""m2"", ""division_code"": ""07""}]"
+wall_insulation_rsmeans_materials_detail_json,,,"[{""name"": ""Fiberglass Batts insulation"", ""description"": ""Added insulation to reach R-20.0; avg added thickness 0.59 in"", ""quantity"": 3030.202240960037, ""unit"": ""SF"", ""division_code"": ""07"", ""rsmeans_id"": ""072116200020"", ""rsmeans_description"": ""Blanket insulation, for walls or ceilings, kraft faced fiberglass, 3-1/2\"" thick, R11, 15\"" wide"", ""unit_cost"": 3.051428571428571, ""total_cost"": 453.2784928924952, ""unit_cost_basis"": ""CF"", ""costing_mode"": ""volume_from_area"", ""match_type"": ""closest_match"", ""catalog"": ""bc-mf"", ""search_term_used"": ""Fiberglass Batts insulation"", ""source"": """"}]","[{""name"": ""Expanded Polystyrene (EPS) Foam Board insulation"", ""description"": ""Added insulation to reach R-30.0; avg added thickness 2.96 in"", ""quantity"": 3030.202240960037, ""unit"": ""SF"", ""division_code"": ""07"", ""rsmeans_id"": ""072113130600"", ""rsmeans_description"": ""Foam board insulation, polystyrene, expanded, 1\"" thick, R4"", ""unit_cost"": 12.600000000000001, ""total_cost"": 9428.907727268188, ""unit_cost_basis"": ""CF"", ""costing_mode"": ""volume_from_area"", ""match_type"": ""closest_match"", ""catalog"": ""bc-mf"", ""search_term_used"": ""Expanded Polystyrene (EPS) Foam Board insulation"", ""source"": """"}]"
+wall_insulation_summary_notes,,"Requested: wall insulation upgrade to target R-10.00 using 'Fiberglass Batts'. Outcome: Not implemented. Reason: All eligible wall constructions already met or exceeded the target R-value. Context: modified constructions=0, target-already-met skips=1, renovated area=0.000 m2, added volume=0.000 m3.","Requested: wall insulation upgrade to target R-20.00 using 'Fiberglass Batts'. Outcome: Implemented. Details: Exterior wall insulation layers were updated to meet the target R-value where needed. Context: modified constructions=1, target-already-met skips=0, renovated area=281.515 m2, added volume=4.206 m3.","Requested: wall insulation upgrade to target R-30.00 using 'Expanded Polystyrene (EPS) Foam Board'. Outcome: Implemented. Details: Exterior wall insulation layers were updated to meet the target R-value where needed. Context: modified constructions=1, target-already-met skips=0, renovated area=281.515 m2, added volume=21.190 m3."
+wall_insulation_target_r_value_ip,,10.0,20.0,30.0
+wall_insulation_total_cost_with_overhead_and_profit_$,,0.0,498.60634218174465,10371.798499995006

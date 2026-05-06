@@ -45,7 +45,7 @@ The setup script validates `openstudio`, `python-dotenv`, and `numpy` imports.
 ### RSMeans mode (`use_custom_costs = false`)
 
 - Searches catalogs: `bc-mf`, `gb-mf`, `rp-mf`
-- Applies minimum acceptable match score of **50.0**
+- Applies minimum acceptable match score of **70.0**
 - If score is too low, uses fallback IDs for known door materials
 
 ### Custom mode (`use_custom_costs = true`)

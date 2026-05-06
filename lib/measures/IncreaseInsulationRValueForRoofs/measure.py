@@ -346,6 +346,17 @@ class IncreaseInsulationRValueForRoofs(openstudio.measure.ModelMeasure):
         overhead_profit_percent = runner.getDoubleArgumentValue("overhead_profit_percent", user_arguments)
 
         exact_costline_id = (exact_costline_id or "").strip()
+
+        # Pre-flight warning: if RSMeans is the active path and the user has
+        # not supplied a fallback custom rate, the measure will hard-error if
+        # RSMeans returns nothing. Surface this risk up front.
+        if calculate_costs and (not use_custom_costs) and float(custom_cost_per_cf) <= 0.0:
+            runner.registerWarning(
+                "RSMeans cost lookup is the active cost source (use_custom_costs=false) "
+                "but no fallback 'custom_cost_per_cf' value has been provided. "
+                "If RSMeans returns no match for this insulation material, the measure "
+                "will fail. Consider setting a non-zero 'custom_cost_per_cf' as a safety net."
+            )
         
         # Track if user provided explicit density value (non-zero means user-specified)
         user_specified_density = insulation_material_density > 0.0
@@ -1127,6 +1138,7 @@ class IncreaseInsulationRValueForRoofs(openstudio.measure.ModelMeasure):
         # even when RSMeans values included both material and labor.
         total_material_cost = 0.0
         total_labor_cost = 0.0
+        total_equipment_cost = 0.0
         total_overhead_profit_cost = 0.0
         cost_source = "none"
         cost_factor_basis = "not_calculated"
@@ -1222,8 +1234,11 @@ class IncreaseInsulationRValueForRoofs(openstudio.measure.ModelMeasure):
                                 "keyword:blown mineral wool": "072123100100",
                                 "keyword:polyiso insulation foam board": "072216101700",
                                 "keyword:polyiso foam board": "072216101700",
-                                "keyword:graphite polystyrene": "072113130600",
-                                "keyword:gps foam board": "072113130600",
+                                # GPS has the same R-value (~R5/inch) as XPS, so XPS is a
+                                # closer cost proxy than EPS (R4/inch). RSMeans 2024-an has
+                                # no graphite-polystyrene line.
+                                "keyword:graphite polystyrene": "072216101910",
+                                "keyword:gps foam board": "072216101910",
                                 "keyword:expanded polystyrene": "072113130600",
                                 "keyword:eps foam board": "072113130600",
                                 "keyword:extruded polystyrene": "072216101910",
@@ -1236,11 +1251,16 @@ class IncreaseInsulationRValueForRoofs(openstudio.measure.ModelMeasure):
                         )
                         if rsmeans_lookup and rsmeans_lookup.get("status") == "ok":
                             summary = rsmeans_lookup.get("summary", {})
-                            # RSMeans summary "total_material_cost" currently
-                            # represents direct cost from the RSMeans API response.
-                            # Backward-compatible alias for downstream consumers.
+                            # Bare costs come split into material/labor/equipment
+                            # by call_rsmeans_api so we can populate the
+                            # AdditionalProperties cost fields independently and
+                            # apply the lifetime multiplier uniformly. Overhead
+                            # and profit are computed by the helper on the
+                            # combined bare cost (single application).
                             _lc_mult = int(lifetime_multiplier(insulation_material_lifetime, analysis_period))
                             total_material_cost = float(summary.get("total_material_cost", 0.0)) * _lc_mult
+                            total_labor_cost = float(summary.get("total_labor_cost", 0.0)) * _lc_mult
+                            total_equipment_cost = float(summary.get("total_equipment_cost", 0.0)) * _lc_mult
                             total_overhead_profit_cost = float(summary.get("total_overhead_profit_cost", 0.0)) * _lc_mult
                             cost_source = "rsmeans_api"
                             materials_results = rsmeans_lookup.get(
@@ -1248,7 +1268,17 @@ class IncreaseInsulationRValueForRoofs(openstudio.measure.ModelMeasure):
                             ).get("materials", [])
                             total_added_volume_cf = sum(float(m.get("quantity_volume", 0.0)) for m in rsmeans_materials)
                             if total_added_volume_cf > 0.0:
-                                rsmeans_cost_per_cf_feature_value = float(summary.get("total_material_cost", 0.0)) / total_added_volume_cf
+                                # Cost-per-CF feature reflects the full installed
+                                # bare cost (material + labor + equipment) so it
+                                # remains comparable across line types regardless
+                                # of how the API splits the components.
+                                total_bare_cost = float(summary.get(
+                                    "total_bare_cost",
+                                    float(summary.get("total_material_cost", 0.0))
+                                    + float(summary.get("total_labor_cost", 0.0))
+                                    + float(summary.get("total_equipment_cost", 0.0)),
+                                ))
+                                rsmeans_cost_per_cf_feature_value = total_bare_cost / total_added_volume_cf
                             if materials_results:
                                 first_match = materials_results[0]
                                 matched_rsmeans_id = first_match.get("rsmeans_id") or rsmeans_materials[0].get("rsmeans_id", "")
@@ -1471,8 +1501,12 @@ class IncreaseInsulationRValueForRoofs(openstudio.measure.ModelMeasure):
         results.setFeature("roof_insulation_embodied_carbon_kgCO2eq", total_embodied_carbon)
         results.setFeature("roof_insulation_material_cost_$", total_material_cost)
         results.setFeature("roof_insulation_labor_cost_$", total_labor_cost)
+        results.setFeature("roof_insulation_equipment_cost_$", total_equipment_cost)
         results.setFeature("roof_insulation_overhead_profit_cost_$", total_overhead_profit_cost)
-        results.setFeature("roof_insulation_total_cost_with_overhead_and_profit_$", total_material_cost + total_labor_cost + total_overhead_profit_cost)
+        results.setFeature(
+            "roof_insulation_total_cost_with_overhead_and_profit_$",
+            total_material_cost + total_labor_cost + total_equipment_cost + total_overhead_profit_cost,
+        )
         results.setFeature("roof_insulation_cost_factor_basis", cost_factor_basis)
         if use_exact_costline_id and exact_costline_id:
             results.setFeature("roof_insulation_rsmeans_requested_costline_id", exact_costline_id)
