@@ -561,6 +561,22 @@ def _score_rsmeans_candidate(material_name: str, item: Dict[str, Any]) -> float:
     if any(tok in description_norm for tok in ["fastener", "clip", "anchor", "hanger"]):
         score -= 20.0
 
+    # Heavily penalize cost-lines that explicitly exclude glazing when the
+    # material we are searching for IS the glazing (e.g. RSMeans line
+    # "Windows ... projected window, excl. glazing and trim" must not match
+    # a "window glazing" search — that line prices a frame only).
+    if "glaz" in material_norm and any(
+        phrase in description_norm
+        for phrase in (
+            "excl glazing",
+            "excluding glazing",
+            "less glazing",
+            "no glazing",
+            "without glazing",
+        )
+    ):
+        score -= 200.0
+
     score += min(len(description_norm), 120) / 120.0
     return score
 
@@ -623,6 +639,29 @@ def _select_best_rsmeans_candidate(
     eligible_items = [item for item in items if not _is_disallowed_candidate(item)]
     if not eligible_items:
         eligible_items = items
+
+    # When the material we're costing is the glazing itself, drop any cost-line
+    # whose description explicitly excludes glazing (those lines price a window
+    # frame/sash unit "excl. glazing and trim" — they are NOT glazing material).
+    material_norm_for_filter = _normalize_search_text(material_name)
+    if "glaz" in material_norm_for_filter:
+        glazing_exclusion_phrases = (
+            "excl glazing",
+            "excluding glazing",
+            "less glazing",
+            "no glazing",
+            "without glazing",
+        )
+        non_excl = [
+            item
+            for item in eligible_items
+            if not any(
+                phrase in _normalize_search_text(item.get("description", ""))
+                for phrase in glazing_exclusion_phrases
+            )
+        ]
+        if non_excl:
+            eligible_items = non_excl
 
     scored = []
     for idx, item in enumerate(eligible_items):

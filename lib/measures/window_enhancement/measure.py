@@ -1513,6 +1513,7 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
             total_film_area_m2=executed_film_area_m2,
             total_frame_area_m2=executed_frame_area_m2,
             total_caulking_volume_m3=executed_caulking_volume_m3,
+            total_caulking_length_m=executed_caulking_length_m,
             total_weatherstrip_length_m=executed_weatherstrip_length_m,
             glass_cost_per_cf=glass_cost_per_cf,
             frame_cost_per_sf=frame_cost_per_sf,
@@ -1547,6 +1548,7 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
         rsmeans_glass_cost_per_sf = cost_metrics.get("rsmeans_glass_cost_per_sf", "N/A")
         rsmeans_frame_cost_per_sf = cost_metrics["rsmeans_frame_cost_per_sf"]
         rsmeans_caulking_cost_per_cy = cost_metrics["rsmeans_caulking_cost_per_cy"]
+        rsmeans_caulking_cost_per_lf = cost_metrics.get("rsmeans_caulking_cost_per_lf", "N/A")
         rsmeans_film_cost_per_sf = cost_metrics["rsmeans_film_cost_per_sf"]
         rsmeans_weatherstrip_cost_per_lf = cost_metrics["rsmeans_weatherstrip_cost_per_lf"]
 
@@ -1572,6 +1574,7 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
             rsmeans_glass_cost_per_sf=rsmeans_glass_cost_per_sf,
             rsmeans_frame_cost_per_sf=rsmeans_frame_cost_per_sf,
             rsmeans_caulking_cost_per_cy=rsmeans_caulking_cost_per_cy,
+            rsmeans_caulking_cost_per_lf=rsmeans_caulking_cost_per_lf,
             rsmeans_film_cost_per_sf=rsmeans_film_cost_per_sf,
             rsmeans_weatherstrip_cost_per_lf=rsmeans_weatherstrip_cost_per_lf,
         )
@@ -1990,7 +1993,12 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
         
         # Assign window area to glass and window frame
         subsurface_data["glass"]["area_m2"] = subsurface_data["film"]["area_m2"]
-        subsurface_data["frame"]["area_m2"] = window_area
+        # Frame area is the perimeter strip: total window area minus the inner
+        # glazing/film opening. Clamp to zero in case of rounding or when the
+        # OS model carries no frame width (frame_width == 0).
+        subsurface_data["frame"]["area_m2"] = max(
+            0.0, float(window_area) - float(subsurface_data["film"]["area_m2"])
+        )
         subsurface_data["second_glazing"]["area_m2"] = subsurface_data["film"]["area_m2"]
 
     def fetch_epd_urls(self, runner, subsurface_name, wf_option, glass_option, num_panes,
@@ -3625,6 +3633,7 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
         total_film_area_m2,
         total_frame_area_m2,
         total_caulking_volume_m3,
+        total_caulking_length_m,
         total_weatherstrip_length_m,
         glass_cost_per_cf,
         frame_cost_per_sf,
@@ -3661,6 +3670,7 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
         rsmeans_glass_cost_per_sf = "N/A"
         rsmeans_frame_cost_per_sf = "N/A"
         rsmeans_caulking_cost_per_cy = "N/A"
+        rsmeans_caulking_cost_per_lf = "N/A"
         rsmeans_film_cost_per_sf = "N/A"
         rsmeans_weatherstrip_cost_per_lf = "N/A"
 
@@ -3847,6 +3857,7 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
                         )
                         _frame_area_sf = float(total_frame_area_m2) * 10.7639
                         _caulking_volume_cy = float(total_caulking_volume_m3) * 1.30795
+                        _caulking_length_lf = float(total_caulking_length_m) * 3.28084
                         _film_area_sf = float(total_film_area_m2) * 10.7639
                         _weatherstrip_length_lf = float(total_weatherstrip_length_m) * 3.28084
 
@@ -3867,6 +3878,13 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
                             rsmeans_frame_cost_per_sf = _frame_cost_total / _frame_area_sf
                         if _caulking_volume_cy > 0.0 and _caulking_cost_total > 0.0:
                             rsmeans_caulking_cost_per_cy = _caulking_cost_total / _caulking_volume_cy
+                        # Companion $/LF metric: RSMeans joint-sealant cost-lines
+                        # are priced per linear foot of bead, so the back-derived
+                        # $/CY (which divides by the tiny bead volume) becomes
+                        # huge and misleading. Provide an intuitive $/LF figure
+                        # alongside.
+                        if _caulking_length_lf > 0.0 and _caulking_cost_total > 0.0:
+                            rsmeans_caulking_cost_per_lf = _caulking_cost_total / _caulking_length_lf
                         if _film_area_sf > 0.0 and _film_cost_total > 0.0:
                             rsmeans_film_cost_per_sf = _film_cost_total / _film_area_sf
                         if _weatherstrip_length_lf > 0.0 and _weatherstrip_cost_total > 0.0:
@@ -3943,6 +3961,7 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
             "rsmeans_glass_cost_per_sf": rsmeans_glass_cost_per_sf,
             "rsmeans_frame_cost_per_sf": rsmeans_frame_cost_per_sf,
             "rsmeans_caulking_cost_per_cy": rsmeans_caulking_cost_per_cy,
+            "rsmeans_caulking_cost_per_lf": rsmeans_caulking_cost_per_lf,
             "rsmeans_film_cost_per_sf": rsmeans_film_cost_per_sf,
             "rsmeans_weatherstrip_cost_per_lf": rsmeans_weatherstrip_cost_per_lf,
         }
@@ -3970,6 +3989,7 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
         rsmeans_glass_cost_per_sf,
         rsmeans_frame_cost_per_sf,
         rsmeans_caulking_cost_per_cy,
+        rsmeans_caulking_cost_per_lf,
         rsmeans_film_cost_per_sf,
         rsmeans_weatherstrip_cost_per_lf,
     ):
@@ -3995,6 +4015,7 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
             "window_enhancement_glass_cost_per_sf": rsmeans_glass_cost_per_sf,
             "window_enhancement_frame_cost_per_sf": rsmeans_frame_cost_per_sf,
             "window_enhancement_caulking_cost_per_cy": rsmeans_caulking_cost_per_cy,
+            "window_enhancement_caulking_cost_per_lf": rsmeans_caulking_cost_per_lf,
             "window_enhancement_film_cost_per_sf": rsmeans_film_cost_per_sf,
             "window_enhancement_weatherstrip_cost_per_lf": rsmeans_weatherstrip_cost_per_lf,
         })

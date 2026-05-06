@@ -138,6 +138,84 @@ S10 = {
     "caulking_option": "polyurethane",
 }
 
+# --- Window-focused scenarios for run_test_010. ---
+# These intentionally leave wall/roof/door measures off (None) so only the
+# window enhancement measure runs. Each scenario isolates or combines window
+# components (caulking, secondary glazing, frame, film, weatherstrip, glass)
+# so per-material cost lines and the conflict-detection paths can be inspected
+# in isolation. The DOE SmallOffice prototype carries SimpleGlazing FixedWindow
+# only, so glass_option / film / weatherstrip will report option-conflicts
+# (expected); caulking and secondary glazing are the materials that actually
+# get costed end-to-end on this prototype.
+W1 = {
+    # Caulking-only, polyurethane, default 8 mm bead.
+    "wall_r_value": None,
+    "roof_r_value": None,
+    "door_option": None,
+    "window_num_panes": None,
+    "wf_option": "none",
+    "film_option": "none",
+    "weatherstrip_option": "none",
+    "caulking_option": "polyurethane",
+    "caulking_thickness": 0.008,
+    "secondary_glazing_option": "none",
+}
+W2 = {
+    # Caulking-only, acrylic, thicker 12 mm bead -> larger caulking volume.
+    "wall_r_value": None,
+    "roof_r_value": None,
+    "door_option": None,
+    "window_num_panes": None,
+    "wf_option": "none",
+    "film_option": "none",
+    "weatherstrip_option": "none",
+    "caulking_option": "acrylic",
+    "caulking_thickness": 0.012,
+    "secondary_glazing_option": "none",
+}
+W3 = {
+    # Caulking + secondary glazing combo (both applicable on SimpleGlazing).
+    "wall_r_value": None,
+    "roof_r_value": None,
+    "door_option": None,
+    "window_num_panes": None,
+    "wf_option": "none",
+    "film_option": "none",
+    "weatherstrip_option": "none",
+    "caulking_option": "polyurethane",
+    "caulking_thickness": 0.008,
+    "secondary_glazing_option": "install secondary glazing",
+}
+W4 = {
+    # Secondary-glazing only (no caulking) -- isolates the IGU cost path.
+    "wall_r_value": None,
+    "roof_r_value": None,
+    "door_option": None,
+    "window_num_panes": None,
+    "wf_option": "none",
+    "film_option": "none",
+    "weatherstrip_option": "none",
+    "caulking_option": "none",
+    "secondary_glazing_option": "install secondary glazing",
+}
+W5 = {
+    # Kitchen-sink: every window component requested. Exercises the
+    # option-conflict path for the items that cannot apply on SimpleGlazing
+    # (glass, film) while still costing what is applicable (caulking,
+    # secondary glazing, frame derivation if num_windows path triggers).
+    "wall_r_value": None,
+    "roof_r_value": None,
+    "door_option": None,
+    "window_num_panes": 2,
+    "wf_option": "wood-aluminium window frame",
+    "film_option": "low-e film",
+    "weatherstrip_option": "silicone adhesive smoke gasket",
+    "caulking_option": "polyurethane",
+    "caulking_thickness": 0.008,
+    "secondary_glazing_option": "install secondary glazing",
+    "window_enhancement_infiltration_reduction_percent": 25.0,
+}
+
 # --- Mapping of run_name -> list of scenario combos to feed workflow.py. ---
 # Each list entry produces one non-baseline scenario (workflow.py always adds
 # its own baseline). Modify, comment out, or add rows here to control what gets
@@ -152,6 +230,7 @@ RUNS = [
     ("run_test_007", [S7, S8, S9]),
     ("run_test_008", [S1, S5, S9]),
     ("run_test_009", [S10]),
+    ("run_test_010", [W1, W2, W3, W4, W5]),
 ]
 
 

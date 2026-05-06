@@ -30,7 +30,7 @@ window_glass_pane_thickness_m,,,0.003,0.003
 window_glass_gap_thickness_m,,,0.013,0.013
 window_enhancement_renovated_area_m2,,,55.778400000000005,55.778400000000005
 window_enhancement_renovated_glazing_area_m2,,,55.778400000000005,55.778400000000005
-window_enhancement_renovated_frame_area_m2,,,55.778400000000005,55.778400000000005
+window_enhancement_renovated_frame_area_m2,,,0.0,0.0
 window_enhancement_renovated_perimeter_m,,,134.16,134.16
 window_enhancement_renovated_caulking_volume_m3,,,0.003371808563244853,0.003371808563244853
 window_enhancement_renovated_weatherstrip_length_m,,,0.0,0.0
@@ -184,6 +184,7 @@ window_caulking_rsmeans_description,,,,"Joint sealants, caulking and sealants, p
 window_caulking_rsmeans_id,,,,079213203500
 window_enhancement_analysis_period_years,,,30,30
 window_enhancement_caulking_cost_per_cy,,,N/A,544937.496287154
+window_enhancement_caulking_cost_per_lf,,,N/A,5.460000000000001
 window_enhancement_cost_factor_basis,,,not_calculated,rsmeans_api
 window_enhancement_equipment_cost_$,,,0.0,0.0
 window_enhancement_film_cost_per_sf,,,N/A,N/A

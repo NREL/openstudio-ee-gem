@@ -30,7 +30,7 @@ window_glass_pane_thickness_m,,,,0.003
 window_glass_gap_thickness_m,,,,0.013
 window_enhancement_renovated_area_m2,,,,55.778400000000005
 window_enhancement_renovated_glazing_area_m2,,,,55.778400000000005
-window_enhancement_renovated_frame_area_m2,,,,55.778400000000005
+window_enhancement_renovated_frame_area_m2,,,,0.0
 window_enhancement_renovated_perimeter_m,,,,134.16
 window_enhancement_renovated_caulking_volume_m3,,,,0.003371808563244853
 window_enhancement_renovated_weatherstrip_length_m,,,,0.0
@@ -175,6 +175,7 @@ wall_insulation_total_cost_with_overhead_and_profit_$,,10371.798499995006,,0.0
 window_caulking_option,,,,none
 window_enhancement_analysis_period_years,,,,30
 window_enhancement_caulking_cost_per_cy,,,,N/A
+window_enhancement_caulking_cost_per_lf,,,,N/A
 window_enhancement_cost_factor_basis,,,,not_calculated
 window_enhancement_equipment_cost_$,,,,0.0
 window_enhancement_film_cost_per_sf,,,,N/A
