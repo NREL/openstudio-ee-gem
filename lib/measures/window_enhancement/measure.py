@@ -1999,6 +1999,10 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
         subsurface_data["frame"]["area_m2"] = max(
             0.0, float(window_area) - float(subsurface_data["film"]["area_m2"])
         )
+        # For embodied carbon calculation, use the complete window area (GWP factor
+        # is based on full window, not frame-only perimeter strip). Stored separately
+        # to keep cost calculation using the corrected perimeter area.
+        subsurface_data["frame"]["area_m2_for_carbon"] = float(window_area)
         subsurface_data["second_glazing"]["area_m2"] = subsurface_data["film"]["area_m2"]
 
     def fetch_epd_urls(self, runner, subsurface_name, wf_option, glass_option, num_panes,
@@ -2169,7 +2173,14 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
                     _mark_carbon_data_unavailable(f"missing_gwp_{material_name}")
                     runner.registerWarning(f"No GWP data found for {material_name} in {subsurface_name}, assigning 0 embodied carbon.")
                 else:
-                    embodied_carbon = float(subsurface_data[material_name]["gwp_per_m2"] * subsurface_data[material_name]["area_m2"] * multiplier)
+                    # For frame, use the complete window area (GWP factor is per m2
+                    # of full window, not frame-only perimeter area). Other materials
+                    # use their respective areas as normal.
+                    if material_name == "frame":
+                        area_for_gwp = subsurface_data[material_name].get("area_m2_for_carbon", subsurface_data[material_name]["area_m2"])
+                    else:
+                        area_for_gwp = subsurface_data[material_name]["area_m2"]
+                    embodied_carbon = float(subsurface_data[material_name]["gwp_per_m2"] * area_for_gwp * multiplier)
             elif material_name == "caulking":
                 if subsurface_data[material_name]["gwp_per_m3"] is None:
                     embodied_carbon = 0.0
