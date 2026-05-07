@@ -3,6 +3,7 @@ import csv
 from pathlib import Path
 
 HERE = Path(__file__).parent
+PARAMETRIC_RUN_DIR = HERE.parent
 RUNS = [f"run_test_{i:03d}" for i in range(1, 9)]
 COMBOS = {
     "run_test_001": "S1,S2,S3", "run_test_002": "S1,S4,S5",
@@ -26,7 +27,7 @@ KEYS = [
 
 
 def load(run):
-    p = HERE / "simulations" / run / "parametric_results.csv"
+    p = PARAMETRIC_RUN_DIR / "simulations" / run / "parametric_results.csv"
     if not p.exists():
         return None
     with open(p, newline="") as f:

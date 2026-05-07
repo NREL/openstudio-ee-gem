@@ -4,14 +4,15 @@ from pathlib import Path
 import json
 
 HERE = Path(__file__).parent
-ROOF_RES = HERE.parent / "measures" / "IncreaseInsulationRValueForRoofs" / "resources"
+PARAMETRIC_RUN_DIR = HERE.parent
+ROOF_RES = PARAMETRIC_RUN_DIR.parent / "measures" / "IncreaseInsulationRValueForRoofs" / "resources"
 sys.path.insert(0, str(ROOF_RES))
 
 from dotenv import load_dotenv  # noqa: E402
 import os  # noqa: E402
 
 # Load .env from various candidate spots
-for cand in [HERE / ".env", HERE.parent / ".env", HERE.parent.parent / ".env", ROOF_RES / ".env"]:
+for cand in [HERE / ".env", PARAMETRIC_RUN_DIR / ".env", PARAMETRIC_RUN_DIR.parent / ".env", ROOF_RES / ".env"]:
     if cand.exists():
         load_dotenv(cand)
         break
