@@ -630,6 +630,46 @@ def apply_ddy_design_days_to_model(osm_path, ddy_path, replace_existing=True):
         print(f"    Failed to apply DDY design days from {ddy_path}: {e}")
         return False
 
+def ensure_window_frame_and_divider(model, frame_width=0.05):
+    """Add a default WindowPropertyFrameAndDivider to windows that lack one.
+
+    For every FixedWindow, OperableWindow, and Skylight SubSurface in `model`
+    that does not already have a FrameAndDivider assigned, create a new
+    WindowPropertyFrameAndDivider with frame_width=`frame_width` (m) and
+    divider_width=0.0, then assign it to that SubSurface.
+    """
+    window_types = {"FixedWindow", "OperableWindow", "Skylight"}
+    added = 0
+    for subsurface in model.getSubSurfaces():
+        if str(subsurface.subSurfaceType()) not in window_types:
+            continue
+        if subsurface.windowPropertyFrameAndDivider().is_initialized():
+            continue
+        fad = openstudio.model.WindowPropertyFrameAndDivider(model)
+        fad.setFrameWidth(frame_width)
+        fad.setDividerWidth(0.0)
+        subsurface.setWindowPropertyFrameAndDivider(fad)
+        added += 1
+    if added:
+        print(f"    Added default FrameAndDivider (frame_width={frame_width} m) to {added} window(s)")
+
+def apply_window_frame_and_divider_to_osm(osm_path, frame_width=0.05):
+    """Load an OSM, apply ensure_window_frame_and_divider, and save in-place."""
+    try:
+        translator = openstudio.osversion.VersionTranslator()
+        loaded = translator.loadModel(openstudio.toPath(str(osm_path)))
+        if not loaded.is_initialized():
+            print(f"    apply_window_frame_and_divider_to_osm: failed to load {osm_path}")
+            return False
+        model = loaded.get()
+        ensure_window_frame_and_divider(model, frame_width=frame_width)
+        model.save(openstudio.toPath(str(osm_path)), True)
+        del model
+        return True
+    except Exception as e:
+        print(f"    apply_window_frame_and_divider_to_osm error: {e}")
+        return False
+
 # --- CORE: SINGLE SCENARIO CREATION/RUN ---
 def create_simulation(
     city,
@@ -722,6 +762,7 @@ def create_simulation(
         shutil.copy2(proto_model_path, final_model_path)
         enforce_weather_url_in_osm(final_model_path, epw_path)
         apply_ddy_design_days_to_model(final_model_path, ddy_path)
+        apply_window_frame_and_divider_to_osm(final_model_path)
         # --- Phase 2: run simulation from seeded model ---
         sim_osw = {
             "weather_file": epw_path,
@@ -782,6 +823,7 @@ def create_simulation(
             return None
 
         model = loaded_model.get()
+        ensure_window_frame_and_divider(model)
         wall_args = None
         roof_args = None
         window_args = None
