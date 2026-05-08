@@ -137,7 +137,6 @@ class TestWindowEnhancement:
         set_arg("secondary_glazing_option", "none")
         set_arg("gwp_statistic", "mean")
         set_arg("api_key", "test_token")
-        set_arg("calculate_costs", False)
 
         # Run the measure
         measure.run(model, runner, arg_map)

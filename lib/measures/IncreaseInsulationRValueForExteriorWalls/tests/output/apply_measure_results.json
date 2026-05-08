@@ -10,7 +10,6 @@
     "insulation_material_lifetime": 30,
     "insulation_thermal_conductivity": 0.0,
     "insulation_material_density": 0.0,
-    "calculate_costs": true,
     "use_custom_costs": true,
     "custom_cost_per_cf": 15.0,
     "labor_cost_multiplier": 1.5,

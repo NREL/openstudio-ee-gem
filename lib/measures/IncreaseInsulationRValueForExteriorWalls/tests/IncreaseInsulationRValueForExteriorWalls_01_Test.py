@@ -29,7 +29,6 @@ class TestIncreaseInsulationRValueForExteriorWalls(unittest.TestCase):
             "insulation_material_lifetime": 30,
             "insulation_thermal_conductivity": 0.0,
             "insulation_material_density": 0.0,
-            "calculate_costs": False,
             "use_custom_costs": False,
             "custom_cost_per_cf": 0.0,
             "labor_cost_multiplier": 1.0,
@@ -76,7 +75,6 @@ class TestIncreaseInsulationRValueForExteriorWalls(unittest.TestCase):
         model = self.load_model("EnvelopeAndLoadTestModel_01.osm")
         result = self.run_measure(model, {
             "r_value": 30.0,
-            "calculate_costs": True,
             "use_custom_costs": True,
             "custom_cost_per_cf": 2.5,
             "insulation_material_type": "Pure Wool Batts",

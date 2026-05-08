@@ -120,7 +120,6 @@ The measure can be included in OpenStudio `.osw` workflow files:
     "gwp_statistic": "median",
     "api_key": "YOUR_EC3_TOKEN",
     "insulation_material_type": "Fiberglass Batts",
-    "calculate_costs": true,
     "use_custom_costs": false,
     "overhead_profit_percent": 10.0
   }

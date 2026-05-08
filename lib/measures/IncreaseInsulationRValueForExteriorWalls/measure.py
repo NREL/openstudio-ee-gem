@@ -139,13 +139,19 @@ class IncreaseInsulationRValueForExteriorWalls(openstudio.measure.ModelMeasure):
         insulation_material_density.setDescription("Density of the insulation material, if 0.0 is entered, typical density will be used based on material type.")
         insulation_material_density.setDefaultValue(0.0) 
         args.append(insulation_material_density)
+        
+        use_custom_gwp = openstudio.measure.OSArgument.makeBoolArgument("use_custom_gwp", True)
+        use_custom_gwp.setDisplayName("Use Custom GWP Inputs (skip EC3)")
+        use_custom_gwp.setDefaultValue(False)
+        args.append(use_custom_gwp)
+        
+        custom_gwp_per_m3 = openstudio.measure.OSArgument.makeDoubleArgument("custom_gwp_per_m3", True)
+        custom_gwp_per_m3.setDisplayName("Custom Insulation GWP (kgCO2eq/m3)")
+        custom_gwp_per_m3.setDescription("Used only when 'Use Custom GWP Inputs (skip EC3)' is true.")
+        custom_gwp_per_m3.setDefaultValue(0.0)
+        args.append(custom_gwp_per_m3)
 
         # Cost / RSMeans args
-        calculate_costs = openstudio.measure.OSArgument.makeBoolArgument("calculate_costs", True)
-        calculate_costs.setDisplayName("Calculate Costs (RSMeans or Custom)")
-        calculate_costs.setDefaultValue(True)
-        args.append(calculate_costs)
-
         use_custom_costs = openstudio.measure.OSArgument.makeBoolArgument("use_custom_costs", True)
         use_custom_costs.setDisplayName("Use Custom Cost Inputs (skip RSMeans)")
         use_custom_costs.setDefaultValue(False)
@@ -243,7 +249,8 @@ class IncreaseInsulationRValueForExteriorWalls(openstudio.measure.ModelMeasure):
         insulation_material_lifetime = runner.getIntegerArgumentValue("insulation_material_lifetime", user_arguments)
         insulation_thermal_conductivity = runner.getDoubleArgumentValue("insulation_thermal_conductivity", user_arguments)
         insulation_material_density = runner.getDoubleArgumentValue("insulation_material_density", user_arguments)
-        calculate_costs = runner.getBoolArgumentValue("calculate_costs", user_arguments)
+        use_custom_gwp = runner.getBoolArgumentValue("use_custom_gwp", user_arguments)
+        custom_gwp_per_m3 = runner.getDoubleArgumentValue("custom_gwp_per_m3", user_arguments)
         use_custom_costs = runner.getBoolArgumentValue("use_custom_costs", user_arguments)
         custom_cost_per_cf = runner.getDoubleArgumentValue("custom_cost_per_cf", user_arguments)
         labor_cost_multiplier = runner.getDoubleArgumentValue("labor_cost_multiplier", user_arguments)
@@ -258,7 +265,7 @@ class IncreaseInsulationRValueForExteriorWalls(openstudio.measure.ModelMeasure):
         # Pre-flight warning: if RSMeans is the active path and the user has
         # not supplied a fallback custom rate, the measure will hard-error if
         # RSMeans returns nothing. Surface this risk up front.
-        if calculate_costs and (not use_custom_costs) and float(custom_cost_per_cf) <= 0.0:
+        if (not use_custom_costs) and float(custom_cost_per_cf) <= 0.0:
             runner.registerWarning(
                 "RSMeans cost lookup is the active cost source (use_custom_costs=false) "
                 "but no fallback 'custom_cost_per_cf' value has been provided. "
@@ -284,6 +291,9 @@ class IncreaseInsulationRValueForExteriorWalls(openstudio.measure.ModelMeasure):
 
         if insulation_material_density < 0:
             runner.registerError("Density of insulation material must be non-negative.")
+            return False
+        if use_custom_gwp and custom_gwp_per_m3 < 0:
+            runner.registerError("Custom GWP (kgCO2eq/m3) must be non-negative.")
             return False
 
         # Convert R-value from IP to SI units (m²·K/W)
@@ -430,7 +440,7 @@ class IncreaseInsulationRValueForExteriorWalls(openstudio.measure.ModelMeasure):
         # where thickness = delta_R × k.  If the user left k = 0.0, we try RSMeans first;
         # the hardcoded default is the last resort.
         # A second RSMeans call is made later in Phase 5 to compute actual cost outputs.
-        if calculate_costs and not use_custom_costs:
+        if not use_custom_costs:
             try:
                 # Build minimal materials list just for RSMeans property extraction
                 mini_rsmeans_materials = [
@@ -621,16 +631,20 @@ class IncreaseInsulationRValueForExteriorWalls(openstudio.measure.ModelMeasure):
 
         # Pull EC3 data for the chosen insulation type once
         carbon_data_unavailable_reasons = []
-        ec3_url = self.generate_url_by_material_type(insulation_material_type)
-        insulation_product_epd = fetch_epd_data(ec3_url, api_key)
-        if not isinstance(insulation_product_epd, list):
+        if use_custom_gwp:
+            runner.registerInfo("Custom GWP mode enabled: skipping EC3 API call for wall insulation carbon calculation.")
             insulation_product_epd = []
-        if len(insulation_product_epd) == 0:
-            carbon_data_unavailable_reasons.append("ec3_epd_fetch_empty")
-            runner.registerWarning(
-                f"No EC3 EPD records found for '{insulation_material_type}'. "
-                "Embodied carbon may be reported as 0 due to unavailable carbon data."
-            )
+        else:
+            ec3_url = self.generate_url_by_material_type(insulation_material_type)
+            insulation_product_epd = fetch_epd_data(ec3_url, api_key)
+            if not isinstance(insulation_product_epd, list):
+                insulation_product_epd = []
+            if len(insulation_product_epd) == 0:
+                carbon_data_unavailable_reasons.append("ec3_epd_fetch_empty")
+                runner.registerWarning(
+                    f"No EC3 EPD records found for '{insulation_material_type}'. "
+                    "Embodied carbon may be reported as 0 due to unavailable carbon data."
+                )
 
         # Extract lifetime values from EPD responses
         lifetime_values = []
@@ -671,9 +685,18 @@ class IncreaseInsulationRValueForExteriorWalls(openstudio.measure.ModelMeasure):
             lifetime_source = "EPD"
 
         # Use compute_gwp_data from EC3_lookup to calculate GWP values with outlier removal and statistics
-        keys = [insulation_material_type]
-        epd_list_by_material = [insulation_product_epd]
-        gwp_data = compute_gwp_data(keys, epd_list_by_material, "Product", gwp_statistic)
+        if use_custom_gwp:
+            gwp_data = {
+                insulation_material_type: {
+                    "gwp_per_kg": 0.0,
+                    "gwp_per_m2": 0.0,
+                    "gwp_per_m3": float(custom_gwp_per_m3),
+                }
+            }
+        else:
+            keys = [insulation_material_type]
+            epd_list_by_material = [insulation_product_epd]
+            gwp_data = compute_gwp_data(keys, epd_list_by_material, "Product", gwp_statistic)
         
         # Extract GWP values for the selected material
         material_gwp = gwp_data.get(insulation_material_type, {})
@@ -796,7 +819,7 @@ class IncreaseInsulationRValueForExteriorWalls(openstudio.measure.ModelMeasure):
             except Exception as e:
                 runner.registerWarning(f"Could not serialize RSMeans retrofit materials to JSON: {e}")
 
-        if calculate_costs and rsmeans_materials:
+        if rsmeans_materials:
             if use_custom_costs:
                 if custom_cost_per_cf <= 0.0:
                     runner.registerWarning("Custom cost mode enabled, but custom_cost_per_cf is 0. Skipping cost calculation.")
@@ -983,6 +1006,7 @@ class IncreaseInsulationRValueForExteriorWalls(openstudio.measure.ModelMeasure):
         basic_input.setFeature("wall_insulation_measure_name", "Increase Insulation R-Value for Exterior Walls")
         basic_input.setFeature("wall_insulation_analysis_period_years", analysis_period)
         basic_input.setFeature("wall_insulation_gwp_statistic", gwp_statistic)
+        basic_input.setFeature("wall_insulation_gwp_source", "custom_user_inputs" if use_custom_gwp else "ec3")
 
         # Site bucket: renovation details/quantities
         reno_detail.setFeature("wall_insulation_renovated_area_m2", total_wall_area)

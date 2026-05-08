@@ -29,7 +29,6 @@ class TestWallInsulationMeasureSetup(unittest.TestCase):
         measure_path = self.measure_dir / "measure.py"
         content = measure_path.read_text(encoding="utf-8")
         required_args = [
-            "calculate_costs",
             "use_custom_costs",
             "custom_cost_per_cf",
             "labor_cost_multiplier",

@@ -99,7 +99,6 @@ def run_measure(model, material_type, use_exact_id=False, exact_id=""):
     set_arg("insulation_material_lifetime", 30)
     set_arg("insulation_thermal_conductivity", 0.0)
     set_arg("insulation_material_density", 0.0)
-    set_arg("calculate_costs", True)
     set_arg("use_custom_costs", False)
     set_arg("use_exact_costline_id", use_exact_id)
     if use_exact_id and exact_id:

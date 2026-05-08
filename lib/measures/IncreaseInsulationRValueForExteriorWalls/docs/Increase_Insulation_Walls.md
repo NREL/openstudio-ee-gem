@@ -44,7 +44,6 @@ The measure is standalone and does not rely on the window enhancement measure.
 | `insulation_material_lifetime` | Integer | `30` | Service life in years |
 | `insulation_thermal_conductivity` | Double | `0.0` | User override for conductivity (W/mK) |
 | `insulation_material_density` | Double | `0.0` | User override for density (kg/m3) |
-| `calculate_costs` | Bool | `true` | Toggle cost calculation |
 | `use_custom_costs` | Bool | `false` | Use custom `$/CF` instead of RSMeans |
 | `custom_cost_per_cf` | Double | `0.0` | Custom cost basis |
 | `labor_cost_multiplier` | Double | `1.0` | Labor multiplier for custom cost path |

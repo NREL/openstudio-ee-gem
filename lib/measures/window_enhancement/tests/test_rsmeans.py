@@ -228,7 +228,6 @@ class TestAPIKeyRedaction(unittest.TestCase):
             "use_rsmeans": True,
             "api_key": "secret_key_12345",
             "client_id": "client_12345",
-            "calculate_costs": True,
         }
         
         # Simulate redaction logic

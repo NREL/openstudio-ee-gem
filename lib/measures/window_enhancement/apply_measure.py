@@ -250,9 +250,6 @@ def run_measure(model, args_overrides=None):
     set_arg("api_key", API_TOKEN)
     
     # --- Cost calculation ---
-    # Keep this enabled so local runs validate custom/fallback cost pathways.
-    set_arg("calculate_costs", True)
-
     # --- Custom cost mode ---
     # Use custom rates here to avoid RSMeans dependency in quick harness runs.
     set_arg("use_custom_costs", True)

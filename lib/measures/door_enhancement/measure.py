@@ -396,6 +396,26 @@ class DoorEnhancement(openstudio.measure.ModelMeasure):
         rsmeans_unit_costline_id.setDefaultValue("")
         args.append(rsmeans_unit_costline_id)
 
+        use_custom_gwp = openstudio.measure.OSArgument.makeBoolArgument("use_custom_gwp", True)
+        use_custom_gwp.setDisplayName("Use Custom GWP Inputs (skip EC3)")
+        use_custom_gwp.setDefaultValue(False)
+        args.append(use_custom_gwp)
+
+        custom_door_leaf_gwp_per_m2 = openstudio.measure.OSArgument.makeDoubleArgument("custom_door_leaf_gwp_per_m2", True)
+        custom_door_leaf_gwp_per_m2.setDisplayName("Custom Door Leaf GWP (kgCO2eq/m2)")
+        custom_door_leaf_gwp_per_m2.setDefaultValue(0.0)
+        args.append(custom_door_leaf_gwp_per_m2)
+
+        custom_bottom_strip_gwp_per_m = openstudio.measure.OSArgument.makeDoubleArgument("custom_bottom_strip_gwp_per_m", True)
+        custom_bottom_strip_gwp_per_m.setDisplayName("Custom Bottom Seal GWP (kgCO2eq/m)")
+        custom_bottom_strip_gwp_per_m.setDefaultValue(0.0)
+        args.append(custom_bottom_strip_gwp_per_m)
+
+        custom_side_top_strip_gwp_per_m = openstudio.measure.OSArgument.makeDoubleArgument("custom_side_top_strip_gwp_per_m", True)
+        custom_side_top_strip_gwp_per_m.setDisplayName("Custom Top/Side Seal GWP (kgCO2eq/m)")
+        custom_side_top_strip_gwp_per_m.setDefaultValue(0.0)
+        args.append(custom_side_top_strip_gwp_per_m)
+
         return args
 
     def run(self, model: openstudio.model.Model, runner: openstudio.measure.OSRunner, user_arguments: openstudio.measure.OSArgumentMap):
@@ -453,6 +473,10 @@ class DoorEnhancement(openstudio.measure.ModelMeasure):
         labor_cost_multiplier = runner.getDoubleArgumentValue("labor_cost_multiplier", user_arguments)
         overhead_profit_percent = runner.getDoubleArgumentValue("overhead_profit_percent", user_arguments)
         rsmeans_unit_costline_id = runner.getStringArgumentValue("rsmeans_unit_costline_id", user_arguments).strip()
+        use_custom_gwp = runner.getBoolArgumentValue("use_custom_gwp", user_arguments)
+        custom_door_leaf_gwp_per_m2 = runner.getDoubleArgumentValue("custom_door_leaf_gwp_per_m2", user_arguments)
+        custom_bottom_strip_gwp_per_m = runner.getDoubleArgumentValue("custom_bottom_strip_gwp_per_m", user_arguments)
+        custom_side_top_strip_gwp_per_m = runner.getDoubleArgumentValue("custom_side_top_strip_gwp_per_m", user_arguments)
 
         if use_custom_costs:
             runner.registerInfo("Custom cost mode enabled. Using user-provided cost values instead of RSMeans API.")
@@ -522,6 +546,13 @@ class DoorEnhancement(openstudio.measure.ModelMeasure):
             return False
         if labor_cost_multiplier < 1.0:
             runner.registerError("Labor cost multiplier must be at least 1.0.")
+            return False
+        if use_custom_gwp and (
+            custom_door_leaf_gwp_per_m2 < 0.0
+            or custom_bottom_strip_gwp_per_m < 0.0
+            or custom_side_top_strip_gwp_per_m < 0.0
+        ):
+            runner.registerError("Custom GWP inputs must be non-negative.")
             return False
 
         # Check for conflicting door options
@@ -787,34 +818,80 @@ class DoorEnhancement(openstudio.measure.ModelMeasure):
             subsurface_dict[subsurface_name]['door']['lifetime'] = door_lifetime
 
             epd_datalist = {}
-            bottom_sealing_product_url = self.generate_sealing_url(door_bottom_seal_option)
-            side_sealing_product_url = self.generate_sealing_url(door_top_side_seal_option)
-            bottom_sealing_product_epd = _fetch_epd_with_cache(bottom_sealing_product_url)
-            side_sealing_product_epd = _fetch_epd_with_cache(side_sealing_product_url)
-            epd_datalist["door_bottom_sealing"] = bottom_sealing_product_epd
-            epd_datalist["door_side_sealing"] = side_sealing_product_epd
-            
-            # Debug: Log EPD data status
-            if bottom_sealing_product_epd is None:
-                runner.registerInfo(f"  DEBUG: Bottom sealing EPD is None")
-            elif isinstance(bottom_sealing_product_epd, list):
-                runner.registerInfo(f"  DEBUG: Bottom sealing EPD returned {len(bottom_sealing_product_epd)} records")
-            
-            if side_sealing_product_epd is None:
-                runner.registerInfo(f"  DEBUG: Side sealing EPD is None")
-            elif isinstance(side_sealing_product_epd, list):
-                runner.registerInfo(f"  DEBUG: Side sealing EPD returned {len(side_sealing_product_epd)} records")
+            if use_custom_gwp:
+                if subsurface_name == sub_surfaces_to_change[0].nameString():
+                    runner.registerInfo("Custom GWP mode enabled: skipping EC3 API calls for door carbon calculation.")
+                epd_datalist["door_bottom_sealing"] = []
+                epd_datalist["door_side_sealing"] = []
+                epd_datalist["door"] = []
+            else:
+                bottom_sealing_product_url = self.generate_sealing_url(door_bottom_seal_option)
+                side_sealing_product_url = self.generate_sealing_url(door_top_side_seal_option)
+                bottom_sealing_product_epd = _fetch_epd_with_cache(bottom_sealing_product_url)
+                side_sealing_product_epd = _fetch_epd_with_cache(side_sealing_product_url)
+                epd_datalist["door_bottom_sealing"] = bottom_sealing_product_epd
+                epd_datalist["door_side_sealing"] = side_sealing_product_epd
+                
+                # Debug: Log EPD data status
+                if bottom_sealing_product_epd is None:
+                    runner.registerInfo(f"  DEBUG: Bottom sealing EPD is None")
+                elif isinstance(bottom_sealing_product_epd, list):
+                    runner.registerInfo(f"  DEBUG: Bottom sealing EPD returned {len(bottom_sealing_product_epd)} records")
+                
+                if side_sealing_product_epd is None:
+                    runner.registerInfo(f"  DEBUG: Side sealing EPD is None")
+                elif isinstance(side_sealing_product_epd, list):
+                    runner.registerInfo(f"  DEBUG: Side sealing EPD returned {len(side_sealing_product_epd)} records")
 
-            door_product_url = self.generate_door_url(door_option, subsurface.subSurfaceType())
-            door_product_epd = _fetch_epd_with_cache(door_product_url)
-            epd_datalist["door"] = door_product_epd
-            
-            if door_product_epd is None:
-                runner.registerInfo(f"  DEBUG: Door EPD is None")
-            elif isinstance(door_product_epd, list):
-                runner.registerInfo(f"  DEBUG: Door EPD returned {len(door_product_epd)} records")
+                door_product_url = self.generate_door_url(door_option, subsurface.subSurfaceType())
+                door_product_epd = _fetch_epd_with_cache(door_product_url)
+                epd_datalist["door"] = door_product_epd
+                
+                if door_product_epd is None:
+                    runner.registerInfo(f"  DEBUG: Door EPD is None")
+                elif isinstance(door_product_epd, list):
+                    runner.registerInfo(f"  DEBUG: Door EPD returned {len(door_product_epd)} records")
 
             for material_name, epd_data in epd_datalist.items():
+                if use_custom_gwp:
+                    multiplier = lifetime_multiplier(subsurface_dict[subsurface_name][material_name]["lifetime"], analysis_period)
+                    sealing_bottom_length = subsurface_dict[subsurface_name]['dimension']['width_m']
+                    sealing_side_length = (subsurface_dict[subsurface_name]['dimension']['perimeter_m'] - subsurface_dict[subsurface_name]['dimension']['width_m'])
+                    door_area = subsurface_dict[subsurface_name]['dimension']['area_m2']
+
+                    subsurface_dict[subsurface_name][material_name]["gwp_per_unit"] = None
+                    subsurface_dict[subsurface_name][material_name]["gwp_per_m"] = None
+                    subsurface_dict[subsurface_name][material_name]["gwp_per_m2"] = None
+
+                    if material_name == "door_bottom_sealing":
+                        subsurface_dict[subsurface_name][material_name]["gwp_per_m"] = float(custom_bottom_strip_gwp_per_m)
+                    elif material_name == "door_side_sealing":
+                        subsurface_dict[subsurface_name][material_name]["gwp_per_m"] = float(custom_side_top_strip_gwp_per_m)
+                    elif material_name == "door":
+                        subsurface_dict[subsurface_name][material_name]["gwp_per_m2"] = float(custom_door_leaf_gwp_per_m2)
+
+                    embodied_carbon = 0.0
+                    selected_gwp_per_m = subsurface_dict[subsurface_name][material_name].get("gwp_per_m")
+                    selected_gwp_per_m2 = subsurface_dict[subsurface_name][material_name].get("gwp_per_m2")
+                    if material_name == "door_bottom_sealing" and selected_gwp_per_m not in [None, 0.0]:
+                        embodied_carbon = float(selected_gwp_per_m * sealing_bottom_length * multiplier)
+                    elif material_name == "door_side_sealing" and selected_gwp_per_m not in [None, 0.0]:
+                        if subsurface.subSurfaceType() != 'OverheadDoor':
+                            embodied_carbon = float(selected_gwp_per_m * sealing_side_length * multiplier)
+                        else:
+                            embodied_carbon = 0.0
+                            runner.registerInfo(f"  ○ Door side sealing skipped for {subsurface_name} (overhead door)")
+                    elif material_name == "door" and door_option_compatible and selected_gwp_per_m2 not in [None, 0.0]:
+                        embodied_carbon = float(selected_gwp_per_m2 * door_area * multiplier)
+                    else:
+                        embodied_carbon = 0.0
+
+                    subsurface_dict[subsurface_name][material_name]["embodied_carbon_kg_co2_eq"] = embodied_carbon
+                    subsurface_dict[subsurface_name][material_name]["lifetime_source"] = "user_input"
+                    runner.registerInfo(f"    ✓ {material_name.replace('_', ' ').title()}: {embodied_carbon:.2f} kg CO2 eq (custom GWP)")
+                    subsurface_dict[subsurface_name]["door_renovation_embodied_carbon_kg_co2_eq"] += embodied_carbon
+                    continue
+
                 # Skip if no EPD data available (None or empty list), but initialize with zeros
                 if epd_data is None or (isinstance(epd_data, list) and len(epd_data) == 0):
                     runner.registerInfo(f"  ⚠ No EPD data available for {material_name}, setting embodied carbon to 0")
@@ -1860,6 +1937,7 @@ class DoorEnhancement(openstudio.measure.ModelMeasure):
         basic_input.setFeature("door_enhancement_measure_name", "Door Enhancement")
         basic_input.setFeature("door_enhancement_analysis_period_years", analysis_period)
         basic_input.setFeature("door_enhancement_gwp_statistic", gwp_statistic)
+        basic_input.setFeature("door_enhancement_gwp_source", "custom_user_inputs" if use_custom_gwp else "ec3")
 
         # 5D) Site bucket (renovation details)
         reno_detail.setFeature("door_enhancement_processed_door_count", len(sub_surfaces_to_change))

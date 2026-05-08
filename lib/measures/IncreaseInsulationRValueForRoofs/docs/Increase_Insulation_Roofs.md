@@ -27,7 +27,6 @@ Core:
 
 Costing:
 
-- `calculate_costs`
 - `use_custom_costs`
 - `use_exact_costline_id`
 - `exact_costline_id`
@@ -37,7 +36,7 @@ Costing:
 
 ## Costing Paths
 
-### RSMeans path (`calculate_costs=True`, `use_custom_costs=False`)
+### RSMeans path (`use_custom_costs=False`)
 
 - Generates retrofit material records (area, thickness, volume).
 - Searches RSMeans catalogs and captures detailed result/search logs.

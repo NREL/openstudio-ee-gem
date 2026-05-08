@@ -37,7 +37,6 @@ This measure is standalone and does not depend on the window enhancement measure
 | `insulation_material_lifetime` | Integer | `30` | Product lifetime in years |
 | `insulation_thermal_conductivity` | Double | `0.0` | If `0.0`, the measure chooses a value from RSMeans extraction or defaults |
 | `insulation_material_density` | Double | `0.0` | If `0.0`, the measure chooses a value from RSMeans extraction or defaults |
-| `calculate_costs` | Bool | `true` | Enables cost path |
 | `use_custom_costs` | Bool | `false` | If true, bypass RSMeans and use custom volume cost |
 | `custom_cost_per_cf` | Double | `0.0` | Custom cost in `$/CF` |
 | `labor_cost_multiplier` | Double | `1.0` | Applies only on custom cost path |

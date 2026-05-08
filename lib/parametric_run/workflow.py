@@ -663,110 +663,6 @@ def ensure_window_frame_and_divider(model, frame_width=0.05):
     if added:
         print(f"    Added default FrameAndDivider (frame_width={frame_width} m) to {added} window(s)")
 
-
-def select_runtime_window_model(base_model_path, scenario_run_dir, scenario_name):
-    """Choose runtime seed model.
-
-    If every window construction is SimpleGlazing, convert to layered and use the
-    converted OSM as main runtime seed. Otherwise keep base_model_path.
-    """
-    selection = {
-        "runtime_model_path": base_model_path,
-        "main_model_type": "original",
-        "layered_model_path": None,
-        "conversions": [],
-    }
-    if not ENABLE_SIMPLE_GLAZING_TO_LAYERED:
-        print(f"    {scenario_name}: SimpleGlazing->layered conversion disabled; using original model_to_run")
-        return selection
-    try:
-        translator = openstudio.osversion.VersionTranslator()
-        loaded = translator.loadModel(openstudio.toPath(str(base_model_path)))
-        if not loaded.is_initialized():
-            print(f"    {scenario_name}: runtime-model check: could not load model; using original")
-            return selection
-        model = loaded.get()
-        all_simple = detect_all_windows_simple_glazing(model)
-        del model
-    except Exception as exc:
-        print(f"    {scenario_name}: runtime-model check error: {exc}; using original")
-        return selection
-
-    if not all_simple:
-        print(f"    {scenario_name}: not all windows are SimpleGlazing; using original model_to_run")
-        return selection
-
-    layered_model_path = os.path.join(
-        scenario_run_dir, "model_to_run_layered_window_construction.osm"
-    )
-    result = convert_all_simple_glazing_to_layered(base_model_path, layered_model_path)
-    if not result["success"]:
-        print(f"    {scenario_name}: layered conversion failed ({result['message']}); using original")
-        return selection
-
-    print(f"    {scenario_name}: using layered runtime model ({result['message']})")
-    selection["runtime_model_path"] = layered_model_path
-    selection["main_model_type"] = "layered"
-    selection["layered_model_path"] = layered_model_path
-    selection["conversions"] = result.get("conversions", [])
-    return selection
-
-
-def write_window_conversion_comparison_csv(
-    scenario_run_dir,
-    scenario_name,
-    energy_original,
-    energy_layered,
-    conversions,
-    main_model_type,
-):
-    """Persist conversion comparison results in a stable CSV layout."""
-    diff_gj = None
-    diff_pct = None
-    if energy_original is not None and energy_layered is not None:
-        diff_gj = energy_layered - energy_original
-        diff_pct = (diff_gj / energy_original * 100.0) if energy_original else 0.0
-
-    csv_path = os.path.join(scenario_run_dir, "window_conversion_comparison.csv")
-    with open(csv_path, "w", newline="", encoding="utf-8") as fh:
-        writer = csv.writer(fh)
-        writer.writerow(["Window Construction Conversion Comparison"])
-        writer.writerow(["Scenario", scenario_name])
-        writer.writerow(["Main model type", main_model_type])
-        writer.writerow([])
-        writer.writerow(["Model", "Total Site Energy (GJ)", "Difference (GJ)", "Difference (%)"])
-        writer.writerow([
-            "Original SimpleGlazing",
-            f"{energy_original:.4f}" if energy_original is not None else "",
-            "",
-            "",
-        ])
-        writer.writerow([
-            "Layered Windows (physical)",
-            f"{energy_layered:.4f}" if energy_layered is not None else "",
-            f"{diff_gj:+.4f}" if diff_gj is not None else "",
-            f"{diff_pct:+.4f}" if diff_pct is not None else "",
-        ])
-        writer.writerow([])
-        writer.writerow(["Construction", "Pane type", "U (W/m²K)", "SHGC", "VT",
-                         "Gap (mm)", "Inner emissivity"])
-        for conv in conversions or []:
-            writer.writerow([
-                conv.get("construction_name"),
-                conv.get("pane_type"),
-                conv.get("u_factor"),
-                conv.get("shgc"),
-                conv.get("vt"),
-                conv.get("gap_mm") if conv.get("gap_mm") else "—",
-                conv.get("inner_emissivity") if conv.get("inner_emissivity") else "—",
-            ])
-
-    return {
-        "difference_gj": round(diff_gj, 4) if diff_gj is not None else None,
-        "difference_percent": round(diff_pct, 4) if diff_pct is not None else None,
-        "csv_path": csv_path,
-    }
-
 def run_window_conversion_comparison(
     base_model_path,
     base_sql_path,
@@ -802,7 +698,7 @@ def run_window_conversion_comparison(
         print(f"    {scenario_name}: windows are not all SimpleGlazing — skipping conversion comparison")
         return None
 
-    print(f"    {scenario_name}: all windows are SimpleGlazing → generating layered copy...")
+    print(f"    {scenario_name}: all windows are SimpleGlazing -> generating layered copy...")
 
     # 2. Generate layered model
     layered_model_path = os.path.join(
@@ -842,115 +738,62 @@ def run_window_conversion_comparison(
         if os.path.exists(layered_sql):
             energy_layered = extract_total_site_energy_gj(layered_sql)
 
-    csv_info = write_window_conversion_comparison_csv(
-        scenario_run_dir=scenario_run_dir,
-        scenario_name=scenario_name,
-        energy_original=energy_original,
-        energy_layered=energy_layered,
-        conversions=result["conversions"],
-        main_model_type="original",
-    )
     comparison = {
         "original_energy_gj": energy_original,
         "layered_energy_gj":  energy_layered,
-        "difference_gj":      csv_info["difference_gj"],
-        "difference_percent": csv_info["difference_percent"],
+        "difference_gj":      None,
+        "difference_percent": None,
         "conversions":        result["conversions"],
-        "main_model_type":    "original",
     }
     if energy_original is not None and energy_layered is not None:
         diff_gj = energy_layered - energy_original
         diff_pct = (diff_gj / energy_original * 100.0) if energy_original else 0.0
+        comparison["difference_gj"]      = round(diff_gj,  4)
+        comparison["difference_percent"] = round(diff_pct, 4)
         print(
             f"    {scenario_name}: window-conversion energy comparison: "
             f"original={energy_original:.2f} GJ, "
             f"layered={energy_layered:.2f} GJ, "
             f"diff={diff_gj:+.2f} GJ ({diff_pct:+.2f}%)"
         )
-        print(f"    {scenario_name}: comparison saved → {csv_info['csv_path']}")
+
+        # Write CSV
+        csv_path = os.path.join(scenario_run_dir, "window_conversion_comparison.csv")
+        with open(csv_path, "w", newline="", encoding="utf-8") as fh:
+            writer = csv.writer(fh)
+            writer.writerow(["Window Construction Conversion Comparison"])
+            writer.writerow(["Scenario", scenario_name])
+            writer.writerow([])
+            writer.writerow(["Model", "Total Site Energy (GJ)", "Difference (GJ)", "Difference (%)"])
+            writer.writerow(["Original SimpleGlazing", f"{energy_original:.4f}", "", ""])
+            writer.writerow([
+                "Layered Windows (physical)",
+                f"{energy_layered:.4f}",
+                f"{diff_gj:+.4f}",
+                f"{diff_pct:+.4f}",
+            ])
+            writer.writerow([])
+            writer.writerow(["Construction", "Pane type", "U (W/m²K)", "SHGC", "VT",
+                             "Gap (mm)", "Inner emissivity"])
+            for conv in result["conversions"]:
+                writer.writerow([
+                    conv["construction_name"],
+                    conv["pane_type"],
+                    conv["u_factor"],
+                    conv["shgc"],
+                    conv["vt"],
+                    conv["gap_mm"] if conv["gap_mm"] else "—",
+                    conv["inner_emissivity"] if conv["inner_emissivity"] else "—",
+                ])
+        print(f"    {scenario_name}: comparison saved -> {csv_path}")
     else:
         print(
             f"    {scenario_name}: window-conversion energy extraction incomplete "
             f"(original={'OK' if energy_original else 'FAIL'}, "
             f"layered={'OK' if energy_layered else 'FAIL'})"
         )
-        print(f"    {scenario_name}: comparison saved → {csv_info['csv_path']}")
 
     return comparison
-
-
-def run_window_conversion_comparison_with_layered_main(
-    original_model_path,
-    layered_sql_path,
-    epw_path,
-    scenario_run_dir,
-    scenario_name,
-    openstudio_path,
-    file_paths,
-    measure_paths,
-    conversions,
-):
-    """When layered is main runtime model, run original as reference and compare."""
-    print(f"    {scenario_name}: layered is main runtime model; running original reference simulation...")
-    original_run_dir = os.path.join(scenario_run_dir, "run_original_windows_reference")
-    sim_osw_original = {
-        "weather_file": epw_path,
-        "seed_file": original_model_path,
-        "file_paths": file_paths,
-        "measure_paths": measure_paths,
-        "steps": [],
-        "name": f"{scenario_name}_original_windows_reference",
-    }
-    success_original = run_osw(
-        sim_osw_original,
-        "run_original_windows_reference.osw",
-        original_run_dir,
-        openstudio_path,
-        f"{scenario_name} [original windows reference]",
-    )
-
-    energy_original = None
-    if success_original:
-        original_sql = os.path.join(original_run_dir, "run", "eplusout.sql")
-        if os.path.exists(original_sql):
-            energy_original = extract_total_site_energy_gj(original_sql)
-
-    energy_layered = None
-    if layered_sql_path and os.path.exists(layered_sql_path):
-        energy_layered = extract_total_site_energy_gj(layered_sql_path)
-
-    csv_info = write_window_conversion_comparison_csv(
-        scenario_run_dir=scenario_run_dir,
-        scenario_name=scenario_name,
-        energy_original=energy_original,
-        energy_layered=energy_layered,
-        conversions=conversions,
-        main_model_type="layered",
-    )
-
-    if energy_original is not None and energy_layered is not None:
-        print(
-            f"    {scenario_name}: window-conversion energy comparison: "
-            f"original={energy_original:.2f} GJ, "
-            f"layered={energy_layered:.2f} GJ, "
-            f"diff={csv_info['difference_gj']:+.2f} GJ ({csv_info['difference_percent']:+.2f}%)"
-        )
-    else:
-        print(
-            f"    {scenario_name}: window-conversion energy extraction incomplete "
-            f"(original={'OK' if energy_original else 'FAIL'}, "
-            f"layered={'OK' if energy_layered else 'FAIL'})"
-        )
-
-    print(f"    {scenario_name}: comparison saved → {csv_info['csv_path']}")
-    return {
-        "original_energy_gj": energy_original,
-        "layered_energy_gj": energy_layered,
-        "difference_gj": csv_info["difference_gj"],
-        "difference_percent": csv_info["difference_percent"],
-        "conversions": conversions,
-        "main_model_type": "layered",
-    }
 
 
 def apply_window_frame_and_divider_to_osm(osm_path, frame_width=0.05):
@@ -1063,16 +906,10 @@ def create_simulation(
         enforce_weather_url_in_osm(final_model_path, epw_path)
         apply_ddy_design_days_to_model(final_model_path, ddy_path)
         apply_window_frame_and_divider_to_osm(final_model_path)
-        runtime_model_selection = select_runtime_window_model(
-            base_model_path=final_model_path,
-            scenario_run_dir=scenario_run_dir,
-            scenario_name=scenario_name,
-        )
-        runtime_model_path = runtime_model_selection["runtime_model_path"]
         # --- Phase 2: run simulation from seeded model ---
         sim_osw = {
             "weather_file": epw_path,
-            "seed_file": runtime_model_path,
+            "seed_file": final_model_path,
             "file_paths": file_paths,
             "measure_paths": measure_paths,
             "steps": [],
@@ -1091,31 +928,16 @@ def create_simulation(
             apply_reporting_measure(model_path, sql_path, measure_dir_path, scenario_name)
         # --- Phase 4: window-conversion comparison (baseline) ---
         print(f"  Checking window constructions for SimpleGlazing conversion...")
-        if not ENABLE_SIMPLE_GLAZING_TO_LAYERED:
-            print("    SimpleGlazing->layered conversion disabled; skipping conversion comparison.")
-        elif runtime_model_selection["main_model_type"] == "layered":
-            run_window_conversion_comparison_with_layered_main(
-                original_model_path=final_model_path,
-                layered_sql_path=sql_path,
-                epw_path=epw_path,
-                scenario_run_dir=scenario_run_dir,
-                scenario_name=scenario_name,
-                openstudio_path=openstudio_path,
-                file_paths=file_paths,
-                measure_paths=measure_paths,
-                conversions=runtime_model_selection.get("conversions", []),
-            )
-        else:
-            run_window_conversion_comparison(
-                base_model_path=final_model_path,
-                base_sql_path=sql_path,
-                epw_path=epw_path,
-                scenario_run_dir=scenario_run_dir,
-                scenario_name=scenario_name,
-                openstudio_path=openstudio_path,
-                file_paths=file_paths,
-                measure_paths=measure_paths,
-            )
+        run_window_conversion_comparison(
+            base_model_path=final_model_path,
+            base_sql_path=sql_path,
+            epw_path=epw_path,
+            scenario_run_dir=scenario_run_dir,
+            scenario_name=scenario_name,
+            openstudio_path=openstudio_path,
+            file_paths=file_paths,
+            measure_paths=measure_paths,
+        )
 
     # ====================================================================
     # NON-BASELINE:
@@ -1147,28 +969,16 @@ def create_simulation(
         final_model_path = os.path.join(scenario_run_dir, "model_to_run.osm")
         shutil.copy2(proto_model_path, final_model_path)
         apply_ddy_design_days_to_model(final_model_path, ddy_path)
-        pre_measure_model_selection = select_runtime_window_model(
-            base_model_path=final_model_path,
-            scenario_run_dir=scenario_run_dir,
-            scenario_name=scenario_name,
-        )
-        measure_model_path = pre_measure_model_selection["runtime_model_path"]
         # --- Phase 2: apply Python model measures ---
         translator = openstudio.osversion.VersionTranslator()
-        loaded_model = translator.loadModel(openstudio.toPath(measure_model_path))
+        loaded_model = translator.loadModel(openstudio.toPath(final_model_path))
         if not loaded_model.is_initialized():
-            print(f"  {scenario_name}: failed to load measure input model")
-            log_failure("failed to load measure input model")
+            print(f"  {scenario_name}: failed to load prototype model")
+            log_failure("failed to load prototype model")
             return None
 
         model = loaded_model.get()
         ensure_window_frame_and_divider(model)
-        window_measure_input_model_type = pre_measure_model_selection["main_model_type"]
-        window_pre_measure_layered_conversion_status = (
-            "layered_for_measure"
-            if window_measure_input_model_type == "layered"
-            else "original_for_measure"
-        )
         wall_args = None
         roof_args = None
         window_args = None
@@ -1193,11 +1003,12 @@ def create_simulation(
             str(scenario_dict.get("door_bottom_seal_option", "none")).strip().lower() != "none",
             str(scenario_dict.get("door_top_side_seal_option", "none")).strip().lower() != "none",
         ])
+        use_custom_gwp = bool(scenario_dict.get("use_custom_gwp", False))
         requires_ec3_data = any([
-            scenario_dict.get("wall_r_value"),
-            scenario_dict.get("roof_r_value"),
-            has_window_renovation,
-            has_door_renovation,
+            bool(scenario_dict.get("wall_r_value")) and (not use_custom_gwp),
+            bool(scenario_dict.get("roof_r_value")) and (not use_custom_gwp),
+            has_window_renovation and (not use_custom_gwp),
+            has_door_renovation and (not use_custom_gwp),
         ])
         if requires_ec3_data and not EC3_API_TOKEN:
             print("  EC3 API token is required for online cost/carbon calculations; scenario skipped.")
@@ -1217,7 +1028,8 @@ def create_simulation(
                 "insulation_material_lifetime": wall_material_lifetime,
                 "insulation_thermal_conductivity": 0.0,
                 "insulation_material_density": 0.0,
-                "calculate_costs": bool(scenario_dict.get("calculate_costs", True)),
+                "use_custom_gwp": use_custom_gwp,
+                "custom_gwp_per_m3": float(scenario_dict.get("custom_gwp_per_m3") or 0.0),
                 "use_custom_costs": bool(scenario_dict.get("use_custom_costs", False)),
                 "custom_cost_per_cf": float(scenario_dict.get("custom_cost_per_cf") or 0.0),
                 "labor_cost_multiplier": float(scenario_dict.get("labor_cost_multiplier") or 1.0),
@@ -1241,7 +1053,8 @@ def create_simulation(
                 "insulation_material_lifetime": roof_material_lifetime,
                 "insulation_thermal_conductivity": 0.0,
                 "insulation_material_density": 0.0,
-                "calculate_costs": bool(scenario_dict.get("calculate_costs", True)),
+                "use_custom_gwp": use_custom_gwp,
+                "custom_gwp_per_m3": float(scenario_dict.get("custom_gwp_per_m3") or 0.0),
                 "use_custom_costs": bool(scenario_dict.get("use_custom_costs", False)),
                 "custom_cost_per_cf": float(scenario_dict.get("custom_cost_per_cf") or 0.0),
                 "labor_cost_multiplier": float(scenario_dict.get("labor_cost_multiplier") or 1.0),
@@ -1295,7 +1108,12 @@ def create_simulation(
                 "secondary_glazing_option": str(scenario_dict.get("secondary_glazing_option") or "none"),
                 "api_key": EC3_API_TOKEN,
                 "gwp_statistic": str(scenario_dict.get("gwp_statistic") or "median"),
-                "calculate_costs": bool(scenario_dict.get("calculate_costs", True)),
+                "use_custom_gwp": use_custom_gwp,
+                "custom_glass_gwp_per_m3": float(scenario_dict.get("custom_glass_gwp_per_m3") or 0.0),
+                "custom_frame_gwp_per_m2": float(scenario_dict.get("custom_frame_gwp_per_m2") or 0.0),
+                "custom_caulking_gwp_per_m3": float(scenario_dict.get("custom_caulking_gwp_per_m3") or 0.0),
+                "custom_weatherstrip_gwp_per_m": float(scenario_dict.get("custom_weatherstrip_gwp_per_m") or 0.0),
+                "custom_film_gwp_per_m2": float(scenario_dict.get("custom_film_gwp_per_m2") or 0.0),
                 "use_custom_costs": bool(scenario_dict.get("use_custom_costs", False)),
                 "glass_cost_per_cf": float(scenario_dict.get("glass_cost_per_cf") or 0.0),
                 "frame_cost_per_sf": float(scenario_dict.get("frame_cost_per_sf") or 0.0),
@@ -1327,6 +1145,10 @@ def create_simulation(
                 "door_lifetime": float(scenario_dict.get("door_lifetime") or 30),
                 "gwp_statistic": str(scenario_dict.get("gwp_statistic") or "median"),
                 "api_key": EC3_API_TOKEN,
+                "use_custom_gwp": use_custom_gwp,
+                "custom_door_leaf_gwp_per_m2": float(scenario_dict.get("custom_door_leaf_gwp_per_m2") or 0.0),
+                "custom_bottom_strip_gwp_per_m": float(scenario_dict.get("custom_bottom_strip_gwp_per_m") or 0.0),
+                "custom_side_top_strip_gwp_per_m": float(scenario_dict.get("custom_side_top_strip_gwp_per_m") or 0.0),
                 "length_per_unit_bottom_side": float(scenario_dict.get("length_per_unit_bottom_side") or 0.0),
                 "length_per_unit_other_sides": float(scenario_dict.get("length_per_unit_other_sides") or 0.0),
                 "door_thermal_conductivity": float(scenario_dict.get("door_thermal_conductivity") or 0.0),
@@ -1347,30 +1169,14 @@ def create_simulation(
                 return None
 
         renovation_details = "Envelope renovation applied (details generated at report time)"
-        site_properties = model.getSite().additionalProperties()
-        site_properties.setFeature("renovation_details", renovation_details)
-        site_properties.setFeature("window_measure_input_model_type", window_measure_input_model_type)
-        site_properties.setFeature(
-            "window_pre_measure_layered_conversion_status",
-            window_pre_measure_layered_conversion_status,
-        )
-        model.save(openstudio.toPath(measure_model_path), True)
-        enforce_weather_url_in_osm(measure_model_path, epw_path)
+        model.getSite().additionalProperties().setFeature("renovation_details", renovation_details)
+        model.save(openstudio.toPath(final_model_path), True)
+        enforce_weather_url_in_osm(final_model_path, epw_path)
         del model
-        if window_measure_input_model_type == "layered":
-            runtime_model_selection = pre_measure_model_selection
-            runtime_model_path = measure_model_path
-        else:
-            runtime_model_selection = select_runtime_window_model(
-                base_model_path=measure_model_path,
-                scenario_run_dir=scenario_run_dir,
-                scenario_name=scenario_name,
-            )
-            runtime_model_path = runtime_model_selection["runtime_model_path"]
         # --- Phase 3: OSW with seed to run EnergyPlus (no measure steps) ---
         sim_osw = {
             "weather_file": epw_path,
-            "seed_file": runtime_model_path,
+            "seed_file": final_model_path,
             "file_paths": file_paths,
             "measure_paths": measure_paths,
             "steps": [],
@@ -1388,33 +1194,16 @@ def create_simulation(
             apply_reporting_measure(model_path, sql_path, measure_dir_path, scenario_name)
         # --- Phase 5: window-conversion comparison (non-baseline) ---
         print(f"  Checking window constructions for SimpleGlazing conversion...")
-        if not ENABLE_SIMPLE_GLAZING_TO_LAYERED:
-            print("    SimpleGlazing->layered conversion disabled; skipping conversion comparison.")
-        elif window_measure_input_model_type == "layered":
-            print("    Layered model was already used as the retrofit-measure input; skipping post-measure conversion comparison.")
-        elif runtime_model_selection["main_model_type"] == "layered":
-            run_window_conversion_comparison_with_layered_main(
-                original_model_path=final_model_path,
-                layered_sql_path=sql_path,
-                epw_path=epw_path,
-                scenario_run_dir=scenario_run_dir,
-                scenario_name=scenario_name,
-                openstudio_path=openstudio_path,
-                file_paths=file_paths,
-                measure_paths=measure_paths,
-                conversions=runtime_model_selection.get("conversions", []),
-            )
-        else:
-            run_window_conversion_comparison(
-                base_model_path=final_model_path,
-                base_sql_path=sql_path,
-                epw_path=epw_path,
-                scenario_run_dir=scenario_run_dir,
-                scenario_name=scenario_name,
-                openstudio_path=openstudio_path,
-                file_paths=file_paths,
-                measure_paths=measure_paths,
-            )
+        run_window_conversion_comparison(
+            base_model_path=final_model_path,
+            base_sql_path=sql_path,
+            epw_path=epw_path,
+            scenario_run_dir=scenario_run_dir,
+            scenario_name=scenario_name,
+            openstudio_path=openstudio_path,
+            file_paths=file_paths,
+            measure_paths=measure_paths,
+        )
     print(f"  Completed: {scenario_name}")
     return scenario_name
 
@@ -1801,8 +1590,6 @@ def extract_scenario_data(osm_path, scenario_name):
         "window_skylight_count",
         "window_simple_glazing_count",
         "window_upgrade_status",
-        "window_measure_input_model_type",
-        "window_pre_measure_layered_conversion_status",
         "window_enhancement_infiltration_reduction_percent",
         "window_glass_pane_thickness_m",
         "window_glass_gap_thickness_m",
@@ -1901,8 +1688,6 @@ def generate_parametric_recap(target_path, city_climate_zones=None):
         "window_skylight_count",
         "window_simple_glazing_count",
         "window_upgrade_status",
-        "window_measure_input_model_type",
-        "window_pre_measure_layered_conversion_status",
         "window_enhancement_infiltration_reduction_percent",
         "window_glass_pane_thickness_m",
         "window_glass_gap_thickness_m",
@@ -1988,11 +1773,10 @@ def generate_parametric_recap(target_path, city_climate_zones=None):
     print("=" * 80)
 
 # --- GLOBAL SETTINGS ---
-# RUN_NAME is the output folder label under simulations/ and is set directly
-# here for this targeted regression run.
-RUN_NAME = "run_test_011_rsmeans_api"
-# Temporary switch for regression: disable SimpleGlazing -> layered conversion.
-ENABLE_SIMPLE_GLAZING_TO_LAYERED = False
+# RUN_NAME, OVERWRITE_EXISTING, and CUSTOM_COMBOS can be overridden via env vars
+# (used by run_all_tests.py to drive multiple sequential runs without editing this file).
+# RUN_NAME is fixed for this custom cost + custom carbon validation run.
+RUN_NAME = "run test 013 custom cost and carbon"
 def detect_openstudio_cli_path():
     """Find the OpenStudio CLI executable on this machine.
 
@@ -2086,65 +1870,96 @@ TEMPLATE = "DOE Ref 1980-2004"
 # (set near the bottom of this section) replaces the literal list below.
 
 CUSTOM_COMBOS = [
-    # Scenario 1: all 4 measures with custom-cost inputs enabled.
+    # Scenario 7: All 4 measures  Wall + Door + Roof + Window
+    # {
+    #     "wall_r_value":    10,
+    #     "wall_insulation_material_type": "Extruded Polystyrene (XPS) Foam Board",
+    #     "roof_r_value":    15,
+    #     "roof_insulation_material_type": "Blown Mineral Wool",
+    #     "door_option":     "glass door",
+    #     "door_infiltration_reduction_percent": 20.0,
+    #     "door_bottom_seal_option": "none",
+    #     "door_top_side_seal_option": "none",
+    #     "window_num_panes": 1,
+    #     "window_infiltration_reduction_percent": 20.0,
+    #     "weatherstrip_option": "silicone adhesive smoke gasket",
+    #     "wf_option": "none",
+    #     "film_option": "safety film",
+    #     "caulking_option": "none",
+    # },
+    # # Scenario 8: All 4 measures  Wall + Door + Roof + Window
+    # {
+    #     "wall_r_value":    30,
+    #     "wall_insulation_material_type": "Expanded Polystyrene (EPS) Foam Board",
+    #     "roof_r_value":    25,
+    #     "roof_insulation_material_type": "Polyiso Insulation Foam Board",
+    #     "door_option":     "polystyrene core steel door",
+    #     "door_infiltration_reduction_percent": 25.0,
+    #     "door_bottom_seal_option": "brush weatherstrip",
+    #     "door_top_side_seal_option": "silicone adhesive smoke gasket",
+    #     "window_num_panes": 2,
+    #     "window_infiltration_reduction_percent": 25.0,
+    #     "weatherstrip_option": "silicone adhesive smoke gasket",
+    #     "wf_option": "none",
+    #     "film_option": "anti-graffiti film",
+    #     "caulking_option": "polyurethane",
+    # },
+    #Scenario 9: All 4 measures  Wall + Door + Roof + Window
+    # {
+    #     "wall_r_value":    20.4,
+    #     "wall_insulation_material_type": "Fiberglass Batts",
+    #     "roof_r_value":    34.5,
+    #     "roof_insulation_material_type": "Blown Fiberglass",
+    #     "door_option":     "wooden door",
+    #     "door_infiltration_reduction_percent": 30.0,
+    #     "door_bottom_seal_option": "automatic door bottom",
+    #     "door_top_side_seal_option": "jamb weatherstrip",
+    #     "window_num_panes": 3,
+    #     "window_enhancement_infiltration_reduction_percent": 30.0,
+    #     "weatherstrip_option": "silicone adhesive smoke gasket",
+    #     "wf_option": "none",
+    #     "film_option": "low-e film",
+    #     "caulking_option": "acrylic",
+    # },
     {
-        "wall_r_value":    15,
-        "wall_insulation_material_type": "Extruded Polystyrene (XPS) Foam Board",
-        "roof_r_value":    15,
-        "roof_insulation_material_type": "Blown Mineral Wool",
-        "door_option":     "glass door",
-        "door_infiltration_reduction_percent": 15.0,
-        "door_bottom_seal_option": "none",
-        "door_top_side_seal_option": "none",
-        "window_num_panes": 1,
-        "window_infiltration_reduction_percent": 15.0,
-        "weatherstrip_option": "silicone adhesive smoke gasket",
-        "wf_option": "wood window frame",
-        "film_option": "safety film",
-        "caulking_option": "none",
-        "secondary_glazing_option": "none",
-        "use_custom_costs": True,
-        "custom_cost_per_cf": 1.5,
-        "glass_cost_per_cf": 18.0,
-        "frame_cost_per_sf": 7.5,
-        "caulking_cost_per_cy": 420.0,
-        "film_cost_per_sf": 3.25,
-        "weatherstrip_cost_per_lf": 2.2,
-        "custom_door_cost_per_area": 65.0,
-        "custom_bottom_seal_cost": 9.0,
-        "custom_top_side_seal_cost": 6.0,
-        "labor_cost_multiplier": 1.15,
-        "overhead_profit_percent": 12.0,
-    },
-    # Scenario 2: all 4 measures with a second custom-cost combination.
-    {
-        "wall_r_value":    20.4,
+        "wall_r_value": 20.4,
         "wall_insulation_material_type": "Fiberglass Batts",
-        "roof_r_value":    34.5,
-        "roof_insulation_material_type": "Blown Fiberglass",
-        "door_option":     "wooden door",
-        "door_infiltration_reduction_percent": 30.0,
+        "roof_r_value": 34.5,
+        "roof_insulation_material_type": "Blown Cellulose",
+        "door_option": "wooden door",
+        "door_area_per_unit": 1.95,
+        "door_infiltration_reduction_percent": 20.0,
         "door_bottom_seal_option": "automatic door bottom",
         "door_top_side_seal_option": "jamb weatherstrip",
         "window_num_panes": 3,
-        "window_enhancement_infiltration_reduction_percent": 30.0,
+        "window_enhancement_infiltration_reduction_percent": 20.0,
         "weatherstrip_option": "silicone adhesive smoke gasket",
-        "wf_option": "wood-aluminium window frame",
-        "film_option": "low-e film",
+        "wf_option": "none",
+        "film_option": "safety film",
         "caulking_option": "acrylic",
         "secondary_glazing_option": "none",
+        "use_custom_gwp": True,
+        "custom_gwp_per_m3": 2.5,
+        "custom_glass_gwp_per_m3": 22.0,
+        "custom_frame_gwp_per_m2": 15.0,
+        "custom_caulking_gwp_per_m3": 3.0,
+        "custom_weatherstrip_gwp_per_m": 0.5,
+        "custom_film_gwp_per_m2": 1.0,
+        "custom_door_leaf_gwp_per_m2": 30.0,
+        "custom_bottom_strip_gwp_per_m": 0.8,
+        "custom_side_top_strip_gwp_per_m": 0.6,
         "use_custom_costs": True,
-        "custom_cost_per_cf": 1.5,
-        "glass_cost_per_cf": 22.0,
-        "frame_cost_per_sf": 8.25,
-        "caulking_cost_per_cy": 395.0,
-        "film_cost_per_sf": 4.1,
-        "weatherstrip_cost_per_lf": 2.45,
-        "custom_door_cost_per_area": 58.0,
-        "custom_bottom_seal_cost": 11.0,
-        "custom_top_side_seal_cost": 7.25,
-        "labor_cost_multiplier": 1.1,
-        "overhead_profit_percent": 11.0,
+        "custom_cost_per_cf": 1.8,
+        "glass_cost_per_cf": 12.0,
+        "frame_cost_per_sf": 8.0,
+        "caulking_cost_per_cy": 110.0,
+        "film_cost_per_sf": 2.8,
+        "weatherstrip_cost_per_lf": 1.2,
+        "custom_door_cost_per_area": 160.0,
+        "custom_bottom_seal_cost": 4.5,
+        "custom_top_side_seal_cost": 3.8,
+        "labor_cost_multiplier": 1.15,
+        "overhead_profit_percent": 12.0,
     },
 ]
 

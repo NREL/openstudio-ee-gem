@@ -71,7 +71,6 @@ class TestWindowEnhancementMeasureSetup(unittest.TestCase):
             "wf_option",
             "glass_option",
             "film_option",
-            "calculate_costs",
             "use_custom_costs",
             "use_specific_rsmeans_line_item_ids",
             "rsmeans_id_glazing",
@@ -104,7 +103,6 @@ class TestWindowEnhancementMeasureArguments(unittest.TestCase):
         test_args = {
             "windows_to_modify": "All",
             "window_orientation": "All",
-            "calculate_costs": True,
             "use_custom_costs": False,
             "use_specific_rsmeans_line_item_ids": False,
             "calculate_embodied_carbon": True,
@@ -119,7 +117,6 @@ class TestWindowEnhancementMeasureArguments(unittest.TestCase):
         args_config = {
             "windows_to_modify": str,
             "window_orientation": str,
-            "calculate_costs": bool,
             "use_custom_costs": bool,
             "custom_glazing_cost": (int, float),
             "custom_frame_cost": (int, float),

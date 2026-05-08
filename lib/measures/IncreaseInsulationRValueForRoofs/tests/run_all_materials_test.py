@@ -75,7 +75,6 @@ def run_material_test(model_path, material_name, output_base_dir):
     set_arg("insulation_material_type", material_name)
     set_arg("analysis_period", 30)
     set_arg("gwp_statistic", "median")
-    set_arg("calculate_costs", True)
     set_arg("use_custom_costs", False)
     
     # Run measure

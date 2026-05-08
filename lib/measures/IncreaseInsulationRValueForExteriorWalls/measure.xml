@@ -85,13 +85,6 @@ The resulting construction will retain the cost data from the source constructio
       <default_value>0.0</default_value>
     </argument>
     <argument>
-      <name>calculate_costs</name>
-      <display_name>Calculate Costs (RSMeans or Custom)</display_name>
-      <type>Boolean</type>
-      <required>true</required>
-      <default_value>true</default_value>
-    </argument>
-    <argument>
       <name>use_custom_costs</name>
       <display_name>Use Custom Cost Inputs (skip RSMeans)</display_name>
       <type>Boolean</type>

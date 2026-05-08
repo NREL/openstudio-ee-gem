@@ -10,7 +10,6 @@
     "insulation_material_lifetime": 30,
     "insulation_thermal_conductivity": 0.0,
     "insulation_material_density": 0.0,
-    "calculate_costs": true,
     "use_custom_costs": false,
     "use_exact_costline_id": true,
     "exact_costline_id": "072116201320",

@@ -49,7 +49,6 @@
     "film_cost_per_sf": 6.0,
     "weatherstrip_cost_per_lf": 2.5,
     "labor_cost_multiplier": 2.0,
-    "calculate_costs": true,
     "use_custom_costs": true,
     "use_specific_rsmeans_line_item_ids": false,
     "rsmeans_id_glazing": "084126100020",

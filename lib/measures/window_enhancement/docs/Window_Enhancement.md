@@ -110,7 +110,6 @@ Material quantities are calculated based on window dimensions:
 
 | Argument | Type | Default | Description |
 |----------|------|---------|-------------|
-| `calculate_costs` | Boolean | true | Enable capital cost calculation and RSMeans lookup |
 | `use_custom_costs` | Boolean | false | If true, skip RSMeans and use user-provided unit costs |
 | `glass_cost_per_cf` | Double | 0.0 | Custom glass unit cost ($/CF) used when custom costs enabled or RSMeans fails (glass and secondary glazing use volume basis) |
 | `frame_cost_per_sf` | Double | 0.0 | Custom frame unit cost ($/SF) used when custom costs enabled or RSMeans fails |

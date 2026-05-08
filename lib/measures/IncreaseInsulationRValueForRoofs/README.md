@@ -23,7 +23,6 @@ This measure upgrades roof insulation to a target R-value, estimates added embod
 | `insulation_material_lifetime` | Integer | 30 | Fallback lifetime if EPD has none (years) |
 | `insulation_thermal_conductivity` | Double | 0.0 | 0 = use typical value for selected material (W/m·K) |
 | `insulation_material_density` | Double | 0.0 | 0 = use typical or EPD-derived value (kg/m³) |
-| `calculate_costs` | Boolean | true | Enable cost calculation (RSMeans or custom) |
 | `use_custom_costs` | Boolean | false | Skip RSMeans; use custom cost inputs instead |
 | `use_exact_costline_id` | Boolean | false | Force RSMeans to use the exact `exact_costline_id` |
 | `exact_costline_id` | String | "" | Exact RSMeans unit costline ID |

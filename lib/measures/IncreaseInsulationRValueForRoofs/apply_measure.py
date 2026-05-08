@@ -131,7 +131,6 @@ def run_measure(model, args_overrides=None):
     set_arg("insulation_material_lifetime", 30)
     set_arg("insulation_thermal_conductivity", 0.0)   # 0 = use typical
     set_arg("insulation_material_density", 0.0)       # 0 = use typical
-    set_arg("calculate_costs", True)
     set_arg("use_custom_costs", False)
     set_arg("use_exact_costline_id", True)
     set_arg("exact_costline_id", "072116201320") # Mineral wool batts, 3-1/2 in, R15 (matches default Pure Wool Batts mapping)
