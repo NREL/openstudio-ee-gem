@@ -1112,6 +1112,9 @@ def create_simulation(
                 "caulking_cost_per_cy": float(scenario_dict.get("caulking_cost_per_cy") or 0.0),
                 "film_cost_per_sf": float(scenario_dict.get("film_cost_per_sf") or 0.0),
                 "weatherstrip_cost_per_lf": float(scenario_dict.get("weatherstrip_cost_per_lf") or 0.0),
+                "u_factor_modification_percentage": float(scenario_dict.get("u_factor_modification_percentage") or 0.0),
+                "shgc_modification_percentage": float(scenario_dict.get("shgc_modification_percentage") or 0.0),
+                "visible_transmittance_modification_percentage": float(scenario_dict.get("visible_transmittance_modification_percentage") or 0.0),
                 "labor_cost_multiplier": float(scenario_dict.get("labor_cost_multiplier") or 1.0),
                 "overhead_profit_percent": float(scenario_dict.get("overhead_profit_percent") or 10.0),
             }
@@ -1765,7 +1768,7 @@ def generate_parametric_recap(target_path, city_climate_zones=None):
 # (used by run_all_tests.py to drive multiple sequential runs without editing this file).
 # RUN_NAME is purely a folder label under simulations/ -- it has no effect on
 # the model itself. Defaults to "run_test_009" for this branch's ad-hoc standalone runs.
-RUN_NAME = "run_test_014_custom_rsmeans"
+RUN_NAME = "run_test_014_better_energy_performance"
 def detect_openstudio_cli_path():
     """Find the OpenStudio CLI executable on this machine.
 
@@ -1936,6 +1939,9 @@ CUSTOM_COMBOS = [
         "custom_door_cost_per_area": 65.12166,
         "custom_bottom_seal_cost": 33.0,
         "custom_top_side_seal_cost": 2.78,
+        "u_factor_modification_percentage": -30.0,
+        "shgc_modification_percentage": -30.0,
+        "visible_transmittance_modification_percentage": 0.0,
     },
     # Scenario 11: Custom-cost dataset test (mid cost mix)
     {
@@ -1963,6 +1969,9 @@ CUSTOM_COMBOS = [
         "custom_door_cost_per_area": 314.8444,
         "custom_bottom_seal_cost": 15.4,
         "custom_top_side_seal_cost": 18.9,
+        "u_factor_modification_percentage": -30.0,
+        "shgc_modification_percentage": -30.0,
+        "visible_transmittance_modification_percentage": 0.0,
     },
     # Scenario 12: Custom-cost dataset test (high cost mix)
     {
@@ -1990,6 +1999,9 @@ CUSTOM_COMBOS = [
         "custom_door_cost_per_area": 341.7114,
         "custom_bottom_seal_cost": 33.0,
         "custom_top_side_seal_cost": 18.9,
+        "u_factor_modification_percentage": -30.0,
+        "shgc_modification_percentage": -30.0,
+        "visible_transmittance_modification_percentage": 0.0,
     },
 ]
 

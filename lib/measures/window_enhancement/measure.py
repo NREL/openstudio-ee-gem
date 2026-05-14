@@ -744,6 +744,46 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
         custom_film_gwp_per_m2.setDefaultValue(0.0)
         args.append(custom_film_gwp_per_m2)
 
+        # ============================================================================
+        # SIMPLE GLAZING MODIFICATION PARAMETERS
+        # ============================================================================
+        # These parameters only apply to windows with Simple Glazing constructions.
+        
+        u_factor_modification_percentage = openstudio.measure.OSArgument.makeDoubleArgument(
+            "u_factor_modification_percentage", True)
+        u_factor_modification_percentage.setDisplayName("U Factor Modification (%)")
+        u_factor_modification_percentage.setDescription(
+            "【ONLY for Simple Glazing】 Percentage modification of U-factor. "
+            "Negative values improve thermal performance (lower heat loss). "
+            "Range: [-50%, +50%]. Default: 0.0 (no modification). "
+            "Formula: new_U = original_U × (1 + percentage/100). "
+            "This parameter has NO EFFECT on Layered Constructions.")
+        u_factor_modification_percentage.setDefaultValue(0.0)
+        args.append(u_factor_modification_percentage)
+
+        shgc_modification_percentage = openstudio.measure.OSArgument.makeDoubleArgument(
+            "shgc_modification_percentage", True)
+        shgc_modification_percentage.setDisplayName("SHGC Modification (%)")
+        shgc_modification_percentage.setDescription(
+            "【ONLY for Simple Glazing】 Percentage modification of Solar Heat Gain Coefficient (SHGC). "
+            "Negative values reduce solar heat gain (beneficial in cooling climates). "
+            "Range: [-50%, +50%]. Default: 0.0 (no modification). "
+            "This parameter has NO EFFECT on Layered Constructions.")
+        shgc_modification_percentage.setDefaultValue(0.0)
+        args.append(shgc_modification_percentage)
+
+        visible_transmittance_modification_percentage = openstudio.measure.OSArgument.makeDoubleArgument(
+            "visible_transmittance_modification_percentage", True)
+        visible_transmittance_modification_percentage.setDisplayName("Visible Transmittance Modification (%)")
+        visible_transmittance_modification_percentage.setDescription(
+            "【ONLY for Simple Glazing】 Percentage modification of Visible Transmittance (VT). "
+            "Positive values increase daylighting (more transparent). "
+            "Negative values reduce daylighting (more opaque). "
+            "Range: [-50%, +50%]. Default: 0.0 (no modification). "
+            "This parameter has NO EFFECT on Layered Constructions.")
+        visible_transmittance_modification_percentage.setDefaultValue(0.0)
+        args.append(visible_transmittance_modification_percentage)
+
         return args
 
     def run(self, model: openstudio.model.Model, runner: openstudio.measure.OSRunner,
@@ -795,6 +835,11 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
         weatherstrip_lifetime = runner.getIntegerArgumentValue("weatherstrip_lifetime",user_arguments)
         overhead_profit_percent = runner.getDoubleArgumentValue("overhead_profit_percent", user_arguments)
         api_key = runner.getStringArgumentValue("api_key", user_arguments)
+        
+        # Simple Glazing modification parameters (only applicable to Simple Glazing constructions)
+        u_factor_mod_pct = runner.getDoubleArgumentValue("u_factor_modification_percentage", user_arguments)
+        shgc_mod_pct = runner.getDoubleArgumentValue("shgc_modification_percentage", user_arguments)
+        vt_mod_pct = runner.getDoubleArgumentValue("visible_transmittance_modification_percentage", user_arguments)
         user_num_panes = runner.getIntegerArgumentValue("user_num_panes", user_arguments)
         glass_pane_thickness_input = runner.getDoubleArgumentValue("glass_pane_thickness", user_arguments)
         gap_thickness_input = runner.getDoubleArgumentValue("gap_thickness", user_arguments)
@@ -922,7 +967,8 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
                                  glass_visible_transmittance, glass_front_emissivity, 
                                  glass_back_emissivity, glass_front_solar_reflectance, 
                                  glass_back_solar_reflectance, glass_front_visible_reflectance, 
-                                 glass_back_visible_reflectance, labor_cost_multiplier):
+                                 glass_back_visible_reflectance, labor_cost_multiplier,
+                                 u_factor_mod_pct, shgc_mod_pct, vt_mod_pct):
             return False
 
         # Effective values may be overridden by RSMeans only when user selected auto/default (0.0).
@@ -1073,6 +1119,32 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
             epd_response_cache[cache_key] = data
             return data
         
+        # Check for Simple Glazing modification parameters and warn if not applicable
+        has_simple_glazing_params = (u_factor_mod_pct != 0.0 or shgc_mod_pct != 0.0 or vt_mod_pct != 0.0)
+        
+        if has_simple_glazing_params:
+            runner.registerInfo("\n" + "=" * 80)
+            runner.registerInfo("SIMPLE GLAZING MODIFICATION PARAMETERS DETECTED")
+            runner.registerInfo("=" * 80)
+            runner.registerInfo(f"  U Factor modification: {u_factor_mod_pct:+.2f}%")
+            runner.registerInfo(f"  SHGC modification: {shgc_mod_pct:+.2f}%")
+            runner.registerInfo(f"  Visible Transmittance modification: {vt_mod_pct:+.2f}%")
+            runner.registerInfo("NOTE: These parameters only apply to Simple Glazing constructions.")
+        
+        # Pre-scan to detect if any windows have Simple Glazing
+        has_any_simple_glazing = False
+        for subsurface in sub_surfaces_to_change:
+            if self.is_simple_glazing_system(runner, subsurface.construction().get() if subsurface.construction().is_initialized() else None):
+                has_any_simple_glazing = True
+                break
+        
+        # Warn if parameters are set but no Simple Glazing windows exist
+        if has_simple_glazing_params and not has_any_simple_glazing:
+            runner.registerWarning(
+                "Simple Glazing modification parameters are set (U Factor/SHGC/Visible Transmittance), "
+                "but all selected windows use Layered Construction. These parameters will have NO EFFECT. "
+                "To use these parameters, please select windows with Simple Glazing constructions.")
+        
         runner.registerInfo("\n" + "=" * 80)
         runner.registerInfo("WINDOW RENOVATION PROCESSING")
         runner.registerInfo("=" * 80)
@@ -1108,14 +1180,35 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
             caulking_option_for_this_window = caulking_option
             weatherstrip_option_for_this_window = weatherstrip_option
 
-            # For SimpleGlazing windows, only disable options that require layered glazing edits.
-            # Keep frame/caulking/weatherstrip active so their cost and embodied carbon still apply.
+            # For SimpleGlazing windows, handle based on whether modification parameters are set.
             if is_simple_glazing:
-                runner.registerWarning(
-                    f"SimpleGlazing system detected in {subsurface_name}. "
-                    "Disabling glass replacement, glazing film, and secondary glazing for this subsurface. "
-                    "Frame/caulking/weatherstrip options remain enabled for cost and embodied carbon calculation."
-                )
+                if u_factor_mod_pct != 0.0 or shgc_mod_pct != 0.0 or vt_mod_pct != 0.0:
+                    # Apply Simple Glazing property modifications
+                    runner.registerInfo(
+                        f"\n  → Applying Simple Glazing property modifications to {subsurface_name}")
+                    modified = self.modify_simple_glazing_properties(
+                        runner, subsurface, 
+                        u_factor_mod_pct, shgc_mod_pct, vt_mod_pct
+                    )
+                    if modified:
+                        runner.registerInfo(
+                            f"    ✓ Simple Glazing properties successfully modified "
+                            f"(U: {u_factor_mod_pct:+.1f}%, SHGC: {shgc_mod_pct:+.1f}%, VT: {vt_mod_pct:+.1f}%)")
+                    else:
+                        runner.registerWarning(
+                            f"    ✗ Failed to modify Simple Glazing properties for {subsurface_name}")
+                else:
+                    runner.registerInfo(
+                        f"  ℹ Simple Glazing detected in {subsurface_name}. "
+                        f"No modification parameters set (u_factor_modification_percentage, "
+                        f"shgc_modification_percentage, visible_transmittance_modification_percentage). "
+                        f"To modify this window's properties, please set one or more of these parameters.")
+                
+                # Always disable glass replacement, film, and secondary glazing for Simple Glazing
+                # (these options require layered construction editing)
+                runner.registerInfo(
+                    f"  ℹ Disabling glass replacement, glazing film, and secondary glazing options "
+                    f"(only applicable to Layered Constructions). Frame/caulking/weatherstrip options remain enabled.")
                 glass_option_for_this_window = "none"
                 film_option_for_this_window = "none"
                 secondary_glazing_option_for_this_window = "none"
@@ -2317,7 +2410,8 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
                                         glass_visible_transmittance, glass_front_emissivity, 
                                         glass_back_emissivity, glass_front_solar_reflectance, 
                                         glass_back_solar_reflectance, glass_front_visible_reflectance, 
-                                        glass_back_visible_reflectance, labor_cost_multiplier):
+                                        glass_back_visible_reflectance, labor_cost_multiplier,
+                                        u_factor_mod_pct=0.0, shgc_mod_pct=0.0, vt_mod_pct=0.0):
         """Check that all user inputs are within reasonable ranges.
         
         Validates lifetimes (>0, within max limits), dimensions (>0, physically realistic),
@@ -2427,6 +2521,29 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
         if glass_back_visible_reflectance < 0.0 or glass_back_visible_reflectance > 1.0:
             runner.registerError("Glass back visible reflectance must be between 0.0 and 1.0.")
             return False
+        
+        # Validate Simple Glazing modification parameters
+        # These parameters are optional (default 0.0 = no modification)
+        if u_factor_mod_pct != 0.0:
+            if u_factor_mod_pct < -50.0 or u_factor_mod_pct > 50.0:
+                runner.registerWarning(
+                    f"U-factor modification percentage {u_factor_mod_pct}% is outside "
+                    "recommended range [-50%, +50%]. Extreme values may result in physically "
+                    "unreasonable window performance. Proceeding anyway.")
+        
+        if shgc_mod_pct != 0.0:
+            if shgc_mod_pct < -50.0 or shgc_mod_pct > 50.0:
+                runner.registerWarning(
+                    f"SHGC modification percentage {shgc_mod_pct}% is outside "
+                    "recommended range [-50%, +50%]. Extreme values may result in physically "
+                    "unreasonable window performance. Proceeding anyway.")
+        
+        if vt_mod_pct != 0.0:
+            if vt_mod_pct < -50.0 or vt_mod_pct > 50.0:
+                runner.registerWarning(
+                    f"Visible Transmittance modification percentage {vt_mod_pct}% is outside "
+                    "recommended range [-50%, +50%]. Extreme values may result in physically "
+                    "unreasonable window performance. Proceeding anyway.")
         
         return True
 
@@ -2791,6 +2908,8 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
         Simple glazing uses U-factor and SHGC instead of detailed layers. Returns True if
         SimpleGlazing is detected, False otherwise. Some operations don't work with SimpleGlazing.
         """
+        if construction is None:
+            return False
         if construction.to_LayeredConstruction().is_initialized():
             layered = construction.to_LayeredConstruction().get()
             for i in range(layered.numLayers()):
@@ -2799,6 +2918,125 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
                     runner.registerInfo(f"  ℹ Simple glazing system detected in layer {i+1}")
                     return True
         return False
+
+    def modify_simple_glazing_properties(self, runner, subsurface, u_factor_mod_pct, shgc_mod_pct, vt_mod_pct):
+        """Modify Simple Glazing properties by percentage.
+        
+        Applies percentage modifications to U-factor, SHGC, and visible transmittance.
+        Returns True if successful, False otherwise.
+        
+        Args:
+            runner: OSRunner for logging
+            subsurface: SubSurface object with Simple Glazing construction
+            u_factor_mod_pct: Percentage modification for U-factor (e.g., -20.0 for -20%)
+            shgc_mod_pct: Percentage modification for SHGC
+            vt_mod_pct: Percentage modification for visible transmittance
+        
+        Returns:
+            bool: True if modification was successful
+        """
+        try:
+            subsurface_name = subsurface.nameString()
+            
+            # Check if subsurface has a construction
+            if not subsurface.construction().is_initialized():
+                runner.registerWarning(f"    {subsurface_name} has no construction assigned.")
+                return False
+            
+            construction = subsurface.construction().get()
+            
+            # Check if it's a LayeredConstruction
+            if not construction.to_LayeredConstruction().is_initialized():
+                runner.registerWarning(f"    {subsurface_name} construction is not a LayeredConstruction.")
+                return False
+            
+            layered = construction.to_LayeredConstruction().get()
+            
+            # Find the SimpleGlazing layer
+            simple_glazing = None
+            for i in range(layered.numLayers()):
+                material = layered.getLayer(i)
+                if material.to_SimpleGlazing().is_initialized():
+                    simple_glazing = material.to_SimpleGlazing().get()
+                    break
+            
+            if simple_glazing is None:
+                runner.registerWarning(f"    No SimpleGlazing material found in {subsurface_name}.")
+                return False
+            
+            # Get current values
+            orig_u = float(simple_glazing.uFactor())
+            orig_shgc = float(simple_glazing.solarHeatGainCoefficient())
+            
+            # Handle optional VT value
+            vt_opt = simple_glazing.visibleTransmittance()
+            if hasattr(vt_opt, 'is_initialized'):
+                if vt_opt.is_initialized():
+                    orig_vt = float(vt_opt.get())
+                else:
+                    orig_vt = 0.6  # Default if not set
+            else:
+                orig_vt = float(vt_opt) if vt_opt else 0.6
+            
+            # Calculate new values with percentage modification
+            new_u = orig_u * (1.0 + u_factor_mod_pct / 100.0)
+            new_shgc = orig_shgc * (1.0 + shgc_mod_pct / 100.0)
+            new_vt = orig_vt * (1.0 + vt_mod_pct / 100.0)
+            
+            # Clamp to valid ranges and log any clamping
+            u_clamped = False
+            shgc_clamped = False
+            vt_clamped = False
+            
+            if new_u < 0.1 or new_u > 10.0:
+                new_u = max(0.1, min(10.0, new_u))
+                u_clamped = True
+                runner.registerWarning(
+                    f"    U-factor after modification clamped to [0.1, 10.0] W/m²K. "
+                    f"Original modification would result in {orig_u * (1.0 + u_factor_mod_pct / 100.0):.4f} W/m²K.")
+            
+            if new_shgc < 0.0 or new_shgc > 1.0:
+                new_shgc = max(0.0, min(1.0, new_shgc))
+                shgc_clamped = True
+                runner.registerWarning(
+                    f"    SHGC after modification clamped to [0.0, 1.0]. "
+                    f"Original modification would result in {orig_shgc * (1.0 + shgc_mod_pct / 100.0):.4f}.")
+            
+            if new_vt < 0.0 or new_vt > 1.0:
+                new_vt = max(0.0, min(1.0, new_vt))
+                vt_clamped = True
+                runner.registerWarning(
+                    f"    Visible Transmittance after modification clamped to [0.0, 1.0]. "
+                    f"Original modification would result in {orig_vt * (1.0 + vt_mod_pct / 100.0):.4f}.")
+            
+            # Apply modifications
+            simple_glazing.setUFactor(new_u)
+            simple_glazing.setSolarHeatGainCoefficient(new_shgc)
+            simple_glazing.setVisibleTransmittance(new_vt)
+            
+            # Log the modifications
+            runner.registerValue(f"{subsurface_name}_original_u_factor", orig_u, "W/m²K")
+            runner.registerValue(f"{subsurface_name}_modified_u_factor", new_u, "W/m²K")
+            runner.registerValue(f"{subsurface_name}_original_shgc", orig_shgc, "")
+            runner.registerValue(f"{subsurface_name}_modified_shgc", new_shgc, "")
+            runner.registerValue(f"{subsurface_name}_original_vt", orig_vt, "")
+            runner.registerValue(f"{subsurface_name}_modified_vt", new_vt, "")
+            
+            runner.registerInfo(
+                f"    ✓ Simple Glazing properties modified:")
+            runner.registerInfo(
+                f"      U-factor:     {orig_u:.4f} → {u_factor_mod_pct:+.1f}% → {new_u:.4f} W/m²K")
+            runner.registerInfo(
+                f"      SHGC:         {orig_shgc:.4f} → {shgc_mod_pct:+.1f}% → {new_shgc:.4f}")
+            runner.registerInfo(
+                f"      VT:           {orig_vt:.4f} → {vt_mod_pct:+.1f}% → {new_vt:.4f}")
+            
+            return True
+            
+        except Exception as e:
+            runner.registerError(
+                f"Error modifying Simple Glazing properties for {subsurface_name}: {str(e)}")
+            return False
 
     def _optional_double_or_default(self, maybe_value, default_value):
         """Return OptionalDouble value when initialized; otherwise use default."""
