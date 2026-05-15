@@ -235,7 +235,7 @@ def _extract_thickness_ft_from_description(description: str) -> Optional[float]:
 
 
 def _extract_unit_cost_components(item: Dict[str, Any]) -> Dict[str, Any]:
-    """Pull bare material/labor/equipment unit costs from a RSMeans line item.
+    """Pull material/labor/equipment unit costs (Including O&P) from a RSMeans line item.
 
     The Gordian/RSMeans cost API returns a ``localizedCosts`` object containing
     both bare and "Op" (already includes overhead & profit) variants of the
@@ -246,28 +246,29 @@ def _extract_unit_cost_components(item: Dict[str, Any]) -> Dict[str, Any]:
       - ``equipmentCost``/ ``equipmentOpCost``
       - ``totalCost``    / ``totalOpCost``
 
-    Bare components are extracted so the caller can surface labor independently
-    and apply ``overhead_profit_percent`` exactly once at the summary stage.
+    To match the book's published "Total Incl. O&P" figure exactly, the
+    ``*OpCost`` components are extracted so the per-line sum equals
+    ``totalOpCost`` (no additional markup is needed downstream).
 
-    If the bare component fields are missing from the response, the helper
+    If the per-component O&P fields are missing from the response, the helper
     falls back to attributing the entire ``totalOpCost`` value to material so
     upstream behavior is preserved.
 
     Returns:
         Dict with keys ``material``, ``labor``, ``equipment`` (all floats),
         ``op_total`` (the API's totalOpCost for reference) and ``source``
-        ("bare_components" or "total_op_cost_fallback").
+        ("op_components" or "total_op_cost_fallback").
     """
     lc = item.get("localizedCosts", {}) or {}
     op_total = float(lc.get("totalOpCost", 0.0) or 0.0)
 
-    if any(k in lc for k in ("materialCost", "laborCost", "equipmentCost")):
+    if any(k in lc for k in ("materialOpCost", "laborOpCost", "equipmentOpCost")):
         return {
-            "material": float(lc.get("materialCost", 0.0) or 0.0),
-            "labor": float(lc.get("laborCost", 0.0) or 0.0),
-            "equipment": float(lc.get("equipmentCost", 0.0) or 0.0),
+            "material": float(lc.get("materialOpCost", 0.0) or 0.0),
+            "labor": float(lc.get("laborOpCost", 0.0) or 0.0),
+            "equipment": float(lc.get("equipmentOpCost", 0.0) or 0.0),
             "op_total": op_total,
-            "source": "bare_components",
+            "source": "op_components",
         }
 
     return {
@@ -1204,8 +1205,10 @@ def main() -> int:
     if total_bare_cost <= 0.0:
         total_bare_cost = float(results.get("total_cost", 0.0))
         total_material_cost = total_bare_cost
-    overhead_profit_cost = total_bare_cost * (args.overhead_profit_percent / 100.0)
-    total_cost = total_bare_cost + overhead_profit_cost
+    # Per-line unit costs already include RSMeans O&P (``totalOpCost``); no
+    # additional markup is layered here.
+    overhead_profit_cost = 0.0
+    total_cost = total_bare_cost
 
     summary = {
         "total_material_cost": total_material_cost,
@@ -1724,20 +1727,22 @@ def run_rsmeans_cost_lookup(
         fallback_costline_ids=fallback_costline_ids,
     )
 
-    # Bare totals from the per-line breakdown. Overhead/profit is applied on
-    # the combined bare cost so the percentage is layered exactly once.
+    # Totals from the per-line breakdown. The per-line unit cost is the
+    # RSMeans ``totalOpCost`` (Total Incl. O&P) so no extra markup is layered.
     total_material_cost = float(results.get("total_material_cost", 0.0))
     total_labor_cost = float(results.get("total_labor_cost", 0.0))
     total_equipment_cost = float(results.get("total_equipment_cost", 0.0))
     total_bare_cost = total_material_cost + total_labor_cost + total_equipment_cost
     if total_bare_cost <= 0.0:
         # Fallback for legacy/edge results where component breakdown was
-        # unavailable; preserve prior behavior of applying the percentage to
-        # the combined total.
+        # unavailable; the aggregated ``total_cost`` is already the line-level
+        # ``totalOpCost`` summed across materials.
         total_bare_cost = float(results.get("total_cost", 0.0))
         total_material_cost = total_bare_cost
-    overhead_profit_cost = total_bare_cost * (overhead_profit_percent / 100.0)
-    total_cost = total_bare_cost + overhead_profit_cost
+    # ``overhead_profit_percent`` is retained in the summary for traceability
+    # but does not alter the total (the per-line cost already includes O&P).
+    overhead_profit_cost = 0.0
+    total_cost = total_bare_cost
 
     summary = {
         "total_material_cost": total_material_cost,
