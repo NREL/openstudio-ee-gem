@@ -1717,9 +1717,14 @@ class DoorEnhancement(openstudio.measure.ModelMeasure):
                         if door_cost_before > 0.0:
                             delta = door_cost_after - door_cost_before
                             adjusted_material_cost = float(rsmeans_summary_dict.get("total_material_cost", 0.0)) + delta
-                            overhead_pct = float(rsmeans_summary_dict.get("overhead_profit_percent", 0.0))
-                            adjusted_overhead = adjusted_material_cost * overhead_pct * 0.01
-                            adjusted_total = adjusted_material_cost + adjusted_overhead
+                            # Per-line costs already include RSMeans O&P, so no
+                            # additional overhead is layered on the area-adjusted total.
+                            adjusted_overhead = 0.0
+                            adjusted_total = (
+                                adjusted_material_cost
+                                + float(rsmeans_summary_dict.get("total_labor_cost", 0.0))
+                                + float(rsmeans_summary_dict.get("total_equipment_cost", 0.0))
+                            )
                             rsmeans_summary_dict["total_material_cost"] = adjusted_material_cost
                             rsmeans_summary_dict["total_overhead_profit_cost"] = adjusted_overhead
                             rsmeans_summary_dict["total_cost_with_overhead_profit"] = adjusted_total
@@ -2284,7 +2289,9 @@ class DoorEnhancement(openstudio.measure.ModelMeasure):
                 labor_type="std",
                 measurement_system="imp",
                 use_sandbox=False,
-                overhead_profit_percent=10.0,
+                # Per-line unit costs already include RSMeans O&P
+                # (``totalOpCost``); no additional markup is layered.
+                overhead_profit_percent=0.0,
             )
         except Exception as e:
             runner.registerWarning(f"RSMeans API lookup failed: {str(e)}")

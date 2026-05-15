@@ -103,10 +103,10 @@ DOOR_FALLBACK_RSMEANS_IDS = {
     "silicone adhesive smoke gasket": "087125105050",
     "brush weatherstrip": "087125103700",
     "automatic door bottom": "087125103650",
-    # 083323104000 was a rolling-service door line ($2.90) — replaced with a
-    # proper door weatherstrip (vinyl door sweep, flush mounted, $45.90).
-    "jamb weatherstrip": "087125103700",
-    "jamb weatherstripping": "087125103700",
+    # Per EC3 Query Strings spreadsheet (RSMeans sheet): jamb weatherstripping
+    # uses costline 083323104000 (door rolling service, extruded rubber jambs).
+    "jamb weatherstrip": "083323104000",
+    "jamb weatherstripping": "083323104000",
     # Whole door components (from EC3 Query Strings sheet).
     "wood door leaf": "081416090025",
     "wooden door": "081416090025",
@@ -332,20 +332,26 @@ def _select_best_rsmeans_candidate(
 
 
 def _extract_bare_components(item: Dict[str, Any]) -> Dict[str, Any]:
-    """Pull bare material/labor/equipment unit costs from a RSMeans line item.
+    """Pull material/labor/equipment unit costs (Including O&P) from a RSMeans line item.
 
-    Bare components are WITHOUT overhead & profit. If the response only has
-    the legacy ``totalOpCost`` (which already includes OHP), attribute the
-    entire value to ``material`` so behavior degrades gracefully. The
-    ``source`` field flags the fallback.
+    The RSMeans API returns both bare (no overhead/profit) and "Op" (already
+    including the published O&P markups) variants of the material, labor and
+    equipment components. To match the book's published "Total Incl. O&P"
+    figure exactly, this helper extracts the ``*OpCost`` fields so the
+    per-line sum equals ``totalOpCost`` (no additional markup needed).
+
+    If the response is missing the ``*OpCost`` breakdown, the helper falls
+    back to attributing the entire ``totalOpCost`` value to ``material`` so
+    upstream callers degrade gracefully. The ``source`` field flags which
+    branch was taken. The function name is kept for backward compatibility.
     """
     lc = item.get("localizedCosts", {}) or {}
-    if any(k in lc for k in ("materialCost", "laborCost", "equipmentCost")):
+    if any(k in lc for k in ("materialOpCost", "laborOpCost", "equipmentOpCost")):
         return {
-            "material": float(lc.get("materialCost", 0.0) or 0.0),
-            "labor": float(lc.get("laborCost", 0.0) or 0.0),
-            "equipment": float(lc.get("equipmentCost", 0.0) or 0.0),
-            "source": "bare_components",
+            "material": float(lc.get("materialOpCost", 0.0) or 0.0),
+            "labor": float(lc.get("laborOpCost", 0.0) or 0.0),
+            "equipment": float(lc.get("equipmentOpCost", 0.0) or 0.0),
+            "source": "op_components",
         }
     return {
         "material": float(lc.get("totalOpCost", 0.0) or 0.0),
@@ -356,12 +362,12 @@ def _extract_bare_components(item: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def _split_total_by_bare(item: Dict[str, Any], total: float) -> Dict[str, Any]:
-    """Split a project total cost into bare material/labor/equipment components
-    using the per-component fractions from the RSMeans line item.
+    """Split a project total cost into material/labor/equipment components
+    using the per-component O&P fractions from the RSMeans line item.
 
-    Note: ``total`` is the project-level cost computed using the BARE
-    unit cost (i.e. material+labor+equipment). It does NOT include OHP.
-    OHP must be applied separately, exactly once, by the summary stage.
+    Note: ``total`` is the project-level cost computed using the per-line
+    ``totalOpCost`` and therefore already includes RSMeans' published O&P.
+    No additional overhead/profit markup should be layered on top.
     """
     bare = _extract_bare_components(item)
     bare_unit = bare["material"] + bare["labor"] + bare["equipment"]
@@ -1246,8 +1252,10 @@ def main() -> int:
 
     # Calculate costs
     total_material_cost = float(results.get("total_cost", 0.0))
-    overhead_profit_cost = total_material_cost * (args.overhead_profit_percent / 100.0)
-    total_cost = total_material_cost + overhead_profit_cost
+    # Per-line unit costs already include RSMeans O&P (``totalOpCost``); no
+    # additional markup is applied.
+    overhead_profit_cost = 0.0
+    total_cost = total_material_cost
 
     # Prepare summary
     summary = {
@@ -1827,8 +1835,13 @@ def run_rsmeans_cost_lookup(
     if total_bare_cost <= 0.0:
         total_bare_cost = float(results.get("total_cost", 0.0))
         total_material_cost = total_bare_cost
-    overhead_profit_cost = total_bare_cost * (overhead_profit_percent / 100.0)
-    total_cost = total_bare_cost + overhead_profit_cost
+    # The per-line unit cost used during aggregation is the RSMeans
+    # ``totalOpCost`` (Total Incl. O&P), so no additional overhead/profit
+    # markup is applied here. The ``overhead_profit_percent`` argument is
+    # retained for backward compatibility and is recorded in the summary
+    # only; it does not alter the reported total.
+    overhead_profit_cost = 0.0
+    total_cost = total_bare_cost
 
     summary = {
         "total_material_cost": total_material_cost,

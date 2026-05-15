@@ -1926,7 +1926,7 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
         runner,
         materials,
         use_custom_costs=False,
-        overhead_profit_percent=10.0,
+        overhead_profit_percent=0.0,
     ):
         """
         Pull RSMeans cost data for retrofit materials using API credentials.
