@@ -1204,14 +1204,10 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
                         f"shgc_modification_percentage, visible_transmittance_modification_percentage). "
                         f"To modify this window's properties, please set one or more of these parameters.")
                 
-                # Always disable glass replacement, film, and secondary glazing for Simple Glazing
-                # (these options require layered construction editing)
+                # Glass, film, and secondary glazing options remain enabled for SimpleGlazing
                 runner.registerInfo(
-                    f"  ℹ Disabling glass replacement, glazing film, and secondary glazing options "
-                    f"(only applicable to Layered Constructions). Frame/caulking/weatherstrip options remain enabled.")
-                glass_option_for_this_window = "none"
-                film_option_for_this_window = "none"
-                secondary_glazing_option_for_this_window = "none"
+                    f"  ℹ Simple Glazing detected. Glass replacement and glazing film will be attempted on this window. "
+                    f"U-factor/SHGC/VT modifications are also available via parameters.")
 
             # Determine number of panes to be installed
             if layered_construction is not None or glass_option_for_this_window == "none":
@@ -1567,10 +1563,6 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
                     f"{option_label} partially blocked by SimpleGlazing windows "
                     f"({simple_glazing_objects_count}/{processed_window_count})"
                 )
-
-        _append_simple_glazing_conflicts(film_option != "none", "Film")
-        _append_simple_glazing_conflicts(glass_option != "none", "Glass replacement")
-        _append_simple_glazing_conflicts(secondary_glazing_option != "none", "Secondary glazing")
 
         requested_actions = []
         if glass_option != "none":
