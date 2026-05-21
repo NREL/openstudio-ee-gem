@@ -1423,7 +1423,7 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
             for name in subsurface_dict.keys()
             if subsurface_dict[name]["frame"]["renovation_option"] != "none"
         )
-        
+
         total_perimeter_m = sum(
             subsurface_dict[name]["dimension"]["perimeter_m"] 
             for name in subsurface_dict.keys()
@@ -1636,6 +1636,7 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
             rsmeans_id_weatherstrip=rsmeans_id_weatherstrip,
             rsmeans_id_secondary_glazing=rsmeans_id_secondary_glazing,
             num_windows_executed=executed_frame_window_count,
+                total_window_area_m2=total_window_area_m2,
         )
 
         # Phase 3: Calculate capital cost using RSMeans or custom fallback inputs.
@@ -3832,6 +3833,7 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
         rsmeans_id_secondary_glazing,
         total_caulking_length_m=0.0,
         num_windows_executed=0,
+        total_window_area_m2=0.0,
     ):
         materials = []
 
@@ -3884,6 +3886,9 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
                 # num_windows is the per-EA quantity used by the
                 # "window unit minus glazing" frame-cost derivation.
                 "num_windows": float(num_windows_executed or 0),
+                # window_area_sf carries the OSM total window-area basis used for
+                # the derived frame total cost and reported $/SF metric.
+                "window_area_sf": _m2_to_sf(float(total_window_area_m2 or 0.0)),
             }
             if use_specific_rsmeans_line_item_ids and rsmeans_id_frame:
                 frame_material["rsmeans_id"] = rsmeans_id_frame
@@ -4183,6 +4188,7 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
                         _film_cost_total = 0.0
                         _weatherstrip_cost_total = 0.0
 
+                        _frame_window_area_sf = 0.0
                         for _m in materials_results:
                             _mn = str(_m.get("name", "")).strip().lower()
                             _mc = float(_m.get("total_cost", 0.0) or 0.0)
@@ -4192,6 +4198,7 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
                                 _glass_cost_total += _mc
                             elif _mn == "window frame":
                                 _frame_cost_total += _mc
+                                _frame_window_area_sf = float(_m.get("window_area_sf", 0.0) or 0.0)
                             elif _mn in ["sealant", "caulking"]:
                                 _caulking_cost_total += _mc
                             elif _mn == "weatherstrip":
@@ -4221,8 +4228,9 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
                         )
                         if _glass_area_sf_total > 0.0 and _glass_cost_total > 0.0:
                             rsmeans_glass_cost_per_sf = _glass_cost_total / _glass_area_sf_total
-                        if _frame_area_sf > 0.0 and _frame_cost_total > 0.0:
-                            rsmeans_frame_cost_per_sf = _frame_cost_total / _frame_area_sf
+                        _frame_denom_sf = _frame_window_area_sf if _frame_window_area_sf > 0.0 else _frame_area_sf
+                        if _frame_denom_sf > 0.0 and _frame_cost_total > 0.0:
+                            rsmeans_frame_cost_per_sf = _frame_cost_total / _frame_denom_sf
                         if _caulking_volume_cy > 0.0 and _caulking_cost_total > 0.0:
                             rsmeans_caulking_cost_per_cy = _caulking_cost_total / _caulking_volume_cy
                         # Companion $/LF metric: RSMeans joint-sealant cost-lines

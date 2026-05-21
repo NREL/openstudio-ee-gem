@@ -354,6 +354,14 @@ def _derive_frame_cost_from_window_minus_glass(
         return None
     if num_windows <= 0.0:
         num_windows = quantity_sf  # backward-compat fallback
+        # osm_window_area_sf is the model window-area basis used for total frame cost.
+        # parsed_window_area_sf is the per-window area used to derive the frame unit cost.
+        osm_window_area_sf = float(material.get("window_area_sf") or 0.0)
+        if osm_window_area_sf <= 0.0:
+            osm_window_area_sf = quantity_sf
+        parsed_window_area_sf = (osm_window_area_sf / num_windows) if num_windows > 0.0 else quantity_sf
+        if parsed_window_area_sf <= 0.0:
+            parsed_window_area_sf = quantity_sf
 
     # Determine pane-count from glazing material description if available.
     pane_count = None
@@ -395,6 +403,12 @@ def _derive_frame_cost_from_window_minus_glass(
         labor_type=labor_type,
         measurement_system=measurement_system,
     )
+    # Prefer the RSMeans window description for the per-window area used by unit-cost derivation.
+    if window_desc:
+        _parsed_area_per_window = _parse_window_area_sf_from_description(window_desc)
+        if _parsed_area_per_window and _parsed_area_per_window > 0.0:
+            parsed_window_area_sf = _parsed_area_per_window
+
     glazing_unit_cost, glazing_desc, glazing_catalog, glazing_bare = _fetch_unit_cost_for_costline_id(
         client=client,
         rsmeans_id=glazing_id,
@@ -408,22 +422,45 @@ def _derive_frame_cost_from_window_minus_glass(
     if window_unit_cost is None or glazing_unit_cost is None:
         return None
 
-    frame_unit_cost = max(0.0, window_unit_cost - glazing_unit_cost)
-    # Use the per-EA window count for cost (not the glazing area in SF).
-    frame_total_cost = frame_unit_cost * num_windows
+    # glazing_unit_cost is $/SF (RSMeans flat glass is priced per S.F.).
+    # Derive one-window frame $/SF from the window unit price minus one window's glazing cost.
+    _frame_unit_total = max(0.0, window_unit_cost - glazing_unit_cost * parsed_window_area_sf)
+    frame_unit_cost = (
+        _frame_unit_total / parsed_window_area_sf if parsed_window_area_sf > 0.0 else 0.0
+    )
+    # Apply the derived unit cost to the model's total window-area basis.
+    frame_total_cost = frame_unit_cost * osm_window_area_sf
 
-    # Per-component bare split for the derived frame:
-    # frame.<comp> = max(0, window.<comp> - glazing.<comp>).
+    # Per-component bare split follows the same two-step derivation: per-window unit first,
+    # then apply the derived $/SF to the model window-area basis.
     if window_bare and glazing_bare:
-        _frame_bare_mat = max(0.0, float(window_bare.get("material", 0.0)) - float(glazing_bare.get("material", 0.0)))
-        _frame_bare_lab = max(0.0, float(window_bare.get("labor", 0.0)) - float(glazing_bare.get("labor", 0.0)))
-        _frame_bare_eq = max(0.0, float(window_bare.get("equipment", 0.0)) - float(glazing_bare.get("equipment", 0.0)))
+        _w_mat = float(window_bare.get("material", 0.0))
+        _w_lab = float(window_bare.get("labor", 0.0))
+        _w_eq  = float(window_bare.get("equipment", 0.0))
+        _g_mat = float(glazing_bare.get("material", 0.0))
+        _g_lab = float(glazing_bare.get("labor", 0.0))
+        _g_eq  = float(glazing_bare.get("equipment", 0.0))
+        _frame_unit_mat = (
+            max(0.0, _w_mat - _g_mat * parsed_window_area_sf) / parsed_window_area_sf
+            if parsed_window_area_sf > 0.0 else 0.0
+        )
+        _frame_unit_lab = (
+            max(0.0, _w_lab - _g_lab * parsed_window_area_sf) / parsed_window_area_sf
+            if parsed_window_area_sf > 0.0 else 0.0
+        )
+        _frame_unit_eq = (
+            max(0.0, _w_eq - _g_eq * parsed_window_area_sf) / parsed_window_area_sf
+            if parsed_window_area_sf > 0.0 else 0.0
+        )
+        _frame_bare_mat = _frame_unit_mat * osm_window_area_sf
+        _frame_bare_lab = _frame_unit_lab * osm_window_area_sf
+        _frame_bare_eq  = _frame_unit_eq  * osm_window_area_sf
         _frame_bare_total = _frame_bare_mat + _frame_bare_lab + _frame_bare_eq
-        if _frame_bare_total > 0.0:
-            _scale = frame_unit_cost / _frame_bare_total
-            _frame_total_mat = _frame_bare_mat * _scale * num_windows
-            _frame_total_lab = _frame_bare_lab * _scale * num_windows
-            _frame_total_eq = _frame_bare_eq * _scale * num_windows
+        if _frame_bare_total > 0.0 and frame_total_cost > 0.0:
+            _scale = frame_total_cost / _frame_bare_total
+            _frame_total_mat = _frame_bare_mat * _scale
+            _frame_total_lab = _frame_bare_lab * _scale
+            _frame_total_eq  = _frame_bare_eq  * _scale
         else:
             _frame_total_mat, _frame_total_lab, _frame_total_eq = frame_total_cost, 0.0, 0.0
         _comp_source = window_bare.get("source", "bare_components")
@@ -444,6 +481,7 @@ def _derive_frame_cost_from_window_minus_glass(
         "glazing_id": glazing_id,
         "glazing_desc": glazing_desc or "",
         "glazing_catalog": glazing_catalog,
+        "window_area_sf": osm_window_area_sf,
         "unit_cost_basis": material.get("unit", "SF"),
         "costing_mode": "derived_window_minus_glass",
     }
@@ -747,6 +785,51 @@ def _extract_thickness_ft_from_description(description: str) -> Optional[float]:
             inches = _parse_inches_token(match.group(1))
             if inches and inches > 0:
                 return inches / 12.0
+    return None
+
+
+def _parse_window_area_sf_from_description(description: str) -> Optional[float]:
+    """Parse window WxH dimensions from RSMeans description and return area in SF.
+
+    Handles formats:
+    - "3'-0\" x 4'-0\""  (feet-inches, e.g. RSMeans standard)
+    - "3' x 4'"          (feet only)
+    - "3 x 4"            (plain numbers assumed to be feet, sanity-checked)
+    """
+    desc = str(description or "")
+    if not desc:
+        return None
+
+    # Pattern 1: N'-M" x N'-M" (feet with inch component, e.g. "3'-0\" x 4'-6\"")
+    m = re.search(
+        r"(\d+)'-(\d+(?:[/]\d+)?)\"\s*[xX\u00d7]\s*(\d+)'-(\d+(?:[/]\d+)?)\""
+        , desc)
+    if m:
+        w_ft = float(m.group(1)) + (_parse_inches_token(m.group(2)) or 0.0) / 12.0
+        h_ft = float(m.group(3)) + (_parse_inches_token(m.group(4)) or 0.0) / 12.0
+        if w_ft > 0.0 and h_ft > 0.0:
+            return w_ft * h_ft
+
+    # Pattern 2: N' x N' (feet only, e.g. "3' x 4'")
+    m = re.search(r"(\d+(?:\.\d+)?)'[ ]*[xX\u00d7][ ]*(\d+(?:\.\d+)?)'", desc)
+    if m:
+        try:
+            w, h = float(m.group(1)), float(m.group(2))
+            if w > 0.0 and h > 0.0:
+                return w * h
+        except ValueError:
+            pass
+
+    # Pattern 3: plain "N x N" (assumed feet; sanity-bounded to 0.5–50 ft)
+    m = re.search(r"\b(\d+(?:\.\d+)?)\s*[xX\u00d7]\s*(\d+(?:\.\d+)?)\b", desc)
+    if m:
+        try:
+            w, h = float(m.group(1)), float(m.group(2))
+            if 0.5 < w < 50.0 and 0.5 < h < 50.0:
+                return w * h
+        except ValueError:
+            pass
+
     return None
 
 
@@ -1690,6 +1773,7 @@ def search_materials_across_catalogs(
         best_total_labor_cost = 0.0
         best_total_equipment_cost = 0.0
         best_component_source = None
+        _derived_window_area_sf = 0.0
 
         # For window frame, derive cost when direct frame RSMeans lines are not available:
         # frame_cost = window_unit_cost - glazing_cost.
@@ -1719,6 +1803,7 @@ def search_materials_across_catalogs(
                 best_total_labor_cost = float(derived.get("total_labor_cost", 0.0))
                 best_total_equipment_cost = float(derived.get("total_equipment_cost", 0.0))
                 best_component_source = derived.get("cost_component_source")
+                _derived_window_area_sf = float(derived.get("window_area_sf", 0.0) or 0.0)
                 search_log.append({
                     "material": material_name,
                     "status": "derived_frame_cost",
@@ -2013,6 +2098,8 @@ def search_materials_across_catalogs(
                 "unit_cost_basis": best_unit_basis,
                 "costing_mode": best_costing_mode,
             }
+            if _derived_window_area_sf > 0.0:
+                material_result["window_area_sf"] = _derived_window_area_sf
             all_results.append(material_result)
             total_cost += float(best_cost or 0.0)
             total_material_cost_bare += float(best_total_material_cost or 0.0)
