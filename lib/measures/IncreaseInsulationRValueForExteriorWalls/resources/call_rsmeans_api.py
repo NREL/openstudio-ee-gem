@@ -452,46 +452,73 @@ def _extract_thickness_ft_from_description(description: str) -> Optional[float]:
 
 
 def _extract_bare_components(item: Dict[str, Any]) -> Dict[str, Any]:
-    """Pull material/labor/equipment unit costs (Including O&P) from a RSMeans line item.
+    """Pull material/labor/equipment unit costs from a RSMeans line item.
 
-    The RSMeans API returns both bare (no overhead/profit) and "Op" (already
-    including the published O&P markups) variants of the material, labor and
-    equipment components. To match the book's published "Total Incl. O&P"
-    exactly, this helper extracts the ``*OpCost`` fields so the per-line sum
-    equals ``totalOpCost`` (no additional markup is needed).
+    The Gordian/RSMeans cost API returns both bare (no overhead/profit) and
+    "Op" (already including the published O&P markups) variants of the
+    material, labor and equipment components:
 
-    Falls back to attributing the entire ``totalOpCost`` to ``material`` when
-    the per-component breakdown is missing. The function name is kept for
-    backward compatibility.
+      - ``materialCost`` / ``materialOpCost``
+      - ``laborCost``    / ``laborOpCost``
+      - ``equipmentCost``/ ``equipmentOpCost``
+      - ``totalCost``    / ``totalOpCost``
+
+    Returned ``material``/``labor``/``equipment`` keys hold the Op-marked-up
+    values so the per-line sum equals ``totalOpCost`` (matches the book's
+    "Total Incl. O&P" figure). The additional ``bare_*`` keys hold the
+    no-O&P values so callers can persist them separately. The function name
+    is retained for backward compatibility.
     """
     lc = item.get("localizedCosts", {}) or {}
+    bare_material = float(lc.get("materialCost", 0.0) or 0.0)
+    bare_labor = float(lc.get("laborCost", 0.0) or 0.0)
+    bare_equipment = float(lc.get("equipmentCost", 0.0) or 0.0)
+    bare_total = float(lc.get("totalCost", 0.0) or 0.0)
     if any(k in lc for k in ("materialOpCost", "laborOpCost", "equipmentOpCost")):
         return {
             "material": float(lc.get("materialOpCost", 0.0) or 0.0),
             "labor": float(lc.get("laborOpCost", 0.0) or 0.0),
             "equipment": float(lc.get("equipmentOpCost", 0.0) or 0.0),
+            "bare_material": bare_material,
+            "bare_labor": bare_labor,
+            "bare_equipment": bare_equipment,
+            "bare_total": bare_total,
             "source": "op_components",
         }
     return {
         "material": float(lc.get("totalOpCost", 0.0) or 0.0),
         "labor": 0.0,
         "equipment": 0.0,
+        "bare_material": bare_material,
+        "bare_labor": bare_labor,
+        "bare_equipment": bare_equipment,
+        "bare_total": bare_total,
         "source": "total_op_cost_fallback",
     }
 
 
-def _compute_total_cost_for_material(material: Dict[str, Any], unit_cost: float, matched_description: str) -> Dict[str, Any]:
+def _compute_total_cost_for_material(
+    material: Dict[str, Any],
+    unit_cost: float,
+    matched_description: str,
+    line_uom: Any = None,
+) -> Dict[str, Any]:
     """
-    Translate a raw RSMeans $/SF unit cost into a project total.
+    Translate a raw RSMeans unit cost into a project total.
 
     Standard mode ("area"):
         total = unit_cost × area_SF  (unit_cost already in $/SF)
 
     Volume mode ("volume_from_area"):
-        RSMeans prices insulation per SF at a specific thickness listed in the
-        description (e.g., "3-1/2 inch").  We extract that thickness, convert
-        the $/SF to $/CF, then multiply by the actual added volume (CF).
-        Falls back to standard mode if thickness cannot be parsed.
+        - If the matched RSMeans line is already priced per volume (CF/CY),
+          the unit cost is in $/CF (or $/CY); we use it directly against the
+          actual added volume — NO thickness conversion is performed. CY lines
+          are scaled by 1/27 to put the unit cost in $/CF.
+        - Otherwise (line is per SF), RSMeans prices insulation per SF at a
+          specific thickness listed in the description (e.g., "3-1/2 inch").
+          We extract that thickness, convert the $/SF to $/CF, then multiply
+          by the actual added volume (CF). Falls back to standard mode if
+          thickness cannot be parsed.
     """
     quantity = float(material.get("quantity", 1.0) or 1.0)
     default = {
@@ -507,6 +534,22 @@ def _compute_total_cost_for_material(material: Dict[str, Any], unit_cost: float,
     quantity_volume = material.get("quantity_volume")
     if quantity_volume is None:
         return default
+
+    # If RSMeans already prices the line per volume, skip the thickness
+    # division entirely — using unit_cost directly is both simpler and
+    # correct. This avoids spurious $/CF values derived from the project's
+    # added thickness (a non-property of the RSMeans line).
+    line_uom_norm = _normalize_uom(line_uom) if line_uom is not None else ""
+    if line_uom_norm in ("CF", "CY"):
+        unit_cost_per_cf = float(unit_cost) / 27.0 if line_uom_norm == "CY" else float(unit_cost)
+        total_cost = unit_cost_per_cf * float(quantity_volume)
+        return {
+            "unit_cost": unit_cost_per_cf,
+            "total_cost": total_cost,
+            "costing_mode": "volume_direct",
+            "effective_unit": material.get("unit_volume", "CF"),
+            "line_uom": line_uom_norm,
+        }
 
     line_thickness_ft_raw = _extract_thickness_ft_from_description(matched_description)
     if line_thickness_ft_raw is None:
@@ -1462,6 +1505,9 @@ def search_materials_across_catalogs(
         best_total_material_cost = 0.0
         best_total_labor_cost = 0.0
         best_total_equipment_cost = 0.0
+        best_bare_material_unit_cost = 0.0
+        best_bare_material_total_cost = 0.0
+        best_line_uom = None
         best_component_source = None
         
         # If a specific RSMeans line item ID is provided, attempt exact match first
@@ -1508,20 +1554,36 @@ def search_materials_across_catalogs(
                                 _bare = _extract_bare_components(item)
                                 _bare_unit = _bare["material"] + _bare["labor"] + _bare["equipment"]
                                 if _bare_unit > 0:
-                                    unit_cost = _bare_unit  # bare unit cost (without OHP)
+                                    unit_cost = _bare_unit  # sum of Op components (Incl. O&P)
                                 if unit_cost > 0:
                                     computed = _compute_total_cost_for_material(
                                         material,
                                         unit_cost,
                                         str(item.get("description", "")),
+                                        line_uom=line_uom,
                                     )
-                                    _total_bare = float(computed["total_cost"])
+                                    _total_op = float(computed["total_cost"])
                                     _mat_frac = (_bare["material"] / _bare_unit) if _bare_unit > 0 else 1.0
                                     _lab_frac = (_bare["labor"] / _bare_unit) if _bare_unit > 0 else 0.0
                                     _eq_frac = (_bare["equipment"] / _bare_unit) if _bare_unit > 0 else 0.0
-                                    best_total_material_cost = _total_bare * _mat_frac
-                                    best_total_labor_cost = _total_bare * _lab_frac
-                                    best_total_equipment_cost = _total_bare * _eq_frac
+                                    best_total_material_cost = _total_op * _mat_frac
+                                    best_total_labor_cost = _total_op * _lab_frac
+                                    best_total_equipment_cost = _total_op * _eq_frac
+                                    # Project total for bare material (no O&P): scale the project Op-total by
+                                    # the bare/Op material ratio from the RSMeans line. Fall back to 0 when
+                                    # the API did not return per-component bare costs.
+                                    _bare_mat_unit = float(_bare.get("bare_material", 0.0) or 0.0)
+                                    _op_mat_unit = float(_bare.get("material", 0.0) or 0.0)
+                                    if _bare_mat_unit > 0 and _op_mat_unit > 0:
+                                        best_bare_material_unit_cost = (
+                                            float(computed["unit_cost"]) * _mat_frac * (_bare_mat_unit / _op_mat_unit)
+                                        )
+                                        best_bare_material_total_cost = (
+                                            best_total_material_cost * (_bare_mat_unit / _op_mat_unit)
+                                        )
+                                    else:
+                                        best_bare_material_unit_cost = 0.0
+                                        best_bare_material_total_cost = 0.0
                                     best_component_source = _bare["source"]
                                     best_match = item
                                     best_cost = computed["total_cost"]
@@ -1530,6 +1592,7 @@ def search_materials_across_catalogs(
                                     best_unit_cost = computed["unit_cost"]
                                     best_unit_basis = computed.get("effective_unit", unit)
                                     best_costing_mode = computed.get("costing_mode", "area")
+                                    best_line_uom = line_uom
                                     search_log.append({
                                         "material": material_name,
                                         "search_term": specified_id,
@@ -1542,9 +1605,12 @@ def search_materials_across_catalogs(
                                         "total_material_cost": best_total_material_cost,
                                         "total_labor_cost": best_total_labor_cost,
                                         "total_equipment_cost": best_total_equipment_cost,
+                                        "bare_material_unit_cost": best_bare_material_unit_cost,
+                                        "bare_material_total_cost": best_bare_material_total_cost,
                                         "cost_component_source": best_component_source,
                                         "costing_mode": best_costing_mode,
                                         "unit_cost_basis": best_unit_basis,
+                                        "line_uom": line_uom,
                                         "source_unit_cost_per_sf": computed.get("source_unit_cost_per_sf"),
                                         "source_line_thickness_ft": computed.get("source_line_thickness_ft"),
                                     })
@@ -1652,14 +1718,27 @@ def search_materials_across_catalogs(
                                             material,
                                             unit_cost,
                                             str(match.get("description", "")),
+                                            line_uom=line_uom,
                                         )
-                                        _total_bare = float(computed["total_cost"])
+                                        _total_op = float(computed["total_cost"])
                                         _mat_frac = (_bare["material"] / _bare_unit) if _bare_unit > 0 else 1.0
                                         _lab_frac = (_bare["labor"] / _bare_unit) if _bare_unit > 0 else 0.0
                                         _eq_frac = (_bare["equipment"] / _bare_unit) if _bare_unit > 0 else 0.0
-                                        best_total_material_cost = _total_bare * _mat_frac
-                                        best_total_labor_cost = _total_bare * _lab_frac
-                                        best_total_equipment_cost = _total_bare * _eq_frac
+                                        best_total_material_cost = _total_op * _mat_frac
+                                        best_total_labor_cost = _total_op * _lab_frac
+                                        best_total_equipment_cost = _total_op * _eq_frac
+                                        _bare_mat_unit = float(_bare.get("bare_material", 0.0) or 0.0)
+                                        _op_mat_unit = float(_bare.get("material", 0.0) or 0.0)
+                                        if _bare_mat_unit > 0 and _op_mat_unit > 0:
+                                            best_bare_material_unit_cost = (
+                                                float(computed["unit_cost"]) * _mat_frac * (_bare_mat_unit / _op_mat_unit)
+                                            )
+                                            best_bare_material_total_cost = (
+                                                best_total_material_cost * (_bare_mat_unit / _op_mat_unit)
+                                            )
+                                        else:
+                                            best_bare_material_unit_cost = 0.0
+                                            best_bare_material_total_cost = 0.0
                                         best_component_source = _bare["source"]
                                         best_match = item
                                         best_cost = computed["total_cost"]
@@ -1668,6 +1747,7 @@ def search_materials_across_catalogs(
                                         best_unit_cost = computed["unit_cost"]
                                         best_unit_basis = computed.get("effective_unit", unit)
                                         best_costing_mode = computed.get("costing_mode", "area")
+                                        best_line_uom = line_uom
                                         
                                         status_msg = f"match_found"
                                         if alt_term != material_name:
@@ -1683,11 +1763,18 @@ def search_materials_across_catalogs(
                                             "unit_cost": computed["unit_cost"],
                                             "quantity": quantity,
                                             "total_cost": best_cost,
+                                            "total_material_cost": best_total_material_cost,
+                                            "total_labor_cost": best_total_labor_cost,
+                                            "total_equipment_cost": best_total_equipment_cost,
+                                            "bare_material_unit_cost": best_bare_material_unit_cost,
+                                            "bare_material_total_cost": best_bare_material_total_cost,
+                                            "cost_component_source": best_component_source,
                                             "selected_id": division_id,
                                             "selected_description": match.get("description", ""),
                                             "top_candidates": ranked_candidates[:5],
                                             "costing_mode": computed.get("costing_mode", "area"),
                                             "unit_cost_basis": computed.get("effective_unit", unit),
+                                            "line_uom": line_uom,
                                             "source_unit_cost_per_sf": computed.get("source_unit_cost_per_sf"),
                                             "source_line_thickness_ft": computed.get("source_line_thickness_ft"),
                                         })
@@ -1718,6 +1805,9 @@ def search_materials_across_catalogs(
                 "total_material_cost": best_total_material_cost,
                 "total_labor_cost": best_total_labor_cost,
                 "total_equipment_cost": best_total_equipment_cost,
+                "bare_material_unit_cost": best_bare_material_unit_cost,
+                "bare_material_total_cost": best_bare_material_total_cost,
+                "line_uom": best_line_uom,
                 "cost_component_source": best_component_source,
                 "rsmeans_id": best_match.get("id", ""),
                 "rsmeans_description": best_match.get("description", ""),

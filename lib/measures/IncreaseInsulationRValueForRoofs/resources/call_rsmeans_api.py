@@ -235,7 +235,7 @@ def _extract_thickness_ft_from_description(description: str) -> Optional[float]:
 
 
 def _extract_unit_cost_components(item: Dict[str, Any]) -> Dict[str, Any]:
-    """Pull material/labor/equipment unit costs (Including O&P) from a RSMeans line item.
+    """Pull material/labor/equipment unit costs from a RSMeans line item.
 
     The Gordian/RSMeans cost API returns a ``localizedCosts`` object containing
     both bare and "Op" (already includes overhead & profit) variants of the
@@ -246,27 +246,37 @@ def _extract_unit_cost_components(item: Dict[str, Any]) -> Dict[str, Any]:
       - ``equipmentCost``/ ``equipmentOpCost``
       - ``totalCost``    / ``totalOpCost``
 
-    To match the book's published "Total Incl. O&P" figure exactly, the
-    ``*OpCost`` components are extracted so the per-line sum equals
-    ``totalOpCost`` (no additional markup is needed downstream).
+    Returned ``material``/``labor``/``equipment`` keys hold the Op-marked-up
+    values so the per-line sum equals ``totalOpCost`` (matches the book's
+    "Total Incl. O&P" figure). Additional ``bare_*`` keys carry the no-O&P
+    component values so callers can persist them separately.
 
     If the per-component O&P fields are missing from the response, the helper
     falls back to attributing the entire ``totalOpCost`` value to material so
     upstream behavior is preserved.
 
     Returns:
-        Dict with keys ``material``, ``labor``, ``equipment`` (all floats),
-        ``op_total`` (the API's totalOpCost for reference) and ``source``
-        ("op_components" or "total_op_cost_fallback").
+        Dict with keys ``material``, ``labor``, ``equipment`` (Op variants),
+        ``bare_material``/``bare_labor``/``bare_equipment``/``bare_total``
+        (no-O&P variants), ``op_total`` (the API's totalOpCost for reference)
+        and ``source`` ("op_components" or "total_op_cost_fallback").
     """
     lc = item.get("localizedCosts", {}) or {}
     op_total = float(lc.get("totalOpCost", 0.0) or 0.0)
+    bare_material = float(lc.get("materialCost", 0.0) or 0.0)
+    bare_labor = float(lc.get("laborCost", 0.0) or 0.0)
+    bare_equipment = float(lc.get("equipmentCost", 0.0) or 0.0)
+    bare_total = float(lc.get("totalCost", 0.0) or 0.0)
 
     if any(k in lc for k in ("materialOpCost", "laborOpCost", "equipmentOpCost")):
         return {
             "material": float(lc.get("materialOpCost", 0.0) or 0.0),
             "labor": float(lc.get("laborOpCost", 0.0) or 0.0),
             "equipment": float(lc.get("equipmentOpCost", 0.0) or 0.0),
+            "bare_material": bare_material,
+            "bare_labor": bare_labor,
+            "bare_equipment": bare_equipment,
+            "bare_total": bare_total,
             "op_total": op_total,
             "source": "op_components",
         }
@@ -275,6 +285,10 @@ def _extract_unit_cost_components(item: Dict[str, Any]) -> Dict[str, Any]:
         "material": op_total,
         "labor": 0.0,
         "equipment": 0.0,
+        "bare_material": bare_material,
+        "bare_labor": bare_labor,
+        "bare_equipment": bare_equipment,
+        "bare_total": bare_total,
         "op_total": op_total,
         "source": "total_op_cost_fallback",
     }
@@ -284,18 +298,19 @@ def _compute_total_costs_by_component(
     material: Dict[str, Any],
     components: Dict[str, float],
     matched_description: str,
+    line_uom: Any = None,
 ) -> Dict[str, Any]:
     """Run the unit→quantity conversion for each cost component independently.
 
     The thickness conversion encoded in :func:`_compute_total_cost_for_material`
-    depends only on ``costing_mode`` and the matched RSMeans line description,
-    not on the magnitude of the cost. We therefore call it once per component
-    (material / labor / equipment) so the same area→volume normalization is
-    applied uniformly.
+    depends only on ``costing_mode``, the matched RSMeans line description and
+    the line's unit of measure, not on the magnitude of the cost. We therefore
+    call it once per component (material / labor / equipment, plus the bare
+    counterparts) so the same area→volume normalization is applied uniformly.
 
     Returns a dict with per-component unit and total costs, plus combined
-    ``unit_cost``/``total_cost`` (sum of all components) and pass-through
-    metadata (``costing_mode``, ``effective_unit``).
+    ``unit_cost``/``total_cost`` (sum of Op components), bare counterparts
+    (``unit_bare_*_cost``, ``total_bare_*_cost``) and pass-through metadata.
     """
     out: Dict[str, Any] = {}
     sample = None
@@ -304,14 +319,28 @@ def _compute_total_costs_by_component(
             material,
             float(components.get(name, 0.0) or 0.0),
             matched_description,
+            line_uom=line_uom,
         )
         out[f"unit_{name}_cost"] = comp_calc["unit_cost"]
         out[f"total_{name}_cost"] = comp_calc["total_cost"]
         if sample is None:
             sample = comp_calc
 
+    # Same conversion applied to the bare (no-O&P) components so the bare
+    # material total can be persisted alongside the Op-marked-up total.
+    for name in ("material", "labor", "equipment"):
+        bare_calc = _compute_total_cost_for_material(
+            material,
+            float(components.get(f"bare_{name}", 0.0) or 0.0),
+            matched_description,
+            line_uom=line_uom,
+        )
+        out[f"unit_bare_{name}_cost"] = bare_calc["unit_cost"]
+        out[f"total_bare_{name}_cost"] = bare_calc["total_cost"]
+
     out["costing_mode"] = sample["costing_mode"]
     out["effective_unit"] = sample["effective_unit"]
+    out["line_uom"] = sample.get("line_uom", line_uom)
     if "source_unit_cost_per_sf" in sample:
         out["source_line_thickness_ft"] = sample.get("source_line_thickness_ft")
     out["unit_cost"] = (
@@ -319,6 +348,12 @@ def _compute_total_costs_by_component(
     )
     out["total_cost"] = (
         out["total_material_cost"] + out["total_labor_cost"] + out["total_equipment_cost"]
+    )
+    out["unit_bare_total_cost"] = (
+        out["unit_bare_material_cost"] + out["unit_bare_labor_cost"] + out["unit_bare_equipment_cost"]
+    )
+    out["total_bare_total_cost"] = (
+        out["total_bare_material_cost"] + out["total_bare_labor_cost"] + out["total_bare_equipment_cost"]
     )
     out["component_source"] = components.get("source", "unknown")
     return out
@@ -328,30 +363,40 @@ def _compute_total_cost_for_material(
     material: Dict[str, Any],
     unit_cost: float,
     matched_description: str,
+    line_uom: Any = None,
 ) -> Dict[str, Any]:
     """Convert a RSMeans unit cost into a total cost for the given material quantity.
 
     RSMeans often prices insulation per SF at a specific thickness (e.g. '$/SF for
     3-1/2" thick batts').  When the measure needs a different thickness, the unit
     cost must be re-expressed as $/CF so it can be multiplied against the actual
-    installed volume rather than a fixed-thickness area.
+    installed volume rather than a fixed-thickness area. However some lines
+    (e.g. blown/poured loose-fill, mineral wool poured-in) are *already* priced
+    per volume (CF or CY) by RSMeans — in that case we use the unit cost
+    directly and skip the thickness conversion entirely.
 
-    Two costing modes:
+    Costing modes:
       - 'area'            : total = unit_cost * area_SF  (no conversion needed)
-      - 'volume_from_area': total = (unit_cost / line_thickness_ft) * volume_CF
-                            The thickness is parsed from the matched RSMeans
-                            description string or falls back to the value stored
-                            in the material dict.
+      - 'volume_from_area':
+          * line_uom in {CF, CY}: total = unit_cost_per_cf * volume_CF
+              (CY lines are scaled by 1/27 to put unit cost in $/CF)
+          * otherwise           : total = (unit_cost / line_thickness_ft) * volume_CF
+              The thickness is parsed from the matched RSMeans description
+              string or falls back to the value stored in the material dict.
 
     Args:
         material:            The retrofit material dict (name, quantity, unit, etc.).
         unit_cost:           RSMeans localizedCosts.totalOpCost for the matched line.
         matched_description: Description text of the matched RSMeans cost line,
                              used to extract the reference thickness.
+        line_uom:            The matched RSMeans line's unitOfMeasure string
+                             (e.g. "C.F.", "S.F."). Used to detect volume-priced
+                             lines so we don't divide by a fabricated thickness.
 
     Returns:
         Dict with keys: unit_cost, total_cost, costing_mode, effective_unit,
-        and (for volume mode) source_unit_cost_per_sf, source_line_thickness_ft.
+        and (for volume-from-area mode) source_unit_cost_per_sf,
+        source_line_thickness_ft. For volume-direct mode, includes ``line_uom``.
     """
     quantity = float(material.get("quantity", 1.0) or 1.0)
     default = {
@@ -367,6 +412,22 @@ def _compute_total_cost_for_material(
     quantity_volume = material.get("quantity_volume")
     if quantity_volume is None:
         return default
+
+    # If RSMeans already prices the line per volume, skip the thickness
+    # division entirely — using unit_cost directly is both simpler and
+    # correct. Avoids deriving a spurious $/CF from the project's added
+    # thickness (which is not a property of the RSMeans line).
+    line_uom_norm = _normalize_uom(line_uom) if line_uom is not None else ""
+    if line_uom_norm in ("CF", "CY"):
+        unit_cost_per_cf = float(unit_cost) / 27.0 if line_uom_norm == "CY" else float(unit_cost)
+        total_cost = unit_cost_per_cf * float(quantity_volume)
+        return {
+            "unit_cost": unit_cost_per_cf,
+            "total_cost": total_cost,
+            "costing_mode": "volume_direct",
+            "effective_unit": material.get("unit_volume", "CF"),
+            "line_uom": line_uom_norm,
+        }
 
     line_thickness_ft = _extract_thickness_ft_from_description(matched_description)
     if line_thickness_ft is None:
@@ -1349,6 +1410,7 @@ def search_materials_across_catalogs(
                                     material,
                                     components,
                                     item.get("description", ""),
+                                    line_uom=line_uom,
                                 )
                                 if cost_calc["total_cost"] > 0:
                                     best_match = item
@@ -1471,6 +1533,7 @@ def search_materials_across_catalogs(
                                         material,
                                         components,
                                         match.get("description", ""),
+                                        line_uom=line_uom,
                                     )
 
                                     if cost_calc["total_cost"] > 0:
@@ -1572,6 +1635,11 @@ def search_materials_across_catalogs(
                 "total_material_cost": mat_cost,
                 "total_labor_cost": lab_cost,
                 "total_equipment_cost": eqp_cost,
+                "bare_material_unit_cost": calc.get("unit_bare_material_cost", 0.0),
+                "bare_material_total_cost": calc.get("total_bare_material_cost", 0.0),
+                "bare_total_unit_cost": calc.get("unit_bare_total_cost", 0.0),
+                "bare_total_total_cost": calc.get("total_bare_total_cost", 0.0),
+                "line_uom": calc.get("line_uom"),
                 "cost_component_source": calc.get("component_source"),
                 "rsmeans_id": best_match.get("id", ""),
                 "rsmeans_description": best_match.get("description", ""),
@@ -1612,11 +1680,13 @@ def search_materials_across_catalogs(
                         if cost_line and "items" in cost_line:
                             for item in cost_line["items"]:
                                 if item.get("id") == fallback_id:
+                                    fallback_line_uom = item.get("unitOfMeasure", "")
                                     components = _extract_unit_cost_components(item)
                                     cost_calc = _compute_total_costs_by_component(
                                         material,
                                         components,
                                         item.get("description", ""),
+                                        line_uom=fallback_line_uom,
                                     )
                                     if cost_calc["total_cost"] > 0:
                                         material_result = {
@@ -1631,6 +1701,11 @@ def search_materials_across_catalogs(
                                             "total_material_cost": cost_calc["total_material_cost"],
                                             "total_labor_cost": cost_calc["total_labor_cost"],
                                             "total_equipment_cost": cost_calc["total_equipment_cost"],
+                                            "bare_material_unit_cost": cost_calc.get("unit_bare_material_cost", 0.0),
+                                            "bare_material_total_cost": cost_calc.get("total_bare_material_cost", 0.0),
+                                            "bare_total_unit_cost": cost_calc.get("unit_bare_total_cost", 0.0),
+                                            "bare_total_total_cost": cost_calc.get("total_bare_total_cost", 0.0),
+                                            "line_uom": cost_calc.get("line_uom"),
                                             "cost_component_source": cost_calc.get("component_source"),
                                             "rsmeans_id": item.get("id", ""),
                                             "rsmeans_description": item.get("description", ""),

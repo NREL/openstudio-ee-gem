@@ -1053,7 +1053,7 @@ def create_simulation(
                 "insulation_material_density": 0.0,
                 "calculate_costs": bool(scenario_dict.get("calculate_costs", True)),
                 "use_custom_costs": bool(scenario_dict.get("use_custom_costs", False)),
-                "custom_cost_per_cf": float(scenario_dict.get("roof_insulation_custom_cost_per_cf") or scenario_dict.get("custom_cost_per_cf") or 0.0),
+                "custom_cost_per_cf": float(scenario_dict.get("custom_cost_per_cf") or 0.0),
                 "labor_cost_multiplier": float(scenario_dict.get("labor_cost_multiplier") or 1.0),
                 "overhead_profit_percent": float(scenario_dict.get("overhead_profit_percent") or 10.0),
             }
@@ -1112,9 +1112,6 @@ def create_simulation(
                 "caulking_cost_per_cy": float(scenario_dict.get("caulking_cost_per_cy") or 0.0),
                 "film_cost_per_sf": float(scenario_dict.get("film_cost_per_sf") or 0.0),
                 "weatherstrip_cost_per_lf": float(scenario_dict.get("weatherstrip_cost_per_lf") or 0.0),
-                "u_factor_modification_percentage": float(scenario_dict.get("u_factor_modification_percentage") or 0.0),
-                "shgc_modification_percentage": float(scenario_dict.get("shgc_modification_percentage") or 0.0),
-                "visible_transmittance_modification_percentage": float(scenario_dict.get("visible_transmittance_modification_percentage") or 0.0),
                 "labor_cost_multiplier": float(scenario_dict.get("labor_cost_multiplier") or 1.0),
                 "overhead_profit_percent": float(scenario_dict.get("overhead_profit_percent") or 10.0),
             }
@@ -1768,7 +1765,8 @@ def generate_parametric_recap(target_path, city_climate_zones=None):
 # (used by run_all_tests.py to drive multiple sequential runs without editing this file).
 # RUN_NAME is purely a folder label under simulations/ -- it has no effect on
 # the model itself. Defaults to "run_test_009" for this branch's ad-hoc standalone runs.
-RUN_NAME = "run_test_017_custom_rsmeans"
+# RUN_NAME = os.environ.get("WORKFLOW_RUN_NAME") or "run_test_015_custom_rsmeans"
+RUN_NAME = "run_test_016_a"
 def detect_openstudio_cli_path():
     """Find the OpenStudio CLI executable on this machine.
 
@@ -1929,20 +1927,16 @@ CUSTOM_COMBOS = [
         "wf_option": "wood window frame",
         "film_option": "safety film",
         "caulking_option": "acrylic",
-        "use_custom_costs": True,
-        "wall_insulation_custom_cost_per_cf": 2.640001,
-        "roof_insulation_custom_cost_per_cf": 0.9,
+        "use_custom_costs": False,
+        "custom_cost_per_cf": 2.640001,
         "glass_cost_per_cf": 499.199388,
         "frame_cost_per_sf": 60.44,
         "caulking_cost_per_cy": 11108.571,
         "film_cost_per_sf": 2.06,
         "weatherstrip_cost_per_lf": 1.575,
         "custom_door_cost_per_area": 65.12166,
-        "custom_bottom_seal_cost": 11.0,
+        "custom_bottom_seal_cost": 33.0,
         "custom_top_side_seal_cost": 2.78,
-        "u_factor_modification_percentage": -30.0,
-        "shgc_modification_percentage": -30.0,
-        "visible_transmittance_modification_percentage": 0.0,
     },
     # Scenario 11: Custom-cost dataset test (mid cost mix)
     {
@@ -1961,19 +1955,15 @@ CUSTOM_COMBOS = [
         "film_option": "anti-graffiti film",
         "caulking_option": "polyurethane",
         "use_custom_costs": True,
-        "wall_insulation_custom_cost_per_cf": 12.000006,
-        "roof_insulation_custom_cost_per_cf": 4.320001,
+        "custom_cost_per_cf": 12.000006,
         "glass_cost_per_cf": 499.199388,
         "frame_cost_per_sf": 73.5,
         "caulking_cost_per_cy": 19995.429,
         "film_cost_per_sf": 2.02,
         "weatherstrip_cost_per_lf": 5.133332,
         "custom_door_cost_per_area": 314.8444,
-        "custom_bottom_seal_cost": 5.133332,
-        "custom_top_side_seal_cost": 1.575,
-        "u_factor_modification_percentage": -30.0,
-        "shgc_modification_percentage": -30.0,
-        "visible_transmittance_modification_percentage": 0.0,
+        "custom_bottom_seal_cost": 15.4,
+        "custom_top_side_seal_cost": 18.9,
     },
     # Scenario 12: Custom-cost dataset test (high cost mix)
     {
@@ -1992,19 +1982,15 @@ CUSTOM_COMBOS = [
         "film_option": "low-e film",
         "caulking_option": "polyurethane",
         "use_custom_costs": True,
-        "wall_insulation_custom_cost_per_cf": 13.920007,
-        "roof_insulation_custom_cost_per_cf": 13.920007,
+        "custom_cost_per_cf": 13.920007,
         "glass_cost_per_cf": 499.199388,
         "frame_cost_per_sf": 73.5,
         "caulking_cost_per_cy": 19995.429,
         "film_cost_per_sf": 0.84,
         "weatherstrip_cost_per_lf": 1.575,
         "custom_door_cost_per_area": 341.7114,
-        "custom_bottom_seal_cost": 11.0,
-        "custom_top_side_seal_cost": 1.575,
-        "u_factor_modification_percentage": -30.0,
-        "shgc_modification_percentage": -30.0,
-        "visible_transmittance_modification_percentage": 0.0,
+        "custom_bottom_seal_cost": 33.0,
+        "custom_top_side_seal_cost": 18.9,
     },
 ]
 
