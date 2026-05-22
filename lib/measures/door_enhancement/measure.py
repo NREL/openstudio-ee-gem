@@ -1433,23 +1433,43 @@ class DoorEnhancement(openstudio.measure.ModelMeasure):
                 )
 
             if door_bottom_seal_option != 'none' and total_sealing_bottom_length_m > 0.0:
+                # Seal hardware (sweeps, automatic door bottoms, weatherstrip kits)
+                # is priced by RSMeans per piece (EA), not per LF. Convert the
+                # measured bottom-seal length to a piece count using the
+                # known piece length so the EA-priced line matches the request
+                # and passes the UoM compatibility check in call_rsmeans_api.
+                _bottom_piece_len_m = float(length_per_unit_bottom_side or 0.0)
+                if _bottom_piece_len_m > 0.0:
+                    _bottom_qty = float(total_sealing_bottom_length_m) / _bottom_piece_len_m
+                    _bottom_unit = "EA"
+                else:
+                    _bottom_qty = float(total_sealing_bottom_length_m * 3.28084)
+                    _bottom_unit = "LF"
                 rsmeans_materials.append(
                     {
                         "name": f"door bottom seal {door_bottom_seal_option}",
                         "description": f"Bottom seal material ({door_bottom_seal_option})",
-                        "quantity": float(total_sealing_bottom_length_m * 3.28084),
-                        "unit": "LF",
+                        "quantity": _bottom_qty,
+                        "unit": _bottom_unit,
                         "division_code": "0871",  # Door Hardware (incl. weatherstripping); avoid stray door/glass matches
                     }
                 )
 
             if door_top_side_seal_option != 'none' and total_sealing_side_length_m > 0.0:
+                # Same EA-vs-LF conversion as above for top/side weatherstrip.
+                _side_piece_len_m = float(length_per_unit_other_sides or 0.0)
+                if _side_piece_len_m > 0.0:
+                    _side_qty = float(total_sealing_side_length_m) / _side_piece_len_m
+                    _side_unit = "EA"
+                else:
+                    _side_qty = float(total_sealing_side_length_m * 3.28084)
+                    _side_unit = "LF"
                 rsmeans_materials.append(
                     {
                         "name": f"door top side seal {door_top_side_seal_option}",
                         "description": f"Top/side seal material ({door_top_side_seal_option})",
-                        "quantity": float(total_sealing_side_length_m * 3.28084),
-                        "unit": "LF",
+                        "quantity": _side_qty,
+                        "unit": _side_unit,
                         "division_code": "0871",  # Door Hardware (incl. weatherstripping); avoid stray door/glass matches
                     }
                 )

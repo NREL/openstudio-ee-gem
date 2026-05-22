@@ -354,14 +354,14 @@ def _derive_frame_cost_from_window_minus_glass(
         return None
     if num_windows <= 0.0:
         num_windows = quantity_sf  # backward-compat fallback
-        # osm_window_area_sf is the model window-area basis used for total frame cost.
-        # parsed_window_area_sf is the per-window area used to derive the frame unit cost.
-        osm_window_area_sf = float(material.get("window_area_sf") or 0.0)
-        if osm_window_area_sf <= 0.0:
-            osm_window_area_sf = quantity_sf
-        parsed_window_area_sf = (osm_window_area_sf / num_windows) if num_windows > 0.0 else quantity_sf
-        if parsed_window_area_sf <= 0.0:
-            parsed_window_area_sf = quantity_sf
+    # osm_window_area_sf is the model window-area basis used for total frame cost.
+    # parsed_window_area_sf is the per-window area used to derive the frame unit cost.
+    osm_window_area_sf = float(material.get("window_area_sf") or 0.0)
+    if osm_window_area_sf <= 0.0:
+        osm_window_area_sf = quantity_sf
+    parsed_window_area_sf = (osm_window_area_sf / num_windows) if num_windows > 0.0 else quantity_sf
+    if parsed_window_area_sf <= 0.0:
+        parsed_window_area_sf = quantity_sf
 
     # Determine pane-count from glazing material description if available.
     pane_count = None
