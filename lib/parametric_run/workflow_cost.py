@@ -182,22 +182,24 @@ if _AUXILIARY_DIR not in sys.path:
 # Read EC3 API Token from config.ini
 def get_ec3_api_token():
     """Read EC3 API token from config.ini file."""
-    script_dir = Path(__file__).parent
-    repo_root = script_dir.parent.parent
-    config_path = repo_root / "config.ini"
-    if not config_path.exists():
-        print(f"Warning: config.ini not found at {config_path}")
-        return None
+    # DISABLED: Carbon calculation is disabled in this workflow
+    # script_dir = Path(__file__).parent
+    # repo_root = script_dir.parent.parent
+    # config_path = repo_root / "config.ini"
+    # if not config_path.exists():
+    #     print(f"Warning: config.ini not found at {config_path}")
+    #     return None
+    #
+    # config = configparser.ConfigParser()
+    # config.read(config_path)
+    # try:
+    #     return config["EC3_API_TOKEN"]["API_TOKEN"]
+    # except KeyError:
+    #     print("Warning: EC3_API_TOKEN not found in config.ini")
+    #     return None
+    return None
 
-    config = configparser.ConfigParser()
-    config.read(config_path)
-    try:
-        return config["EC3_API_TOKEN"]["API_TOKEN"]
-    except KeyError:
-        print("Warning: EC3_API_TOKEN not found in config.ini")
-        return None
-
-EC3_API_TOKEN = get_ec3_api_token()
+EC3_API_TOKEN = None  # DISABLED: Carbon calculation disabled
 
 # --- HELPER FUNCTIONS ---
 def get_city_weather_files(city_name, base_weather_path):
@@ -286,13 +288,13 @@ def generate_scenario_name(scenario_dict):
     return "_".join(parts)
 
 def detect_window_upgrade_status(model, requested_panes):
-    """Infer whether requested pane upgrade was applied based on model constructions."""
+    """Detect whether requested pane upgrade was actually applied to model windows."""
     windows = [
         ss for ss in model.getSubSurfaces()
         if ss.subSurfaceType() in ["FixedWindow", "OperableWindow", "Skylight"]
     ]
     if not windows:
-        return "none"
+        return None
 
     upgraded_count = 0
     simple_glazing_count = 0
@@ -788,6 +790,7 @@ def create_simulation(
         if os.path.exists(sql_path):
             print(f"  Applying reporting measure...")
             apply_reporting_measure(model_path, sql_path, measure_dir_path, scenario_name)
+
     # ====================================================================
     # NON-BASELINE:
     #   Phase 1: create prototype in a _proto/ subfolder
@@ -852,17 +855,18 @@ def create_simulation(
             str(scenario_dict.get("door_bottom_seal_option", "none")).strip().lower() != "none",
             str(scenario_dict.get("door_top_side_seal_option", "none")).strip().lower() != "none",
         ])
-        requires_ec3_data = any([
-            scenario_dict.get("wall_r_value"),
-            scenario_dict.get("roof_r_value"),
-            has_window_renovation,
-            has_door_renovation,
-        ])
-        if requires_ec3_data and not EC3_API_TOKEN:
-            print("  EC3 API token is required for online cost/carbon calculations; scenario skipped.")
-            log_failure("missing EC3 API token for required online cost/carbon calculations")
-            del model
-            return None
+        # DISABLED: Carbon calculation disabled - no EC3 API token check needed
+        # requires_ec3_data = any([
+        #     scenario_dict.get("wall_r_value"),
+        #     scenario_dict.get("roof_r_value"),
+        #     has_window_renovation,
+        #     has_door_renovation,
+        # ])
+        # if requires_ec3_data and not EC3_API_TOKEN:
+        #     print("  EC3 API token is required for online cost/carbon calculations; scenario skipped.")
+        #     log_failure("missing EC3 API token for required online cost/carbon calculations")
+        #     del model
+        #     return None
 
         if scenario_dict.get("wall_r_value"):
             wall_material_type = scenario_dict.get("wall_insulation_material_type") or "Blown Fiberglass"
@@ -871,7 +875,10 @@ def create_simulation(
                 "r_value": float(scenario_dict["wall_r_value"]),
                 "analysis_period": 30,
                 "gwp_statistic": "median",
-                "api_key": EC3_API_TOKEN,
+                # Explicitly skip EC3 lookups for stable cost-only runs.
+                "use_custom_gwp": True,
+                "custom_gwp_per_m3": 0.0,
+                "api_key": "",
                 "insulation_material_type": wall_material_type,
                 "insulation_material_lifetime": wall_material_lifetime,
                 "insulation_thermal_conductivity": 0.0,
@@ -895,14 +902,17 @@ def create_simulation(
                 "r_value": float(scenario_dict["roof_r_value"]),
                 "analysis_period": 30,
                 "gwp_statistic": "median",
-                "api_key": EC3_API_TOKEN,
+                # Explicitly skip EC3 lookups for stable cost-only runs.
+                "use_custom_gwp": True,
+                "custom_gwp_per_m3": 0.0,
+                "api_key": "",
                 "insulation_material_type": roof_material_type,
                 "insulation_material_lifetime": roof_material_lifetime,
                 "insulation_thermal_conductivity": 0.0,
                 "insulation_material_density": 0.0,
                 "calculate_costs": bool(scenario_dict.get("calculate_costs", True)),
                 "use_custom_costs": bool(scenario_dict.get("use_custom_costs", False)),
-                "custom_cost_per_cf": float(scenario_dict.get("custom_cost_per_cf") or 0.0),
+                "custom_cost_per_cf": float(scenario_dict.get("roof_insulation_custom_cost_per_cf") or scenario_dict.get("custom_cost_per_cf") or 0.0),
                 "labor_cost_multiplier": float(scenario_dict.get("labor_cost_multiplier") or 1.0),
                 "overhead_profit_percent": float(scenario_dict.get("overhead_profit_percent") or 10.0),
             }
@@ -952,7 +962,14 @@ def create_simulation(
                 "weatherstrip_option": str(scenario_dict.get("weatherstrip_option") or "none"),
                 "length_per_unit": float(scenario_dict.get("length_per_unit") or 0.0),
                 "secondary_glazing_option": str(scenario_dict.get("secondary_glazing_option") or "none"),
-                "api_key": EC3_API_TOKEN,
+                # Explicitly skip EC3 lookups for stable cost-only runs.
+                "use_custom_gwp": True,
+                "custom_glass_gwp_per_m3": 0.0,
+                "custom_frame_gwp_per_m2": 0.0,
+                "custom_caulking_gwp_per_m3": 0.0,
+                "custom_weatherstrip_gwp_per_m": 0.0,
+                "custom_film_gwp_per_m2": 0.0,
+                "api_key": "",
                 "gwp_statistic": str(scenario_dict.get("gwp_statistic") or "median"),
                 "calculate_costs": bool(scenario_dict.get("calculate_costs", True)),
                 "use_custom_costs": bool(scenario_dict.get("use_custom_costs", False)),
@@ -961,6 +978,9 @@ def create_simulation(
                 "caulking_cost_per_cy": float(scenario_dict.get("caulking_cost_per_cy") or 0.0),
                 "film_cost_per_sf": float(scenario_dict.get("film_cost_per_sf") or 0.0),
                 "weatherstrip_cost_per_lf": float(scenario_dict.get("weatherstrip_cost_per_lf") or 0.0),
+                "u_factor_modification_percentage": float(scenario_dict.get("u_factor_modification_percentage") or 0.0),
+                "shgc_modification_percentage": float(scenario_dict.get("shgc_modification_percentage") or 0.0),
+                "visible_transmittance_modification_percentage": float(scenario_dict.get("visible_transmittance_modification_percentage") or 0.0),
                 "labor_cost_multiplier": float(scenario_dict.get("labor_cost_multiplier") or 1.0),
                 "overhead_profit_percent": float(scenario_dict.get("overhead_profit_percent") or 10.0),
             }
@@ -985,7 +1005,12 @@ def create_simulation(
                 "strip_lifetime": float(scenario_dict.get("strip_lifetime") or 15),
                 "door_lifetime": float(scenario_dict.get("door_lifetime") or 30),
                 "gwp_statistic": str(scenario_dict.get("gwp_statistic") or "median"),
-                "api_key": EC3_API_TOKEN,
+                # Explicitly skip EC3 lookups for stable cost-only runs.
+                "use_custom_gwp": True,
+                "custom_door_leaf_gwp_per_m2": 0.0,
+                "custom_bottom_strip_gwp_per_m": 0.0,
+                "custom_side_top_strip_gwp_per_m": 0.0,
+                "api_key": "",
                 "length_per_unit_bottom_side": float(scenario_dict.get("length_per_unit_bottom_side") or 0.0),
                 "length_per_unit_other_sides": float(scenario_dict.get("length_per_unit_other_sides") or 0.0),
                 "door_thermal_conductivity": float(scenario_dict.get("door_thermal_conductivity") or 0.0),
@@ -1128,6 +1153,32 @@ def extract_total_site_energy_gj(sql_path):
 
     return None
 
+
+def extract_fuel_energy_gj(sql_path):
+    """Extract site energy by fuel type from EnergyPlus SQL End Uses table (GJ)."""
+    result = {}
+    try:
+        with sqlite3.connect(str(sql_path)) as conn:
+            cur = conn.cursor()
+            cur.execute(
+                """
+                SELECT ColumnName, SUM(CAST(Value AS REAL)) as total_gj
+                FROM TabularDataWithStrings
+                WHERE lower(ReportName) = 'annualbuildingutilityperformancesummary'
+                  AND lower(TableName) = 'end uses'
+                  AND lower(RowName) != 'total end uses'
+                  AND lower(Units) = 'gj'
+                GROUP BY ColumnName
+                """
+            )
+            for col_name, total_gj in cur.fetchall():
+                if total_gj is not None and float(total_gj) > 0:
+                    slug = str(col_name).strip().lower().replace(" ", "_").replace("-", "_")
+                    result[f"{slug}_site_energy_gj"] = round(float(total_gj), 4)
+    except Exception as e:
+        print(f"     Failed to read fuel energy from SQL {sql_path}: {e}")
+    return result
+
 def get_prop_value(props, name):
     """Helper to safely extract value from AdditionalProperties by type."""
     if props.getFeatureAsDouble(name).is_initialized():
@@ -1189,47 +1240,51 @@ def extract_scenario_data(osm_path, scenario_name):
         results["renovation_details"] = "Envelope renovation applied (details generated at report time)"
 
     found_any = True
+    # DISABLED: Carbon calculation disabled
     # 1) Embodied carbon from SimulationControl.additionalProperties().
+    # sim_props = model.getSimulationControl().additionalProperties()
+    # ec_keys = [
+    #     "wall_insulation_embodied_carbon_kgCO2eq",
+    #     "roof_insulation_embodied_carbon_kgCO2eq",
+    #     "window_enhancement_embodied_carbon_kgCO2eq",
+    #     "door_enhancement_embodied_carbon_kgCO2eq",
+    # ]
+    # for key in ec_keys:
+    #     if key in sim_props.featureNames():
+    #         val = get_prop_value(sim_props, key)
+    #         if val is not None:
+    #             results[key] = val
+    #             found_any = True
+    #
+    # # Also capture embodied-carbon keys from all AdditionalProperties objects
+    # # (newer measures store keys such as *_embodied_carbon_kgCO2eq).
+    # idd_type = openstudio.IddObjectType("OS:AdditionalProperties")
+    # for obj in model.getObjectsByType(idd_type):
+    #     opt_props = openstudio.model.toAdditionalProperties(obj)
+    #     if not opt_props.is_initialized():
+    #         continue
+    #     props = opt_props.get()
+    #     for fname in props.featureNames():
+    #         lname = str(fname).lower()
+    #         if "embodied_carbon" not in lname:
+    #             continue
+    #         val = get_prop_value(props, fname)
+    #         if val is not None:
+    #             results[fname] = val
+    #             found_any = True
+    #
+    # # Convenience aggregate for analysis widgets.
+    # if "total_additional_embodied_carbon_kg" not in results:
+    #     total_embodied = (
+    #         float(results.get("wall_insulation_embodied_carbon_kgCO2eq", 0.0) or 0.0)
+    #         + float(results.get("roof_insulation_embodied_carbon_kgCO2eq", 0.0) or 0.0)
+    #         + float(results.get("window_enhancement_embodied_carbon_kgCO2eq", 0.0) or 0.0)
+    #         + float(results.get("door_enhancement_embodied_carbon_kgCO2eq", 0.0) or 0.0)
+    #     )
+    #     results["total_additional_embodied_carbon_kg"] = total_embodied
+
+    # Keep SimulationControl props for non-carbon fields (cost keys still sourced here).
     sim_props = model.getSimulationControl().additionalProperties()
-    ec_keys = [
-        "wall_insulation_embodied_carbon_kgCO2eq",
-        "roof_insulation_embodied_carbon_kgCO2eq",
-        "window_enhancement_embodied_carbon_kgCO2eq",
-        "door_enhancement_embodied_carbon_kgCO2eq",
-    ]
-    for key in ec_keys:
-        if key in sim_props.featureNames():
-            val = get_prop_value(sim_props, key)
-            if val is not None:
-                results[key] = val
-                found_any = True
-
-    # Also capture embodied-carbon keys from all AdditionalProperties objects
-    # (newer measures store keys such as *_embodied_carbon_kgCO2eq).
-    idd_type = openstudio.IddObjectType("OS:AdditionalProperties")
-    for obj in model.getObjectsByType(idd_type):
-        opt_props = openstudio.model.toAdditionalProperties(obj)
-        if not opt_props.is_initialized():
-            continue
-        props = opt_props.get()
-        for fname in props.featureNames():
-            lname = str(fname).lower()
-            if "embodied_carbon" not in lname:
-                continue
-            val = get_prop_value(props, fname)
-            if val is not None:
-                results[fname] = val
-                found_any = True
-
-    # Convenience aggregate for analysis widgets.
-    if "total_additional_embodied_carbon_kg" not in results:
-        total_embodied = (
-            float(results.get("wall_insulation_embodied_carbon_kgCO2eq", 0.0) or 0.0)
-            + float(results.get("roof_insulation_embodied_carbon_kgCO2eq", 0.0) or 0.0)
-            + float(results.get("window_enhancement_embodied_carbon_kgCO2eq", 0.0) or 0.0)
-            + float(results.get("door_enhancement_embodied_carbon_kgCO2eq", 0.0) or 0.0)
-        )
-        results["total_additional_embodied_carbon_kg"] = total_embodied
 
     # 2) Operating cost and emissions from Site.additionalProperties().
     site_props = model.getSite().additionalProperties()
@@ -1400,6 +1455,15 @@ def extract_scenario_data(osm_path, scenario_name):
                 results["total_site_energy_gj"] = total_site_energy
                 found_any = True
 
+    # Extract per-fuel site energy from SQL (Water is excluded because End Uses Water uses m3, not GJ).
+    sql_path_fuel = osm_path.parent / "eplusout.sql"
+    if sql_path_fuel.exists():
+        fuel_data = extract_fuel_energy_gj(sql_path_fuel)
+        for fkey, fval in fuel_data.items():
+            if fkey not in results and fval is not None:
+                results[fkey] = fval
+                found_any = True
+
     # Explicit reno detail keys written by envelope measures
     reno_keys = [
         "wall_insulation_renovated_area_m2",
@@ -1496,6 +1560,8 @@ def generate_parametric_recap(target_path, city_climate_zones=None):
         "annual_electricity_operating_emissions_kg_co2e",
         "annual_gas_operating_emissions_kg_co2e",
         "total_site_energy_gj",
+        "electricity_site_energy_gj",
+        "natural_gas_site_energy_gj",
         "wall_insulation_renovated_area_m2",
         "wall_insulation_added_volume_m3",
         "roof_insulation_renovated_area_m2",
@@ -1602,8 +1668,7 @@ def generate_parametric_recap(target_path, city_climate_zones=None):
 # (used by run_all_tests.py to drive multiple sequential runs without editing this file).
 # RUN_NAME is purely a folder label under simulations/ -- it has no effect on
 # the model itself. Defaults to "run_test_009" for this branch's ad-hoc standalone runs.
-# RUN_NAME = os.environ.get("WORKFLOW_RUN_NAME") or "run_test_015_custom_rsmeans"
-RUN_NAME = "run_test_016_a"
+RUN_NAME = "run_test_017_cost"
 def detect_openstudio_cli_path():
     """Find the OpenStudio CLI executable on this machine.
 
@@ -1764,16 +1829,20 @@ CUSTOM_COMBOS = [
         "wf_option": "wood window frame",
         "film_option": "safety film",
         "caulking_option": "acrylic",
-        "use_custom_costs": False,
-        "custom_cost_per_cf": 2.640001,
+        "use_custom_costs": True,
+        "wall_insulation_custom_cost_per_cf": 2.640001,
+        "roof_insulation_custom_cost_per_cf": 0.9,
         "glass_cost_per_cf": 499.199388,
         "frame_cost_per_sf": 60.44,
         "caulking_cost_per_cy": 11108.571,
         "film_cost_per_sf": 2.06,
         "weatherstrip_cost_per_lf": 1.575,
         "custom_door_cost_per_area": 65.12166,
-        "custom_bottom_seal_cost": 33.0,
+        "custom_bottom_seal_cost": 11.0,
         "custom_top_side_seal_cost": 2.78,
+        "u_factor_modification_percentage": -30.0,
+        "shgc_modification_percentage": -30.0,
+        "visible_transmittance_modification_percentage": 0.0,
     },
     # Scenario 11: Custom-cost dataset test (mid cost mix)
     {
@@ -1791,16 +1860,20 @@ CUSTOM_COMBOS = [
         "wf_option": "wood-aluminium window frame",
         "film_option": "anti-graffiti film",
         "caulking_option": "polyurethane",
-        "use_custom_costs": False,
-        "custom_cost_per_cf": 12.000006,
+        "use_custom_costs": True,
+        "wall_insulation_custom_cost_per_cf": 12.000006,
+        "roof_insulation_custom_cost_per_cf": 4.320001,
         "glass_cost_per_cf": 499.199388,
         "frame_cost_per_sf": 73.5,
         "caulking_cost_per_cy": 19995.429,
         "film_cost_per_sf": 2.02,
         "weatherstrip_cost_per_lf": 5.133332,
         "custom_door_cost_per_area": 314.8444,
-        "custom_bottom_seal_cost": 15.4,
-        "custom_top_side_seal_cost": 18.9,
+        "custom_bottom_seal_cost": 5.133332,
+        "custom_top_side_seal_cost": 1.575,
+        "u_factor_modification_percentage": -30.0,
+        "shgc_modification_percentage": -30.0,
+        "visible_transmittance_modification_percentage": 0.0,
     },
     # Scenario 12: Custom-cost dataset test (high cost mix)
     {
@@ -1818,16 +1891,20 @@ CUSTOM_COMBOS = [
         "wf_option": "wood-aluminium window frame",
         "film_option": "low-e film",
         "caulking_option": "polyurethane",
-        "use_custom_costs": False,
-        "custom_cost_per_cf": 13.920007,
+        "use_custom_costs": True,
+        "wall_insulation_custom_cost_per_cf": 13.920007,
+        "roof_insulation_custom_cost_per_cf": 13.920007,
         "glass_cost_per_cf": 499.199388,
         "frame_cost_per_sf": 73.5,
         "caulking_cost_per_cy": 19995.429,
         "film_cost_per_sf": 0.84,
         "weatherstrip_cost_per_lf": 1.575,
         "custom_door_cost_per_area": 341.7114,
-        "custom_bottom_seal_cost": 33.0,
-        "custom_top_side_seal_cost": 18.9,
+        "custom_bottom_seal_cost": 11.0,
+        "custom_top_side_seal_cost": 1.575,
+        "u_factor_modification_percentage": -30.0,
+        "shgc_modification_percentage": -30.0,
+        "visible_transmittance_modification_percentage": 0.0,
     },
 ]
 
@@ -2018,6 +2095,7 @@ available_construction_cost_col = next((c for c in construction_cost_cols if c i
 
 required_base_cols = [
     "scenario",
+    "total_site_energy_gj",
     "annual_electricity_operating_emissions_kg_co2e",
     "annual_gas_operating_emissions_kg_co2e",
     "annual_electricity_cost_usd",
@@ -2042,12 +2120,14 @@ for col in expected_embodied_cols:
 numeric_cols = [c for c in required_base_cols if c != "scenario"] + expected_embodied_cols
 df[numeric_cols] = df[numeric_cols].apply(pd.to_numeric, errors="coerce").fillna(0.0)
 
-df["total_additional_embodied_carbon_kg"] = (
-    df["window_enhancement_embodied_carbon_kgCO2eq"]
-    + df["door_enhancement_embodied_carbon_kgCO2eq"]
-    + df["wall_insulation_embodied_carbon_kgCO2eq"]
-    + df["roof_insulation_embodied_carbon_kgCO2eq"]
-)
+# DISABLED: Carbon calculation disabled - set all carbon columns to 0
+df["total_additional_embodied_carbon_kg"] = 0.0
+# df["total_additional_embodied_carbon_kg"] = (
+#     df["window_enhancement_embodied_carbon_kgCO2eq"]
+#     + df["door_enhancement_embodied_carbon_kgCO2eq"]
+#     + df["wall_insulation_embodied_carbon_kgCO2eq"]
+#     + df["roof_insulation_embodied_carbon_kgCO2eq"]
+# )
 df["annual_operational_carbon_kg_co2e"] = (
     df["annual_electricity_operating_emissions_kg_co2e"]
     + df["annual_gas_operating_emissions_kg_co2e"]
@@ -2056,6 +2136,7 @@ df["annual_operational_cost_usd"] = (
     df["annual_electricity_cost_usd"]
     + df["annual_gas_cost_usd"]
 )
+df["annual_operational_energy_gj"] = pd.to_numeric(df["total_site_energy_gj"], errors="coerce").fillna(0.0)
 
 if available_construction_cost_col:
     df["total_construction_cost_usd"] = pd.to_numeric(df[available_construction_cost_col], errors="coerce").fillna(0.0)
@@ -2086,27 +2167,25 @@ if baseline_mask.any():
     else:
         df["cost_payback_period_years"] = None
 
-    df["carbon_payback_period_years"] = df.apply(lambda r: safe_payback(r["total_additional_embodied_carbon_kg"], r["emissions_delta"]), axis=1)
+    # DISABLED: Carbon calculation disabled - set carbon payback to None
+    # df["carbon_payback_period_years"] = df.apply(lambda r: safe_payback(r["total_additional_embodied_carbon_kg"], r["emissions_delta"]), axis=1)
+    df["carbon_payback_period_years"] = None
 else:
     df["cost_payback_period_years"] = None
     df["carbon_payback_period_years"] = None
 
 metrics = [
-    "total_additional_embodied_carbon_kg",
-    "annual_operational_carbon_kg_co2e",
+    "annual_operational_energy_gj",
     "annual_operational_cost_usd",
     "total_construction_cost_usd",
     "cost_payback_period_years",
-    "carbon_payback_period_years",
 ]
 
 metric_labels = {
-    "total_additional_embodied_carbon_kg": "Retrofit Embodied Carbon (kgCO2e)",
-    "annual_operational_carbon_kg_co2e": "Annual Operational Carbon (kgCO2e)",
+    "annual_operational_energy_gj": "Annual Operational Energy (GJ)",
     "annual_operational_cost_usd": "Annual Operational Cost (USD)",
     "total_construction_cost_usd": "Retrofit Construction Cost (USD)",
     "cost_payback_period_years": "Cost Payback Period (years)",
-    "carbon_payback_period_years": "Carbon Payback Period (years)",
 }
 
 def wrap_label(text, width=22):
@@ -2160,7 +2239,7 @@ table_df = table_df.round(2)
 
 # --- Report Builder Imports ---
 # (auxiliary/ is already on sys.path from the top-level setup above)
-from report_template import (
+from cost_report_template import (
     build_report_html,
     build_material_list_row_html,
     component_from_entry,
@@ -2229,10 +2308,15 @@ def generate_html_report(df, html_report_path, run_name="run"):
     else:
         analysis_period_years = pd.Series([default_embodied_analysis_period_years] * len(df), index=df.index)
 
-    wall_ec = _to_num(df, "wall_insulation_embodied_carbon_kgCO2eq")
-    roof_ec = _to_num(df, "roof_insulation_embodied_carbon_kgCO2eq")
-    window_ec = _to_num(df, "window_enhancement_embodied_carbon_kgCO2eq")
-    door_ec = _to_num(df, "door_enhancement_embodied_carbon_kgCO2eq")
+    # DISABLED: Carbon calculation disabled - use zero values for all carbon data
+    wall_ec = pd.Series([0.0] * len(df), index=df.index)
+    roof_ec = pd.Series([0.0] * len(df), index=df.index)
+    window_ec = pd.Series([0.0] * len(df), index=df.index)
+    door_ec = pd.Series([0.0] * len(df), index=df.index)
+    # wall_ec = _to_num(df, "wall_insulation_embodied_carbon_kgCO2eq")
+    # roof_ec = _to_num(df, "roof_insulation_embodied_carbon_kgCO2eq")
+    # window_ec = _to_num(df, "window_enhancement_embodied_carbon_kgCO2eq")
+    # door_ec = _to_num(df, "door_enhancement_embodied_carbon_kgCO2eq")
     report = pd.DataFrame({
 
         "scenario": df[scenario_col].astype(str),
@@ -2246,7 +2330,8 @@ def generate_html_report(df, html_report_path, run_name="run"):
         "door_ec": door_ec,
 
     })
-    report["embodied_carbon_kg"] = report[["wall_ec", "roof_ec", "window_ec", "door_ec"]].sum(axis=1)
+    report["embodied_carbon_kg"] = pd.Series([0.0] * len(report), index=report.index)  # DISABLED: Carbon calculation disabled
+    # report["embodied_carbon_kg"] = report[["wall_ec", "roof_ec", "window_ec", "door_ec"]].sum(axis=1)
     floor_area_col_candidates = [
 
         "building_area_m2",
@@ -2283,6 +2368,8 @@ def generate_html_report(df, html_report_path, run_name="run"):
     comparison_df["cost_delta_pct"] = comparison_df["cost_delta"] / b["annual_cost_usd"] * 100.0 if b["annual_cost_usd"] > 0 else 0.0
     comparison_df["emissions_delta"] = comparison_df["annual_emissions_kg"] - b["annual_emissions_kg"]
     comparison_df["emissions_delta_pct"] = comparison_df["emissions_delta"] / b["annual_emissions_kg"] * 100.0 if b["annual_emissions_kg"] > 0 else 0.0
+    comparison_df["energy_delta"] = b["total_site_energy_gj"] - comparison_df["total_site_energy_gj"]
+    comparison_df["energy_delta_pct"] = comparison_df["energy_delta"] / b["total_site_energy_gj"] * 100.0 if b["total_site_energy_gj"] > 0 else 0.0
     if comparison_df.empty:
         max_savings = b
         max_emissions_reduction = b
@@ -2292,16 +2379,30 @@ def generate_html_report(df, html_report_path, run_name="run"):
         max_cost_delta_pct = 0.0
         max_emis_delta = 0.0
         max_emis_delta_pct = 0.0
+        max_energy_savings_row = b
+        max_energy_scenario = "No renovation scenarios"
+        max_energy_delta_gj = 0.0
+        max_energy_delta_pct = 0.0
+        max_energy_class = ""
+        max_energy_savings_text = "N/A"
+        max_energy_savings_scenario = "No renovation scenarios"
 
     else:
         max_savings = comparison_df.loc[comparison_df["cost_delta"].idxmin()]
         max_emissions_reduction = comparison_df.loc[comparison_df["emissions_delta"].idxmin()]
+        max_energy_savings_row = comparison_df.loc[comparison_df["energy_delta"].idxmax()]
         max_savings_scenario = scenario_display_map.get(str(max_savings["scenario"]), str(max_savings["scenario"]))
         max_emissions_scenario = scenario_display_map.get(str(max_emissions_reduction["scenario"]), str(max_emissions_reduction["scenario"]))
+        max_energy_scenario = scenario_display_map.get(str(max_energy_savings_row["scenario"]), str(max_energy_savings_row["scenario"]))
         max_cost_delta = float(max_savings["cost_delta"])
         max_cost_delta_pct = float(max_savings["cost_delta_pct"])
         max_emis_delta = float(max_emissions_reduction["emissions_delta"])
         max_emis_delta_pct = float(max_emissions_reduction["emissions_delta_pct"])
+        max_energy_delta_gj = float(max_energy_savings_row["energy_delta"])
+        max_energy_delta_pct = float(max_energy_savings_row["energy_delta_pct"])
+        max_energy_class = "positive" if max_energy_delta_gj >= 0 else ""
+        max_energy_savings_text = f"{max_energy_delta_gj:,.2f} GJ/yr" if max_energy_delta_gj > 0 else "N/A"
+        max_energy_savings_scenario = max_energy_scenario
 
     construction_cost_columns = [
 
@@ -2361,6 +2462,9 @@ def generate_html_report(df, html_report_path, run_name="run"):
     max_chart_emis = max(b["annual_emissions_kg"], max_emissions_reduction["annual_emissions_kg"], 1.0)
     baseline_emis_w = b["annual_emissions_kg"] / max_chart_emis * 100.0
     best_emis_w = max_emissions_reduction["annual_emissions_kg"] / max_chart_emis * 100.0
+    max_chart_energy = max(b["total_site_energy_gj"], max_energy_savings_row["total_site_energy_gj"], 1.0)
+    baseline_energy_w = b["total_site_energy_gj"] / max_chart_energy * 100.0
+    best_energy_w = max_energy_savings_row["total_site_energy_gj"] / max_chart_energy * 100.0
     def _format_chart_number(v):
         try:
             val = float(v)
@@ -2389,13 +2493,14 @@ def generate_html_report(df, html_report_path, run_name="run"):
         construction_cost_values = pd.Series([float("nan")] * len(report), index=report.index)
 
     spider_table_rows = "".join(
-
-        f"<tr><td>{scenario_display_map.get(str(report.iloc[i]['scenario']), str(report.iloc[i]['scenario']))}</td><td>{num(float(report.iloc[i]['embodied_carbon_kg']))}</td><td>{money(float(construction_cost_values.iloc[i])) if pd.notna(construction_cost_values.iloc[i]) else 'N/A'}</td><td>{num(float(annual_operational_carbon.iloc[i]))}</td><td>{money(float(annual_operational_cost.iloc[i]))}</td></tr>"
+        f"<tr><td>{scenario_display_map.get(str(report.iloc[i]['scenario']), str(report.iloc[i]['scenario']))}</td>"
+        f"<td>{money(float(construction_cost_values.iloc[i])) if pd.notna(construction_cost_values.iloc[i]) else 'N/A'}</td>"
+        f"<td>{money(float(annual_operational_cost.iloc[i]))}</td>"
+        f"<td>{num_energy(float(report.iloc[i]['total_site_energy_gj'])) if pd.notna(report.iloc[i]['total_site_energy_gj']) else 'N/A'}</td></tr>"
         for i in range(len(report))
-
     )
     if not spider_table_rows:
-        spider_table_rows = "<tr><td colspan='5'>No spider chart data found in CSV.</td></tr>"
+        spider_table_rows = "<tr><td colspan='4'>No spider chart data found in CSV.</td></tr>"
 
     if "renovation_details" in df.columns:
         renovation_df = df[[scenario_col, "renovation_details"]].copy()
@@ -3137,6 +3242,11 @@ def generate_html_report(df, html_report_path, run_name="run"):
             + "</div>"
         )
 
+    fuel_color_map = {
+        "electricity": "#1f77b4",
+        "natural_gas": "#ff7f0e",
+        "other": "#9467bd",
+    }
     measure_color_map = {
         "Wall": "#1f77b4",
         "Roof": "#ff7f0e",
@@ -3166,23 +3276,30 @@ def generate_html_report(df, html_report_path, run_name="run"):
             "door_enhancement_total_cost_with_overhead_and_profit_$",
         ])
 
-        wall_carbon, _ = _pick_first_numeric(scenario_row, ["wall_insulation_embodied_carbon_kgCO2eq"])
-        roof_carbon, _ = _pick_first_numeric(scenario_row, ["roof_insulation_embodied_carbon_kgCO2eq"])
-        window_carbon, _ = _pick_first_numeric(scenario_row, ["window_enhancement_embodied_carbon_kgCO2eq"])
-        door_carbon, _ = _pick_first_numeric(scenario_row, ["door_enhancement_embodied_carbon_kgCO2eq"])
-
         cost_slices = [
             ("Wall", wall_cost, measure_color_map["Wall"]),
             ("Roof", roof_cost, measure_color_map["Roof"]),
             ("Window", window_cost, measure_color_map["Window"]),
             ("Door", door_cost, measure_color_map["Door"]),
         ]
-        carbon_slices = [
-            ("Wall", wall_carbon, measure_color_map["Wall"]),
-            ("Roof", roof_carbon, measure_color_map["Roof"]),
-            ("Window", window_carbon, measure_color_map["Window"]),
-            ("Door", door_carbon, measure_color_map["Door"]),
+
+        elec_gj = _safe_float(scenario_row.get("electricity_site_energy_gj"))
+        gas_gj = _safe_float(scenario_row.get("natural_gas_site_energy_gj"))
+        total_gj = _safe_float(scenario_row.get("total_site_energy_gj"))
+        other_gj = None
+        if total_gj is not None:
+            elec_for_calc = elec_gj if elec_gj is not None else 0.0
+            gas_for_calc = gas_gj if gas_gj is not None else 0.0
+            other_candidate = total_gj - elec_for_calc - gas_for_calc
+            if other_candidate > 0.01:
+                other_gj = other_candidate
+
+        energy_slices = [
+            ("Electricity", elec_gj, fuel_color_map["electricity"]),
+            ("Natural Gas", gas_gj, fuel_color_map["natural_gas"]),
         ]
+        if other_gj is not None:
+            energy_slices.append(("Other", other_gj, fuel_color_map["other"]))
 
         scenario_label = scenario_display_map.get(scenario_name, scenario_name)
         pie_cards.append(
@@ -3190,21 +3307,25 @@ def generate_html_report(df, html_report_path, run_name="run"):
             + f"<div class='scenario-pie-title'>{scenario_label}</div>"
             + "<div class='scenario-pie-row'>"
             + _build_measure_pie_panel("Cost breakdown by retrofit measure", cost_slices, money)
-            + _build_measure_pie_panel("Carbon breakdown by retrofit measure", carbon_slices, num, " kg CO2e")
+            + _build_measure_pie_panel(
+                "Total Site Energy Breakdown (GJ)",
+                energy_slices,
+                lambda v: f"{float(v):,.2f} GJ",
+                "",
+            )
             + "</div></div>"
         )
 
     if pie_cards:
         result_summary_pie_charts_html = (
-            "<div class='summary-box'><p>Per-scenario retrofit contribution breakdown."
-            + " Each scenario includes two pie charts: cost and embodied carbon by retrofit measure.</p></div>"
+            "<div class='summary-box'><p>Per-scenario breakdown: left chart shows retrofit construction cost contribution by measure, right chart shows total site energy by fuel type (electricity, natural gas, and other). Water is excluded from energy breakdown.</p></div>"
             + "<div class='scenario-pie-grid'>"
             + "".join(pie_cards)
             + "</div>"
         )
     else:
         result_summary_pie_charts_html = (
-            "<div class='summary-box'><p>No non-baseline scenarios available for retrofit measure breakdown pie charts.</p></div>"
+            "<div class='summary-box'><p>No non-baseline scenarios available for energy breakdown pie charts.</p></div>"
         )
 
     energy_analysis_rows = []
@@ -3265,11 +3386,13 @@ def generate_html_report(df, html_report_path, run_name="run"):
             payback_df["construction_cost"] = float("nan")
 
         payback_df["cost_payback_years"] = payback_df.apply(lambda r: _safe_payback_report(r["construction_cost"], -r["cost_delta"]), axis=1)
-        payback_df["carbon_payback_years"] = payback_df.apply(lambda r: _safe_payback_report(r["embodied_carbon_kg"], -r["emissions_delta"]), axis=1)
+        # DISABLED: Carbon calculation disabled - set carbon payback to None
+        # payback_df["carbon_payback_years"] = payback_df.apply(lambda r: _safe_payback_report(r["embodied_carbon_kg"], -r["emissions_delta"]), axis=1)
+        payback_df["carbon_payback_years"] = None
         valid_cost_paybacks = payback_df["cost_payback_years"].dropna()
         valid_carbon_paybacks = payback_df["carbon_payback_years"].dropna()
         max_cost_payback = float(valid_cost_paybacks.max()) if not valid_cost_paybacks.empty else 1.0
-        max_carbon_payback = float(valid_carbon_paybacks.max()) if not valid_carbon_paybacks.empty else 1.0
+        max_carbon_payback = 1.0  # DISABLED: Carbon calculation disabled
         if max_cost_payback <= 0:
             max_cost_payback = 1.0
 
@@ -3457,8 +3580,6 @@ def generate_html_report(df, html_report_path, run_name="run"):
     generated_time = datetime.now().strftime("%B %d, %Y")
     report_year = datetime.now().year
     html = build_report_html(
-
-        embodied_analysis_period_years=embodied_analysis_period_years,
         renovation_rows=renovation_rows,
         energy_analysis_table=energy_analysis_table,
         max_cost_class=max_cost_class,
@@ -3466,32 +3587,28 @@ def generate_html_report(df, html_report_path, run_name="run"):
         max_cost_delta=max_cost_delta,
         max_cost_delta_pct=max_cost_delta_pct,
         max_savings_scenario=max_savings_scenario,
-        max_emis_class=max_emis_class,
+        max_energy_class=max_energy_class,
         num=num,
-        max_emis_delta=max_emis_delta,
-        max_emis_delta_pct=max_emis_delta_pct,
-        max_emissions_scenario=max_emissions_scenario,
+        max_energy_delta_gj=max_energy_delta_gj,
+        max_energy_delta_pct=max_energy_delta_pct,
+        max_energy_scenario=max_energy_scenario,
+        max_energy_savings_text=max_energy_savings_text,
+        max_energy_savings_scenario=max_energy_savings_scenario,
         min_construction_cost_text=min_construction_cost_text,
         min_construction_cost_scenario=min_construction_cost_scenario,
-        min_embodied_text=min_embodied_text,
-        min_embodied_intensity_text=min_embodied_intensity_text,
-        min_embodied_scenario=min_embodied_scenario,
         lowest_cost_payback_text=lowest_cost_payback_text,
         lowest_cost_payback_scenario=lowest_cost_payback_scenario,
-        lowest_carbon_payback_text=lowest_carbon_payback_text,
-        lowest_carbon_payback_scenario=lowest_carbon_payback_scenario,
         spider_table_rows=spider_table_rows,
         baseline_cost_w=baseline_cost_w,
         b=b,
         best_cost_w=best_cost_w,
         max_savings=max_savings,
-        baseline_emis_w=baseline_emis_w,
-        best_emis_w=best_emis_w,
-        max_emissions_reduction=max_emissions_reduction,
+        baseline_energy_w=baseline_energy_w,
+        best_energy_w=best_energy_w,
+        max_energy_savings_row=max_energy_savings_row,
         cost_payback_chart_rows=cost_payback_chart_rows,
-        carbon_payback_chart_rows=carbon_payback_chart_rows,
         material_list_section_html=material_list_section_html,
-        material_comparison_section_html=material_comparison_section_html,
+        material_comparison_section_html="",
         generated_time=generated_time,
         report_year=report_year,
         run_name=run_name,
@@ -3868,7 +3985,8 @@ def _normalize_renovation_table(report_path):
 
 building_info = _derive_building_information(df_report)
 
-_patch_min_embodied_metric(out)
+# DISABLED: Carbon calculation disabled - skip carbon metric patching
+# _patch_min_embodied_metric(out)
 _patch_building_information(out, building_info)
 _patch_report_headings(out)
 _normalize_renovation_table(out)
