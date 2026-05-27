@@ -1,0 +1,34 @@
+scenario,measure,component,unit,test_015_material_cost_per_unit,test_015_material_description,test_016_material_cost_per_unit,test_016_material_description
+scenario_1,door_enhancement,door,$/m2,65.12166,wooden door,117.05752578171823,"Door, wood, architectural, flush, interior, hollow core, luan face, 3'-0"" x 6'-8"" x 1-3/8"" thick"
+scenario_1,door_enhancement,bottom_seal,$/m,33.0,automatic door bottom,173.8845144356955,"Weatherstripping, for thresholds, door sweep, flush mounted, aluminum"
+scenario_1,door_enhancement,top_side_seal,$/m,2.78,jamb weatherstrip,2.78,jamb weatherstrip
+scenario_1,wall_insulation,material,$/CF,2.640001,Fiberglass Batts,1.9885714285714282,"Blanket insulation, for walls or ceilings, kraft faced fiberglass, 3-1/2"" thick, R11, 15"" wide"
+scenario_1,roof_insulation,material,$/CF,2.640001,Blown Mineral Wool,4.58,"Mineral wool insulation, R3 per inch, poured in"
+scenario_1,window_enhancement,glass,$/CF,499.199388,provide user_num_panes,499.199388,provide user_num_panes
+scenario_1,window_enhancement,frame,$/SF,60.44,wood window frame,63.633333333333326,window frame (derived from window unit - glazing)
+scenario_1,window_enhancement,caulking,$/CY,11108.571,acrylic,832377.0547682899,"Joint sealants, caulking and sealants, bulk acrylic latex, 1/4"" x 1/2"", in place"
+scenario_1,window_enhancement,film,$/SF,2.06,safety film,38.06999999999999,"Safety film, safety film on glass, clear, 2 mil, excl. glass"
+scenario_1,window_enhancement,weatherstrip,$/LF,1.575,silicone adhesive smoke gasket,1.575,silicone adhesive smoke gasket
+,,,,,,,
+scenario_2,door_enhancement,door,$/m2,314.8444,polystyrene core steel door,314.8444,polystyrene core steel door
+scenario_2,door_enhancement,bottom_seal,$/m,15.4,brush weatherstrip,15.4,brush weatherstrip
+scenario_2,door_enhancement,top_side_seal,$/m,18.9,silicone adhesive smoke gasket,18.9,silicone adhesive smoke gasket
+scenario_2,wall_insulation,material,$/CF,12.000006,Extruded Polystyrene (XPS) Foam Board,12.000006,Extruded Polystyrene (XPS) Foam Board
+scenario_2,roof_insulation,material,$/CF,12.000006,Expanded Polystyrene (EPS) Foam Board,12.000006,Expanded Polystyrene (EPS) Foam Board
+scenario_2,window_enhancement,glass,$/CF,499.199388,provide user_num_panes,499.199388,provide user_num_panes
+scenario_2,window_enhancement,frame,$/SF,73.5,wood-aluminium window frame,73.5,wood-aluminium window frame
+scenario_2,window_enhancement,caulking,$/CY,19995.429,polyurethane,19995.429,polyurethane
+scenario_2,window_enhancement,film,$/SF,2.02,anti-graffiti film,2.02,anti-graffiti film
+scenario_2,window_enhancement,weatherstrip,$/LF,5.133332,N/A,5.133332,N/A
+,,,,,,,
+scenario_3,door_enhancement,door,$/m2,341.7114,garage door,341.7114,garage door
+scenario_3,door_enhancement,bottom_seal,$/m,33.0,automatic door bottom,33.0,automatic door bottom
+scenario_3,door_enhancement,top_side_seal,$/m,18.9,silicone adhesive smoke gasket,18.9,silicone adhesive smoke gasket
+scenario_3,wall_insulation,material,$/CF,13.920007,Polyiso Insulation Foam Board,13.920007,Polyiso Insulation Foam Board
+scenario_3,roof_insulation,material,$/CF,13.920007,Polyiso Insulation Foam Board,13.920007,Polyiso Insulation Foam Board
+scenario_3,window_enhancement,glass,$/CF,499.199388,provide user_num_panes,499.199388,provide user_num_panes
+scenario_3,window_enhancement,frame,$/SF,73.5,wood-aluminium window frame,73.5,wood-aluminium window frame
+scenario_3,window_enhancement,caulking,$/CY,19995.429,polyurethane,19995.429,polyurethane
+scenario_3,window_enhancement,film,$/SF,0.84,low-e film,0.84,low-e film
+scenario_3,window_enhancement,weatherstrip,$/LF,1.575,silicone adhesive smoke gasket,1.575,silicone adhesive smoke gasket
+,,,,,,,

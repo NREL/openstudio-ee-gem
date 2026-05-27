@@ -1,9 +1,0 @@
-Window Construction Conversion Comparison
-Scenario,scenario_3_SmallOffice_Buffalo
-
-Model,Total Site Energy (GJ),Difference (GJ),Difference (%)
-Original SimpleGlazing,385.7000,,
-Layered Windows (physical),393.6700,+7.9700,+2.0664
-
-Construction,Pane type,U (W/m²K),SHGC,VT,Gap (mm),Inner emissivity
-U 0.59 SHGC 0.39 Simple Glazing,double,0.1,0.0003,0.81,20.0,0.1
