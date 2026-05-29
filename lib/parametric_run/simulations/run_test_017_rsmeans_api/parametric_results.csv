@@ -1,0 +1,23 @@
+scenario,baseline_SmallOffice_Buffalo
+city,Buffalo
+building_type,SmallOffice
+climate_zone,ASHRAE 169-2013-5A
+building_area_m2,511.15740000000005
+renovation_details,Baseline (no envelope renovation)
+annual_electricity_cost_usd,17766.60850528496
+annual_gas_cost_usd,519.3035162647304
+annual_electricity_operating_emissions_kg_co2e,37482.77665738494
+annual_gas_operating_emissions_kg_co2e,2736.6057642365754
+total_site_energy_gj,440.31
+electricity_site_energy_gj,385.9
+natural_gas_site_energy_gj,54.41
+window_total_count,20
+window_fixed_count,20
+window_operable_count,0
+window_skylight_count,0
+window_simple_glazing_count,20
+window_upgrade_status,
+total_additional_construction_cost_usd,0.0
+total_construction_cost_usd,0.0
+lpd_fraction_linear_fluorescent,1.0
+measure_name,Operating Cost Carbon Reporting Measure
