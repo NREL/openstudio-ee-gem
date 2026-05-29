@@ -51,6 +51,7 @@ The setup script validates `openstudio`, `python-dotenv`, and `numpy` imports.
 ### Custom mode (`use_custom_costs = true`)
 
 - Uses `custom_door_cost_per_area`, `custom_bottom_seal_cost`, `custom_top_side_seal_cost`
+- Units: `custom_door_cost_per_area` in $/ft^2, `custom_bottom_seal_cost` and `custom_top_side_seal_cost` in $/lf
 - Skips API lookups
 
 ## AdditionalProperties Buckets
@@ -249,8 +250,8 @@ Use PAT to test cost sensitivity:
 
 1. Set `use_custom_costs = True`
 2. Create parameter ranges:
-  - `custom_door_cost_per_area`: 2000, 3000, 4000, 5000 ($/m²)
-   - `custom_bottom_seal_cost`: 25, 50, 75 ($/m)
+  - `custom_door_cost_per_area`: 186, 279, 372, 465 ($/ft^2)
+   - `custom_bottom_seal_cost`: 7.6, 15.2, 22.9 ($/lf)
 3. Run parametric study (12 scenarios)
 4. Export results to CSV
 5. Analyze cost vs. embodied carbon trade-offs

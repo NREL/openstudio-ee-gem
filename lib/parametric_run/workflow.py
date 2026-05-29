@@ -1315,8 +1315,8 @@ def extract_scenario_data(osm_path, scenario_name):
         "door_conductivity_W_per_mK",
         "door_enhancement_custom_labor_cost_multiplier",
         "door_enhancement_custom_door_cost_per_area",
-        "door_enhancement_custom_bottom_seal_cost_per_m",
-        "door_enhancement_custom_top_side_seal_cost_per_m",
+        "door_enhancement_custom_bottom_seal_cost_per_lf",
+        "door_enhancement_custom_top_side_seal_cost_per_lf",
     ]
     all_ap_sources = [
         model.getBuilding().additionalProperties(),
@@ -1543,8 +1543,8 @@ def generate_parametric_recap(target_path, city_climate_zones=None):
         "door_enhancement_renovated_area_m2",
         "door_enhancement_custom_labor_cost_multiplier",
         "door_enhancement_custom_door_cost_per_area",
-        "door_enhancement_custom_bottom_seal_cost_per_m",
-        "door_enhancement_custom_top_side_seal_cost_per_m",
+        "door_enhancement_custom_bottom_seal_cost_per_lf",
+        "door_enhancement_custom_top_side_seal_cost_per_lf",
         "wall_insulation_embodied_carbon_kgCO2eq",
         "roof_insulation_embodied_carbon_kgCO2eq",
         "window_enhancement_embodied_carbon_kgCO2eq",
