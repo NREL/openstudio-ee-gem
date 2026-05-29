@@ -1632,9 +1632,6 @@ class DoorEnhancement(openstudio.measure.ModelMeasure):
                     )
                     _mult_door = int(lifetime_multiplier(door_lifetime, analysis_period))
                     _mult_seal = int(lifetime_multiplier(strip_lifetime, analysis_period))
-                                        door_area_ft2 = float(total_eligible_door_area_m2) * 10.7639
-                                        bottom_seal_length_lf = float(total_sealing_bottom_length_m) * 3.28084
-                                        top_side_seal_length_lf = float(total_sealing_side_length_m) * 3.28084
                     door_cost_total = (float(custom_door_cost_per_area)
                                                                              * door_area_ft2 * _mult_door
                                        if _need_door_rate else 0.0)
