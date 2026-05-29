@@ -917,6 +917,14 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
         film_cost_per_sf = runner.getDoubleArgumentValue("film_cost_per_sf", user_arguments)
         weatherstrip_cost_per_lf = runner.getDoubleArgumentValue("weatherstrip_cost_per_lf", user_arguments)
         labor_cost_multiplier = runner.getDoubleArgumentValue("labor_cost_multiplier", user_arguments)
+        has_window_cost_component = any([
+            glass_option != "none" and user_num_panes > 0,
+            wf_option != "none",
+            caulking_option != "none",
+            film_option != "none",
+            weatherstrip_option != "none",
+            secondary_glazing_option != "none",
+        ])
 
         if use_custom_costs:
             runner.registerInfo("Custom cost mode enabled. Will use user-provided cost values instead of RSMeans API.")
@@ -926,6 +934,8 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
             runner.registerInfo(f"  Film cost: ${film_cost_per_sf}/SF")
             runner.registerInfo(f"  Weatherstrip cost: ${weatherstrip_cost_per_lf}/LF")
             runner.registerInfo(f"  Labor multiplier: {labor_cost_multiplier}")
+            if not has_window_cost_component:
+                runner.registerInfo("No window cost component is enabled (all options are 'none'); custom cost values will not be applied.")
         else:
             # Pre-flight warning: RSMeans is the active path. If the user has
             # not supplied any fallback custom rates, the measure will hard-error
@@ -1715,6 +1725,7 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
             rsmeans_caulking_cost_per_lf=rsmeans_caulking_cost_per_lf,
             rsmeans_film_cost_per_sf=rsmeans_film_cost_per_sf,
             rsmeans_weatherstrip_cost_per_lf=rsmeans_weatherstrip_cost_per_lf,
+            use_custom_costs=use_custom_costs,
         )
 
         self._update_gwp_and_construction_feature_maps(
@@ -1840,6 +1851,9 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
         
         def _m3_to_cy(value_m3: float) -> float:
             return value_m3 * 1.30795
+
+        def _m3_to_gal(value_m3: float) -> float:
+            return value_m3 * 264.172052
 
         def _m_to_ft(value_m: float) -> float:
             return value_m * 3.28084
@@ -3843,20 +3857,24 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
         def _m3_to_cy(value_m3: float) -> float:
             return value_m3 * 1.30795
 
+        def _m3_to_gal(value_m3: float) -> float:
+            return value_m3 * 264.172052
+
         def _m_to_lf(value_m: float) -> float:
             return value_m * 3.28084
 
         def _m_to_ft(value_m: float) -> float:
             return value_m * 3.28084
 
-        if glass_option != "none" and user_num_panes > 0 and total_glazing_area_m2 > 0:
-            pane_count = max(1, int(user_num_panes))
+        if glass_option != "none" and total_glazing_area_m2 > 0:
+            pane_count = max(1, int(user_num_panes or 1))
+            pane_count_label = int(user_num_panes) if float(user_num_panes or 0) > 0 else pane_count
             glass_thickness_ft = _m_to_ft(float(effective_glass_pane_thickness)) if effective_glass_pane_thickness > 0 else 0.0
             glazing_qty_sf = _m2_to_sf(total_glazing_area_m2)
             glazing_material = {
                 "name": "window glazing",
                 "description": (
-                    f"{user_num_panes}-pane glass replacement; "
+                    f"{pane_count_label}-pane glass replacement; "
                     f"single-pane thickness {effective_glass_pane_thickness*1000:.1f} mm; "
                     f"gap {effective_gap_thickness*1000:.1f} mm"
                 ),
@@ -3909,24 +3927,23 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
             materials.append(film_material)
 
         if caulking_option != "none" and total_caulking_volume_m3 > 0:
-            # RSMeans joint-sealant lines (Division 0792) are priced per LF of
-            # bead, not per CY of bead volume. Quote the lookup in LF using the
-            # caulking bead length (window perimeter where caulking is applied)
-            # so the per-LF unit cost multiplies a matching LF quantity.
-            caulking_length_lf = _m_to_lf(total_caulking_length_m) if total_caulking_length_m > 0 else 0.0
+            caulking_volume_gal = _m3_to_gal(total_caulking_volume_m3)
             caulking_material = {
                 "name": "sealant",
                 "description": f"{caulking_option} caulking",
-                "quantity": caulking_length_lf,
-                "unit": "LF",
-                "quantity_si": float(total_caulking_length_m),
-                "unit_si": "m",
-                # Preserve volume context for downstream EC/GWP calculations
-                # and per-CY metric reporting; RSMeans lookup itself uses LF.
+                "quantity": caulking_volume_gal,
+                "unit": "GAL",
+                "quantity_si": float(total_caulking_volume_m3),
+                "unit_si": "m3",
+                # Preserve CY and LF context for downstream reporting metrics.
                 "quantity_volume": _m3_to_cy(total_caulking_volume_m3),
                 "unit_volume": "CY",
                 "quantity_volume_si": total_caulking_volume_m3,
                 "unit_volume_si": "m3",
+                "quantity_length": _m_to_lf(total_caulking_length_m) if total_caulking_length_m > 0 else 0.0,
+                "unit_length": "LF",
+                "quantity_length_si": float(total_caulking_length_m),
+                "unit_length_si": "m",
                 "division_code": "0792",  # Joint Sealants (MasterFormat); avoid stray matches in 0701 concrete maintenance
             }
             if use_specific_rsmeans_line_item_ids and rsmeans_id_caulking:
@@ -4347,6 +4364,7 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
         rsmeans_caulking_cost_per_lf,
         rsmeans_film_cost_per_sf,
         rsmeans_weatherstrip_cost_per_lf,
+        use_custom_costs,
     ):
         results_features.update({
             "window_enhancement_material_cost_$": total_material_cost,
@@ -4361,11 +4379,6 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
             "window_enhancement_cost_factor_basis": cost_factor_basis,
             "window_enhancement_overhead_profit_percent": overhead_profit_percent,
             "window_enhancement_custom_labor_cost_multiplier": labor_cost_multiplier,
-            "window_custom_glass_cost_per_cf": glass_cost_per_cf,
-            "window_custom_frame_cost_per_sf": frame_cost_per_sf,
-            "window_custom_caulking_cost_per_cy": caulking_cost_per_cy,
-            "window_custom_film_cost_per_sf": film_cost_per_sf,
-            "window_custom_weatherstrip_cost_per_lf": weatherstrip_cost_per_lf,
             "window_enhancement_glass_cost_per_cf": rsmeans_glass_cost_per_cf,
             "window_enhancement_glass_cost_per_sf": rsmeans_glass_cost_per_sf,
             "window_enhancement_frame_cost_per_sf": rsmeans_frame_cost_per_sf,
@@ -4374,6 +4387,14 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
             "window_enhancement_film_cost_per_sf": rsmeans_film_cost_per_sf,
             "window_enhancement_weatherstrip_cost_per_lf": rsmeans_weatherstrip_cost_per_lf,
         })
+        if use_custom_costs:
+            factors_features.update({
+                "window_custom_glass_cost_per_cf": glass_cost_per_cf,
+                "window_custom_frame_cost_per_sf": frame_cost_per_sf,
+                "window_custom_caulking_cost_per_cy": caulking_cost_per_cy,
+                "window_custom_film_cost_per_sf": film_cost_per_sf,
+                "window_custom_weatherstrip_cost_per_lf": weatherstrip_cost_per_lf,
+            })
         mtrl_prop_features.update(rsmeans_material_features)
 
     def _update_gwp_and_construction_feature_maps(self, subsurface_dict, factors_features, basic_input_features):

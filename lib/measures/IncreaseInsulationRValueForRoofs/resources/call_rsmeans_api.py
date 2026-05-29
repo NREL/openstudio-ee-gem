@@ -43,6 +43,45 @@ DEFAULT_FEATURE_KEYS = {
 # to them when the search match is weak.
 MIN_ACCEPTABLE_MATCH_SCORE = 70.0
 
+RSMEANS_RAW_LOG_ENV = "RSMEANS_SCENARIO_RAW_LOG_PATH"
+
+
+def _append_rsmeans_raw_log(material, matched_item, catalog, match_type, search_term):
+    """Append raw RSMeans unit-cost fields for the matched line item."""
+    log_path = os.environ.get(RSMEANS_RAW_LOG_ENV)
+    if not log_path or not isinstance(matched_item, dict):
+        return
+
+    localized = (matched_item.get("localizedCosts") or {}) if isinstance(matched_item, dict) else {}
+    entry = {
+        "material_name": material.get("name"),
+        "material_description": material.get("description"),
+        "material_quantity": material.get("quantity"),
+        "material_unit": material.get("unit"),
+        "catalog": catalog,
+        "match_type": match_type,
+        "search_term_used": search_term,
+        "rsmeans_id": matched_item.get("id"),
+        "rsmeans_description": matched_item.get("description"),
+        "rsmeans_unit_of_measure": matched_item.get("unitOfMeasure"),
+        "localizedCosts": {
+            "materialCost": localized.get("materialCost"),
+            "laborCost": localized.get("laborCost"),
+            "equipmentCost": localized.get("equipmentCost"),
+            "totalCost": localized.get("totalCost"),
+            "materialOpCost": localized.get("materialOpCost"),
+            "laborOpCost": localized.get("laborOpCost"),
+            "equipmentOpCost": localized.get("equipmentOpCost"),
+            "totalOpCost": localized.get("totalOpCost"),
+        },
+    }
+    try:
+        os.makedirs(os.path.dirname(log_path), exist_ok=True)
+        with open(log_path, "a", encoding="utf-8") as f:
+            f.write(json.dumps(entry, ensure_ascii=False) + "\n")
+    except Exception:
+        pass
+
 
 def _id_matches_division(item_id, division_code) -> bool:
     """Return True if ``item_id`` (RSMeans line number) starts with
@@ -1648,6 +1687,7 @@ def search_materials_across_catalogs(
                 "costing_mode": calc.get("costing_mode", "area"),
             }
             all_results.append(material_result)
+            _append_rsmeans_raw_log(material, best_match, best_catalog, match_type, matched_term)
             total_cost += best_cost
             total_material_cost_bare += mat_cost
             total_labor_cost_bare += lab_cost
@@ -1714,6 +1754,7 @@ def search_materials_across_catalogs(
                                             "costing_mode": cost_calc.get("costing_mode", "area"),
                                         }
                                         all_results.append(material_result)
+                                        _append_rsmeans_raw_log(material, item, catalog, "fallback_id", f"fallback:{fallback_id}")
                                         total_cost += cost_calc["total_cost"]
                                         total_material_cost_bare += cost_calc["total_material_cost"]
                                         total_labor_cost_bare += cost_calc["total_labor_cost"]

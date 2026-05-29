@@ -1485,7 +1485,8 @@ class DoorEnhancement(openstudio.measure.ModelMeasure):
                     top_side_seal_length_lf = float(total_sealing_side_length_m) * 3.28084
                     # --- Step 1: Material costs (each rate × quantity × lifetime_multiplier) ---
                     # door material cost = rate ($/ft^2) × total door area (ft^2) × door_lifetime_multiplier
-                    door_cost_total = custom_door_cost_per_area * door_area_ft2 * _mult_door
+                    door_cost_total = (custom_door_cost_per_area * door_area_ft2 * _mult_door
+                                       if door_option != 'none' else 0.0)
                     # bottom seal cost = rate ($/lf) × total bottom seal length (lf) × seal_lifetime_multiplier; 0 if seal option is 'none'
                     bottom_seal_cost_total = (custom_bottom_seal_cost * bottom_seal_length_lf * _mult_seal
                                               if door_bottom_seal_option != 'none' else 0.0)
@@ -2182,9 +2183,10 @@ class DoorEnhancement(openstudio.measure.ModelMeasure):
             factors.setFeature("door_enhancement_cost_factor_basis", cost_factor_basis)
             factors.setFeature("door_enhancement_overhead_profit_percent", rsmeans_overhead_percent)
             factors.setFeature("door_enhancement_custom_labor_cost_multiplier", labor_cost_multiplier)
-            factors.setFeature("door_enhancement_custom_door_cost_per_area", custom_door_cost_per_area)
-            factors.setFeature("door_enhancement_custom_bottom_seal_cost_per_lf", custom_bottom_seal_cost)
-            factors.setFeature("door_enhancement_custom_top_side_seal_cost_per_lf", custom_top_side_seal_cost)
+            if use_custom_costs:
+                factors.setFeature("door_enhancement_custom_door_cost_per_area", custom_door_cost_per_area)
+                factors.setFeature("door_enhancement_custom_bottom_seal_cost_per_lf", custom_bottom_seal_cost)
+                factors.setFeature("door_enhancement_custom_top_side_seal_cost_per_lf", custom_top_side_seal_cost)
             factors.setFeature("door_enhancement_rsmeans_door_cost_per_area", door_rsmeans_cost_per_area_feature_value)
             factors.setFeature("door_enhancement_rsmeans_bottom_seal_cost_per_m", door_rsmeans_bottom_seal_cost_per_m_feature_value)
             factors.setFeature("door_enhancement_rsmeans_top_side_seal_cost_per_m", door_rsmeans_top_side_seal_cost_per_m_feature_value)
@@ -2233,9 +2235,10 @@ class DoorEnhancement(openstudio.measure.ModelMeasure):
             factors.setFeature("door_enhancement_cost_factor_basis", "not_calculated")
             factors.setFeature("door_enhancement_overhead_profit_percent", 0.0)
             factors.setFeature("door_enhancement_custom_labor_cost_multiplier", labor_cost_multiplier)
-            factors.setFeature("door_enhancement_custom_door_cost_per_area", custom_door_cost_per_area)
-            factors.setFeature("door_enhancement_custom_bottom_seal_cost_per_lf", custom_bottom_seal_cost)
-            factors.setFeature("door_enhancement_custom_top_side_seal_cost_per_lf", custom_top_side_seal_cost)
+            if use_custom_costs:
+                factors.setFeature("door_enhancement_custom_door_cost_per_area", custom_door_cost_per_area)
+                factors.setFeature("door_enhancement_custom_bottom_seal_cost_per_lf", custom_bottom_seal_cost)
+                factors.setFeature("door_enhancement_custom_top_side_seal_cost_per_lf", custom_top_side_seal_cost)
             factors.setFeature("door_enhancement_rsmeans_door_cost_per_area", door_rsmeans_cost_per_area_feature_value)
             factors.setFeature("door_enhancement_rsmeans_bottom_seal_cost_per_m", door_rsmeans_bottom_seal_cost_per_m_feature_value)
             factors.setFeature("door_enhancement_rsmeans_top_side_seal_cost_per_m", door_rsmeans_top_side_seal_cost_per_m_feature_value)

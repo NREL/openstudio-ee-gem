@@ -132,6 +132,45 @@ DOOR_FALLBACK_RSMEANS_IDS = {
 # safer to fall through to them when the search match is weak.
 MIN_ACCEPTABLE_MATCH_SCORE = 70.0
 
+RSMEANS_RAW_LOG_ENV = "RSMEANS_SCENARIO_RAW_LOG_PATH"
+
+
+def _append_rsmeans_raw_log(material, matched_item, catalog, match_type, search_term):
+    """Append raw RSMeans unit-cost fields for the matched line item."""
+    log_path = os.environ.get(RSMEANS_RAW_LOG_ENV)
+    if not log_path or not isinstance(matched_item, dict):
+        return
+
+    localized = (matched_item.get("localizedCosts") or {}) if isinstance(matched_item, dict) else {}
+    entry = {
+        "material_name": material.get("name"),
+        "material_description": material.get("description"),
+        "material_quantity": material.get("quantity"),
+        "material_unit": material.get("unit"),
+        "catalog": catalog,
+        "match_type": match_type,
+        "search_term_used": search_term,
+        "rsmeans_id": matched_item.get("id"),
+        "rsmeans_description": matched_item.get("description"),
+        "rsmeans_unit_of_measure": matched_item.get("unitOfMeasure"),
+        "localizedCosts": {
+            "materialCost": localized.get("materialCost"),
+            "laborCost": localized.get("laborCost"),
+            "equipmentCost": localized.get("equipmentCost"),
+            "totalCost": localized.get("totalCost"),
+            "materialOpCost": localized.get("materialOpCost"),
+            "laborOpCost": localized.get("laborOpCost"),
+            "equipmentOpCost": localized.get("equipmentOpCost"),
+            "totalOpCost": localized.get("totalOpCost"),
+        },
+    }
+    try:
+        os.makedirs(os.path.dirname(log_path), exist_ok=True)
+        with open(log_path, "a", encoding="utf-8") as f:
+            f.write(json.dumps(entry, ensure_ascii=False) + "\n")
+    except Exception:
+        pass
+
 
 def _id_matches_division(item_id: Any, division_code: Any) -> bool:
     """Return True if ``item_id`` (an RSMeans line number like '087125103700')
@@ -1411,6 +1450,7 @@ def search_materials_across_catalogs(
                             "rsmeans_unit_of_measure": line_uom,
                             "source": "rsmeans_user_id",
                         })
+                        _append_rsmeans_raw_log(material, explicit_item, catalog, "explicit_id_match", "user_rsmeans_id")
                         total_cost += total
                         total_material_cost_bare += _split["material"]
                         total_labor_cost_bare += _split["labor"]
@@ -1502,6 +1542,7 @@ def search_materials_across_catalogs(
                             "rsmeans_unit_of_measure": _line_uom,
                             "source": "rsmeans_fallback_id",
                         })
+                        _append_rsmeans_raw_log(material, _fb_item, _cat, "curated_direct_fallback_id", "curated_direct_fallback_id")
                         total_cost += _tc
                         total_material_cost_bare += _split["material"]
                         total_labor_cost_bare += _split["labor"]
@@ -1657,6 +1698,7 @@ def search_materials_across_catalogs(
             material_result["total_equipment_cost"] = _split["equipment"]
             material_result["cost_component_source"] = _split["source"]
             all_results.append(material_result)
+            _append_rsmeans_raw_log(material, best_match, best_catalog, str(best_source or "search"), matched_term)
             total_cost += best_cost
             total_material_cost_bare += _split["material"]
             total_labor_cost_bare += _split["labor"]
@@ -1746,6 +1788,7 @@ def search_materials_across_catalogs(
                     "rsmeans_unit_of_measure": line_uom,
                     "source": "rsmeans_fallback_id",
                 })
+                _append_rsmeans_raw_log(material, fallback_item, fallback_catalog, "fallback_rsmeans_id", "fallback_rsmeans_id")
                 total_cost += total
                 total_material_cost_bare += _split["material"]
                 total_labor_cost_bare += _split["labor"]

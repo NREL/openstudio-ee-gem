@@ -68,6 +68,7 @@ class IncreaseInsulationRValueForExteriorWalls(openstudio.measure.ModelMeasure):
     @staticmethod
     def insulation_material_types():
         return [
+            "none",
             "Blown Cellulose",
             "Blown Fiberglass",
             "Blown Mineral Wool",
@@ -249,6 +250,9 @@ class IncreaseInsulationRValueForExteriorWalls(openstudio.measure.ModelMeasure):
         insulation_material_lifetime = runner.getIntegerArgumentValue("insulation_material_lifetime", user_arguments)
         insulation_thermal_conductivity = runner.getDoubleArgumentValue("insulation_thermal_conductivity", user_arguments)
         insulation_material_density = runner.getDoubleArgumentValue("insulation_material_density", user_arguments)
+        if str(insulation_material_type).strip().lower() == "none":
+            runner.registerInfo("Insulation material type is 'none'; skipping wall insulation and cost calculation.")
+            return True
         use_custom_gwp = runner.getBoolArgumentValue("use_custom_gwp", user_arguments)
         custom_gwp_per_m3 = runner.getDoubleArgumentValue("custom_gwp_per_m3", user_arguments)
         use_custom_costs = runner.getBoolArgumentValue("use_custom_costs", user_arguments)
@@ -1078,7 +1082,8 @@ class IncreaseInsulationRValueForExteriorWalls(openstudio.measure.ModelMeasure):
         factors.setFeature("wall_insulation_overhead_profit_percent", overhead_profit_percent)
         factors.setFeature("wall_insulation_cost_factor_basis", cost_factor_basis)
         factors.setFeature("wall_insulation_custom_labor_cost_multiplier", labor_cost_multiplier)
-        factors.setFeature("wall_insulation_custom_cost_per_cf", custom_cost_per_cf)
+        if use_custom_costs:
+            factors.setFeature("wall_insulation_custom_cost_per_cf", custom_cost_per_cf)
         factors.setFeature("wall_insulation_material_rsmeans_cost_per_cf", rsmeans_cost_per_cf_feature_value)
         if material_gwp.get("gwp_per_kg", 0.0) > 0.0:
             factors.setFeature("wall_insulation_material_gwp_per_kg", material_gwp.get("gwp_per_kg", 0.0))

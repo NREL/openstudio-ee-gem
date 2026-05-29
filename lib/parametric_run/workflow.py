@@ -40,6 +40,8 @@ urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 import csv
 import sqlite3
 
+RSMEANS_RAW_LOG_ENV = "RSMEANS_SCENARIO_RAW_LOG_PATH"
+
 # --- ENVIRONMENT / PYTHON 3.12 + OPENSTUDIO 3.11.0 BINDINGS DETECTION ---
 # OpenStudio 3.11.0 Python bindings are built for Python 3.12, so the helpers
 # below locate (or re-launch under) a compatible interpreter and add the
@@ -717,6 +719,19 @@ def create_simulation(
     scenario_name = generate_scenario_name(scenario_dict)
     scenario_run_dir = os.path.abspath(os.path.join(base_run_dir, scenario_name))
     os.makedirs(scenario_run_dir, exist_ok=True)
+    rsmeans_raw_log_path = os.path.join(scenario_run_dir, "rsmeans_api_raw_fields.jsonl")
+    os.environ[RSMEANS_RAW_LOG_ENV] = rsmeans_raw_log_path
+    try:
+        with open(rsmeans_raw_log_path, "w", encoding="utf-8") as raw_log_file:
+            raw_log_file.write(json.dumps({
+                "event": "scenario_start",
+                "scenario": scenario_name,
+                "city": city,
+                "building_type": building_type,
+            }) + "\n")
+    except Exception as raw_log_err:
+        print(f"  Warning: failed to initialize RSMeans raw log at {rsmeans_raw_log_path}: {raw_log_err}")
+
     def log_failure(reason):
         append_scenario_failure_log(scenario_run_dir, reason)
 
@@ -849,8 +864,10 @@ def create_simulation(
             str(scenario_dict.get("caulking_option", "none")).strip().lower() != "none",
             str(scenario_dict.get("secondary_glazing_option", "none")).strip().lower() != "none",
         ])
+        wall_material_type_raw = str(scenario_dict.get("wall_insulation_material_type") or "").strip().lower()
+        roof_material_type_raw = str(scenario_dict.get("roof_insulation_material_type") or "").strip().lower()
         has_door_renovation = any([
-            scenario_dict.get("door_option"),
+            str(scenario_dict.get("door_option", "none")).strip().lower() != "none",
             scenario_dict.get("door_infiltration_reduction_percent") not in [None, "", 0, 0.0],
             str(scenario_dict.get("door_bottom_seal_option", "none")).strip().lower() != "none",
             str(scenario_dict.get("door_top_side_seal_option", "none")).strip().lower() != "none",
@@ -868,7 +885,7 @@ def create_simulation(
         #     del model
         #     return None
 
-        if scenario_dict.get("wall_r_value"):
+        if scenario_dict.get("wall_r_value") and wall_material_type_raw != "none":
             wall_material_type = scenario_dict.get("wall_insulation_material_type") or "Blown Fiberglass"
             wall_material_lifetime = float(scenario_dict.get("wall_insulation_material_lifetime") or 30)
             wall_args = {
@@ -895,7 +912,7 @@ def create_simulation(
                 log_failure("wall measure failed")
                 del model
                 return None
-        if scenario_dict.get("roof_r_value"):
+        if scenario_dict.get("roof_r_value") and roof_material_type_raw != "none":
             roof_material_type = scenario_dict.get("roof_insulation_material_type") or "Blown Fiberglass"
             roof_material_lifetime = float(scenario_dict.get("roof_insulation_material_lifetime") or 30)
             roof_args = {
@@ -1668,7 +1685,7 @@ def generate_parametric_recap(target_path, city_climate_zones=None):
 # (used by run_all_tests.py to drive multiple sequential runs without editing this file).
 # RUN_NAME is purely a folder label under simulations/ -- it has no effect on
 # the model itself. Defaults to "run_test_009" for this branch's ad-hoc standalone runs.
-RUN_NAME = "run_test_018_rsmeans_api"
+RUN_NAME = "run_test_017_api"
 def detect_openstudio_cli_path():
     """Find the OpenStudio CLI executable on this machine.
 
@@ -1869,6 +1886,184 @@ def scenario_output_exists(base_run_dir, scenario_dict):
     scenario_name = generate_scenario_name(scenario_dict)
     sql_path = os.path.join(base_run_dir, scenario_name, "run", "eplusout.sql")
     return os.path.exists(sql_path)
+
+
+def export_scenario_user_arguments_csv(base_run_dir, scenarios, ec3_api_token=None):
+    """Export scenario user arguments for downstream report grouping logic."""
+    del ec3_api_token  # Reserved for compatibility with older call sites.
+
+    def _is_none_option(value):
+        return str(value or "none").strip().lower() == "none"
+
+    out_path = Path(base_run_dir) / "scenario_user_arguments.csv"
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+
+    rows = []
+
+    for scenario in scenarios:
+        scenario_name = generate_scenario_name(scenario)
+
+        wall_material_type = scenario.get("wall_insulation_material_type")
+        roof_material_type = scenario.get("roof_insulation_material_type")
+        window_infiltration_reduction = scenario.get(
+            "window_enhancement_infiltration_reduction_percent",
+            scenario.get("window_infiltration_reduction_percent"),
+        )
+
+        wall_requested = bool(scenario.get("wall_r_value")) and (not _is_none_option(wall_material_type))
+        roof_requested = bool(scenario.get("roof_r_value")) and (not _is_none_option(roof_material_type))
+        window_requested = any([
+            scenario.get("window_num_panes"),
+            window_infiltration_reduction not in [None, "", 0, 0.0],
+            not _is_none_option(scenario.get("weatherstrip_option")),
+            not _is_none_option(scenario.get("wf_option")),
+            not _is_none_option(scenario.get("film_option")),
+            not _is_none_option(scenario.get("caulking_option")),
+            not _is_none_option(scenario.get("secondary_glazing_option")),
+        ])
+        door_requested = any([
+            not _is_none_option(scenario.get("door_option")),
+            scenario.get("door_infiltration_reduction_percent") not in [None, "", 0, 0.0],
+            not _is_none_option(scenario.get("door_bottom_seal_option")),
+            not _is_none_option(scenario.get("door_top_side_seal_option")),
+        ])
+
+        rows.extend([
+            {
+                "scenario": scenario_name,
+                "measure": "wall",
+                "argument": "__status__",
+                "value": "applied" if wall_requested else "not_applied",
+            },
+            {
+                "scenario": scenario_name,
+                "measure": "wall",
+                "argument": "r_value",
+                "value": scenario.get("wall_r_value", ""),
+            },
+            {
+                "scenario": scenario_name,
+                "measure": "wall",
+                "argument": "insulation_material_type",
+                "value": scenario.get("wall_insulation_material_type", ""),
+            },
+            {
+                "scenario": scenario_name,
+                "measure": "roof",
+                "argument": "__status__",
+                "value": "applied" if roof_requested else "not_applied",
+            },
+            {
+                "scenario": scenario_name,
+                "measure": "roof",
+                "argument": "r_value",
+                "value": scenario.get("roof_r_value", ""),
+            },
+            {
+                "scenario": scenario_name,
+                "measure": "roof",
+                "argument": "insulation_material_type",
+                "value": scenario.get("roof_insulation_material_type", ""),
+            },
+            {
+                "scenario": scenario_name,
+                "measure": "window",
+                "argument": "__status__",
+                "value": "applied" if window_requested else "not_applied",
+            },
+            {
+                "scenario": scenario_name,
+                "measure": "window",
+                "argument": "user_num_panes",
+                "value": scenario.get("window_num_panes", ""),
+            },
+            {
+                "scenario": scenario_name,
+                "measure": "window",
+                "argument": "u_value",
+                "value": scenario.get("window_u_value", ""),
+            },
+            {
+                "scenario": scenario_name,
+                "measure": "window",
+                "argument": "weatherstrip_option",
+                "value": scenario.get("weatherstrip_option", ""),
+            },
+            {
+                "scenario": scenario_name,
+                "measure": "window",
+                "argument": "u_factor_modification_percentage",
+                "value": scenario.get("u_factor_modification_percentage", ""),
+            },
+            {
+                "scenario": scenario_name,
+                "measure": "window",
+                "argument": "shgc_modification_percentage",
+                "value": scenario.get("shgc_modification_percentage", ""),
+            },
+            {
+                "scenario": scenario_name,
+                "measure": "window",
+                "argument": "visible_transmittance_modification_percentage",
+                "value": scenario.get("visible_transmittance_modification_percentage", ""),
+            },
+            {
+                "scenario": scenario_name,
+                "measure": "window",
+                "argument": "film_option",
+                "value": scenario.get("film_option", ""),
+            },
+            {
+                "scenario": scenario_name,
+                "measure": "window",
+                "argument": "wf_option",
+                "value": scenario.get("wf_option", ""),
+            },
+            {
+                "scenario": scenario_name,
+                "measure": "window",
+                "argument": "caulking_option",
+                "value": scenario.get("caulking_option", ""),
+            },
+            {
+                "scenario": scenario_name,
+                "measure": "window",
+                "argument": "secondary_glazing_option",
+                "value": scenario.get("secondary_glazing_option", ""),
+            },
+            {
+                "scenario": scenario_name,
+                "measure": "door",
+                "argument": "__status__",
+                "value": "applied" if door_requested else "not_applied",
+            },
+            {
+                "scenario": scenario_name,
+                "measure": "door",
+                "argument": "door_option",
+                "value": scenario.get("door_option", ""),
+            },
+            {
+                "scenario": scenario_name,
+                "measure": "door",
+                "argument": "door_bottom_seal_option",
+                "value": scenario.get("door_bottom_seal_option", ""),
+            },
+            {
+                "scenario": scenario_name,
+                "measure": "door",
+                "argument": "door_top_side_seal_option",
+                "value": scenario.get("door_top_side_seal_option", ""),
+            },
+        ])
+
+    with out_path.open("w", encoding="utf-8", newline="") as f:
+        writer = csv.DictWriter(f, fieldnames=["scenario", "measure", "argument", "value"])
+        writer.writeheader()
+        writer.writerows(rows)
+
+    print(f"Exported scenario arguments CSV: {out_path}")
+    return out_path
 
 # --- MAIN - RUN PARAMETRIC STUDY ---
 # Pipeline: validate CLI -> generate scenarios -> run sims -> recap CSV
