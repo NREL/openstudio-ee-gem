@@ -39,6 +39,7 @@ import argparse
 import json
 import os
 import re
+import sys
 from pathlib import Path
 from typing import Optional, Dict, Any, List
 
@@ -47,6 +48,13 @@ import urllib3
 from dotenv import load_dotenv
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+
+
+_AUXILIARY_UTILS_DIR = Path(__file__).resolve().parents[3] / "parametric_run" / "auxiliary"
+if str(_AUXILIARY_UTILS_DIR) not in sys.path:
+    sys.path.insert(0, str(_AUXILIARY_UTILS_DIR))
+
+from rsmeans_logging import append_measure_raw_record, append_measure_summary_record
 
 
 # Keys used when extracting material data from an OSM model's AdditionalProperties
@@ -70,43 +78,14 @@ DEFAULT_FEATURE_KEYS = {
 MIN_ACCEPTABLE_MATCH_SCORE = 70.0
 
 RSMEANS_RAW_LOG_ENV = "RSMEANS_SCENARIO_RAW_LOG_PATH"
+MEASURE_LOG_SLUG = "wall_insulation"
 
 
 def _append_rsmeans_raw_log(material, matched_item, catalog, match_type, search_term):
     """Append raw RSMeans unit-cost fields for the matched line item."""
-    log_path = os.environ.get(RSMEANS_RAW_LOG_ENV)
-    if not log_path or not isinstance(matched_item, dict):
+    if not isinstance(matched_item, dict):
         return
-
-    localized = (matched_item.get("localizedCosts") or {}) if isinstance(matched_item, dict) else {}
-    entry = {
-        "material_name": material.get("name"),
-        "material_description": material.get("description"),
-        "material_quantity": material.get("quantity"),
-        "material_unit": material.get("unit"),
-        "catalog": catalog,
-        "match_type": match_type,
-        "search_term_used": search_term,
-        "rsmeans_id": matched_item.get("id"),
-        "rsmeans_description": matched_item.get("description"),
-        "rsmeans_unit_of_measure": matched_item.get("unitOfMeasure"),
-        "localizedCosts": {
-            "materialCost": localized.get("materialCost"),
-            "laborCost": localized.get("laborCost"),
-            "equipmentCost": localized.get("equipmentCost"),
-            "totalCost": localized.get("totalCost"),
-            "materialOpCost": localized.get("materialOpCost"),
-            "laborOpCost": localized.get("laborOpCost"),
-            "equipmentOpCost": localized.get("equipmentOpCost"),
-            "totalOpCost": localized.get("totalOpCost"),
-        },
-    }
-    try:
-        os.makedirs(os.path.dirname(log_path), exist_ok=True)
-        with open(log_path, "a", encoding="utf-8") as f:
-            f.write(json.dumps(entry, ensure_ascii=False) + "\n")
-    except Exception:
-        pass
+    append_measure_raw_record(MEASURE_LOG_SLUG, material, matched_item, catalog, match_type, search_term)
 
 
 def _id_matches_division(item_id, division_code) -> bool:
@@ -1900,6 +1879,10 @@ def run_rsmeans_cost_lookup(
     client_secret = os.getenv("client_secret")
 
     if not client_id or not client_secret:
+        append_measure_summary_record(MEASURE_LOG_SLUG, {
+            "status": "auth_error",
+            "message": "RSMeans API credentials not found in environment",
+        })
         return {
             "status": "auth_error",
             "message": "RSMeans API credentials not found in environment",
@@ -1907,6 +1890,10 @@ def run_rsmeans_cost_lookup(
 
     client = RSMeansAPIClient(client_id, client_secret, use_sandbox=use_sandbox)
     if not client.authenticate():
+        append_measure_summary_record(MEASURE_LOG_SLUG, {
+            "status": "auth_error",
+            "message": "RSMeans authentication failed",
+        })
         return {
             "status": "auth_error",
             "message": "RSMeans authentication failed",
@@ -1954,6 +1941,12 @@ def run_rsmeans_cost_lookup(
         "measurement_system": measurement_system,
         "use_sandbox": use_sandbox,
     }
+
+    append_measure_summary_record(MEASURE_LOG_SLUG, {
+        "status": "ok",
+        "summary": summary,
+        "results": results,
+    })
 
     return {
         "status": "ok",

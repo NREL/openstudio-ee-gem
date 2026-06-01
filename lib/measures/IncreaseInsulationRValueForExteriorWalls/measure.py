@@ -970,7 +970,7 @@ class IncreaseInsulationRValueForExteriorWalls(openstudio.measure.ModelMeasure):
                             )
                         else:
                             error_msg = rsmeans_lookup.get("message", "Unknown error") if rsmeans_lookup else "No response"
-                            runner.registerError(
+                            runner.registerWarning(
                                 f"RSMeans lookup failed: {error_msg}\n"
                                 f"The RSMeans API could not find a cost for this insulation material.\n"
                                 f"SOLUTION: Retry the measure with custom cost input:\n"
@@ -979,19 +979,49 @@ class IncreaseInsulationRValueForExteriorWalls(openstudio.measure.ModelMeasure):
                                 f"  (For Pure Wool Batts, consult RS Means or quotes from vendors for typical $/CF rates)"
                             )
                     except Exception as e:
-                        runner.registerError(
+                        runner.registerWarning(
                             f"RSMeans lookup failed: {e}\n"
                             f"SOLUTION: Retry the measure with custom cost input:\n"
                             f"  1. Set 'Use Custom Cost Inputs (skip RSMeans)' = true\n"
                             f"  2. Enter 'Custom Insulation Cost ($/CF)' with your estimated cost"
                         )
                 else:
-                    runner.registerError(
+                    runner.registerWarning(
                         "RSMeans helper not found at resources/call_rsmeans_api.py\n"
                         "SOLUTION: Retry the measure with custom cost input:\n"
                         f"  1. Set 'Use Custom Cost Inputs (skip RSMeans)' = true\n"
                         f"  2. Enter 'Custom Insulation Cost ($/CF)' with your estimated cost"
                     )
+
+            if (not use_custom_costs) and cost_source != "rsmeans_api":
+                total_added_volume_cf = float(rsmeans_materials[0].get("quantity_volume", 0.0)) if rsmeans_materials else 0.0
+                if float(custom_cost_per_cf) > 0.0 and total_added_volume_cf > 0.0:
+                    _lc_mult = int(lifetime_multiplier(insulation_material_lifetime, analysis_period))
+                    total_material_cost = custom_cost_per_cf * total_added_volume_cf * _lc_mult
+                    total_labor_cost = (
+                        total_material_cost * (labor_cost_multiplier - 1.0)
+                        if labor_cost_multiplier and labor_cost_multiplier > 1.0 else 0.0
+                    )
+                    total_equipment_cost = 0.0
+                    total_overhead_profit_cost = (total_material_cost + total_labor_cost) * (overhead_profit_percent / 100.0)
+                    cost_source = "custom_input_fallback"
+                    cost_factor_basis = "custom_cost_per_volume"
+                    runner.registerInfo(
+                        "Custom cost fallback summary (cost_source=custom_input_fallback): "
+                        f"material_cost=${total_material_cost:,.2f} (lifetime_multiplier={_lc_mult}), "
+                        f"labor_cost=${total_labor_cost:,.2f}, "
+                        f"overhead_profit_cost=${total_overhead_profit_cost:,.2f} "
+                        f"(volume={total_added_volume_cf:.2f} CF × rate ${custom_cost_per_cf}/CF, "
+                        f"labor_multiplier={labor_cost_multiplier:.2f}, overhead_profit_percent={overhead_profit_percent:.1f}%)"
+                    )
+                else:
+                    runner.registerError(
+                        "RSMeans lookup failed/returned no costs AND no custom fallback cost was provided.\n"
+                        "SOLUTION: Retry the measure with custom cost input:\n"
+                        "  1. Set 'Use Custom Cost Inputs (skip RSMeans)' = true, or keep RSMeans mode with a fallback rate\n"
+                        "  2. Enter a non-zero 'Custom Insulation Cost ($/CF)'"
+                    )
+                    return False
 
         # ===================== AdditionalProperties write-out (centralized) =====================
         # Per-construction properties for reporting compatibility
@@ -1076,15 +1106,17 @@ class IncreaseInsulationRValueForExteriorWalls(openstudio.measure.ModelMeasure):
         results.setFeature("wall_insulation_equipment_cost_$", total_equipment_cost)
         results.setFeature("wall_insulation_overhead_profit_cost_$", total_overhead_profit_cost)
         results.setFeature("wall_insulation_total_cost_with_overhead_and_profit_$", total_material_cost + total_labor_cost + total_equipment_cost + total_overhead_profit_cost)
+        results.setFeature("wall_insulation_cost_factor_basis", cost_factor_basis)
         
         # Facility bucket: emission/cost factors
         factors.setFeature("wall_insulation_cost_source", cost_source)
         factors.setFeature("wall_insulation_overhead_profit_percent", overhead_profit_percent)
         factors.setFeature("wall_insulation_cost_factor_basis", cost_factor_basis)
-        factors.setFeature("wall_insulation_custom_labor_cost_multiplier", labor_cost_multiplier)
-        if use_custom_costs:
+        if cost_source in ("custom_input", "custom_input_fallback"):
+            factors.setFeature("wall_insulation_custom_labor_cost_multiplier", labor_cost_multiplier)
             factors.setFeature("wall_insulation_custom_cost_per_cf", custom_cost_per_cf)
-        factors.setFeature("wall_insulation_material_rsmeans_cost_per_cf", rsmeans_cost_per_cf_feature_value)
+        if cost_source == "rsmeans_api":
+            factors.setFeature("wall_insulation_api_material_cost_per_cf", rsmeans_cost_per_cf_feature_value)
         if material_gwp.get("gwp_per_kg", 0.0) > 0.0:
             factors.setFeature("wall_insulation_material_gwp_per_kg", material_gwp.get("gwp_per_kg", 0.0))
         if material_gwp.get("gwp_per_m2", 0.0) > 0.0:

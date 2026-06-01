@@ -259,7 +259,7 @@ def generate_scenario_name(scenario_dict):
                 parts.append(roof_part)
             if scenario_dict.get("window_num_panes"):
                 parts.append(f"window_num_panes{int(float(scenario_dict['window_num_panes']))}")
-            window_infil = scenario_dict.get("window_enhancement_infiltration_reduction_percent", scenario_dict.get("window_infiltration_reduction_percent"))
+            window_infil = scenario_dict.get("window_infiltration_reduction_percent")
             if window_infil not in [None, "", 0, 0.0]:
                 parts.append(f"window_infil{float(window_infil):g}")
             for key, tag in [
@@ -679,6 +679,83 @@ def apply_window_frame_and_divider_to_osm(osm_path, frame_width=0.05):
         print(f"    apply_window_frame_and_divider_to_osm error: {e}")
         return False
 
+
+def _scenario_uses_rsmeans_api_pathway(scenario_dict):
+    """Return True when this scenario is expected to call RSMeans API."""
+    if scenario_dict.get("is_baseline", False):
+        return False
+
+    if not bool(scenario_dict.get("calculate_costs", True)):
+        return False
+
+    if bool(scenario_dict.get("use_custom_costs", False)):
+        return False
+
+    window_infiltration_reduction = scenario_dict.get("window_infiltration_reduction_percent")
+
+    has_wall_renovation = bool(scenario_dict.get("wall_r_value")) and str(
+        scenario_dict.get("wall_insulation_material_type") or ""
+    ).strip().lower() != "none"
+
+    has_roof_renovation = bool(scenario_dict.get("roof_r_value")) and str(
+        scenario_dict.get("roof_insulation_material_type") or ""
+    ).strip().lower() != "none"
+
+    has_window_renovation = any([
+        scenario_dict.get("window_num_panes"),
+        window_infiltration_reduction not in [None, "", 0, 0.0],
+        str(scenario_dict.get("weatherstrip_option", "none")).strip().lower() != "none",
+        str(scenario_dict.get("wf_option", "none")).strip().lower() != "none",
+        str(scenario_dict.get("film_option", "none")).strip().lower() != "none",
+        str(scenario_dict.get("caulking_option", "none")).strip().lower() != "none",
+        str(scenario_dict.get("secondary_glazing_option", "none")).strip().lower() != "none",
+    ])
+
+    has_door_renovation = any([
+        str(scenario_dict.get("door_option", "none")).strip().lower() != "none",
+        scenario_dict.get("door_infiltration_reduction_percent") not in [None, "", 0, 0.0],
+        str(scenario_dict.get("door_bottom_seal_option", "none")).strip().lower() != "none",
+        str(scenario_dict.get("door_top_side_seal_option", "none")).strip().lower() != "none",
+    ])
+
+    return any([
+        has_wall_renovation,
+        has_roof_renovation,
+        has_window_renovation,
+        has_door_renovation,
+    ])
+
+
+def _load_repo_dotenv_if_present():
+    """Load simple key=value pairs from repo-root .env into environment."""
+    dotenv_path = Path(__file__).resolve().parents[2] / ".env"
+    if not dotenv_path.exists():
+        return
+    try:
+        for raw_line in dotenv_path.read_text(encoding="utf-8").splitlines():
+            line = raw_line.strip()
+            if not line or line.startswith("#") or "=" not in line:
+                continue
+            key, value = line.split("=", 1)
+            key = key.strip()
+            value = value.strip().strip('"').strip("'")
+            if key:
+                os.environ.setdefault(key, value)
+    except Exception:
+        return
+
+
+def _has_rsmeans_api_credentials():
+    client_id = str(os.environ.get("client_id") or "").strip()
+    client_secret = str(os.environ.get("client_secret") or "").strip()
+    if client_id and client_secret:
+        return True
+
+    _load_repo_dotenv_if_present()
+    client_id = str(os.environ.get("client_id") or "").strip()
+    client_secret = str(os.environ.get("client_secret") or "").strip()
+    return bool(client_id and client_secret)
+
 # --- CORE: SINGLE SCENARIO CREATION/RUN ---
 def create_simulation(
     city,
@@ -719,18 +796,32 @@ def create_simulation(
     scenario_name = generate_scenario_name(scenario_dict)
     scenario_run_dir = os.path.abspath(os.path.join(base_run_dir, scenario_name))
     os.makedirs(scenario_run_dir, exist_ok=True)
-    rsmeans_raw_log_path = os.path.join(scenario_run_dir, "rsmeans_api_raw_fields.jsonl")
-    os.environ[RSMEANS_RAW_LOG_ENV] = rsmeans_raw_log_path
-    try:
-        with open(rsmeans_raw_log_path, "w", encoding="utf-8") as raw_log_file:
-            raw_log_file.write(json.dumps({
-                "event": "scenario_start",
-                "scenario": scenario_name,
-                "city": city,
-                "building_type": building_type,
-            }) + "\n")
-    except Exception as raw_log_err:
-        print(f"  Warning: failed to initialize RSMeans raw log at {rsmeans_raw_log_path}: {raw_log_err}")
+    use_rsmeans_api_pathway = _scenario_uses_rsmeans_api_pathway(scenario_dict)
+    if use_rsmeans_api_pathway and not _has_rsmeans_api_credentials():
+        reason = (
+            "RSMeans API credentials missing: scenario requires RSMeans pathway "
+            "(use_custom_costs=false) but client_id/client_secret are not set "
+            "in environment or repo .env"
+        )
+        append_scenario_failure_log(scenario_run_dir, reason)
+        print(f"  {scenario_name}: {reason}")
+        return None
+
+    if use_rsmeans_api_pathway:
+        rsmeans_raw_log_path = os.path.join(scenario_run_dir, "rsmeans_api_raw_fields.jsonl")
+        os.environ[RSMEANS_RAW_LOG_ENV] = rsmeans_raw_log_path
+        try:
+            with open(rsmeans_raw_log_path, "w", encoding="utf-8") as raw_log_file:
+                raw_log_file.write(json.dumps({
+                    "event": "scenario_start",
+                    "scenario": scenario_name,
+                    "city": city,
+                    "building_type": building_type,
+                }) + "\n")
+        except Exception as raw_log_err:
+            print(f"  Warning: failed to initialize RSMeans raw log at {rsmeans_raw_log_path}: {raw_log_err}")
+    else:
+        os.environ.pop(RSMEANS_RAW_LOG_ENV, None)
 
     def log_failure(reason):
         append_scenario_failure_log(scenario_run_dir, reason)
@@ -851,10 +942,7 @@ def create_simulation(
         window_args = None
         door_args = None
         window_upgrade_status = None
-        window_infiltration_reduction = scenario_dict.get(
-            "window_enhancement_infiltration_reduction_percent",
-            scenario_dict.get("window_infiltration_reduction_percent"),
-        )
+        window_infiltration_reduction = scenario_dict.get("window_infiltration_reduction_percent")
         has_window_renovation = any([
             scenario_dict.get("window_num_panes"),
             window_infiltration_reduction not in [None, "", 0, 0.0],
@@ -890,7 +978,7 @@ def create_simulation(
             wall_material_lifetime = float(scenario_dict.get("wall_insulation_material_lifetime") or 30)
             wall_args = {
                 "r_value": float(scenario_dict["wall_r_value"]),
-                "analysis_period": 30,
+                "analysis_period": float(scenario_dict.get("analysis_period") or 30),
                 "gwp_statistic": "median",
                 # Explicitly skip EC3 lookups for stable cost-only runs.
                 "use_custom_gwp": True,
@@ -917,7 +1005,7 @@ def create_simulation(
             roof_material_lifetime = float(scenario_dict.get("roof_insulation_material_lifetime") or 30)
             roof_args = {
                 "r_value": float(scenario_dict["roof_r_value"]),
-                "analysis_period": 30,
+                "analysis_period": float(scenario_dict.get("analysis_period") or 30),
                 "gwp_statistic": "median",
                 # Explicitly skip EC3 lookups for stable cost-only runs.
                 "use_custom_gwp": True,
@@ -1102,7 +1190,7 @@ def generate_scenarios(
             "roof_insulation_material_type": None,
             "roof_insulation_material_lifetime": None,
             "scenario_index": None,
-            "window_enhancement_infiltration_reduction_percent": None,
+            "window_infiltration_reduction_percent": None,
             "door_infiltration_reduction_percent": None,
             "weatherstrip_option": None,
             "wf_option": None,
@@ -1263,8 +1351,8 @@ def extract_scenario_data(osm_path, scenario_name):
     # ec_keys = [
     #     "wall_insulation_embodied_carbon_kgCO2eq",
     #     "roof_insulation_embodied_carbon_kgCO2eq",
-    #     "window_enhancement_embodied_carbon_kgCO2eq",
-    #     "door_enhancement_embodied_carbon_kgCO2eq",
+    #     "window_embodied_carbon_kgCO2eq",
+    #     "door_embodied_carbon_kgCO2eq",
     # ]
     # for key in ec_keys:
     #     if key in sim_props.featureNames():
@@ -1295,8 +1383,8 @@ def extract_scenario_data(osm_path, scenario_name):
     #     total_embodied = (
     #         float(results.get("wall_insulation_embodied_carbon_kgCO2eq", 0.0) or 0.0)
     #         + float(results.get("roof_insulation_embodied_carbon_kgCO2eq", 0.0) or 0.0)
-    #         + float(results.get("window_enhancement_embodied_carbon_kgCO2eq", 0.0) or 0.0)
-    #         + float(results.get("door_enhancement_embodied_carbon_kgCO2eq", 0.0) or 0.0)
+    #         + float(results.get("window_embodied_carbon_kgCO2eq", 0.0) or 0.0)
+    #         + float(results.get("door_embodied_carbon_kgCO2eq", 0.0) or 0.0)
     #     )
     #     results["total_additional_embodied_carbon_kg"] = total_embodied
 
@@ -1340,14 +1428,16 @@ def extract_scenario_data(osm_path, scenario_name):
         "roof_insulation_equipment_cost_$": "roof_insulation_equipment_cost_usd",
         "roof_insulation_overhead_profit_cost_$": "roof_insulation_overhead_profit_cost_usd",
         "roof_insulation_total_cost_with_overhead_and_profit_$": "roof_insulation_total_cost_with_overhead_and_profit_usd",
-        "window_enhancement_material_cost_$": "window_enhancement_material_cost_usd",
-        "window_enhancement_labor_cost_$": "window_enhancement_labor_cost_usd",
-        "window_enhancement_overhead_profit_cost_$": "window_enhancement_overhead_profit_cost_usd",
-        "window_enhancement_total_cost_with_overhead_and_profit_$": "window_enhancement_total_cost_with_overhead_and_profit_usd",
-        "door_enhancement_material_cost_$": "door_enhancement_material_cost_usd",
-        "door_enhancement_labor_cost_$": "door_enhancement_labor_cost_usd",
-        "door_enhancement_overhead_profit_cost_$": "door_enhancement_overhead_profit_cost_usd",
-        "door_enhancement_total_cost_with_overhead_and_profit_$": "door_enhancement_total_cost_with_overhead_and_profit_usd",
+        "window_material_cost_$": "window_material_cost_usd",
+        "window_labor_cost_$": "window_labor_cost_usd",
+        "window_equipment_cost_$": "window_equipment_cost_usd",
+        "window_overhead_profit_cost_$": "window_overhead_profit_cost_usd",
+        "window_total_cost_with_overhead_and_profit_$": "window_total_cost_with_overhead_and_profit_usd",
+        "door_material_cost_$": "door_material_cost_usd",
+        "door_labor_cost_$": "door_labor_cost_usd",
+        "door_equipment_cost_$": "door_equipment_cost_usd",
+        "door_overhead_profit_cost_$": "door_overhead_profit_cost_usd",
+        "door_total_cost_with_overhead_and_profit_$": "door_total_cost_with_overhead_and_profit_usd",
     }
     for src_props in [sim_props, facility_props]:
         for raw_key, norm_key in construction_cost_key_map.items():
@@ -1375,7 +1465,7 @@ def extract_scenario_data(osm_path, scenario_name):
         "window_caulking_lifetime_years",
         "window_film_lifetime_years",
         "window_weatherstrip_lifetime_years",
-        "window_enhancement_custom_labor_cost_multiplier",
+        "window_custom_labor_cost_multiplier",
         "window_custom_glass_cost_per_cf",
         "window_custom_frame_cost_per_sf",
         "window_custom_caulking_cost_per_cy",
@@ -1385,10 +1475,10 @@ def extract_scenario_data(osm_path, scenario_name):
         "door_lifetime_years",
         "door_density_kg_per_m3",
         "door_conductivity_W_per_mK",
-        "door_enhancement_custom_labor_cost_multiplier",
-        "door_enhancement_custom_door_cost_per_area",
-        "door_enhancement_custom_bottom_seal_cost_per_lf",
-        "door_enhancement_custom_top_side_seal_cost_per_lf",
+        "door_custom_labor_cost_multiplier",
+        "door_custom_door_cost_per_area",
+        "door_custom_bottom_seal_cost_per_lf",
+        "door_custom_top_side_seal_cost_per_lf",
     ]
     all_ap_sources = [
         model.getBuilding().additionalProperties(),
@@ -1442,16 +1532,22 @@ def extract_scenario_data(osm_path, scenario_name):
             + float(results.get("roof_insulation_overhead_profit_cost_usd", 0.0) or 0.0)
         )
 
-    window_total = (
-        float(results.get("window_enhancement_material_cost_usd", 0.0) or 0.0)
-        + float(results.get("window_enhancement_labor_cost_usd", 0.0) or 0.0)
-        + float(results.get("window_enhancement_overhead_profit_cost_usd", 0.0) or 0.0)
-    )
-    door_total = (
-        float(results.get("door_enhancement_material_cost_usd", 0.0) or 0.0)
-        + float(results.get("door_enhancement_labor_cost_usd", 0.0) or 0.0)
-        + float(results.get("door_enhancement_overhead_profit_cost_usd", 0.0) or 0.0)
-    )
+    window_total = float(results.get("window_total_cost_with_overhead_and_profit_usd", 0.0) or 0.0)
+    if window_total <= 0.0:
+        window_total = (
+            float(results.get("window_material_cost_usd", 0.0) or 0.0)
+            + float(results.get("window_labor_cost_usd", 0.0) or 0.0)
+            + float(results.get("window_equipment_cost_usd", 0.0) or 0.0)
+            + float(results.get("window_overhead_profit_cost_usd", 0.0) or 0.0)
+        )
+    door_total = float(results.get("door_total_cost_with_overhead_and_profit_usd", 0.0) or 0.0)
+    if door_total <= 0.0:
+        door_total = (
+            float(results.get("door_material_cost_usd", 0.0) or 0.0)
+            + float(results.get("door_labor_cost_usd", 0.0) or 0.0)
+            + float(results.get("door_equipment_cost_usd", 0.0) or 0.0)
+            + float(results.get("door_overhead_profit_cost_usd", 0.0) or 0.0)
+        )
     results["total_additional_construction_cost_usd"] = wall_total + roof_total + window_total + door_total
     results["total_construction_cost_usd"] = results["total_additional_construction_cost_usd"]
     # Total site energy (GJ): prefer Site AdditionalProperties; fallback to SQL tabular data
@@ -1489,26 +1585,26 @@ def extract_scenario_data(osm_path, scenario_name):
         "roof_insulation_added_volume_m3",
         "wall_insulation_material_thermal_conductivity_W_per_mK",
         "wall_insulation_material_density_kg_per_m3",
-        "window_enhancement_retrofit_materials_json",
+        "window_retrofit_materials_json",
         "window_total_count",
         "window_fixed_count",
         "window_operable_count",
         "window_skylight_count",
         "window_simple_glazing_count",
         "window_upgrade_status",
-        "window_enhancement_infiltration_reduction_percent",
+        "window_infiltration_reduction_percent",
         "window_glass_pane_thickness_m",
         "window_glass_gap_thickness_m",
-        "window_enhancement_renovated_area_m2",
-        "window_enhancement_renovated_glazing_area_m2",
-        "window_enhancement_renovated_frame_area_m2",
-        "window_enhancement_renovated_perimeter_m",
-        "window_enhancement_renovated_caulking_volume_m3",
-        "window_enhancement_renovated_weatherstrip_length_m",
+        "window_renovated_area_m2",
+        "window_renovated_glazing_area_m2",
+        "window_renovated_frame_area_m2",
+        "window_renovated_perimeter_m",
+        "window_renovated_caulking_volume_m3",
+        "window_renovated_weatherstrip_length_m",
         "window_weatherstrip_length_per_unit",
         "door_sealing_bottom_length_m",
         "door_sealing_side_length_m",
-        "door_enhancement_renovated_area_m2",
+        "door_renovated_area_m2",
     ]
     for key in reno_keys:
         if key in site_props.featureNames():
@@ -1589,29 +1685,29 @@ def generate_parametric_recap(target_path, city_climate_zones=None):
         "roof_insulation_material_thermal_conductivity_W_per_mK",
         "roof_insulation_material_density_kg_per_m3",
         "roof_insulation_material_lifetime_years",
-        "window_enhancement_retrofit_materials_json",
+        "window_retrofit_materials_json",
         "window_total_count",
         "window_fixed_count",
         "window_operable_count",
         "window_skylight_count",
         "window_simple_glazing_count",
         "window_upgrade_status",
-        "window_enhancement_infiltration_reduction_percent",
+        "window_infiltration_reduction_percent",
         "window_glass_pane_thickness_m",
         "window_glass_gap_thickness_m",
-        "window_enhancement_renovated_area_m2",
-        "window_enhancement_renovated_glazing_area_m2",
-        "window_enhancement_renovated_frame_area_m2",
-        "window_enhancement_renovated_perimeter_m",
-        "window_enhancement_renovated_caulking_volume_m3",
-        "window_enhancement_renovated_weatherstrip_length_m",
+        "window_renovated_area_m2",
+        "window_renovated_glazing_area_m2",
+        "window_renovated_frame_area_m2",
+        "window_renovated_perimeter_m",
+        "window_renovated_caulking_volume_m3",
+        "window_renovated_weatherstrip_length_m",
         "window_weatherstrip_length_per_unit",
         "window_glass_lifetime_years",
         "window_frame_lifetime_years",
         "window_caulking_lifetime_years",
         "window_film_lifetime_years",
         "window_weatherstrip_lifetime_years",
-        "window_enhancement_custom_labor_cost_multiplier",
+        "window_custom_labor_cost_multiplier",
         "window_custom_glass_cost_per_cf",
         "window_custom_frame_cost_per_sf",
         "window_custom_caulking_cost_per_cy",
@@ -1623,23 +1719,23 @@ def generate_parametric_recap(target_path, city_climate_zones=None):
         "door_conductivity_W_per_mK",
         "door_sealing_bottom_length_m",
         "door_sealing_side_length_m",
-        "door_enhancement_renovated_area_m2",
-        "door_enhancement_custom_labor_cost_multiplier",
-        "door_enhancement_custom_door_cost_per_area",
-        "door_enhancement_custom_bottom_seal_cost_per_lf",
-        "door_enhancement_custom_top_side_seal_cost_per_lf",
+        "door_renovated_area_m2",
+        "door_custom_labor_cost_multiplier",
+        "door_custom_door_cost_per_area",
+        "door_custom_bottom_seal_cost_per_lf",
+        "door_custom_top_side_seal_cost_per_lf",
         "wall_insulation_embodied_carbon_kgCO2eq",
         "roof_insulation_embodied_carbon_kgCO2eq",
-        "window_enhancement_embodied_carbon_kgCO2eq",
-        "door_enhancement_embodied_carbon_kgCO2eq",
+        "window_embodied_carbon_kgCO2eq",
+        "door_embodied_carbon_kgCO2eq",
         "wall_insulation_custom_labor_cost_multiplier",
         "wall_insulation_custom_cost_per_cf",
         "roof_insulation_custom_labor_cost_multiplier",
         "roof_insulation_custom_cost_per_cf",
         "wall_insulation_total_cost_with_overhead_and_profit_usd",
         "roof_insulation_total_cost_with_overhead_and_profit_usd",
-        "window_enhancement_total_cost_with_overhead_and_profit_usd",
-        "door_enhancement_total_cost_with_overhead_and_profit_usd",
+        "window_total_cost_with_overhead_and_profit_usd",
+        "door_total_cost_with_overhead_and_profit_usd",
         "wall_insulation_material_cost_usd",
         "wall_insulation_labor_cost_usd",
         "wall_insulation_overhead_profit_cost_usd",
@@ -1647,12 +1743,12 @@ def generate_parametric_recap(target_path, city_climate_zones=None):
         "roof_insulation_labor_cost_usd",
         "roof_insulation_equipment_cost_usd",
         "roof_insulation_overhead_profit_cost_usd",
-        "window_enhancement_material_cost_usd",
-        "window_enhancement_labor_cost_usd",
-        "window_enhancement_overhead_profit_cost_usd",
-        "door_enhancement_material_cost_usd",
-        "door_enhancement_labor_cost_usd",
-        "door_enhancement_overhead_profit_cost_usd",
+        "window_material_cost_usd",
+        "window_labor_cost_usd",
+        "window_overhead_profit_cost_usd",
+        "door_material_cost_usd",
+        "door_labor_cost_usd",
+        "door_overhead_profit_cost_usd",
         "total_additional_construction_cost_usd",
         "total_construction_cost_usd",
     ]
@@ -1685,7 +1781,7 @@ def generate_parametric_recap(target_path, city_climate_zones=None):
 # (used by run_all_tests.py to drive multiple sequential runs without editing this file).
 # RUN_NAME is purely a folder label under simulations/ -- it has no effect on
 # the model itself. Defaults to "run_test_009" for this branch's ad-hoc standalone runs.
-RUN_NAME = "run_test_017_api"
+RUN_NAME = "run_test_018_custom"
 def detect_openstudio_cli_path():
     """Find the OpenStudio CLI executable on this machine.
 
@@ -1795,7 +1891,7 @@ CUSTOM_COMBOS = [
         "wf_option": "wood window frame",
         "film_option": "safety film",
         "caulking_option": "acrylic",
-        "use_custom_costs": False,
+        "use_custom_costs": True,
         "wall_insulation_custom_cost_per_cf": 0.9,
         "roof_insulation_custom_cost_per_cf": 0.9,
         "glass_cost_per_cf": 499.199388,
@@ -1826,7 +1922,7 @@ CUSTOM_COMBOS = [
         "wf_option": "wood window frame",
         "film_option": "anti-graffiti film",
         "caulking_option": "polyurethane",
-        "use_custom_costs": False,
+        "use_custom_costs": True,
         "wall_insulation_custom_cost_per_cf": 0.981819,
         "roof_insulation_custom_cost_per_cf": 0.981819,
         "glass_cost_per_cf": 499.199388,
@@ -1857,7 +1953,7 @@ CUSTOM_COMBOS = [
         "wf_option": "wood-aluminium window frame",
         "film_option": "low-e film",
         "caulking_option": "polyurethane",
-        "use_custom_costs": False,
+        "use_custom_costs": True,
         "wall_insulation_custom_cost_per_cf": 2.64,
         "roof_insulation_custom_cost_per_cf": 2.64,
         "glass_cost_per_cf": 499.199388,
@@ -1905,10 +2001,7 @@ def export_scenario_user_arguments_csv(base_run_dir, scenarios, ec3_api_token=No
 
         wall_material_type = scenario.get("wall_insulation_material_type")
         roof_material_type = scenario.get("roof_insulation_material_type")
-        window_infiltration_reduction = scenario.get(
-            "window_enhancement_infiltration_reduction_percent",
-            scenario.get("window_infiltration_reduction_percent"),
-        )
+        window_infiltration_reduction = scenario.get("window_infiltration_reduction_percent")
 
         wall_requested = bool(scenario.get("wall_r_value")) and (not _is_none_option(wall_material_type))
         roof_requested = bool(scenario.get("roof_r_value")) and (not _is_none_option(roof_material_type))
@@ -2246,8 +2339,8 @@ required_base_cols = [
     "annual_gas_cost_usd",
 ]
 expected_embodied_cols = [
-    "window_enhancement_embodied_carbon_kgCO2eq",
-    "door_enhancement_embodied_carbon_kgCO2eq",
+    "window_embodied_carbon_kgCO2eq",
+    "door_embodied_carbon_kgCO2eq",
     "wall_insulation_embodied_carbon_kgCO2eq",
     "roof_insulation_embodied_carbon_kgCO2eq",
 ]
@@ -2267,8 +2360,8 @@ df[numeric_cols] = df[numeric_cols].apply(pd.to_numeric, errors="coerce").fillna
 # DISABLED: Carbon calculation disabled - set all carbon columns to 0
 df["total_additional_embodied_carbon_kg"] = 0.0
 # df["total_additional_embodied_carbon_kg"] = (
-#     df["window_enhancement_embodied_carbon_kgCO2eq"]
-#     + df["door_enhancement_embodied_carbon_kgCO2eq"]
+#     df["window_embodied_carbon_kgCO2eq"]
+#     + df["door_embodied_carbon_kgCO2eq"]
 #     + df["wall_insulation_embodied_carbon_kgCO2eq"]
 #     + df["roof_insulation_embodied_carbon_kgCO2eq"]
 # )
@@ -2443,7 +2536,19 @@ def generate_html_report(df, html_report_path, run_name="run"):
     gas_emis = _to_num(df, "annual_gas_operating_emissions_kg_co2e")
     annual_operational_carbon = elec_emis + gas_emis
     site_energy = _to_num(df, "total_site_energy_gj")
-    analysis_period_col_candidates = ["analysis_period", "wall_analysis_period", "window_analysis_period", "roof_analysis_period", "door_analysis_period", "analysis_period_years", "analysis_period_yrs"]
+    analysis_period_col_candidates = [
+        "wall_insulation_analysis_period_years",
+        "roof_insulation_analysis_period_years",
+        "window_analysis_period_years",
+        "door_analysis_period_years",
+        "analysis_period",
+        "wall_analysis_period",
+        "window_analysis_period",
+        "roof_analysis_period",
+        "door_analysis_period",
+        "analysis_period_years",
+        "analysis_period_yrs",
+    ]
     available_analysis_period_col = next((c for c in analysis_period_col_candidates if c in df.columns), None)
     default_embodied_analysis_period_years = 30.0
     if available_analysis_period_col:
@@ -2464,8 +2569,8 @@ def generate_html_report(df, html_report_path, run_name="run"):
     door_ec = pd.Series([0.0] * len(df), index=df.index)
     # wall_ec = _to_num(df, "wall_insulation_embodied_carbon_kgCO2eq")
     # roof_ec = _to_num(df, "roof_insulation_embodied_carbon_kgCO2eq")
-    # window_ec = _to_num(df, "window_enhancement_embodied_carbon_kgCO2eq")
-    # door_ec = _to_num(df, "door_enhancement_embodied_carbon_kgCO2eq")
+    # window_ec = _to_num(df, "window_embodied_carbon_kgCO2eq")
+    # door_ec = _to_num(df, "door_embodied_carbon_kgCO2eq")
     report = pd.DataFrame({
 
         "scenario": df[scenario_col].astype(str),
@@ -2761,7 +2866,6 @@ def generate_html_report(df, html_report_path, run_name="run"):
 
         window_requested = any([
             scenario_cfg.get("window_num_panes"),
-            scenario_cfg.get("window_enhancement_infiltration_reduction_percent") not in [None, "", 0, 0.0],
             scenario_cfg.get("window_infiltration_reduction_percent") not in [None, "", 0, 0.0],
             str(scenario_cfg.get("weatherstrip_option", "none")).strip().lower() != "none",
             str(scenario_cfg.get("wf_option", "none")).strip().lower() != "none",
@@ -2839,7 +2943,7 @@ def generate_html_report(df, html_report_path, run_name="run"):
         if upgrade_status == "upgraded":
             return True
 
-        material_cost = _as_float(row.get("window_enhancement_material_cost_usd"))
+        material_cost = _as_float(row.get("window_material_cost_usd"))
         if material_cost is None or material_cost <= 0:
             return False
 
@@ -2854,8 +2958,6 @@ def generate_html_report(df, html_report_path, run_name="run"):
             note = _clean_summary_note(scenario_summary.get("window"))
         if not note:
             note = _clean_summary_note(row.get("window_summary_notes"))
-        if not note:
-            note = _clean_summary_note(row.get("window_enhancement_summary_notes"))
         if note and "glass replacement selected but all window constructions are simpleglazing" in note.lower():
             return False
 
@@ -2869,10 +2971,10 @@ def generate_html_report(df, html_report_path, run_name="run"):
         frame_opt = _arg_value(scenario_name, "window", "wf_option")
         caulking_opt = _arg_value(scenario_name, "window", "caulking_option")
         secondary_opt = _arg_value(scenario_name, "window", "secondary_glazing_option")
-        frame_area = _as_float(row.get("window_enhancement_renovated_frame_area_m2"))
-        glazing_area = _as_float(row.get("window_enhancement_renovated_glazing_area_m2"))
-        caulking_volume = _as_float(row.get("window_enhancement_renovated_caulking_volume_m3"))
-        weatherstrip_length = _as_float(row.get("window_enhancement_renovated_weatherstrip_length_m"))
+        frame_area = _as_float(row.get("window_renovated_frame_area_m2"))
+        glazing_area = _as_float(row.get("window_renovated_glazing_area_m2"))
+        caulking_volume = _as_float(row.get("window_renovated_caulking_volume_m3"))
+        weatherstrip_length = _as_float(row.get("window_renovated_weatherstrip_length_m"))
         operable_count = _as_float(row.get("window_operable_count"))
 
         if _has_meaningful_value(panes):
@@ -2918,8 +3020,8 @@ def generate_html_report(df, html_report_path, run_name="run"):
     summary_col_candidates = {
         "wall": ["wall_summary_notes", "wall_insulation_summary_notes"],
         "roof": ["roof_summary_notes", "roof_insulation_summary_notes"],
-        "window": ["window_summary_notes", "window_enhancement_summary_notes"],
-        "door": ["door_summary_notes", "door_enhancement_summary_notes"],
+        "window": ["window_summary_notes"],
+        "door": ["door_summary_notes"],
     }
     source_df = df.copy()
     source_df[scenario_col] = source_df[scenario_col].astype(str)
@@ -3084,16 +3186,16 @@ def generate_html_report(df, html_report_path, run_name="run"):
         total_window_count = _safe_float(data_row.get("window_total_count"))
         all_simple_glazing = bool(total_window_count and simple_glazing_count is not None and simple_glazing_count >= total_window_count)
         frame_area, _ = _pick_first_numeric(data_row, [
-            "window_enhancement_renovated_frame_area_m2",
+            "window_renovated_frame_area_m2",
         ])
         glazing_area, _ = _pick_first_numeric(data_row, [
-            "window_enhancement_renovated_glazing_area_m2",
+            "window_renovated_glazing_area_m2",
         ])
         caulking_volume, _ = _pick_first_numeric(data_row, [
-            "window_enhancement_renovated_caulking_volume_m3",
+            "window_renovated_caulking_volume_m3",
         ])
         weatherstrip_length, _ = _pick_first_numeric(data_row, [
-            "window_enhancement_renovated_weatherstrip_length_m",
+            "window_renovated_weatherstrip_length_m",
         ])
         if "weatherstrip" in name or "weatherstrip" in description:
             return weatherstrip_length is not None and weatherstrip_length > 0
@@ -3254,13 +3356,13 @@ def generate_html_report(df, html_report_path, run_name="run"):
 
         if window_status == "applied":
             frame_area, _ = _pick_first_numeric(data_row, [
-                "window_enhancement_renovated_frame_area_m2",
+                "window_renovated_frame_area_m2",
             ])
             caulking_volume, _ = _pick_first_numeric(data_row, [
-                "window_enhancement_renovated_caulking_volume_m3",
+                "window_renovated_caulking_volume_m3",
             ])
             weatherstrip_length, _ = _pick_first_numeric(data_row, [
-                "window_enhancement_renovated_weatherstrip_length_m",
+                "window_renovated_weatherstrip_length_m",
             ])
 
             if frame_area is not None and frame_area > 0:
@@ -3296,7 +3398,7 @@ def generate_html_report(df, html_report_path, run_name="run"):
                 "door_conductivity_W_per_mK",
             ])
             door_area, _ = _pick_first_numeric(data_row, [
-                "door_enhancement_renovated_area_m2",
+                "door_renovated_area_m2",
                 "total_renovated_door_area_m2",
             ])
             if door_area is not None and door_area > 0:
@@ -3417,12 +3519,12 @@ def generate_html_report(df, html_report_path, run_name="run"):
             "roof_insulation_total_cost_with_overhead_and_profit_$",
         ])
         window_cost, _ = _pick_first_numeric(scenario_row, [
-            "window_enhancement_total_cost_with_overhead_and_profit_usd",
-            "window_enhancement_total_cost_with_overhead_and_profit_$",
+            "window_total_cost_with_overhead_and_profit_usd",
+            "window_total_cost_with_overhead_and_profit_$",
         ])
         door_cost, _ = _pick_first_numeric(scenario_row, [
-            "door_enhancement_total_cost_with_overhead_and_profit_usd",
-            "door_enhancement_total_cost_with_overhead_and_profit_$",
+            "door_total_cost_with_overhead_and_profit_usd",
+            "door_total_cost_with_overhead_and_profit_$",
         ])
 
         cost_slices = [

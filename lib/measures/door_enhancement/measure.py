@@ -795,6 +795,68 @@ class DoorEnhancement(openstudio.measure.ModelMeasure):
             epd_response_cache[cache_key] = epd_data
             return epd_data
 
+        def _apply_door_construction_update(
+            subsurface_obj,
+            subsurface_name,
+            new_r_value_si,
+            mat_props,
+            construction_label,
+            material_label,
+            update_header,
+            material_display=None,
+            rsmeans_match_desc=None,
+        ):
+            if not subsurface_obj.construction().is_initialized():
+                runner.registerWarning(f"No construction found for {subsurface_name}, R-value not modified.")
+                return False
+
+            old_construction = subsurface_obj.construction().get()
+            old_construction_name = old_construction.nameString()
+
+            old_r_value_si = 0.0
+            if old_construction.to_LayeredConstruction().is_initialized():
+                lc = old_construction.to_LayeredConstruction().get()
+                if lc.thermalConductance().is_initialized() and lc.thermalConductance().get() > 0.0:
+                    old_r_value_si = 1.0 / lc.thermalConductance().get()
+
+            old_r_value_ip = openstudio.convert(old_r_value_si, "m^2*K/W", "ft^2*h*R/Btu").get()
+            new_r_value_ip = openstudio.convert(new_r_value_si, "m^2*K/W", "ft^2*h*R/Btu").get()
+
+            new_construction = old_construction.clone(model).to_Construction().get()
+            new_construction.setName(f"{old_construction_name} - {construction_label} R-{new_r_value_si:.2f}")
+
+            new_door_material = openstudio.model.StandardOpaqueMaterial(model)
+            new_door_material.setName(material_label)
+            new_door_material.setThickness(mat_props['thickness'])
+            new_door_material.setConductivity(mat_props['conductivity'])
+            new_door_material.setDensity(mat_props['density'])
+            new_door_material.setSpecificHeat(1000)
+
+            new_construction.setLayers([new_door_material])
+            subsurface_obj.setConstruction(new_construction)
+
+            subsurface_dict[subsurface_name]['old_r_value_si'] = old_r_value_si
+            subsurface_dict[subsurface_name]['new_r_value_si'] = new_r_value_si
+            subsurface_dict[subsurface_name]['new_construction_name'] = new_construction.nameString()
+            subsurface_dict[subsurface_name]['material_thickness_m'] = mat_props['thickness']
+            subsurface_dict[subsurface_name]['material_conductivity_W_per_mK'] = mat_props['conductivity']
+            subsurface_dict[subsurface_name]['material_density_kg_per_m3'] = mat_props['density']
+
+            runner.registerInfo(f"\n  → {update_header} for {subsurface_name}:")
+            if rsmeans_match_desc:
+                runner.registerInfo(f"    RSMeans Match: {rsmeans_match_desc}")
+            if material_display is not None:
+                runner.registerInfo(f"    Material: {material_display}")
+            runner.registerInfo(
+                f"    R-value: {old_r_value_si:.2f} → {new_r_value_si:.2f} m²·K/W "
+                f"(R-{old_r_value_ip:.1f} → R-{new_r_value_ip:.1f} IP)"
+            )
+            runner.registerInfo(
+                f"    Thickness: {mat_props['thickness']*1000:.1f} mm | "
+                f"Conductivity: {mat_props['conductivity']:.3f} W/m·K"
+            )
+            return True
+
         for subsurface in sub_surfaces_to_change:
             subsurface_name = subsurface.nameString()
             door_option_compatible = is_door_option_compatible_with_subsurface(door_option, subsurface)
@@ -1116,54 +1178,17 @@ class DoorEnhancement(openstudio.measure.ModelMeasure):
                 else:
                     runner.registerWarning(f"Invalid material properties for {door_option}, skipping R-value calculation.")
                     new_r_value_si = 0.0
-                
-                # Get current construction
-                if subsurface.construction().is_initialized():
-                    old_construction = subsurface.construction().get()
-                    old_construction_name = old_construction.nameString()
-                    
-                    # Get current R-value for comparison
-                    old_r_value_si = 0.0
-                    if old_construction.to_LayeredConstruction().is_initialized():
-                        lc = old_construction.to_LayeredConstruction().get()
-                        if lc.thermalConductance().is_initialized():
-                            old_r_value_si = 1.0 / lc.thermalConductance().get()
-                    
-                    old_r_value_ip = openstudio.convert(old_r_value_si, "m^2*K/W", "ft^2*h*R/Btu").get()
-                    new_r_value_ip = openstudio.convert(new_r_value_si, "m^2*K/W", "ft^2*h*R/Btu").get()
-                    
-                    # Clone construction for modification
-                    new_construction = old_construction.clone(model).to_Construction().get()
-                    new_construction.setName(f"{old_construction_name} - {door_option} R-{new_r_value_si:.2f}")
-                    
-                    # Create a new standard opaque material with physical properties
-                    new_door_material = openstudio.model.StandardOpaqueMaterial(model)
-                    new_door_material.setName(f"{door_option} R-{new_r_value_si:.2f}")
-                    new_door_material.setThickness(mat_props['thickness'])
-                    new_door_material.setConductivity(mat_props['conductivity'])
-                    new_door_material.setDensity(mat_props['density'])
-                    new_door_material.setSpecificHeat(1000)  # J/kg·K, typical for building materials
-                    
-                    # Set the construction to use only the new material
-                    new_construction.setLayers([new_door_material])
-                    
-                    # Apply new construction to subsurface
-                    subsurface.setConstruction(new_construction)
-                    
-                    # Store R-value and material properties in subsurface dict
-                    subsurface_dict[subsurface_name]['old_r_value_si'] = old_r_value_si
-                    subsurface_dict[subsurface_name]['new_r_value_si'] = new_r_value_si
-                    subsurface_dict[subsurface_name]['new_construction_name'] = new_construction.nameString()
-                    subsurface_dict[subsurface_name]['material_thickness_m'] = mat_props['thickness']
-                    subsurface_dict[subsurface_name]['material_conductivity_W_per_mK'] = mat_props['conductivity']
-                    subsurface_dict[subsurface_name]['material_density_kg_per_m3'] = mat_props['density']
-                    
-                    runner.registerInfo(f"\n  → Door construction updated for {subsurface_name}:")
-                    runner.registerInfo(f"    Material: {door_option}")
-                    runner.registerInfo(f"    R-value: {old_r_value_si:.2f} → {new_r_value_si:.2f} m²·K/W (R-{old_r_value_ip:.1f} → R-{new_r_value_ip:.1f} IP)")
-                    runner.registerInfo(f"    Thickness: {mat_props['thickness']*1000:.1f} mm | Conductivity: {mat_props['conductivity']:.3f} W/m·K")
-                else:
-                    runner.registerWarning(f"No construction found for {subsurface_name}, R-value not modified.")
+
+                _apply_door_construction_update(
+                    subsurface_obj=subsurface,
+                    subsurface_name=subsurface_name,
+                    new_r_value_si=new_r_value_si,
+                    mat_props=mat_props,
+                    construction_label=door_option,
+                    material_label=f"{door_option} R-{new_r_value_si:.2f}",
+                    update_header="Door construction updated",
+                    material_display=door_option,
+                )
 
         # Calculate total embodied carbon and count door replacements
         total_embodied_carbon = sum(
@@ -1561,6 +1586,15 @@ class DoorEnhancement(openstudio.measure.ModelMeasure):
                             f"total_cost=${summary.get('total_cost_with_overhead_profit', 0.0):,.2f}"
                         )
                         runner.registerInfo(rsmeans_summary_line)
+
+                        # Ensure RSMeans detail keys are always available on successful API responses.
+                        matched_rsmeans["door_material"]["id"] = "N/A"
+                        matched_rsmeans["door_material"]["description"] = "N/A"
+                        matched_rsmeans["door_bottom_seal"]["id"] = "N/A"
+                        matched_rsmeans["door_bottom_seal"]["description"] = "N/A"
+                        matched_rsmeans["door_top_side_seal"]["id"] = "N/A"
+                        matched_rsmeans["door_top_side_seal"]["description"] = "N/A"
+
                         rsmeans_results = rsmeans_lookup.get("results", {})
                         materials_results = rsmeans_results.get("materials", [])
                         if materials_results:
@@ -1578,12 +1612,12 @@ class DoorEnhancement(openstudio.measure.ModelMeasure):
                                     target_key = "door_material"
 
                                 if target_key:
-                                    if matched_id and not matched_rsmeans[target_key]["id"]:
+                                    if matched_id and matched_rsmeans[target_key]["id"] == "N/A":
                                         matched_rsmeans[target_key]["id"] = str(matched_id)
-                                    if matched_desc and not matched_rsmeans[target_key]["description"]:
+                                    if matched_desc and matched_rsmeans[target_key]["description"] == "N/A":
                                         matched_rsmeans[target_key]["description"] = str(matched_desc)
 
-                            if rsmeans_unit_costline_id and not matched_rsmeans["door_material"]["id"] and door_option != 'none':
+                            if rsmeans_unit_costline_id and matched_rsmeans["door_material"]["id"] == "N/A" and door_option != 'none':
                                 matched_rsmeans["door_material"]["id"] = rsmeans_unit_costline_id
                         for warning_msg in rsmeans_results.get("warnings", []):
                             runner.registerWarning(f"RSMeans fallback: {warning_msg}")
@@ -1626,6 +1660,7 @@ class DoorEnhancement(openstudio.measure.ModelMeasure):
                         "  2. Provide non-zero values for the rates listed above. "
                         "(Only components matching your selected door/seal options need values.)"
                     )
+                    return False
                 else:
                     runner.registerWarning(
                         "RSMeans lookup failed/returned no costs. Falling back to "
@@ -1786,38 +1821,47 @@ class DoorEnhancement(openstudio.measure.ModelMeasure):
                 else:
                     rsmeans_applied_door_option = door_option
 
-                # If user did not provide explicit properties, take defaults from the
-                # inferred RSMeans door type first, then refine with parsed description values.
+                # Resolve final material properties with explicit precedence:
+                # user input > RSMeans parsed (density/thickness only) > defaults.
                 inferred_defaults = self.door_material_properties().get(rsmeans_applied_door_option, {})
-                if (not user_specified_door_conductivity) and inferred_defaults.get('conductivity', 0.0) > 0.0:
-                    resolved_door_conductivity = float(inferred_defaults.get('conductivity'))
-                if (not user_specified_door_density) and inferred_defaults.get('density', 0.0) > 0.0:
-                    resolved_door_density = float(inferred_defaults.get('density'))
-                if (not user_specified_door_thickness) and inferred_defaults.get('thickness', 0.0) > 0.0:
-                    resolved_door_thickness = float(inferred_defaults.get('thickness'))
+                parsed_density = float(rsmeans_parsed_props.get('density', 0.0) or 0.0)
+                parsed_thickness = float(rsmeans_parsed_props.get('thickness', 0.0) or 0.0)
 
-                if (not user_specified_door_thickness) and rsmeans_parsed_props.get('thickness', 0.0) > 0.0:
-                    resolved_door_thickness = float(rsmeans_parsed_props.get('thickness'))
-                if (not user_specified_door_density) and rsmeans_parsed_props.get('density', 0.0) > 0.0:
-                    resolved_door_density = float(rsmeans_parsed_props.get('density'))
+                # Conductivity is never inferred from RSMeans text parsing in this measure.
+                if user_specified_door_conductivity:
+                    resolved_door_conductivity = float(door_thermal_conductivity)
+                else:
+                    resolved_door_conductivity = float(inferred_defaults.get('conductivity', 0.0) or 0.0)
 
-                # Primary user-requested behavior: when user input is 0.0, replace
-                # door_density/door_thickness with values parsed from RSMeans description.
-                if (not user_specified_door_density) and rsmeans_parsed_props.get('density', 0.0) > 0.0:
-                    door_density = float(rsmeans_parsed_props.get('density'))
-                    resolved_door_density = door_density
-                if (not user_specified_door_thickness) and rsmeans_parsed_props.get('thickness', 0.0) > 0.0:
-                    door_thickness = float(rsmeans_parsed_props.get('thickness'))
-                    resolved_door_thickness = door_thickness
+                if user_specified_door_density:
+                    resolved_door_density = float(door_density)
+                elif parsed_density > 0.0:
+                    resolved_door_density = parsed_density
+                else:
+                    resolved_door_density = float(inferred_defaults.get('density', 0.0) or 0.0)
+
+                if user_specified_door_thickness:
+                    resolved_door_thickness = float(door_thickness)
+                elif parsed_thickness > 0.0:
+                    resolved_door_thickness = parsed_thickness
+                else:
+                    resolved_door_thickness = float(inferred_defaults.get('thickness', 0.0) or 0.0)
 
                 if door_option != 'none':
-                    resolved_door_material_props = self.door_material_properties().get(rsmeans_applied_door_option, {}).copy()
-                    if resolved_door_conductivity is not None and resolved_door_conductivity > 0.0:
+                    resolved_door_material_props = inferred_defaults.copy()
+                    if resolved_door_conductivity > 0.0:
                         resolved_door_material_props['conductivity'] = resolved_door_conductivity
-                    if resolved_door_density is not None and resolved_door_density > 0.0:
+                    if resolved_door_density > 0.0:
                         resolved_door_material_props['density'] = resolved_door_density
-                    if resolved_door_thickness is not None and resolved_door_thickness > 0.0:
+                    if resolved_door_thickness > 0.0:
                         resolved_door_material_props['thickness'] = resolved_door_thickness
+
+                if user_specified_door_density or user_specified_door_thickness or user_specified_door_conductivity:
+                    runner.registerInfo("Door R-value material properties source: user input (highest priority).")
+                elif parsed_density > 0.0 or parsed_thickness > 0.0:
+                    runner.registerInfo("Door R-value material properties source: RSMeans parsed values with defaults for missing fields.")
+                else:
+                    runner.registerInfo("Door R-value material properties source: door_material_properties() defaults (RSMeans missing values).")
 
                 model_avg_door_area_m2 = 0.0
                 if eligible_door_count > 0:
@@ -1853,59 +1897,27 @@ class DoorEnhancement(openstudio.measure.ModelMeasure):
                     for subsurface_name in subsurface_dict.keys():
                         if not subsurface_dict[subsurface_name].get("door_option_compatible", False):
                             continue
-                        subsurface = subsurface_dict[subsurface_name]["subsurface object"]
-                        if not subsurface.construction().is_initialized():
-                            runner.registerWarning(f"No construction found for {subsurface_name}, RSMeans replacement skipped.")
+                        if 'new_r_value_si' in subsurface_dict[subsurface_name]:
+                            runner.registerInfo(
+                                f"Skipping RSMeans R-value replacement for {subsurface_name} "
+                                "because door construction was already updated earlier in this run."
+                            )
                             continue
-
-                        old_construction = subsurface.construction().get()
-                        old_construction_name = old_construction.nameString()
-                        old_r_value_si = 0.0
-                        if old_construction.to_LayeredConstruction().is_initialized():
-                            lc = old_construction.to_LayeredConstruction().get()
-                            if lc.thermalConductance().is_initialized() and lc.thermalConductance().get() > 0.0:
-                                old_r_value_si = 1.0 / lc.thermalConductance().get()
-
+                        subsurface = subsurface_dict[subsurface_name]["subsurface object"]
                         new_r_value_si = (
                             resolved_door_material_props['thickness']
                             / resolved_door_material_props['conductivity']
                         )
-                        old_r_value_ip = openstudio.convert(old_r_value_si, "m^2*K/W", "ft^2*h*R/Btu").get()
-                        new_r_value_ip = openstudio.convert(new_r_value_si, "m^2*K/W", "ft^2*h*R/Btu").get()
 
-                        new_construction = old_construction.clone(model).to_Construction().get()
-                        new_construction.setName(
-                            f"{old_construction_name} - RSMeans {rsmeans_applied_door_option} R-{new_r_value_si:.2f}"
-                        )
-
-                        new_door_material = openstudio.model.StandardOpaqueMaterial(model)
-                        new_door_material.setName(
-                            f"RSMeans {rsmeans_applied_door_option} {rsmeans_door_hit.get('rsmeans_id', '')}"
-                        )
-                        new_door_material.setThickness(resolved_door_material_props['thickness'])
-                        new_door_material.setConductivity(resolved_door_material_props['conductivity'])
-                        new_door_material.setDensity(resolved_door_material_props['density'])
-                        new_door_material.setSpecificHeat(1000)
-
-                        new_construction.setLayers([new_door_material])
-                        subsurface.setConstruction(new_construction)
-
-                        subsurface_dict[subsurface_name]['old_r_value_si'] = old_r_value_si
-                        subsurface_dict[subsurface_name]['new_r_value_si'] = new_r_value_si
-                        subsurface_dict[subsurface_name]['new_construction_name'] = new_construction.nameString()
-                        subsurface_dict[subsurface_name]['material_thickness_m'] = resolved_door_material_props['thickness']
-                        subsurface_dict[subsurface_name]['material_conductivity_W_per_mK'] = resolved_door_material_props['conductivity']
-                        subsurface_dict[subsurface_name]['material_density_kg_per_m3'] = resolved_door_material_props['density']
-
-                        runner.registerInfo(f"\n  → RSMeans door construction updated for {subsurface_name}:")
-                        runner.registerInfo(f"    RSMeans Match: {rsmeans_door_match_description}")
-                        runner.registerInfo(
-                            f"    R-value: {old_r_value_si:.2f} → {new_r_value_si:.2f} m²·K/W "
-                            f"(R-{old_r_value_ip:.1f} → R-{new_r_value_ip:.1f} IP)"
-                        )
-                        runner.registerInfo(
-                            f"    Thickness: {resolved_door_material_props['thickness']*1000:.1f} mm | "
-                            f"Conductivity: {resolved_door_material_props['conductivity']:.3f} W/m·K"
+                        _apply_door_construction_update(
+                            subsurface_obj=subsurface,
+                            subsurface_name=subsurface_name,
+                            new_r_value_si=new_r_value_si,
+                            mat_props=resolved_door_material_props,
+                            construction_label=f"RSMeans {rsmeans_applied_door_option}",
+                            material_label=f"RSMeans {rsmeans_applied_door_option} {rsmeans_door_hit.get('rsmeans_id', '')}",
+                            update_header="RSMeans door construction updated",
+                            rsmeans_match_desc=rsmeans_door_match_description,
                         )
             else:
                 runner.registerWarning(
@@ -1963,24 +1975,23 @@ class DoorEnhancement(openstudio.measure.ModelMeasure):
             )
 
         # 5C) Building bucket (basic inputs)
-        basic_input.setFeature("door_enhancement_measure_name", "Door Enhancement")
-        basic_input.setFeature("door_enhancement_analysis_period_years", analysis_period)
-        basic_input.setFeature("door_enhancement_gwp_statistic", gwp_statistic)
-        basic_input.setFeature("door_enhancement_gwp_source", "custom_user_inputs" if use_custom_gwp else "ec3")
+        basic_input.setFeature("door_measure_name", "Door Enhancement for Infiltration Reduction")
+        basic_input.setFeature("door_analysis_period_years", analysis_period)
+        basic_input.setFeature("door_gwp_statistic", gwp_statistic)
+        basic_input.setFeature("door_gwp_source", "custom_user_inputs" if use_custom_gwp else "ec3")
 
         # 5D) Site bucket (renovation details)
-        reno_detail.setFeature("door_enhancement_processed_door_count", len(sub_surfaces_to_change))
-        reno_detail.setFeature("door_enhancement_door_area_per_unit_m2", door_area_per_unit)
-        reno_detail.setFeature("door_enhancement_infiltration_reduction_percent", space_infiltration_reduction_percent)
+        reno_detail.setFeature("door_processed_door_count", len(sub_surfaces_to_change))
+        reno_detail.setFeature("door_area_per_unit_m2", door_area_per_unit)
+        reno_detail.setFeature("door_infiltration_reduction_percent", space_infiltration_reduction_percent)
         reno_detail.setFeature("door_bottom_seal_option", door_bottom_seal_option)
         reno_detail.setFeature("door_sealing_bottom_length_m", total_sealing_bottom_length_m)
         reno_detail.setFeature("door_top_side_seal_option", door_top_side_seal_option)
         reno_detail.setFeature("door_sealing_side_length_m", total_sealing_side_length_m)
         reno_detail.setFeature("door_option", door_option)
         # Renovated area is the area where the selected door option is actually applicable.
-        reno_detail.setFeature("door_enhancement_renovated_area_m2", total_eligible_door_area_m2)
-        # Keep full processed area for traceability/debugging.
-        reno_detail.setFeature("door_enhancement_total_processed_area_m2", total_door_area_m2)
+        reno_detail.setFeature("door_renovated_area_m2", total_eligible_door_area_m2)
+
 
         # Set summary notes based on model-door compatibility conflicts.
         summary_notes = "door enhancement successfully completed!"
@@ -2006,7 +2017,7 @@ class DoorEnhancement(openstudio.measure.ModelMeasure):
                 + available_types_summary
             )
 
-        reno_detail.setFeature("door_enhancement_summary_notes", summary_notes)
+        reno_detail.setFeature("door_summary_notes", summary_notes)
 
         # 5E) SizingParameters bucket (material properties)
         mtrl_prop.setFeature("door_strip_lifetime_years", strip_lifetime)
@@ -2025,9 +2036,9 @@ class DoorEnhancement(openstudio.measure.ModelMeasure):
         if matched_rsmeans["door_top_side_seal"]["description"]:
             mtrl_prop.setFeature("door_top_side_seal_rsmeans_description", matched_rsmeans["door_top_side_seal"]["description"])
         if rsmeans_unit_cost_line_id_value:
-            mtrl_prop.setFeature("rsmeans_unit_cost_line_id", rsmeans_unit_cost_line_id_value)
+            mtrl_prop.setFeature("door_rsmeans_unit_cost_line_id", rsmeans_unit_cost_line_id_value)
         if rsmeans_unit_cost_description_value:
-            mtrl_prop.setFeature("rsmeans_unit_cost_description", rsmeans_unit_cost_description_value)
+            mtrl_prop.setFeature("door_rsmeans_unit_cost_description", rsmeans_unit_cost_description_value)
 
         # Selected door option material properties
         if door_option != 'none':
@@ -2047,9 +2058,9 @@ class DoorEnhancement(openstudio.measure.ModelMeasure):
                 mtrl_prop.setFeature("door_conductivity_W_per_mK", resolved_door_conductivity)
 
         if rsmeans_door_area_per_unit_m2 is not None:
-            mtrl_prop.setFeature("rsmeans_door_area_per_unit_m2", rsmeans_door_area_per_unit_m2)
+            mtrl_prop.setFeature("door_rsmeans_door_area_per_unit_m2", rsmeans_door_area_per_unit_m2)
         if rsmeans_door_thickness_m is not None:
-            mtrl_prop.setFeature("rsmeans_door_thickness_m", rsmeans_door_thickness_m)
+            mtrl_prop.setFeature("door_rsmeans_door_thickness_m", rsmeans_door_thickness_m)
         
         # Store length per unit for sealing strips
         if door_bottom_seal_option != 'none':
@@ -2072,7 +2083,7 @@ class DoorEnhancement(openstudio.measure.ModelMeasure):
 
         # 5G) SimulationControl bucket (results)
         # Canonical embodied carbon key used by wall/roof/window measures.
-        results.setFeature("door_enhancement_embodied_carbon_kgCO2eq", total_embodied_carbon)
+        results.setFeature("door_embodied_carbon_kgCO2eq", total_embodied_carbon)
 
         # Apply lifetime multipliers to RSMeans API costs (non-custom path only).
         # For the custom path the multipliers are already baked into the component costs.
@@ -2179,24 +2190,26 @@ class DoorEnhancement(openstudio.measure.ModelMeasure):
                 cost_factor_basis = "mixed"
 
             # -- Facility (factors) bucket: cost totals and basis metadata --
-            factors.setFeature("door_enhancement_cost_source", cost_source_val)
-            factors.setFeature("door_enhancement_cost_factor_basis", cost_factor_basis)
-            factors.setFeature("door_enhancement_overhead_profit_percent", rsmeans_overhead_percent)
-            factors.setFeature("door_enhancement_custom_labor_cost_multiplier", labor_cost_multiplier)
-            if use_custom_costs:
-                factors.setFeature("door_enhancement_custom_door_cost_per_area", custom_door_cost_per_area)
-                factors.setFeature("door_enhancement_custom_bottom_seal_cost_per_lf", custom_bottom_seal_cost)
-                factors.setFeature("door_enhancement_custom_top_side_seal_cost_per_lf", custom_top_side_seal_cost)
-            factors.setFeature("door_enhancement_rsmeans_door_cost_per_area", door_rsmeans_cost_per_area_feature_value)
-            factors.setFeature("door_enhancement_rsmeans_bottom_seal_cost_per_m", door_rsmeans_bottom_seal_cost_per_m_feature_value)
-            factors.setFeature("door_enhancement_rsmeans_top_side_seal_cost_per_m", door_rsmeans_top_side_seal_cost_per_m_feature_value)
+            factors.setFeature("door_cost_source", cost_source_val)
+            factors.setFeature("door_overhead_profit_percent", rsmeans_overhead_percent)
+            factors.setFeature("door_cost_factor_basis", cost_factor_basis)
+            if cost_source_val in ("custom_input", "custom_input_fallback"):
+                factors.setFeature("door_custom_labor_cost_multiplier", labor_cost_multiplier)
+                factors.setFeature("door_custom_door_cost_per_area", custom_door_cost_per_area)
+                factors.setFeature("door_custom_bottom_seal_cost_per_lf", custom_bottom_seal_cost)
+                factors.setFeature("door_custom_top_side_seal_cost_per_lf", custom_top_side_seal_cost)
+            else:
+                factors.setFeature("door_api_door_cost_per_area", door_rsmeans_cost_per_area_feature_value)
+                factors.setFeature("door_api_bottom_seal_cost_per_m", door_rsmeans_bottom_seal_cost_per_m_feature_value)
+                factors.setFeature("door_api_top_side_seal_cost_per_m", door_rsmeans_top_side_seal_cost_per_m_feature_value)
 
             # -- SimulationControl (results) bucket: mirrored scalars + JSON --
-            results.setFeature("door_enhancement_material_cost_$", rsmeans_material_cost)
-            results.setFeature("door_enhancement_labor_cost_$", rsmeans_labor_cost)
-            results.setFeature("door_enhancement_equipment_cost_$", rsmeans_equipment_cost)
-            results.setFeature("door_enhancement_overhead_profit_cost_$", rsmeans_overhead_cost)
-            results.setFeature("door_enhancement_total_cost_with_overhead_and_profit_$", rsmeans_total_cost)
+            results.setFeature("door_material_cost_$", rsmeans_material_cost)
+            results.setFeature("door_labor_cost_$", rsmeans_labor_cost)
+            results.setFeature("door_equipment_cost_$", rsmeans_equipment_cost)
+            results.setFeature("door_overhead_profit_cost_$", rsmeans_overhead_cost)
+            results.setFeature("door_total_cost_with_overhead_and_profit_$", rsmeans_total_cost)
+            results.setFeature("door_cost_factor_basis", cost_factor_basis)
 
             # Three JSON payloads for full diagnostic traceability (mirrors
             # the three-payload pattern used by wall and roof insulation measures).
@@ -2231,24 +2244,16 @@ class DoorEnhancement(openstudio.measure.ModelMeasure):
         else:
             # Cost lookup was not attempted or did not succeed; record "none"
             # in both buckets so downstream consumers always find the key.
-            factors.setFeature("door_enhancement_cost_source", "none")
-            factors.setFeature("door_enhancement_cost_factor_basis", "not_calculated")
-            factors.setFeature("door_enhancement_overhead_profit_percent", 0.0)
-            factors.setFeature("door_enhancement_custom_labor_cost_multiplier", labor_cost_multiplier)
-            if use_custom_costs:
-                factors.setFeature("door_enhancement_custom_door_cost_per_area", custom_door_cost_per_area)
-                factors.setFeature("door_enhancement_custom_bottom_seal_cost_per_lf", custom_bottom_seal_cost)
-                factors.setFeature("door_enhancement_custom_top_side_seal_cost_per_lf", custom_top_side_seal_cost)
-            factors.setFeature("door_enhancement_rsmeans_door_cost_per_area", door_rsmeans_cost_per_area_feature_value)
-            factors.setFeature("door_enhancement_rsmeans_bottom_seal_cost_per_m", door_rsmeans_bottom_seal_cost_per_m_feature_value)
-            factors.setFeature("door_enhancement_rsmeans_top_side_seal_cost_per_m", door_rsmeans_top_side_seal_cost_per_m_feature_value)
+            factors.setFeature("door_cost_source", "none")
+            factors.setFeature("door_overhead_profit_percent", 0.0)
+            factors.setFeature("door_cost_factor_basis", "none")
+            results.setFeature("door_cost_factor_basis", "none")
 
-        reno_detail.setFeature("total_doors_processed_count", len(sub_surfaces_to_change))
         reno_detail.setFeature("total_doors_with_r_value_change_count", doors_with_r_value_change)
         
         # Construction names for traceability
         if construction_names:
-            basic_input.setFeature("door_enhancement_construction_names", ', '.join(construction_names))
+            basic_input.setFeature("door_construction_names", ', '.join(construction_names))
         
         runner.registerInfo(f"\n✓ Door enhancement summary stored in organized additional properties")
         

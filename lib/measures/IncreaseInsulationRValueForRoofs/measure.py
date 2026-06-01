@@ -1369,13 +1369,27 @@ class IncreaseInsulationRValueForRoofs(openstudio.measure.ModelMeasure):
                                             f"the requested costline ID '{exact_costline_id}' "
                                             f"for '{material_name}'."
                                         )
-                                self._register_rsmeans_resolution_error(
-                                    runner,
-                                    unresolved_materials,
-                                    use_exact_costline_id,
-                                    exact_costline_id,
-                                )
-                                return False
+                                if float(custom_cost_per_cf) > 0.0:
+                                    runner.registerWarning(
+                                        "RSMeans resolution was incomplete. Falling back to custom cost input because "
+                                        f"'custom_cost_per_cf' is available for: {', '.join(unresolved_materials)}."
+                                    )
+                                    cost_source = "none"
+                                    total_material_cost = 0.0
+                                    total_labor_cost = 0.0
+                                    total_equipment_cost = 0.0
+                                    total_overhead_profit_cost = 0.0
+                                    rsmeans_cost_per_cf_feature_value = "N/A"
+                                    rsmeans_material_id_for_write = None
+                                    rsmeans_material_description_for_write = None
+                                else:
+                                    self._register_rsmeans_resolution_error(
+                                        runner,
+                                        unresolved_materials,
+                                        use_exact_costline_id,
+                                        exact_costline_id,
+                                    )
+                                    return False
 
                             # Ambiguity warning: when closest-match mode
                             # auto-selected from tied candidates, warn the
@@ -1475,6 +1489,36 @@ class IncreaseInsulationRValueForRoofs(openstudio.measure.ModelMeasure):
                 else:
                     runner.registerWarning("RSMeans lookup skipped: call_rsmeans_api.py not found")
 
+            if (not use_custom_costs) and cost_source != "rsmeans_api":
+                total_added_volume_cf = sum(float(m.get("quantity_volume", 0.0)) for m in rsmeans_materials)
+                if float(custom_cost_per_cf) > 0.0 and total_added_volume_cf > 0.0:
+                    _lc_mult = int(lifetime_multiplier(insulation_material_lifetime, analysis_period))
+                    total_material_cost = custom_cost_per_cf * total_added_volume_cf * _lc_mult
+                    total_labor_cost = (
+                        total_material_cost * (labor_cost_multiplier - 1.0)
+                        if labor_cost_multiplier > 1.0 else 0.0
+                    )
+                    total_equipment_cost = 0.0
+                    total_overhead_profit_cost = (total_material_cost + total_labor_cost) * (overhead_profit_percent / 100.0)
+                    cost_source = "custom_input_fallback"
+                    cost_factor_basis = "custom_cost_per_volume"
+                    runner.registerInfo(
+                        "Custom cost fallback summary (cost_source=custom_input_fallback): "
+                        f"material_cost=${total_material_cost:,.2f} (lifetime_multiplier={_lc_mult}), "
+                        f"labor_cost=${total_labor_cost:,.2f} "
+                        f"overhead_profit_cost=${total_overhead_profit_cost:,.2f} "
+                        f"(volume={total_added_volume_cf:.2f} CF × rate ${custom_cost_per_cf}/CF, "
+                        f"labor_multiplier={labor_cost_multiplier:.2f}, overhead_profit_percent={overhead_profit_percent:.1f}%)"
+                    )
+                else:
+                    runner.registerError(
+                        "RSMeans lookup failed/returned no costs AND no custom fallback cost was provided.\n"
+                        "SOLUTION: Retry the measure with custom cost input:\n"
+                        "  1. Set 'Use Custom Cost Inputs (skip RSMeans)' = true, or keep RSMeans mode with a fallback rate\n"
+                        "  2. Enter a non-zero 'Custom Insulation Cost ($/CF)'"
+                    )
+                    return False
+
         # ===================== AdditionalProperties write-out (centralized) =====================
         # Building bucket: basic inputs
         basic_input.setFeature("roof_insulation_measure_name", "Increase Insulation R-Value for Roofs")
@@ -1544,10 +1588,11 @@ class IncreaseInsulationRValueForRoofs(openstudio.measure.ModelMeasure):
         factors.setFeature("roof_insulation_cost_source", cost_source)
         factors.setFeature("roof_insulation_overhead_profit_percent", overhead_profit_percent)
         factors.setFeature("roof_insulation_cost_factor_basis", cost_factor_basis)
-        factors.setFeature("roof_insulation_custom_labor_cost_multiplier", labor_cost_multiplier)
-        if use_custom_costs:
+        if cost_source in ("custom_input", "custom_input_fallback"):
+            factors.setFeature("roof_insulation_custom_labor_cost_multiplier", labor_cost_multiplier)
             factors.setFeature("roof_insulation_custom_cost_per_cf", custom_cost_per_cf)
-        factors.setFeature("roof_insulation_material_rsmeans_cost_per_cf", rsmeans_cost_per_cf_feature_value)
+        if cost_source == "rsmeans_api":
+            factors.setFeature("roof_insulation_api_material_cost_per_cf", rsmeans_cost_per_cf_feature_value)
         
 
         # Emission factors aggregated from selected statistic lists
