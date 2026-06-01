@@ -200,6 +200,31 @@ def _uom_compatible(requested_unit: Any, returned_uom: Any) -> bool:
     return False
 
 
+def _can_convert_weatherstrip_each_to_lf(material: Dict[str, Any], requested_unit: Any, returned_uom: Any) -> bool:
+    """Return True when weatherstrip pricing can convert EA/OPNG -> LF.
+
+    Conversion requires:
+    - material name resolves to weatherstrip,
+    - requested unit is LF,
+    - returned RSMeans UOM is EA/OPNG,
+    - per-each length metadata is present and positive.
+    """
+    material_name_norm = _normalize_search_text(material.get("name", ""))
+    if material_name_norm != "weatherstrip":
+        return False
+
+    req = _normalize_uom(requested_unit)
+    ret = _normalize_uom(returned_uom)
+    if req != "LF" or ret not in {"EA", "OPNG"}:
+        return False
+
+    try:
+        each_length_ft = float(material.get("unit_length_per_each_ft") or 0.0)
+    except (TypeError, ValueError):
+        return False
+    return each_length_ft > 0.0
+
+
 def _get_double_pane_fallback_rsmeans_id(area_sf: float) -> str:
     """Return double-pane glass fallback ID by area bin.
 
@@ -866,6 +891,24 @@ def _compute_total_cost_for_material(material: Dict[str, Any], unit_cost: float,
         "costing_mode": "area",
         "effective_unit": requested_unit,
     }
+
+    # Weatherstrip path: API can return per-EA/Opening prices while this
+    # measure requests LF quantity. Convert per-EA -> per-LF using declared
+    # each length (default set by measure payload to 3 inches = 0.25 ft).
+    source_uom = material.get("_rsmeans_line_uom", material.get("rsmeans_line_uom", ""))
+    if _can_convert_weatherstrip_each_to_lf(material, requested_unit, source_uom):
+        each_length_ft = float(material.get("unit_length_per_each_ft"))
+        unit_cost_per_lf = float(unit_cost) / each_length_ft
+        total_cost = unit_cost_per_lf * quantity
+        return {
+            "unit_cost": unit_cost_per_lf,
+            "total_cost": total_cost,
+            "costing_mode": "weatherstrip_each_to_lf",
+            "effective_unit": requested_unit,
+            "source_unit_cost_per_each": float(unit_cost),
+            "source_each_length_ft": each_length_ft,
+            "source_line_uom": source_uom,
+        }
 
     # Sealant path: when RSMeans line is GAL and volume context is present,
     # normalize reported unit-cost basis to $/CY for downstream consistency.
@@ -1814,6 +1857,7 @@ def search_materials_across_catalogs(
         best_total_equipment_cost = 0.0
         best_component_source = None
         _derived_window_area_sf = 0.0
+        chosen_source_type = "search"
         material_name_norm = _normalize_search_text(material_name)
         sealant_requires_volume = material_name_norm in {"sealant", "caulking"}
         explicit_id_non_volume_uom_rejected = False
@@ -1899,6 +1943,7 @@ def search_materials_across_catalogs(
                                 if (
                                     unit_cost > 0
                                     and str(material.get("costing_mode", "")).lower() != "volume_from_area"
+                                    and not _can_convert_weatherstrip_each_to_lf(material, unit, line_uom)
                                     and not _uom_compatible(unit, line_uom)
                                 ):
                                     if sealant_requires_volume and not _is_volume_uom(line_uom):
@@ -1920,6 +1965,7 @@ def search_materials_across_catalogs(
                                     _bare_unit = _bare["material"] + _bare["labor"] + _bare["equipment"]
                                     if _bare_unit > 0:
                                         unit_cost = _bare_unit
+                                    material["_rsmeans_line_uom"] = line_uom
                                     computed = _compute_total_cost_for_material(
                                         material,
                                         unit_cost,
@@ -1940,6 +1986,7 @@ def search_materials_across_catalogs(
                                     best_unit_cost = computed["unit_cost"]
                                     best_unit_basis = computed.get("effective_unit", unit)
                                     best_costing_mode = computed.get("costing_mode", "area")
+                                    chosen_source_type = "user_id"
                                     search_log.append({
                                         "material": material_name,
                                         "search_term": specified_id,
@@ -1994,6 +2041,7 @@ def search_materials_across_catalogs(
                                 _bare_unit = _bare["material"] + _bare["labor"] + _bare["equipment"]
                                 if _bare_unit > 0:
                                     unit_cost = _bare_unit
+                                material["_rsmeans_line_uom"] = item.get("unitOfMeasure", "")
                                 computed = _compute_total_cost_for_material(
                                     material,
                                     unit_cost,
@@ -2014,6 +2062,7 @@ def search_materials_across_catalogs(
                                 best_unit_cost = computed["unit_cost"]
                                 best_unit_basis = computed.get("effective_unit", unit)
                                 best_costing_mode = computed.get("costing_mode", "area")
+                                chosen_source_type = "fallback"
                                 search_log.append({
                                     "material": material_name,
                                     "search_term": str(specified_id),
@@ -2078,6 +2127,22 @@ def search_materials_across_catalogs(
                         if not match:
                             continue
                         division_id = match.get("id", "")
+                        _candidate_count = len(ranked_candidates or [])
+                        _force_fallback_multi = False
+                        if not specified_id and _candidate_count > 1:
+                            _fallback_id = _get_default_fallback_rsmeans_id(material_name, material)
+                            if _fallback_id:
+                                division_id = _fallback_id
+                                _force_fallback_multi = True
+                                search_log.append({
+                                    "material": material_name,
+                                    "search_term": alt_term,
+                                    "catalog": catalog,
+                                    "division": alt_division,
+                                    "status": "multi_candidate_fallback",
+                                    "forced_fallback_costline_id": division_id,
+                                    "candidate_scores": ranked_candidates[:5],
+                                })
                         if match.get("is_fallback"):
                             print("  Fallback:")
                             print(f"    Reason      : {match.get('fallback_reason', 'out_of_bounds')}")
@@ -2120,6 +2185,7 @@ def search_materials_across_catalogs(
                                     if (
                                         unit_cost > 0
                                         and str(material.get("costing_mode", "")).lower() != "volume_from_area"
+                                        and not _can_convert_weatherstrip_each_to_lf(material, unit, line_uom)
                                         and not _uom_compatible(unit, line_uom)
                                     ):
                                         search_log.append({
@@ -2140,6 +2206,7 @@ def search_materials_across_catalogs(
                                         _bare_unit = _bare["material"] + _bare["labor"] + _bare["equipment"]
                                         if _bare_unit > 0:
                                             unit_cost = _bare_unit
+                                        material["_rsmeans_line_uom"] = line_uom
                                         computed = _compute_total_cost_for_material(
                                             material,
                                             unit_cost,
@@ -2156,10 +2223,12 @@ def search_materials_across_catalogs(
                                         best_match = item
                                         best_cost = computed["total_cost"]
                                         best_catalog = catalog
-                                        matched_term = alt_term
+                                        matched_term = f"fallback:{division_id}" if _force_fallback_multi else alt_term
                                         best_unit_cost = computed["unit_cost"]
                                         best_unit_basis = computed.get("effective_unit", unit)
                                         best_costing_mode = computed.get("costing_mode", "area")
+                                        if _force_fallback_multi or match.get("is_fallback"):
+                                            chosen_source_type = "fallback"
                                         
                                         status_msg = f"match_found"
                                         if alt_term != material_name:
@@ -2199,8 +2268,12 @@ def search_materials_across_catalogs(
         
         if best_match:
             match_type = "closest_match"
-            if matched_term and str(matched_term).startswith("rsmeans_id:"):
+            if chosen_source_type == "user_id" and matched_term and str(matched_term).startswith("rsmeans_id:"):
                 match_type = "exact_id_match"
+            elif chosen_source_type == "fallback":
+                match_type = "fallback_id"
+            _qty = float(material.get("quantity", 0.0) or 0.0)
+            _bare_unit = (float(best_total_material_cost or 0.0) / _qty) if _qty > 0.0 else 0.0
             material_result = {
                 **material,
                 "catalog": best_catalog,
@@ -2210,10 +2283,13 @@ def search_materials_across_catalogs(
                 "total_material_cost": best_total_material_cost,
                 "total_labor_cost": best_total_labor_cost,
                 "total_equipment_cost": best_total_equipment_cost,
+                "bare_material_unit_cost": _bare_unit,
+                "bare_material_unit_basis": best_unit_basis,
                 "cost_component_source": best_component_source,
                 "rsmeans_id": best_match.get("id", ""),
                 "rsmeans_description": best_match.get("description", ""),
                 "match_type": match_type,
+                "chosen_source_type": chosen_source_type,
                 "unit_cost_basis": best_unit_basis,
                 "costing_mode": best_costing_mode,
             }

@@ -1290,18 +1290,63 @@ class IncreaseInsulationRValueForRoofs(openstudio.measure.ModelMeasure):
                                 "results", {}
                             ).get("materials", [])
                             total_added_volume_cf = sum(float(m.get("quantity_volume", 0.0)) for m in rsmeans_materials)
-                            if total_added_volume_cf > 0.0:
-                                # Cost-per-CF feature reflects the full installed
-                                # bare cost (material + labor + equipment) so it
-                                # remains comparable across line types regardless
-                                # of how the API splits the components.
-                                total_bare_cost = float(summary.get(
-                                    "total_bare_cost",
-                                    float(summary.get("total_material_cost", 0.0))
-                                    + float(summary.get("total_labor_cost", 0.0))
-                                    + float(summary.get("total_equipment_cost", 0.0)),
-                                ))
-                                rsmeans_cost_per_cf_feature_value = total_bare_cost / total_added_volume_cf
+                            if materials_results:
+                                _selected_mat = None
+                                if use_exact_costline_id and exact_costline_id:
+                                    for _mat in materials_results:
+                                        if str(_mat.get("rsmeans_id", "")).strip() == str(exact_costline_id).strip():
+                                            _selected_mat = _mat
+                                            break
+                                if _selected_mat is None:
+                                    _selected_ids = {
+                                        str(m.get("rsmeans_id", "")).strip()
+                                        for m in materials_results
+                                        if str(m.get("rsmeans_id", "")).strip()
+                                    }
+                                    if len(_selected_ids) > 1:
+                                        _fallback_costline_id = "072116201320"
+                                        for _mat in materials_results:
+                                            if str(_mat.get("rsmeans_id", "")).strip() == _fallback_costline_id:
+                                                _selected_mat = _mat
+                                                break
+                                        if _selected_mat is not None:
+                                            runner.registerWarning(
+                                                "Multiple RSMeans lines detected for roof insulation API unit rate; "
+                                                f"forcing fallback costline ID {_fallback_costline_id}."
+                                            )
+                                        else:
+                                            runner.registerWarning(
+                                                "Multiple RSMeans lines detected for roof insulation API unit rate; "
+                                                "fallback ID not found in results, using first matched line."
+                                            )
+                                    if _selected_mat is None:
+                                        _selected_mat = materials_results[0]
+
+                                _bare_unit = float(_selected_mat.get("bare_material_unit_cost", 0.0) or 0.0)
+                                _basis = str(_selected_mat.get("bare_material_unit_basis", _selected_mat.get("unit_cost_basis", _selected_mat.get("unit", "")))).upper().replace(" ", "")
+                                _mode = str(_selected_mat.get("costing_mode", "")).strip().lower()
+                                _cost_per_cf = 0.0
+                                if _bare_unit > 0.0:
+                                    if _basis == "CF":
+                                        _cost_per_cf = _bare_unit
+                                    elif _basis == "CY":
+                                        _cost_per_cf = _bare_unit / 27.0
+                                    elif _basis == "SF" and _mode == "volume_from_area":
+                                        _thk_ft = float(_selected_mat.get("source_line_thickness_ft", 0.0) or 0.0)
+                                        if _thk_ft > 0.0:
+                                            _cost_per_cf = _bare_unit / _thk_ft
+                                if _cost_per_cf > 0.0:
+                                    # API cost-per-CF feature is bare material-only
+                                    # from selected RSMeans line unit pricing.
+                                    rsmeans_cost_per_cf_feature_value = _cost_per_cf
+                                elif total_added_volume_cf > 0.0:
+                                    runner.registerWarning(
+                                        "Could not derive roof API unit rate from RSMeans bare unit fields; "
+                                        "falling back to summary/material volume back-calculation."
+                                    )
+                                    rsmeans_cost_per_cf_feature_value = float(
+                                        summary.get("total_material_cost", 0.0)
+                                    ) / total_added_volume_cf
                             if materials_results:
                                 first_match = materials_results[0]
                                 matched_rsmeans_id = first_match.get("rsmeans_id") or rsmeans_materials[0].get("rsmeans_id", "")

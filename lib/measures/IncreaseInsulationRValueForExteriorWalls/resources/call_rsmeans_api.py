@@ -193,6 +193,22 @@ INSULATION_FALLBACK_IDS = {
 }
 
 
+def _resolve_insulation_fallback_costline_id(material_name: str) -> Optional[str]:
+    exact = INSULATION_FALLBACK_IDS.get(material_name)
+    if exact:
+        return exact
+
+    material_norm = _normalize_search_text(material_name)
+    for key, fallback_id in INSULATION_FALLBACK_IDS.items():
+        if _normalize_search_text(key) == material_norm:
+            return fallback_id
+    for key, fallback_id in INSULATION_FALLBACK_IDS.items():
+        key_norm = _normalize_search_text(key)
+        if key_norm and key_norm in material_norm:
+            return fallback_id
+    return None
+
+
 def _get_feature_as_string(props, feature_name: str) -> Optional[str]:
     if not props.hasFeature(feature_name):
         return None
@@ -1527,6 +1543,7 @@ def search_materials_across_catalogs(
         best_bare_material_total_cost = 0.0
         best_line_uom = None
         best_component_source = None
+        chosen_source_type = "search"
         
         # If a specific RSMeans line item ID is provided, attempt exact match first
         if specified_id and division_code and not _id_matches_division(specified_id, division_code):
@@ -1611,6 +1628,7 @@ def search_materials_across_catalogs(
                                     best_unit_basis = computed.get("effective_unit", unit)
                                     best_costing_mode = computed.get("costing_mode", "area")
                                     best_line_uom = line_uom
+                                    chosen_source_type = "user_id"
                                     search_log.append({
                                         "material": material_name,
                                         "search_term": specified_id,
@@ -1682,6 +1700,23 @@ def search_materials_across_catalogs(
                         if not match:
                             continue
                         division_id = match.get("id", "")
+                        _candidate_count = len(ranked_candidates or [])
+                        _fallback_id = _resolve_insulation_fallback_costline_id(material_name)
+                        _force_fallback_multi = (
+                            not specified_id and _candidate_count > 1 and bool(_fallback_id)
+                        )
+                        if _force_fallback_multi:
+                            division_id = str(_fallback_id)
+                            search_log.append({
+                                "material": material_name,
+                                "search_term": alt_term,
+                                "catalog": catalog,
+                                "division": alt_division,
+                                "status": "multi_candidate_fallback",
+                                "candidates_considered": _candidate_count,
+                                "forced_fallback_costline_id": division_id,
+                                "candidate_scores": ranked_candidates,
+                            })
                         print("  Match:")
                         print(f"    ID          : {division_id}")
                         print(f"    Description : {match.get('description', '')}")
@@ -1732,10 +1767,11 @@ def search_materials_across_catalogs(
                                         unit_cost = _bare_unit
 
                                     if unit_cost > 0:
+                                        _matched_desc = str(item.get("description", "")) if _force_fallback_multi else str(match.get("description", ""))
                                         computed = _compute_total_cost_for_material(
                                             material,
                                             unit_cost,
-                                            str(match.get("description", "")),
+                                            _matched_desc,
                                             line_uom=line_uom,
                                         )
                                         _total_op = float(computed["total_cost"])
@@ -1761,11 +1797,13 @@ def search_materials_across_catalogs(
                                         best_match = item
                                         best_cost = computed["total_cost"]
                                         best_catalog = catalog
-                                        matched_term = alt_term
+                                        matched_term = f"fallback:{division_id}" if _force_fallback_multi else alt_term
                                         best_unit_cost = computed["unit_cost"]
                                         best_unit_basis = computed.get("effective_unit", unit)
                                         best_costing_mode = computed.get("costing_mode", "area")
                                         best_line_uom = line_uom
+                                        if _force_fallback_multi or match.get("is_fallback"):
+                                            chosen_source_type = "fallback"
                                         
                                         status_msg = f"match_found"
                                         if alt_term != material_name:
@@ -1812,8 +1850,10 @@ def search_materials_across_catalogs(
         
         if best_match:
             match_type = "closest_match"
-            if matched_term and str(matched_term).startswith("rsmeans_id:"):
+            if chosen_source_type == "user_id" and matched_term and str(matched_term).startswith("rsmeans_id:"):
                 match_type = "exact_id_match"
+            elif chosen_source_type == "fallback":
+                match_type = "fallback_id"
             material_result = {
                 **material,
                 "catalog": best_catalog,
@@ -1824,12 +1864,14 @@ def search_materials_across_catalogs(
                 "total_labor_cost": best_total_labor_cost,
                 "total_equipment_cost": best_total_equipment_cost,
                 "bare_material_unit_cost": best_bare_material_unit_cost,
+                "bare_material_unit_basis": best_line_uom if best_line_uom else best_unit_basis,
                 "bare_material_total_cost": best_bare_material_total_cost,
                 "line_uom": best_line_uom,
                 "cost_component_source": best_component_source,
                 "rsmeans_id": best_match.get("id", ""),
                 "rsmeans_description": best_match.get("description", ""),
                 "match_type": match_type,
+                "chosen_source_type": chosen_source_type,
                 "unit_cost_basis": best_unit_basis,
                 "costing_mode": best_costing_mode,
             }

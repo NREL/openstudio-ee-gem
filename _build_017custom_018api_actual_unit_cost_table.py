@@ -4,9 +4,9 @@ from pathlib import Path
 from typing import Dict, List, Tuple
 
 ROOT = Path(__file__).resolve().parent
-TEST_A = ROOT / "lib" / "parametric_run" / "simulations" / "run_test_017_custom_rsmeans"
-TEST_B = ROOT / "lib" / "parametric_run" / "simulations" / "run_test_018_rsmeans_api"
-OUT_CSV = ROOT / "lib" / "parametric_run" / "018api_017custom_material_effective_cost_comparison_table.csv"
+TEST_A = ROOT / "lib" / "parametric_run" / "simulations" / "run_test_017_api"
+TEST_B = ROOT / "lib" / "parametric_run" / "simulations" / "run_test_018_custom"
+OUT_CSV = ROOT / "lib" / "parametric_run" / "017api_018custom_material_actual_unit_cost_comparison_table.csv"
 
 SCENARIOS = ["scenario_1", "scenario_2", "scenario_3"]
 FT_PER_M = 3.280839895013123
@@ -288,10 +288,10 @@ def main() -> None:
         "measure",
         "component",
         "unit",
-        "test_017_custom_rsmeans_material_cost_per_unit",
-        "test_017_custom_rsmeans_material_description",
-        "test_018_rsmeans_api_material_cost_per_unit",
-        "test_018_rsmeans_api_material_description",
+        "test_017_api_material_cost_per_unit",
+        "test_017_api_material_description",
+        "test_018_custom_material_cost_per_unit",
+        "test_018_custom_material_description",
     ]
 
     out_rows: List[List[str]] = []

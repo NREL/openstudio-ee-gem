@@ -1429,11 +1429,15 @@ def search_materials_across_catalogs(
                             "total_material_cost": _split["material"],
                             "total_labor_cost": _split["labor"],
                             "total_equipment_cost": _split["equipment"],
+                            "bare_material_unit_cost": (float(_split["material"] or 0.0) / float(quantity or 1.0)) if float(quantity or 0.0) > 0.0 else 0.0,
+                            "bare_material_unit_basis": line_uom,
                             "cost_component_source": _split["source"],
                             "rsmeans_id": explicit_item.get("id", explicit_rsmeans_id),
                             "rsmeans_description": explicit_item.get("description", ""),
                             "rsmeans_unit_of_measure": line_uom,
                             "source": "rsmeans_user_id",
+                            "match_type": "exact_id_match",
+                            "chosen_source_type": "user_id",
                         })
                         _append_rsmeans_raw_log(material, explicit_item, catalog, "explicit_id_match", "user_rsmeans_id")
                         total_cost += total
@@ -1460,88 +1464,6 @@ def search_materials_across_catalogs(
                 f"User-provided RSMeans ID {explicit_rsmeans_id} was not found; falling back to search logic for '{material_name}'"
             )
         
-        # For any material that maps to a curated entry in
-        # DOOR_FALLBACK_RSMEANS_IDS (door replacements, seals, weatherstrip,
-        # gaskets), prefer the curated ID over RSMeans text search.  Free-text
-        # matches against generic terms like "door" routinely picked the wrong
-        # costline (e.g. "Doors, stainless steel and glass, ...") for a
-        # "wooden door" request, leading to wildly inflated costs.  The
-        # curated mapping is authoritative for the supported door_option /
-        # seal_option values, so use it first and only fall through to text
-        # search if no curated mapping exists or the lookup fails.
-        _direct_fallback_id = _get_default_fallback_rsmeans_id(
-            material_name, material.get("description", "")
-        )
-        # Avoid the generic "door" -> commercial-glass-door fallback when the
-        # material name doesn't actually contain a known door/seal phrase, so
-        # text search still gets a chance for unknown materials.
-        _name_lower = material_name.lower()
-        _has_curated_phrase = any(
-            phrase in _name_lower for phrase in DOOR_FALLBACK_RSMEANS_IDS.keys()
-        )
-        if _direct_fallback_id and _has_curated_phrase:
-            for _cat in catalogs:
-                _fb_item = _lookup_cost_item_by_rsmeans_id(
-                    client=client,
-                    rsmeans_id=_direct_fallback_id,
-                    catalog=_cat,
-                    release_id=release_id,
-                    location_id=location_id,
-                    labor_type=labor_type,
-                    measurement_system=measurement_system,
-                )
-                if _fb_item:
-                    _bare2 = _extract_bare_components(_fb_item)
-                    _bare2_unit = _bare2["material"] + _bare2["labor"] + _bare2["equipment"]
-                    _uc = _bare2_unit if _bare2_unit > 0 else float(_fb_item.get("localizedCosts", {}).get("totalOpCost", 0.0))
-                    _line_uom = _fb_item.get("unitOfMeasure", "")
-                    _line_id = _fb_item.get("id", _direct_fallback_id)
-                    if _uc > 0 and division_code and not _id_matches_division(_line_id, division_code):
-                        warnings.append(
-                            f"Curated fallback ID {_direct_fallback_id} for '{material_name}' "
-                            f"resolved to id '{_line_id}' outside division '{division_code}'. Rejecting."
-                        )
-                        _uc = 0.0
-                    if _uc > 0 and not _uom_compatible(unit, _line_uom):
-                        warnings.append(
-                            f"Curated fallback ID {_direct_fallback_id} for '{material_name}' "
-                            f"has UOM '{_line_uom}' incompatible with requested unit '{unit}'. "
-                            f"Rejecting this match to avoid unit-mismatch costing errors."
-                        )
-                        _uc = 0.0
-                    if _uc > 0:
-                        _tc = _uc * quantity
-                        _split = _split_total_by_bare(_fb_item, _tc)
-                        all_results.append({
-                            **material,
-                            "catalog": _cat,
-                            "search_term_used": "curated_direct_fallback_id",
-                            "unit_cost": _uc,
-                            "total_cost": _tc,
-                            "total_material_cost": _split["material"],
-                            "total_labor_cost": _split["labor"],
-                            "total_equipment_cost": _split["equipment"],
-                            "cost_component_source": _split["source"],
-                            "rsmeans_id": _fb_item.get("id", _direct_fallback_id),
-                            "rsmeans_description": _fb_item.get("description", ""),
-                            "rsmeans_unit_of_measure": _line_uom,
-                            "source": "rsmeans_fallback_id",
-                        })
-                        _append_rsmeans_raw_log(material, _fb_item, _cat, "curated_direct_fallback_id", "curated_direct_fallback_id")
-                        total_cost += _tc
-                        total_material_cost_bare += _split["material"]
-                        total_labor_cost_bare += _split["labor"]
-                        total_equipment_cost_bare += _split["equipment"]
-                        fallback_count += 1
-                        warnings.append(
-                            f"Used curated fallback RSMeans ID {_direct_fallback_id} for "
-                            f"'{material_name}' (text search bypassed)"
-                        )
-                        best_match = _fb_item
-                        break
-            if best_match:
-                continue
-
         # Generate alternative search terms
         search_alternatives = generate_search_term_alternatives(material_name)
         
@@ -1578,6 +1500,25 @@ def search_materials_across_catalogs(
                         if not match:
                             continue
                         division_id = match.get("id", "")
+                        _candidate_count = len(ranked_candidates or [])
+                        _force_fallback_multi = False
+                        if not explicit_rsmeans_id and _candidate_count > 1:
+                            _fallback_id = _get_default_fallback_rsmeans_id(
+                                material_name,
+                                material.get("description", ""),
+                            )
+                            if _fallback_id:
+                                division_id = _fallback_id
+                                _force_fallback_multi = True
+                                search_log.append({
+                                    "material": material_name,
+                                    "search_term": alt_term,
+                                    "catalog": catalog,
+                                    "division": alt_division,
+                                    "status": "multi_candidate_fallback",
+                                    "forced_fallback_costline_id": division_id,
+                                    "candidate_scores": ranked_candidates[:5],
+                                })
                         print(f"    ✓ Match: {match.get('description', '')} (id {division_id})")
                         
                         # Get detailed cost data
@@ -1627,7 +1568,7 @@ def search_materials_across_catalogs(
                                         best_match = item
                                         best_cost = unit_cost * quantity
                                         best_catalog = catalog
-                                        if match.get("is_fallback"):
+                                        if _force_fallback_multi or match.get("is_fallback"):
                                             matched_term = "fallback_rsmeans_id"
                                             best_source = "rsmeans_fallback_id"
                                         else:
@@ -1666,6 +1607,9 @@ def search_materials_across_catalogs(
                     })
         
         if best_match:
+            _split = _split_total_by_bare(best_match, float(best_cost or 0.0))
+            _qty = float(quantity or 0.0)
+            _bare_unit = (float(_split["material"] or 0.0) / _qty) if _qty > 0.0 else 0.0
             material_result = {
                 **material,
                 "catalog": best_catalog,
@@ -1676,8 +1620,11 @@ def search_materials_across_catalogs(
                 "rsmeans_description": best_match.get("description", ""),
                 "rsmeans_unit_of_measure": best_match.get("unitOfMeasure", ""),
                 "source": best_source,
+                "match_type": "fallback_id" if best_source == "rsmeans_fallback_id" else "closest_match",
+                "chosen_source_type": "fallback" if best_source == "rsmeans_fallback_id" else "search",
+                "bare_material_unit_cost": _bare_unit,
+                "bare_material_unit_basis": best_match.get("unitOfMeasure", ""),
             }
-            _split = _split_total_by_bare(best_match, float(best_cost or 0.0))
             material_result["total_material_cost"] = _split["material"]
             material_result["total_labor_cost"] = _split["labor"]
             material_result["total_equipment_cost"] = _split["equipment"]
@@ -1767,11 +1714,15 @@ def search_materials_across_catalogs(
                     "total_material_cost": _split["material"],
                     "total_labor_cost": _split["labor"],
                     "total_equipment_cost": _split["equipment"],
+                    "bare_material_unit_cost": (float(_split["material"] or 0.0) / float(quantity or 1.0)) if float(quantity or 0.0) > 0.0 else 0.0,
+                    "bare_material_unit_basis": line_uom,
                     "cost_component_source": _split["source"],
                     "rsmeans_id": fallback_item.get("id", fallback_id),
                     "rsmeans_description": fallback_item.get("description", ""),
                     "rsmeans_unit_of_measure": line_uom,
                     "source": "rsmeans_fallback_id",
+                    "match_type": "fallback_id",
+                    "chosen_source_type": "fallback",
                 })
                 _append_rsmeans_raw_log(material, fallback_item, fallback_catalog, "fallback_rsmeans_id", "fallback_rsmeans_id")
                 total_cost += total

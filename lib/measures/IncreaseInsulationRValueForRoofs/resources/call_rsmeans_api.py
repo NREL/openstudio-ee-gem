@@ -1382,6 +1382,8 @@ def search_materials_across_catalogs(
         best_catalog = None
         matched_term = None
         force_fallback_due_to_score = False
+        force_fallback_due_to_ambiguity = False
+        explicit_id_used = False
 
         if specified_id:
             if division_code and not _id_matches_division(specified_id, division_code):
@@ -1436,6 +1438,7 @@ def search_materials_across_catalogs(
                                     best_cost_calc = cost_calc
                                     best_catalog = catalog
                                     matched_term = f"rsmeans_id:{specified_id}"
+                                    explicit_id_used = True
                                     search_log.append({
                                         "material": material_name,
                                         "search_term": specified_id,
@@ -1555,6 +1558,19 @@ def search_materials_across_catalogs(
                                     )
 
                                     if cost_calc["total_cost"] > 0:
+                                        _candidate_count = len(candidate_details or [])
+                                        if not specified_id and _candidate_count > 1 and material_fallback_id:
+                                            force_fallback_due_to_ambiguity = True
+                                            search_log.append({
+                                                "material": material_name,
+                                                "search_term": alt_term,
+                                                "catalog": catalog,
+                                                "status": "multi_candidate_fallback",
+                                                "fallback_costline_id": material_fallback_id,
+                                                "candidates_considered": _candidate_count,
+                                                "candidate_scores": candidate_details,
+                                            })
+                                            break
                                         top_score = candidate_details[0].get("score", 0.0)
                                         if top_score < MIN_ACCEPTABLE_MATCH_SCORE and material_fallback_id:
                                             force_fallback_due_to_score = True
@@ -1612,6 +1628,8 @@ def search_materials_across_catalogs(
 
                             if best_match:
                                 break
+                            if force_fallback_due_to_ambiguity:
+                                break
                             if force_fallback_due_to_score:
                                 break
 
@@ -1625,11 +1643,15 @@ def search_materials_across_catalogs(
                     })
             if force_fallback_due_to_score:
                 break
+            if force_fallback_due_to_ambiguity:
+                break
 
         if best_match:
             match_type = "closest_match"
-            if matched_term and str(matched_term).startswith("rsmeans_id:"):
+            chosen_source_type = "search"
+            if explicit_id_used and matched_term and str(matched_term).startswith("rsmeans_id:"):
                 match_type = "exact_id_match"
+                chosen_source_type = "user_id"
             # Pull breakdown from the cost_calc dict captured at match time so
             # each material contributes its own bare material/labor/equipment
             # totals to the catalog-wide aggregate. Falls back to combined
@@ -1654,6 +1676,7 @@ def search_materials_across_catalogs(
                 "total_labor_cost": lab_cost,
                 "total_equipment_cost": eqp_cost,
                 "bare_material_unit_cost": calc.get("unit_bare_material_cost", 0.0),
+                "bare_material_unit_basis": calc.get("line_uom") or calc.get("effective_unit", material.get("unit", "")),
                 "bare_material_total_cost": calc.get("total_bare_material_cost", 0.0),
                 "bare_total_unit_cost": calc.get("unit_bare_total_cost", 0.0),
                 "bare_total_total_cost": calc.get("total_bare_total_cost", 0.0),
@@ -1662,6 +1685,7 @@ def search_materials_across_catalogs(
                 "rsmeans_id": best_match.get("id", ""),
                 "rsmeans_description": best_match.get("description", ""),
                 "match_type": match_type,
+                "chosen_source_type": chosen_source_type,
                 "unit_cost_basis": calc.get("effective_unit", material.get("unit", "")),
                 "costing_mode": calc.get("costing_mode", "area"),
             }
@@ -1721,6 +1745,7 @@ def search_materials_across_catalogs(
                                             "total_labor_cost": cost_calc["total_labor_cost"],
                                             "total_equipment_cost": cost_calc["total_equipment_cost"],
                                             "bare_material_unit_cost": cost_calc.get("unit_bare_material_cost", 0.0),
+                                            "bare_material_unit_basis": cost_calc.get("line_uom") or cost_calc.get("effective_unit", ""),
                                             "bare_material_total_cost": cost_calc.get("total_bare_material_cost", 0.0),
                                             "bare_total_unit_cost": cost_calc.get("unit_bare_total_cost", 0.0),
                                             "bare_total_total_cost": cost_calc.get("total_bare_total_cost", 0.0),
@@ -1729,6 +1754,7 @@ def search_materials_across_catalogs(
                                             "rsmeans_id": item.get("id", ""),
                                             "rsmeans_description": item.get("description", ""),
                                             "match_type": "fallback_id",
+                                            "chosen_source_type": "fallback",
                                             "unit_cost_basis": cost_calc.get("effective_unit", ""),
                                             "costing_mode": cost_calc.get("costing_mode", "area"),
                                         }

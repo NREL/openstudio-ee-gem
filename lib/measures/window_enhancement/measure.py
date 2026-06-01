@@ -109,6 +109,43 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
     def secondary_glazing_options():
         return ["none", "install secondary glazing"]
 
+    def _resolve_glazing_rsmeans_id(self, material_name, material_payload, user_specified_id):
+        """Resolve RSMeans ID for glazing-related materials.
+
+        Priority:
+        1) User-specified ID (if provided)
+        2) Curated fallback ID from call_rsmeans_api helper
+        3) Raise ValueError (caller should terminate measure)
+        """
+        explicit_id = str(user_specified_id or "").strip()
+        if explicit_id:
+            return explicit_id
+
+        measure_dir = Path(__file__).parent
+        rsmeans_helper_path = measure_dir / "resources" / "call_rsmeans_api.py"
+        if not rsmeans_helper_path.exists():
+            raise ValueError(
+                f"RSMeans helper not found at {rsmeans_helper_path}; cannot resolve fallback ID for '{material_name}'."
+            )
+
+        spec = importlib.util.spec_from_file_location("call_rsmeans_api", rsmeans_helper_path)
+        if spec is None or spec.loader is None:
+            raise ValueError("Unable to load RSMeans helper module for fallback ID resolution.")
+        rsmeans_module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(rsmeans_module)
+
+        fallback_resolver = getattr(rsmeans_module, "_get_default_fallback_rsmeans_id", None)
+        if not callable(fallback_resolver):
+            raise ValueError("RSMeans fallback ID resolver '_get_default_fallback_rsmeans_id' is unavailable.")
+
+        fallback_id = fallback_resolver(material_name, material_payload)
+        if fallback_id:
+            return str(fallback_id).strip()
+
+        raise ValueError(
+            f"No RSMeans ID available for '{material_name}': user-specified ID and fallback ID are both missing."
+        )
+
     def arguments(self, model: typing.Optional[openstudio.model.Model] = None):
         """Define the arguments that user will input."""
         args = openstudio.measure.OSArgumentVector()
@@ -989,29 +1026,41 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
         # Early RSMeans lookup to infer preferred defaults from matched descriptions.
         if not use_custom_costs:
             seed_materials = []
-            if glass_option != "none" and user_num_panes > 0:
-                glazing_seed = {
-                    "name": "window glazing",
-                    "description": f"{user_num_panes}-pane glass replacement",
-                    "quantity": 100.0,
-                    "unit": "SF",
-                    "division_code": "08",
-                }
-                if use_specific_rsmeans_line_item_ids and rsmeans_id_glazing:
-                    glazing_seed["rsmeans_id"] = rsmeans_id_glazing
-                seed_materials.append(glazing_seed)
+            try:
+                if glass_option != "none" and user_num_panes > 0:
+                    glazing_seed = {
+                        "name": "window glazing",
+                        "description": f"{user_num_panes}-pane glass replacement",
+                        "quantity": 100.0,
+                        "unit": "SF",
+                        "division_code": "08",
+                    }
+                    glazing_seed["rsmeans_id"] = self._resolve_glazing_rsmeans_id(
+                        "window glazing",
+                        glazing_seed,
+                        rsmeans_id_glazing,
+                    )
+                    glazing_seed["strict_rsmeans_id_only"] = True
+                    seed_materials.append(glazing_seed)
 
-            if secondary_glazing_option != "none":
-                second_seed = {
-                    "name": "secondary glazing",
-                    "description": "secondary glazing installation",
-                    "quantity": 100.0,
-                    "unit": "SF",
-                    "division_code": "08",
-                }
-                if use_specific_rsmeans_line_item_ids and rsmeans_id_secondary_glazing:
-                    second_seed["rsmeans_id"] = rsmeans_id_secondary_glazing
-                seed_materials.append(second_seed)
+                if secondary_glazing_option != "none":
+                    second_seed = {
+                        "name": "secondary glazing",
+                        "description": "secondary glazing installation",
+                        "quantity": 100.0,
+                        "unit": "SF",
+                        "division_code": "08",
+                    }
+                    second_seed["rsmeans_id"] = self._resolve_glazing_rsmeans_id(
+                        "secondary glazing",
+                        second_seed,
+                        rsmeans_id_secondary_glazing,
+                    )
+                    second_seed["strict_rsmeans_id_only"] = True
+                    seed_materials.append(second_seed)
+            except ValueError as e:
+                runner.registerError(str(e))
+                return False
 
             if weatherstrip_option != "none":
                 weather_seed = {
@@ -1621,33 +1670,37 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
         reno_detail_features["window_weatherstrip_length_per_unit"] = length_per_unit
    
         # Phase 2: Build normalized material payload for RSMeans lookup.
-        materials = self._build_rsmeans_material_payload(
-            total_glazing_area_m2=executed_glazing_area_m2,
-            total_secondary_glazing_area_m2=executed_secondary_glazing_area_m2,
-            total_film_area_m2=executed_film_area_m2,
-            total_frame_area_m2=executed_frame_area_m2,
-            total_caulking_volume_m3=executed_caulking_volume_m3,
-            total_caulking_length_m=executed_caulking_length_m,
-            total_weatherstrip_length_m=executed_weatherstrip_length_m,
-            glass_option=glass_option,
-            wf_option=wf_option,
-            caulking_option=caulking_option,
-            film_option=film_option,
-            weatherstrip_option=weatherstrip_option,
-            secondary_glazing_option=secondary_glazing_option,
-            user_num_panes=user_num_panes,
-            effective_glass_pane_thickness=effective_glass_pane_thickness,
-            effective_gap_thickness=effective_gap_thickness,
-            use_specific_rsmeans_line_item_ids=use_specific_rsmeans_line_item_ids,
-            rsmeans_id_glazing=rsmeans_id_glazing,
-            rsmeans_id_frame=rsmeans_id_frame,
-            rsmeans_id_caulking=rsmeans_id_caulking,
-            rsmeans_id_film=rsmeans_id_film,
-            rsmeans_id_weatherstrip=rsmeans_id_weatherstrip,
-            rsmeans_id_secondary_glazing=rsmeans_id_secondary_glazing,
-            num_windows_executed=executed_frame_window_count,
-                total_window_area_m2=total_window_area_m2,
-        )
+        try:
+            materials = self._build_rsmeans_material_payload(
+                total_glazing_area_m2=executed_glazing_area_m2,
+                total_secondary_glazing_area_m2=executed_secondary_glazing_area_m2,
+                total_film_area_m2=executed_film_area_m2,
+                total_frame_area_m2=executed_frame_area_m2,
+                total_caulking_volume_m3=executed_caulking_volume_m3,
+                total_caulking_length_m=executed_caulking_length_m,
+                total_weatherstrip_length_m=executed_weatherstrip_length_m,
+                glass_option=glass_option,
+                wf_option=wf_option,
+                caulking_option=caulking_option,
+                film_option=film_option,
+                weatherstrip_option=weatherstrip_option,
+                secondary_glazing_option=secondary_glazing_option,
+                user_num_panes=user_num_panes,
+                effective_glass_pane_thickness=effective_glass_pane_thickness,
+                effective_gap_thickness=effective_gap_thickness,
+                use_specific_rsmeans_line_item_ids=use_specific_rsmeans_line_item_ids,
+                rsmeans_id_glazing=rsmeans_id_glazing,
+                rsmeans_id_frame=rsmeans_id_frame,
+                rsmeans_id_caulking=rsmeans_id_caulking,
+                rsmeans_id_film=rsmeans_id_film,
+                rsmeans_id_weatherstrip=rsmeans_id_weatherstrip,
+                rsmeans_id_secondary_glazing=rsmeans_id_secondary_glazing,
+                num_windows_executed=executed_frame_window_count,
+                    total_window_area_m2=total_window_area_m2,
+            )
+        except ValueError as e:
+            runner.registerError(str(e))
+            return False
 
         # Phase 3: Calculate capital cost using RSMeans or custom fallback inputs.
         cost_metrics = self._calculate_cost_metrics(
@@ -3891,8 +3944,12 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
                 "unit_si": "m2",
                 "division_code": "08",
             }
-            if use_specific_rsmeans_line_item_ids and rsmeans_id_glazing:
-                glazing_material["rsmeans_id"] = rsmeans_id_glazing
+            glazing_material["rsmeans_id"] = self._resolve_glazing_rsmeans_id(
+                "window glazing",
+                glazing_material,
+                rsmeans_id_glazing,
+            )
+            glazing_material["strict_rsmeans_id_only"] = True
             materials.append(glazing_material)
 
         if wf_option != "none" and total_frame_area_m2 > 0:
@@ -3925,8 +3982,12 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
                 "unit_si": "m2",
                 "division_code": "08",
             }
-            if use_specific_rsmeans_line_item_ids and rsmeans_id_film:
-                film_material["rsmeans_id"] = rsmeans_id_film
+            film_material["rsmeans_id"] = self._resolve_glazing_rsmeans_id(
+                "glazing film",
+                film_material,
+                rsmeans_id_film,
+            )
+            film_material["strict_rsmeans_id_only"] = True
             materials.append(film_material)
 
         if caulking_option != "none" and total_caulking_volume_m3 > 0:
@@ -3949,8 +4010,12 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
                 "unit_length_si": "m",
                 "division_code": "0792",  # Joint Sealants (MasterFormat); avoid stray matches in 0701 concrete maintenance
             }
-            if use_specific_rsmeans_line_item_ids and rsmeans_id_caulking:
-                caulking_material["rsmeans_id"] = rsmeans_id_caulking
+            caulking_material["rsmeans_id"] = self._resolve_glazing_rsmeans_id(
+                "sealant",
+                caulking_material,
+                rsmeans_id_caulking,
+            )
+            caulking_material["strict_rsmeans_id_only"] = True
             materials.append(caulking_material)
 
         if weatherstrip_option != "none" and total_weatherstrip_length_m > 0:
@@ -3959,6 +4024,10 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
                 "description": weatherstrip_option,
                 "quantity": _m_to_lf(total_weatherstrip_length_m),
                 "unit": "LF",
+                # RSMeans may return weatherstrip unit cost as $/EA (or opening).
+                # Apply fixed each length = 3 inches (0.25 ft) to convert EA -> LF.
+                "unit_length_per_each_in": 3.0,
+                "unit_length_per_each_ft": 0.25,
                 "quantity_si": total_weatherstrip_length_m,
                 "unit_si": "m",
                 "division_code": "08",
@@ -3987,8 +4056,12 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
                 "unit_si": "m2",
                 "division_code": "08",
             }
-            if use_specific_rsmeans_line_item_ids and rsmeans_id_secondary_glazing:
-                secondary_glazing_material["rsmeans_id"] = rsmeans_id_secondary_glazing
+            secondary_glazing_material["rsmeans_id"] = self._resolve_glazing_rsmeans_id(
+                "secondary glazing",
+                secondary_glazing_material,
+                rsmeans_id_secondary_glazing,
+            )
+            secondary_glazing_material["strict_rsmeans_id_only"] = True
             materials.append(secondary_glazing_material)
 
         return materials
@@ -4186,6 +4259,11 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
                             _mc = float(_m.get("total_cost", 0.0))
                             _ml = float(_m.get("total_labor_cost", 0.0))
                             _me = float(_m.get("total_equipment_cost", 0.0))
+                            _mm = float(_m.get("total_material_cost", _mc) or 0.0)
+                            _m["total_cost_pre_lifetime"] = _mc
+                            _m["total_labor_cost_pre_lifetime"] = _ml
+                            _m["total_equipment_cost_pre_lifetime"] = _me
+                            _m["total_material_cost_pre_lifetime"] = _mm
                             _lc_m = 1
                             for _key, _mult in _lc_mult_map:
                                 if _key in _mn:
@@ -4227,22 +4305,63 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
                         _caulking_cost_total = 0.0
                         _film_cost_total = 0.0
                         _weatherstrip_cost_total = 0.0
+                        _glass_unit_cost_cf = None
+                        _caulking_unit_cost_cy = None
+                        _film_unit_cost_sf = None
+                        _weatherstrip_unit_cost_lf = None
 
                         _frame_window_area_sf = 0.0
                         for _m in materials_results:
                             _mn = str(_m.get("name", "")).strip().lower()
-                            _mc = float(_m.get("total_cost", 0.0) or 0.0)
+                            _basis = str(_m.get("bare_material_unit_basis", _m.get("unit_cost_basis", _m.get("unit", "")))).upper().replace(" ", "")
+                            _mode = str(_m.get("costing_mode", "")).strip().lower()
+                            _bare_unit = float(_m.get("bare_material_unit_cost", 0.0) or 0.0)
+                            # API unit-rate fields are intentionally bare material
+                            # unit costs (pre-lifetime). Do not use installed totals
+                            # in this chain, so API vs CUSTOM stays comparable.
+                            _mc = float(
+                                _m.get(
+                                    "total_material_cost_pre_lifetime",
+                                    _m.get(
+                                        "total_material_cost",
+                                        _m.get("total_cost_pre_lifetime", _m.get("total_cost", 0.0)),
+                                    ),
+                                )
+                                or 0.0
+                            )
                             if _mn == "glazing film":
                                 _film_cost_total += _mc
+                                if _bare_unit > 0.0:
+                                    if _basis == "SF":
+                                        _film_unit_cost_sf = _bare_unit
                             elif _mn in ["window glazing", "glazing", "secondary glazing"]:
                                 _glass_cost_total += _mc
+                                if _bare_unit > 0.0:
+                                    if _basis == "CF":
+                                        _glass_unit_cost_cf = _bare_unit
+                                    elif _basis == "SF" and _mode == "volume_from_area":
+                                        _src_thk_ft = float(_m.get("source_line_thickness_ft", 0.0) or 0.0)
+                                        if _src_thk_ft > 0.0:
+                                            _glass_unit_cost_cf = _bare_unit / _src_thk_ft
                             elif _mn == "window frame":
                                 _frame_cost_total += _mc
                                 _frame_window_area_sf = float(_m.get("window_area_sf", 0.0) or 0.0)
                             elif _mn in ["sealant", "caulking"]:
                                 _caulking_cost_total += _mc
+                                if _bare_unit > 0.0:
+                                    if _basis == "CY":
+                                        _caulking_unit_cost_cy = _bare_unit
+                                    elif _basis == "GAL":
+                                        _caulking_unit_cost_cy = _bare_unit * 201.974
                             elif _mn == "weatherstrip":
                                 _weatherstrip_cost_total += _mc
+                                if _bare_unit > 0.0:
+                                    if _basis == "LF":
+                                        _weatherstrip_unit_cost_lf = _bare_unit
+                                    elif _basis == "EA":
+                                        _len_each_ft = float(_m.get("unit_length_per_each_ft", 0.0) or 0.0)
+                                        if _len_each_ft > 0.0:
+                                            _weatherstrip_unit_cost_lf = _bare_unit / _len_each_ft
 
                         _glass_volume_cf = (
                             (float(total_glazing_area_m2) + float(total_secondary_glazing_area_m2))
@@ -4255,7 +4374,9 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
                         _film_area_sf = float(total_film_area_m2) * 10.7639
                         _weatherstrip_length_lf = float(total_weatherstrip_length_m) * 3.28084
 
-                        if _glass_volume_cf > 0.0 and _glass_cost_total > 0.0:
+                        if _glass_unit_cost_cf is not None and _glass_unit_cost_cf > 0.0:
+                            rsmeans_glass_cost_per_cf = _glass_unit_cost_cf
+                        elif _glass_volume_cf > 0.0 and _glass_cost_total > 0.0:
                             rsmeans_glass_cost_per_cf = _glass_cost_total / _glass_volume_cf
                         # Companion $/SF metric: RSMeans glass cost-lines are
                         # priced per square foot of glazing area, so reporting
@@ -4271,7 +4392,9 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
                         _frame_denom_sf = _frame_window_area_sf if _frame_window_area_sf > 0.0 else _frame_area_sf
                         if _frame_denom_sf > 0.0 and _frame_cost_total > 0.0:
                             rsmeans_frame_cost_per_sf = _frame_cost_total / _frame_denom_sf
-                        if _caulking_volume_cy > 0.0 and _caulking_cost_total > 0.0:
+                        if _caulking_unit_cost_cy is not None and _caulking_unit_cost_cy > 0.0:
+                            rsmeans_caulking_cost_per_cy = _caulking_unit_cost_cy
+                        elif _caulking_volume_cy > 0.0 and _caulking_cost_total > 0.0:
                             rsmeans_caulking_cost_per_cy = _caulking_cost_total / _caulking_volume_cy
                         # Companion $/LF metric: RSMeans joint-sealant cost-lines
                         # are priced per linear foot of bead, so the back-derived
@@ -4280,9 +4403,13 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
                         # alongside.
                         if _caulking_length_lf > 0.0 and _caulking_cost_total > 0.0:
                             rsmeans_caulking_cost_per_lf = _caulking_cost_total / _caulking_length_lf
-                        if _film_area_sf > 0.0 and _film_cost_total > 0.0:
+                        if _film_unit_cost_sf is not None and _film_unit_cost_sf > 0.0:
+                            rsmeans_film_cost_per_sf = _film_unit_cost_sf
+                        elif _film_area_sf > 0.0 and _film_cost_total > 0.0:
                             rsmeans_film_cost_per_sf = _film_cost_total / _film_area_sf
-                        if _weatherstrip_length_lf > 0.0 and _weatherstrip_cost_total > 0.0:
+                        if _weatherstrip_unit_cost_lf is not None and _weatherstrip_unit_cost_lf > 0.0:
+                            rsmeans_weatherstrip_cost_per_lf = _weatherstrip_unit_cost_lf
+                        elif _weatherstrip_length_lf > 0.0 and _weatherstrip_cost_total > 0.0:
                             rsmeans_weatherstrip_cost_per_lf = _weatherstrip_cost_total / _weatherstrip_length_lf
 
                     self.apply_rsmeans_glazing_updates_to_model(
@@ -4408,6 +4535,7 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
             "window_cost_factor_basis": cost_factor_basis,
         })
         if cost_source == "rsmeans_api":
+            # Keep API factors as bare material unit costs.
             factors_features.update({
                 "window_api_glass_cost_per_cf": rsmeans_glass_cost_per_cf,
                 "window_api_frame_cost_per_sf": rsmeans_frame_cost_per_sf,
@@ -4416,6 +4544,7 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
                 "window_api_weatherstrip_cost_per_lf": rsmeans_weatherstrip_cost_per_lf,
             })
         if cost_source in ("custom_input", "custom_input_fallback"):
+            # Keep custom factors as user-entered bare material unit costs.
             factors_features.update({
                 "window_custom_labor_cost_multiplier": labor_cost_multiplier,
                 "window_custom_glass_cost_per_cf": glass_cost_per_cf,
