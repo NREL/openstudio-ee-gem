@@ -1781,7 +1781,7 @@ def generate_parametric_recap(target_path, city_climate_zones=None):
 # (used by run_all_tests.py to drive multiple sequential runs without editing this file).
 # RUN_NAME is purely a folder label under simulations/ -- it has no effect on
 # the model itself. Defaults to "run_test_009" for this branch's ad-hoc standalone runs.
-RUN_NAME = "run_test_018_custom"
+RUN_NAME = "run_test_019_api"
 def detect_openstudio_cli_path():
     """Find the OpenStudio CLI executable on this machine.
 
@@ -1891,7 +1891,7 @@ CUSTOM_COMBOS = [
         "wf_option": "wood window frame",
         "film_option": "safety film",
         "caulking_option": "acrylic",
-        "use_custom_costs": True,
+        "use_custom_costs": False,
         "wall_insulation_custom_cost_per_cf": 0.9,
         "roof_insulation_custom_cost_per_cf": 0.9,
         "glass_cost_per_cf": 499.199388,
@@ -1922,7 +1922,7 @@ CUSTOM_COMBOS = [
         "wf_option": "wood window frame",
         "film_option": "anti-graffiti film",
         "caulking_option": "polyurethane",
-        "use_custom_costs": True,
+        "use_custom_costs": False,
         "wall_insulation_custom_cost_per_cf": 0.981819,
         "roof_insulation_custom_cost_per_cf": 0.981819,
         "glass_cost_per_cf": 499.199388,
@@ -1953,7 +1953,7 @@ CUSTOM_COMBOS = [
         "wf_option": "wood-aluminium window frame",
         "film_option": "low-e film",
         "caulking_option": "polyurethane",
-        "use_custom_costs": True,
+        "use_custom_costs": False,
         "wall_insulation_custom_cost_per_cf": 2.64,
         "roof_insulation_custom_cost_per_cf": 2.64,
         "glass_cost_per_cf": 499.199388,

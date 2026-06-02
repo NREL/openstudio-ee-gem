@@ -136,6 +136,23 @@ DOOR_FALLBACK_RSMEANS_IDS = {
     "stiffened core": "081313130020",
 }
 
+# Forced fallback IDs requested for specific door/seal options.
+# Priority is still: user-provided explicit ID > forced fallback ID > search.
+FORCED_RSMEANS_IDS = {
+    "silicone adhesive smoke gasket": "087125105050",
+    "brush weatherstrip": "087125103700",
+    "automatic door bottom": "087125103650",
+    "jamb weatherstrip": "083323104000",
+    "jamb weatherstripping": "083323104000",
+    "wooden door": "081416090025",
+    "garage door": "083613200200",
+    "glass door": "083213100450",
+    "polystyrene core steel door": "081313130020",
+    "polyurethane core steel door": "081313130020",
+    "honeycomb core steel door": "081313130020",
+    "stiffened core steel door": "081313130020",
+}
+
 # Minimum clamped match score [0-100] required to accept a search result.
 # Scores below this trigger the fallback costline-ID lookup so that a
 # low-confidence text match never silently produces wrong costs.
@@ -407,6 +424,18 @@ def _split_total_by_bare(item: Dict[str, Any], total: float) -> Dict[str, Any]:
 
 def _normalize_text(value: str) -> str:
     return re.sub(r"\s+", " ", str(value or "").lower()).strip()
+
+
+def _get_forced_fallback_rsmeans_id(material_name: str, material_description: str = "") -> Optional[str]:
+    """Return a forced fallback ID for configured seal/door materials.
+
+    Only applies to specific materials listed in FORCED_RSMEANS_IDS.
+    """
+    normalized = _normalize_text(f"{material_name or ''} {material_description or ''}")
+    for phrase in sorted(FORCED_RSMEANS_IDS.keys(), key=len, reverse=True):
+        if phrase in normalized:
+            return FORCED_RSMEANS_IDS[phrase]
+    return None
 
 
 def _get_default_fallback_rsmeans_id(material_name: str, material_description: str = "") -> Optional[str]:
@@ -1463,6 +1492,110 @@ def search_materials_across_catalogs(
             warnings.append(
                 f"User-provided RSMeans ID {explicit_rsmeans_id} was not found; falling back to search logic for '{material_name}'"
             )
+
+        # Forced fallback path for configured seal/door options.
+        forced_fallback_id = _get_forced_fallback_rsmeans_id(
+            material_name,
+            material.get("description", ""),
+        )
+        if forced_fallback_id:
+            forced_item = None
+            forced_catalog = None
+            for catalog in catalogs:
+                forced_item = _lookup_cost_item_by_rsmeans_id(
+                    client=client,
+                    rsmeans_id=forced_fallback_id,
+                    catalog=catalog,
+                    release_id=release_id,
+                    location_id=location_id,
+                    labor_type=labor_type,
+                    measurement_system=measurement_system,
+                )
+                if forced_item:
+                    forced_catalog = catalog
+                    break
+
+            if forced_item:
+                _bare_forced = _extract_bare_components(forced_item)
+                _bare_forced_unit = (
+                    _bare_forced["material"]
+                    + _bare_forced["labor"]
+                    + _bare_forced["equipment"]
+                )
+                unit_cost = (
+                    _bare_forced_unit
+                    if _bare_forced_unit > 0
+                    else float(forced_item.get("localizedCosts", {}).get("totalOpCost", 0.0))
+                )
+                line_uom = forced_item.get("unitOfMeasure", "")
+                line_id = forced_item.get("id", forced_fallback_id)
+                if unit_cost > 0 and division_code and not _id_matches_division(line_id, division_code):
+                    warnings.append(
+                        f"Forced RSMeans ID {forced_fallback_id} for '{material_name}' "
+                        f"resolved to id '{line_id}' outside division '{division_code}'. "
+                        f"Falling back to search logic."
+                    )
+                    unit_cost = 0.0
+                if unit_cost > 0 and not _uom_compatible(unit, line_uom):
+                    warnings.append(
+                        f"Forced RSMeans ID {forced_fallback_id} for '{material_name}' "
+                        f"has UOM '{line_uom}' incompatible with requested unit '{unit}'. "
+                        f"Falling back to search logic."
+                    )
+                    unit_cost = 0.0
+
+                if unit_cost > 0:
+                    total = unit_cost * quantity
+                    _split = _split_total_by_bare(forced_item, total)
+                    all_results.append({
+                        **material,
+                        "catalog": forced_catalog,
+                        "search_term_used": "forced_fallback_rsmeans_id",
+                        "unit_cost": unit_cost,
+                        "total_cost": total,
+                        "total_material_cost": _split["material"],
+                        "total_labor_cost": _split["labor"],
+                        "total_equipment_cost": _split["equipment"],
+                        "bare_material_unit_cost": (float(_split["material"] or 0.0) / float(quantity or 1.0)) if float(quantity or 0.0) > 0.0 else 0.0,
+                        "bare_material_unit_basis": line_uom,
+                        "cost_component_source": _split["source"],
+                        "rsmeans_id": line_id,
+                        "rsmeans_description": forced_item.get("description", ""),
+                        "rsmeans_unit_of_measure": line_uom,
+                        "source": "rsmeans_forced_fallback_id",
+                        "match_type": "forced_fallback_id",
+                        "chosen_source_type": "forced_fallback",
+                    })
+                    _append_rsmeans_raw_log(
+                        material,
+                        forced_item,
+                        forced_catalog,
+                        "forced_fallback_rsmeans_id",
+                        "forced_fallback_rsmeans_id",
+                    )
+                    total_cost += total
+                    total_material_cost_bare += _split["material"]
+                    total_labor_cost_bare += _split["labor"]
+                    total_equipment_cost_bare += _split["equipment"]
+                    fallback_count += 1
+                    search_log.append({
+                        "material": material_name,
+                        "status": "forced_fallback_match",
+                        "forced_rsmeans_id": forced_fallback_id,
+                        "catalog": forced_catalog,
+                        "unit_cost": unit_cost,
+                        "unit_of_measure": line_uom,
+                        "quantity": quantity,
+                        "total_cost": total,
+                    })
+                    continue
+                warnings.append(
+                    f"Forced RSMeans ID {forced_fallback_id} for '{material_name}' was found but unusable; falling back to search logic."
+                )
+            else:
+                warnings.append(
+                    f"Forced RSMeans ID {forced_fallback_id} for '{material_name}' was not found; falling back to search logic."
+                )
         
         # Generate alternative search terms
         search_alternatives = generate_search_term_alternatives(material_name)

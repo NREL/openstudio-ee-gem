@@ -4032,7 +4032,7 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
                 "unit_si": "m",
                 "division_code": "08",
             }
-            if use_specific_rsmeans_line_item_ids and rsmeans_id_weatherstrip:
+            if rsmeans_id_weatherstrip:
                 weatherstrip_material["rsmeans_id"] = rsmeans_id_weatherstrip
             materials.append(weatherstrip_material)
 

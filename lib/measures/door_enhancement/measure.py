@@ -396,6 +396,15 @@ class DoorEnhancement(openstudio.measure.ModelMeasure):
         rsmeans_unit_costline_id.setDefaultValue("")
         args.append(rsmeans_unit_costline_id)
 
+        rsmeans_id_top_side_seal = openstudio.measure.OSArgument.makeStringArgument("rsmeans_id_top_side_seal", True)
+        rsmeans_id_top_side_seal.setDisplayName("RSMeans Line Item ID - Top/Side Seal (Optional Override)")
+        rsmeans_id_top_side_seal.setDescription(
+            "Optional exact RSMeans line item ID for top/side sealing strip. "
+            "If provided, this ID is attempted first before forced fallback/search."
+        )
+        rsmeans_id_top_side_seal.setDefaultValue("")
+        args.append(rsmeans_id_top_side_seal)
+
         use_custom_gwp = openstudio.measure.OSArgument.makeBoolArgument("use_custom_gwp", True)
         use_custom_gwp.setDisplayName("Use Custom GWP Inputs (skip EC3)")
         use_custom_gwp.setDefaultValue(False)
@@ -473,6 +482,7 @@ class DoorEnhancement(openstudio.measure.ModelMeasure):
         labor_cost_multiplier = runner.getDoubleArgumentValue("labor_cost_multiplier", user_arguments)
         overhead_profit_percent = runner.getDoubleArgumentValue("overhead_profit_percent", user_arguments)
         rsmeans_unit_costline_id = runner.getStringArgumentValue("rsmeans_unit_costline_id", user_arguments).strip()
+        rsmeans_id_top_side_seal = runner.getStringArgumentValue("rsmeans_id_top_side_seal", user_arguments).strip()
         use_custom_gwp = runner.getBoolArgumentValue("use_custom_gwp", user_arguments)
         custom_door_leaf_gwp_per_m2 = runner.getDoubleArgumentValue("custom_door_leaf_gwp_per_m2", user_arguments)
         custom_bottom_strip_gwp_per_m = runner.getDoubleArgumentValue("custom_bottom_strip_gwp_per_m", user_arguments)
@@ -504,6 +514,10 @@ class DoorEnhancement(openstudio.measure.ModelMeasure):
                 )
             if rsmeans_unit_costline_id:
                 runner.registerInfo(f"RSMeans Unit Cost Line ID override requested: {rsmeans_unit_costline_id}")
+            if rsmeans_id_top_side_seal:
+                runner.registerInfo(
+                    f"RSMeans top/side seal line item ID override requested: {rsmeans_id_top_side_seal}"
+                )
         length_per_unit_dict = {
             "brush weatherstrip": 0.9144,  # 36" = 0.9144 m, source: https://www.pemko.com/en/view-pdf?id=AADSS1046707&page=1
             "silicone adhesive smoke gasket": 5.1816,  # 17' = 5.1816 m, source: https://buildingtransparency.org/ec3/epds/ec327rq0
@@ -1358,6 +1372,56 @@ class DoorEnhancement(openstudio.measure.ModelMeasure):
 
             return None
 
+        def _parse_rsmeans_length_m(text: str):
+            """Extract a single-piece length in meters from RSMeans description text."""
+            desc = str(text or "")
+            lowered = desc.lower()
+
+            token = r"(\d+\s*-\s*\d+\s*/\s*\d+|\d+\s+\d+\s*/\s*\d+|\d+\s*/\s*\d+|\d+(?:\.\d+)?)"
+            contextual_patterns = [
+                rf"(?:length|len|long)\D{{0,20}}{token}\s*(?:\"|in\b|inch\b|inches\b)",
+                rf"(?:length|len|long)\D{{0,20}}{token}\s*(?:'|ft\b|foot\b|feet\b)",
+            ]
+            for pattern in contextual_patterns:
+                match = re.search(pattern, lowered, flags=re.IGNORECASE)
+                if not match:
+                    continue
+                numeric = _mixed_number_to_float(match.group(1))
+                if numeric is None or numeric <= 0.0:
+                    continue
+                if "in" in match.group(0) or '"' in match.group(0):
+                    return numeric * 0.0254
+                if "ft" in match.group(0) or "foot" in match.group(0) or "feet" in match.group(0) or "'" in match.group(0):
+                    return numeric * 0.3048
+
+            inch_match = re.search(rf"{token}\s*(?:\"|in\b|inch\b|inches\b)", lowered, flags=re.IGNORECASE)
+            if inch_match:
+                numeric = _mixed_number_to_float(inch_match.group(1))
+                if numeric is not None and numeric > 0.0:
+                    return numeric * 0.0254
+
+            foot_match = re.search(rf"{token}\s*(?:'|ft\b|foot\b|feet\b)", lowered, flags=re.IGNORECASE)
+            if foot_match:
+                numeric = _mixed_number_to_float(foot_match.group(1))
+                if numeric is not None and numeric > 0.0:
+                    return numeric * 0.3048
+
+            return None
+
+        def _default_seal_piece_length_m(option: str):
+            normalized = str(option or "").strip().lower()
+            if normalized == "silicone adhesive smoke gasket":
+                return 12.0 * 0.0254
+            if normalized in ["brush weatherstrip", "automatic door bottom"]:
+                return 3.0 * 0.0254
+            return float(length_per_unit_dict.get(option, 0.0) or 0.0)
+
+        def _resolve_seal_piece_length_for_cost(rsmeans_description: str, seal_option: str):
+            parsed_len_m = _parse_rsmeans_length_m(rsmeans_description)
+            if parsed_len_m is not None and parsed_len_m > 0.0:
+                return parsed_len_m, "rsmeans_description"
+            return _default_seal_piece_length_m(seal_option), "default_rule"
+
         def _parse_rsmeans_door_material_props(text: str):
             """Extract door material properties from RSMeans match description.
 
@@ -1496,6 +1560,7 @@ class DoorEnhancement(openstudio.measure.ModelMeasure):
                         "quantity": _side_qty,
                         "unit": _side_unit,
                         "division_code": "0871",  # Door Hardware (incl. weatherstripping); avoid stray door/glass matches
+                        "explicit_rsmeans_id": rsmeans_id_top_side_seal,
                     }
                 )
 
@@ -1739,16 +1804,12 @@ class DoorEnhancement(openstudio.measure.ModelMeasure):
                 rsmeans_door_thickness_m = rsmeans_parsed_props.get("thickness")
                 rsmeans_inferred_option = _infer_door_option_from_rsmeans(rsmeans_door_match_description)
 
-                # If we couldn't parse a door opening area from the RSMeans
-                # description, fall back to the user-supplied EPD reference
-                # area so that per-EACH costs still get normalized to per-m2.
-                if (rsmeans_door_area_per_unit_m2 is None or rsmeans_door_area_per_unit_m2 <= 0.0) and door_area_per_unit > 0.0:
-                    rsmeans_door_area_per_unit_m2 = float(door_area_per_unit)
-                    runner.registerWarning(
-                        "Could not parse door opening area from RSMeans description "
-                        f"'{rsmeans_door_match_description}'. Falling back to "
-                        f"door_area_per_unit={door_area_per_unit:.3f} m2 for cost normalization."
+                if rsmeans_door_area_per_unit_m2 is None or rsmeans_door_area_per_unit_m2 <= 0.0:
+                    runner.registerError(
+                        "Could not parse door opening area from RSMeans description for EA->area conversion. "
+                        f"Matched description: '{rsmeans_door_match_description}'."
                     )
+                    return False
 
                 # Normalize RSMeans door costs to area-based totals.
                 if rsmeans_lookup and rsmeans_lookup.get("status") == "ok":
@@ -2206,9 +2267,17 @@ class DoorEnhancement(openstudio.measure.ModelMeasure):
                             elif _basis in ("M", "METER", "METRE"):
                                 _bottom_unit_cost_per_m = _bare_unit
                             elif _basis == "EA":
-                                _len_each_m = float(length_per_unit_dict.get(door_bottom_seal_option, 0.0) or 0.0)
+                                _desc = str(mat.get("rsmeans_description", mat.get("description", "")) or "")
+                                _len_each_m, _len_source = _resolve_seal_piece_length_for_cost(
+                                    _desc,
+                                    door_bottom_seal_option,
+                                )
                                 if _len_each_m > 0.0:
                                     _bottom_unit_cost_per_m = _bare_unit / _len_each_m
+                                    runner.registerInfo(
+                                        "Bottom seal EA->m conversion used "
+                                        f"{_len_each_m:.6f} m per each ({_len_source})."
+                                    )
                     elif "top side seal" in _mat_name or "top/side" in _mat_name or "jamb" in _mat_name:
                         _top_side_seal_cost_total += _mat_cost
                         if _bare_unit > 0.0:
@@ -2217,9 +2286,17 @@ class DoorEnhancement(openstudio.measure.ModelMeasure):
                             elif _basis in ("M", "METER", "METRE"):
                                 _top_side_unit_cost_per_m = _bare_unit
                             elif _basis == "EA":
-                                _len_each_m = float(length_per_unit_dict.get(door_top_side_seal_option, 0.0) or 0.0)
+                                _desc = str(mat.get("rsmeans_description", mat.get("description", "")) or "")
+                                _len_each_m, _len_source = _resolve_seal_piece_length_for_cost(
+                                    _desc,
+                                    door_top_side_seal_option,
+                                )
                                 if _len_each_m > 0.0:
                                     _top_side_unit_cost_per_m = _bare_unit / _len_each_m
+                                    runner.registerInfo(
+                                        "Top/side seal EA->m conversion used "
+                                        f"{_len_each_m:.6f} m per each ({_len_source})."
+                                    )
 
                 if _door_unit_cost_per_m2 is not None and _door_unit_cost_per_m2 > 0.0:
                     door_rsmeans_cost_per_area_feature_value = _door_unit_cost_per_m2

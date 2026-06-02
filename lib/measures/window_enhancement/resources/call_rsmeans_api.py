@@ -306,6 +306,18 @@ def _get_default_fallback_rsmeans_id(material_name: str, material: Optional[Dict
     return None
 
 
+def _get_forced_fallback_rsmeans_id(material_name: str, material: Optional[Dict[str, Any]] = None) -> Optional[str]:
+    """Return forced fallback ID for targeted materials in this measure.
+
+    For this change-set we force weatherstrip to use curated fallback IDs when
+    user did not provide a usable explicit ID.
+    """
+    name_norm = _normalize_search_text(material_name)
+    if name_norm == "weatherstrip":
+        return _get_default_fallback_rsmeans_id(material_name, material)
+    return None
+
+
 def _extract_bare_components(item: Dict[str, Any]) -> Dict[str, Any]:
     """Pull material/labor/equipment unit costs (Including O&P) from a RSMeans line item.
 
@@ -2088,6 +2100,102 @@ def search_materials_across_catalogs(
                             "fallback_rsmeans_id": fallback_id,
                             "error": str(e),
                         })
+
+        # Forced fallback path for targeted materials (weatherstrip), after
+        # explicit ID attempt and before generic search.
+        forced_fallback_id = _get_forced_fallback_rsmeans_id(material_name, material)
+        if forced_fallback_id and not best_match:
+            for catalog in catalogs:
+                try:
+                    print(f"  Forced fallback ID: {forced_fallback_id}")
+                    print(f"  Catalog          : {catalog}")
+                    cost_line = client.get_unit_costlines(
+                        release_id=release_id,
+                        catalog=catalog,
+                        location_id=location_id,
+                        labor_type=labor_type,
+                        measurement_system=measurement_system,
+                        division_code=forced_fallback_id,
+                    )
+                    if not (cost_line and "items" in cost_line):
+                        continue
+
+                    for item in cost_line["items"]:
+                        if item.get("id") != forced_fallback_id:
+                            continue
+
+                        unit_cost = item.get("localizedCosts", {}).get("totalOpCost", 0.0)
+                        if unit_cost <= 0:
+                            continue
+                        line_uom = item.get("unitOfMeasure", "")
+                        if (
+                            str(material.get("costing_mode", "")).lower() != "volume_from_area"
+                            and not _can_convert_weatherstrip_each_to_lf(material, unit, line_uom)
+                            and not _uom_compatible(unit, line_uom)
+                        ):
+                            search_log.append({
+                                "material": material_name,
+                                "search_term": forced_fallback_id,
+                                "catalog": catalog,
+                                "status": "forced_fallback_uom_mismatch_rejected",
+                                "requested_unit": unit,
+                                "line_uom": line_uom,
+                                "rsmeans_id": forced_fallback_id,
+                                "rsmeans_description": item.get("description", ""),
+                            })
+                            continue
+
+                        _bare = _extract_bare_components(item)
+                        _bare_unit = _bare["material"] + _bare["labor"] + _bare["equipment"]
+                        if _bare_unit > 0:
+                            unit_cost = _bare_unit
+                        material["_rsmeans_line_uom"] = line_uom
+                        computed = _compute_total_cost_for_material(
+                            material,
+                            unit_cost,
+                            str(item.get("description", "")),
+                        )
+                        _total_bare = float(computed["total_cost"])
+                        _mat_frac = (_bare["material"] / _bare_unit) if _bare_unit > 0 else 1.0
+                        _lab_frac = (_bare["labor"] / _bare_unit) if _bare_unit > 0 else 0.0
+                        _eq_frac = (_bare["equipment"] / _bare_unit) if _bare_unit > 0 else 0.0
+
+                        best_total_material_cost = _total_bare * _mat_frac
+                        best_total_labor_cost = _total_bare * _lab_frac
+                        best_total_equipment_cost = _total_bare * _eq_frac
+                        best_component_source = _bare["source"]
+                        best_match = item
+                        best_cost = computed["total_cost"]
+                        best_catalog = catalog
+                        matched_term = f"forced_fallback:{forced_fallback_id}"
+                        best_unit_cost = computed["unit_cost"]
+                        best_unit_basis = computed.get("effective_unit", unit)
+                        best_costing_mode = computed.get("costing_mode", "area")
+                        chosen_source_type = "fallback"
+
+                        search_log.append({
+                            "material": material_name,
+                            "search_term": forced_fallback_id,
+                            "catalog": catalog,
+                            "status": "forced_fallback_match",
+                            "unit_cost": computed["unit_cost"],
+                            "quantity": quantity,
+                            "total_cost": best_cost,
+                            "costing_mode": best_costing_mode,
+                            "unit_cost_basis": best_unit_basis,
+                        })
+                        break
+
+                    if best_match:
+                        break
+                except Exception as e:
+                    search_log.append({
+                        "material": material_name,
+                        "search_term": forced_fallback_id,
+                        "catalog": catalog,
+                        "status": "forced_fallback_error",
+                        "error": str(e),
+                    })
 
         # Generate alternative search terms
         search_alternatives = generate_search_term_alternatives(material_name)
