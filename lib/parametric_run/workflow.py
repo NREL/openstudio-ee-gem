@@ -471,7 +471,7 @@ def _isolate_measure_resources_imports(measure_folder_str):
 def apply_python_measure(model, measure_folder, measure_class_name, arguments_dict):
     """
     Apply a Python OpenStudio ModelMeasure directly to a model in-process.
-    Returns True if successful, False otherwise.
+    Returns (success: bool, reason: str).
     """
     measure_folder_str = str(measure_folder)
     restore_imports = _isolate_measure_resources_imports(measure_folder_str)
@@ -486,21 +486,36 @@ def apply_python_measure(model, measure_folder, measure_class_name, arguments_di
         for arg_name, arg_value in arguments_dict.items():
             if arg_name in arg_map:
                 arg = arg_map[arg_name]
-                arg.setValue(arg_value)
+                set_ok = arg.setValue(arg_value)
+                if not set_ok:
+                    reason = (
+                        f"Invalid measure argument for {measure_class_name}: "
+                        f"{arg_name}={arg_value!r}"
+                    )
+                    try:
+                        choice_values = list(arg.choiceValues())
+                        if choice_values:
+                            reason += f". Allowed options: {choice_values}"
+                    except Exception:
+                        pass
+                    print(f"  ERROR: {reason}")
+                    return False, reason
                 arg_map[arg_name] = arg
         measure.run(model, runner, arg_map)
         result_value = runner.result().value().valueName()
         if result_value != "Success":
+            reason = f"Measure result is {result_value} for {measure_class_name}"
             print(f"  Measure result: {result_value}")
             for error in runner.result().errors():
                 print(f"    ERROR: {error.logMessage()}")
-            return False
-        return True
+            return False, reason
+        return True, ""
     except Exception as e:
-        print(f"  ERROR applying measure: {str(e)}")
+        reason = f"ERROR applying measure {measure_class_name}: {str(e)}"
+        print(f"  {reason}")
         import traceback
         traceback.print_exc()
-        return False
+        return False, reason
     finally:
         restore_imports()
 
@@ -995,9 +1010,10 @@ def create_simulation(
                 "overhead_profit_percent": float(scenario_dict.get("overhead_profit_percent") or 10.0),
             }
             print(f"  Applying wall insulation (R={scenario_dict['wall_r_value']}, material={wall_material_type})...")
-            if not apply_python_measure(model, Path(measure_dir_path) / "IncreaseInsulationRValueForExteriorWalls", "IncreaseInsulationRValueForExteriorWalls", wall_args):
+            wall_ok, wall_reason = apply_python_measure(model, Path(measure_dir_path) / "IncreaseInsulationRValueForExteriorWalls", "IncreaseInsulationRValueForExteriorWalls", wall_args)
+            if not wall_ok:
                 print(f"   {scenario_name}: wall measure failed")
-                log_failure("wall measure failed")
+                log_failure(f"wall measure failed: {wall_reason or 'unknown reason'}")
                 del model
                 return None
         if scenario_dict.get("roof_r_value") and roof_material_type_raw != "none":
@@ -1022,9 +1038,10 @@ def create_simulation(
                 "overhead_profit_percent": float(scenario_dict.get("overhead_profit_percent") or 10.0),
             }
             print(f"  Applying roof insulation (R={scenario_dict['roof_r_value']}, material={roof_material_type})...")
-            if not apply_python_measure(model, Path(measure_dir_path) / "IncreaseInsulationRValueForRoofs", "IncreaseInsulationRValueForRoofs", roof_args):
+            roof_ok, roof_reason = apply_python_measure(model, Path(measure_dir_path) / "IncreaseInsulationRValueForRoofs", "IncreaseInsulationRValueForRoofs", roof_args)
+            if not roof_ok:
                 print(f"   {scenario_name}: roof measure failed")
-                log_failure("roof measure failed")
+                log_failure(f"roof measure failed: {roof_reason or 'unknown reason'}")
                 del model
                 return None
         if has_window_renovation:
@@ -1086,13 +1103,19 @@ def create_simulation(
                 "u_factor_modification_percentage": float(scenario_dict.get("u_factor_modification_percentage") or 0.0),
                 "shgc_modification_percentage": float(scenario_dict.get("shgc_modification_percentage") or 0.0),
                 "visible_transmittance_modification_percentage": float(scenario_dict.get("visible_transmittance_modification_percentage") or 0.0),
+                "energy_guard_enabled": bool(scenario_dict.get("energy_guard_enabled", False)),
+                "energy_guard_strict": bool(scenario_dict.get("energy_guard_strict", True)),
+                "energy_guard_check_shgc": bool(scenario_dict.get("energy_guard_check_shgc", False)),
+                "energy_guard_u_tolerance": float(scenario_dict.get("energy_guard_u_tolerance") or 0.0),
+                "energy_guard_shgc_tolerance": float(scenario_dict.get("energy_guard_shgc_tolerance") or 0.0),
                 "labor_cost_multiplier": float(scenario_dict.get("labor_cost_multiplier") or 1.0),
                 "overhead_profit_percent": float(scenario_dict.get("overhead_profit_percent") or 10.0),
             }
             print(f"  Applying window enhancement (num_panes={num_panes}, glass_option={glass_option})...")
-            if not apply_python_measure(model, Path(measure_dir_path) / "window_enhancement", "WindowEnhancement", window_args):
+            window_ok, window_reason = apply_python_measure(model, Path(measure_dir_path) / "window_enhancement", "WindowEnhancement", window_args)
+            if not window_ok:
                 print(f"    {scenario_name}: window measure failed")
-                log_failure("window measure failed")
+                log_failure(f"window measure failed: {window_reason or 'unknown reason'}")
                 del model
                 return None
 
@@ -1129,9 +1152,10 @@ def create_simulation(
                 "overhead_profit_percent": float(scenario_dict.get("overhead_profit_percent") or 0.0),
             }
             print(f"  Applying door enhancement (door={door_args['door_option']})...")
-            if not apply_python_measure(model, Path(measure_dir_path) / "door_enhancement", "DoorEnhancement", door_args):
+            door_ok, door_reason = apply_python_measure(model, Path(measure_dir_path) / "door_enhancement", "DoorEnhancement", door_args)
+            if not door_ok:
                 print(f"    {scenario_name}: door measure failed")
-                log_failure("door measure failed")
+                log_failure(f"door measure failed: {door_reason or 'unknown reason'}")
                 del model
                 return None
 
@@ -1887,7 +1911,7 @@ CUSTOM_COMBOS = [
         "door_top_side_seal_option": "jamb weatherstrip",
         "window_num_panes": 1,
         "window_infiltration_reduction_percent": 30.0,
-        "weatherstrip_option": "brush weatherstrip",
+        "weatherstrip_option": "silicone adhesive smoke gasket",
         "wf_option": "wood window frame",
         "film_option": "safety film",
         "caulking_option": "acrylic",
@@ -1966,7 +1990,7 @@ CUSTOM_COMBOS = [
         "custom_top_side_seal_cost": 1.575,
         "u_factor_modification_percentage": -30.0,
         "shgc_modification_percentage": -30.0,
-        "visible_transmittance_modification_percentage": 20.0,
+        "visible_transmittance_modification_percentage": 0.0,
     },
 ]
 
@@ -1976,6 +2000,80 @@ _combos_override_json = os.environ.get("WORKFLOW_CUSTOM_COMBOS_JSON")
 if _combos_override_json:
     import json as _json
     CUSTOM_COMBOS = _json.loads(_combos_override_json)
+
+
+def validate_custom_combos(custom_combos, measure_dir_path):
+    """Fail fast on invalid combo keys/choice values before scenarios run."""
+    if not custom_combos:
+        return
+
+    legacy_key_map = {
+        "window_enhancement_infiltration_reduction_percent": "window_infiltration_reduction_percent",
+    }
+
+    argument_labels = {
+        "wall_insulation_material_type": "wall insulation material",
+        "roof_insulation_material_type": "roof insulation material",
+        "wf_option": "window frame option",
+        "caulking_option": "window caulking option",
+        "film_option": "window film option",
+        "weatherstrip_option": "window weatherstrip option",
+        "secondary_glazing_option": "window secondary glazing option",
+        "door_bottom_seal_option": "door bottom seal option",
+        "door_top_side_seal_option": "door top/side seal option",
+        "door_option": "door option",
+    }
+
+    choice_sources = [
+        ("IncreaseInsulationRValueForExteriorWalls", "IncreaseInsulationRValueForExteriorWalls", "wall_insulation_material_type", "insulation_material_types"),
+        ("IncreaseInsulationRValueForRoofs", "IncreaseInsulationRValueForRoofs", "roof_insulation_material_type", "insulation_material_types"),
+        ("window_enhancement", "WindowEnhancement", "wf_option", "wf_options"),
+        ("window_enhancement", "WindowEnhancement", "caulking_option", "caulking_options"),
+        ("window_enhancement", "WindowEnhancement", "film_option", "film_options"),
+        ("window_enhancement", "WindowEnhancement", "weatherstrip_option", "weatherstrip_options"),
+        ("window_enhancement", "WindowEnhancement", "secondary_glazing_option", "secondary_glazing_options"),
+        ("door_enhancement", "DoorEnhancement", "door_bottom_seal_option", "bottom_seal_options"),
+        ("door_enhancement", "DoorEnhancement", "door_top_side_seal_option", "top_side_seal_options"),
+        ("door_enhancement", "DoorEnhancement", "door_option", "door_options"),
+    ]
+
+    allowed_choices = {}
+    for measure_folder_name, measure_class_name, arg_name, options_method_name in choice_sources:
+        measure_module = load_measure_module_from_folder(
+            str(Path(measure_dir_path) / measure_folder_name),
+            measure_class_name,
+        )
+        measure_class = getattr(measure_module, measure_class_name)
+        allowed_choices[arg_name] = set(getattr(measure_class, options_method_name)())
+
+    errors = []
+    for combo_index, combo in enumerate(custom_combos, start=1):
+        if not isinstance(combo, dict):
+            errors.append(f"CUSTOM_COMBOS[{combo_index}] must be a dict, got {type(combo).__name__}")
+            continue
+
+        for legacy_key, canonical_key in legacy_key_map.items():
+            if legacy_key in combo:
+                errors.append(
+                    f"CUSTOM_COMBOS[{combo_index}] uses unsupported key '{legacy_key}'. "
+                    f"Use '{canonical_key}' instead."
+                )
+
+        for arg_name, allowed_values in allowed_choices.items():
+            if arg_name not in combo:
+                continue
+            value = combo.get(arg_name)
+            if value in [None, ""]:
+                continue
+            if str(value) not in allowed_values:
+                arg_label = argument_labels.get(arg_name, arg_name)
+                errors.append(
+                    f"CUSTOM_COMBOS[{combo_index}] has invalid {arg_label} ({arg_name})={value!r}. "
+                    f"Allowed values: {sorted(allowed_values)}"
+                )
+
+    if errors:
+        raise ValueError("Invalid custom combos:\n- " + "\n- ".join(errors))
 
 def scenario_output_exists(base_run_dir, scenario_dict):
     """Return True if this scenario's EnergyPlus SQL output already exists."""
@@ -2176,6 +2274,7 @@ if __name__ == "__main__":
     print(f"Run Name: {RUN_NAME}")
     print(f"Output Directory: {base_run_dir}")
     print("=" * 70)
+    validate_custom_combos(CUSTOM_COMBOS, measure_dir_path)
     # Phase 1: build the full scenario list (baseline + each custom combo per
     # city / building type).
     print("\n Generating scenarios...")
