@@ -331,6 +331,7 @@ def collect_window_inventory(model):
         "window_operable_count": 0,
         "window_skylight_count": 0,
         "window_simple_glazing_count": 0,
+        "window_layered_glazing_count": 0,
     }
     windows = [
         ss for ss in model.getSubSurfaces()
@@ -349,15 +350,201 @@ def collect_window_inventory(model):
         if not subsurface.construction().is_initialized():
             continue
         construction = subsurface.construction().get()
+        is_simple = False
         if construction.to_LayeredConstruction().is_initialized():
             layered = construction.to_LayeredConstruction().get()
             for layer_index in range(layered.numLayers()):
                 layer_material = layered.getLayer(layer_index)
                 if layer_material.to_SimpleGlazing().is_initialized():
                     inventory["window_simple_glazing_count"] += 1
+                    is_simple = True
                     break
+        if not is_simple:
+            inventory["window_layered_glazing_count"] += 1
 
     return inventory
+
+
+def _construction_r_value_ip(construction):
+    """Return construction R-value in IP units (ft^2*h*R/Btu), or None."""
+    if not construction.to_LayeredConstruction().is_initialized():
+        return None
+
+    layered = construction.to_LayeredConstruction().get()
+    if not layered.thermalConductance().is_initialized():
+        return None
+
+    conductance_si = layered.thermalConductance().get()
+    if conductance_si <= 0:
+        return None
+
+    try:
+        r_value_si = 1.0 / conductance_si
+        return openstudio.convert(r_value_si, "m^2*K/W", "ft^2*h*R/Btu").get()
+    except Exception:
+        return None
+
+
+def collect_baseline_envelope_inventory(model):
+    """Collect outdoor wall/roof construction counts and current R-values for baseline reporting."""
+    inventory = {
+        "baseline_wall_construction_r_values_json": "[]",
+        "baseline_roof_construction_r_values_json": "[]",
+    }
+    grouped = {
+        "wall": {},
+        "roof": {},
+    }
+
+    for surface in model.getSurfaces():
+        if str(surface.outsideBoundaryCondition()) != "Outdoors":
+            continue
+
+        surface_type = str(surface.surfaceType())
+        target_key = None
+        if surface_type == "Wall":
+            target_key = "wall"
+        elif surface_type in {"RoofCeiling", "Roof"}:
+            target_key = "roof"
+        if not target_key:
+            continue
+
+        if not surface.construction().is_initialized():
+            continue
+        construction = surface.construction().get()
+        r_value_ip = _construction_r_value_ip(construction)
+        if r_value_ip is None:
+            continue
+
+        construction_name = construction.nameString() or "Unnamed construction"
+        by_name = grouped[target_key]
+        if construction_name not in by_name:
+            by_name[construction_name] = {
+                "construction": construction_name,
+                "r_value_ip": r_value_ip,
+                "count": 0,
+            }
+        by_name[construction_name]["count"] += 1
+
+    for key, field in [
+        ("wall", "baseline_wall_construction_r_values_json"),
+        ("roof", "baseline_roof_construction_r_values_json"),
+    ]:
+        rows = list(grouped[key].values())
+        rows.sort(key=lambda item: (-int(item.get("count", 0)), str(item.get("construction", ""))))
+        inventory[field] = json.dumps(rows)
+
+    return inventory
+
+
+def collect_door_inventory(model):
+    """Collect door counts by subtype for baseline report text."""
+    inventory = {
+        "baseline_door_total_count": 0,
+        "baseline_door_glass_count": 0,
+        "baseline_door_overhead_count": 0,
+        "baseline_door_standard_count": 0,
+    }
+
+    for subsurface in model.getSubSurfaces():
+        subtype = str(subsurface.subSurfaceType())
+        if subtype not in {"Door", "GlassDoor", "OverheadDoor"}:
+            continue
+
+        inventory["baseline_door_total_count"] += 1
+        if subtype == "GlassDoor":
+            inventory["baseline_door_glass_count"] += 1
+        elif subtype == "OverheadDoor":
+            inventory["baseline_door_overhead_count"] += 1
+        else:
+            inventory["baseline_door_standard_count"] += 1
+
+    return inventory
+
+
+def build_baseline_renovation_details(envelope_inventory, window_inventory, door_inventory):
+    """Build baseline renovation details HTML for report table."""
+
+    def _build_measure_section(label, bullets):
+        clean_bullets = [b for b in bullets if b]
+        if not clean_bullets:
+            return ""
+        bullet_html = "".join(f"<li>{b}</li>" for b in clean_bullets)
+        return (
+            f"<div><strong>{label}:</strong>"
+            + "<ul class='reno-action-list' style='margin:6px 0 6px 18px;padding:0;list-style-type:disc;'>"
+            + bullet_html
+            + "</ul></div>"
+        )
+
+    def _fmt_r(raw):
+        try:
+            return f"R-{float(raw):.1f}"
+        except Exception:
+            return "N/A"
+
+    def _envelope_bullets(action_label, json_text):
+        try:
+            rows = json.loads(str(json_text or "[]"))
+        except Exception:
+            rows = []
+
+        if not rows:
+            return [f"{action_label}: current R-value of insulation is N/A"]
+
+        if len(rows) == 1:
+            return [
+                f"{action_label}: current R-value of insulation is {_fmt_r(rows[0].get('r_value_ip'))}"
+            ]
+
+        bullets = []
+        for row in rows:
+            construction_name = str(row.get("construction") or "Unnamed construction")
+            bullets.append(
+                f"{action_label} ({construction_name}): current R-value of insulation is {_fmt_r(row.get('r_value_ip'))}"
+            )
+        return bullets
+
+    window_total = int(window_inventory.get("window_total_count", 0) or 0)
+    window_simple = int(window_inventory.get("window_simple_glazing_count", 0) or 0)
+    window_layered = int(window_inventory.get("window_layered_glazing_count", 0) or 0)
+
+    door_total = int(door_inventory.get("baseline_door_total_count", 0) or 0)
+    door_glass = int(door_inventory.get("baseline_door_glass_count", 0) or 0)
+    door_overhead = int(door_inventory.get("baseline_door_overhead_count", 0) or 0)
+    door_standard = int(door_inventory.get("baseline_door_standard_count", 0) or 0)
+
+    sections = [
+        _build_measure_section(
+            "Current Condition of Exterior Wall",
+            _envelope_bullets("Exterior wall insulation", envelope_inventory.get("baseline_wall_construction_r_values_json")),
+        ),
+        _build_measure_section(
+            "Current Condition of Roof",
+            _envelope_bullets("Roof insulation", envelope_inventory.get("baseline_roof_construction_r_values_json")),
+        ),
+        _build_measure_section(
+            "Current Condition of Window",
+            [
+                (
+                    "Number of window constructions is "
+                    + f"{window_total}, with {window_simple} simple glazing type windows, "
+                    + f"and {window_layered} layered construction windows"
+                )
+            ],
+        ),
+        _build_measure_section(
+            "Current Condition of Door",
+            [
+                (
+                    "Number of door constructions is "
+                    + f"{door_total}, with {door_glass} glass door, {door_overhead} overhead door, "
+                    + f"and {door_standard} door"
+                )
+            ],
+        ),
+    ]
+    return "".join([section for section in sections if section])
 
 def run_osw(osw_dict, osw_filename, run_dir, openstudio_path, label):
     """Write an OSW and run it with the OpenStudio CLI. Returns True on success."""
@@ -1233,9 +1420,20 @@ def extract_scenario_data(osm_path, scenario_name):
     model = model_ptr.get()
     results["building_area_m2"] = model.getBuilding().floorArea()
     results["window_upgrade_status"] = None
-    results.update(collect_window_inventory(model))
+    window_inventory = collect_window_inventory(model)
+    door_inventory = collect_door_inventory(model)
+    results.update(window_inventory)
+    results.update(door_inventory)
+    baseline_details_html = None
     if scenario_name.startswith("baseline"):
-        results["renovation_details"] = "Baseline (no envelope renovation)"
+        envelope_inventory = collect_baseline_envelope_inventory(model)
+        results.update(envelope_inventory)
+        baseline_details_html = build_baseline_renovation_details(
+            envelope_inventory,
+            window_inventory,
+            door_inventory,
+        )
+        results["renovation_details"] = baseline_details_html or "Baseline (no envelope renovation)"
     else:
         results["renovation_details"] = "Envelope renovation applied (details generated at report time)"
 
@@ -1298,6 +1496,8 @@ def extract_scenario_data(osm_path, scenario_name):
                 # OpenStudio may serialize punctuation as HTML entities in OSM strings.
                 site_renovation_details = site_renovation_details.replace("&#59;", ";").replace("&#44;", ",")
                 results["renovation_details"] = site_renovation_details
+    if scenario_name.startswith("baseline") and baseline_details_html:
+        results["renovation_details"] = baseline_details_html
     op_keys = [
         "annual_electricity_cost_usd",
         "annual_gas_cost_usd",
@@ -1778,7 +1978,7 @@ CUSTOM_COMBOS = [
         "wf_option": "wood window frame",
         "film_option": "safety film",
         "caulking_option": "acrylic",
-        "use_custom_costs": False,
+        "use_custom_costs": True,
         "wall_insulation_custom_cost_per_cf": 0.9,
         "roof_insulation_custom_cost_per_cf": 0.9,
         "glass_cost_per_cf": 499.199388,
@@ -1809,7 +2009,7 @@ CUSTOM_COMBOS = [
         "wf_option": "wood window frame",
         "film_option": "anti-graffiti film",
         "caulking_option": "polyurethane",
-        "use_custom_costs": False,
+        "use_custom_costs": True,
         "wall_insulation_custom_cost_per_cf": 0.981819,
         "roof_insulation_custom_cost_per_cf": 0.981819,
         "glass_cost_per_cf": 499.199388,
@@ -1840,7 +2040,7 @@ CUSTOM_COMBOS = [
         "wf_option": "wood-aluminium window frame",
         "film_option": "low-e film",
         "caulking_option": "polyurethane",
-        "use_custom_costs": False,
+        "use_custom_costs": True,
         "wall_insulation_custom_cost_per_cf": 2.64,
         "roof_insulation_custom_cost_per_cf": 2.64,
         "glass_cost_per_cf": 499.199388,
@@ -2748,7 +2948,11 @@ def generate_html_report(df, html_report_path, run_name="run"):
         source_row = source_rows_by_scenario.get(scenario_name, row)
         if "baseline" in scenario_name.lower():
             renovation_df.at[idx, "renovation_type"] = "baseline"
-            renovation_df.at[idx, "renovation_details"] = "Baseline (no envelope renovation)"
+            baseline_details = source_row.get("renovation_details")
+            if _has_meaningful_value(baseline_details):
+                renovation_df.at[idx, "renovation_details"] = str(baseline_details)
+            else:
+                renovation_df.at[idx, "renovation_details"] = "Baseline (no envelope renovation)"
             continue
 
         measure_flags = {}
@@ -2812,6 +3016,8 @@ def generate_html_report(df, html_report_path, run_name="run"):
             door_lines = []
             if _has_meaningful_value(door_opt):
                 total_doors = _as_float(source_row.get("total_doors_processed_count"))
+                if total_doors is None:
+                    total_doors = _as_float(source_row.get("baseline_door_total_count"))
                 changed_doors = _as_float(source_row.get("total_doors_with_r_value_change_count"))
                 friendly_opt = _friendly_option(door_opt)
                 if changed_doors is not None and changed_doors == 0:
@@ -3261,9 +3467,9 @@ def generate_html_report(df, html_report_path, run_name="run"):
             "<div class='scenario-pie-card'>"
             + f"<div class='scenario-pie-title'>{scenario_label}</div>"
             + "<div class='scenario-pie-row'>"
-            + _build_measure_pie_panel("Cost breakdown by retrofit measure", cost_slices, money)
+            + _build_measure_pie_panel("Cost Breakdown by Retrofit Measure", cost_slices, money)
             + _build_measure_pie_panel(
-                "Total Site Energy Breakdown (GJ)",
+                "Annual Total Site Energy Breakdown (GJ)",
                 energy_slices,
                 lambda v: f"{float(v):,.2f} GJ",
                 "",
@@ -3292,7 +3498,7 @@ def generate_html_report(df, html_report_path, run_name="run"):
 
             f"<tr>"
             f"<td>{scenario_display_map.get(row['scenario'], row['scenario'])}</td>"
-            f"<td>Total Site Energy (GJ)</td>"
+            f"<td>Anual Total Site Energy (GJ)</td>"
             f"<td>{num_energy(b['total_site_energy_gj'])}</td>"
             f"<td>{num_energy(row['total_site_energy_gj'])}</td>"
             f"<td class=\"{positive_class}\">{num_energy(row_delta)}</td>"

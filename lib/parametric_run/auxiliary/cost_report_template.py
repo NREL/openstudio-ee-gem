@@ -256,7 +256,7 @@ def build_report_html(
         <div class="section">
             <h2>Executive Summary</h2>
             <div class="summary-box">
-                <p>This report compares total site energy consumption and operational costs between baseline and all applied renovation scenarios from CSV results. The construction cost data is from {report_year} RSMeans Database. Since RSMeans Database is proprietary, users can adopt customized cost dataset when needed.</p>
+                <p>This report compares total site energy consumption, operational costs, construction costs, and payback period between baseline and all the applied renovation scenarios. The construction cost data is from {report_year} RSMeans Database. Since RSMeans Database is proprietary, users can also adopt customized cost dataset when needed.</p>
             </div>
             <h3>Renovation Details by Scenario</h3>
             <table class="renovation-table">
@@ -360,7 +360,7 @@ def build_report_html(
             {result_summary_pie_charts_html}
             </div>
             <table class="material-costs-table">
-                <tr><th>Scenario</th><th>Retrofit Construction Cost (USD)</th><th>Annual Operational Cost (USD)</th><th>Total Site Energy (GJ)</th></tr>
+                <tr><th>Scenario</th><th>Retrofit Construction Cost (USD)</th><th>Annual Operational Cost (USD)</th><th>Anual Total Site Energy (GJ)</th></tr>
                 {spider_table_rows}
 
             </table>
