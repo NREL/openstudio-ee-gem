@@ -1389,7 +1389,7 @@ OS:SubSurface,
 
 OS:WeatherFile,
   {144a40dc-3f95-48b6-9628-f744a7629c92}, !- Handle
-  Buffalo Niagara Intl AP,                !- City
+  Buffalo Niagara Intl Ap,                !- City
   NY,                                     !- State Province Region
   USA,                                    !- Country
   TMY3,                                   !- Data Source
@@ -1399,7 +1399,7 @@ OS:WeatherFile,
   -5,                                     !- Time Zone {hr}
   215,                                    !- Elevation {m}
   C:/All_repos/openstudio-ee-gem/lib/parametric_run/weather/Buffalo/USA_NY_Buffalo-Greater.Buffalo.Intl.AP.725280_TMY3.epw, !- Url
-  3A15D82B,                               !- Checksum
+  6B50E0FF,                               !- Checksum
   ,                                       !- Start Date Actual Year
   Sunday;                                 !- Start Day of Week
 
@@ -8897,7 +8897,22 @@ OS:AdditionalProperties,
   2,                                      !- Feature Value 42
   renovation_details,                     !- Feature Name 43
   String,                                 !- Feature Data Type 43
-  Envelope renovation applied (details generated at report time); !- Feature Value 43
+  Envelope renovation applied (details generated at report time), !- Feature Value 43
+  measure_name,                           !- Feature Name 44
+  String,                                 !- Feature Data Type 44
+  Operating Cost Carbon Reporting Measure, !- Feature Value 44
+  annual_electricity_cost_usd,            !- Feature Name 45
+  Double,                                 !- Feature Data Type 45
+  16868.37163364244,                      !- Feature Value 45
+  annual_gas_cost_usd,                    !- Feature Name 46
+  Double,                                 !- Feature Data Type 46
+  155.52292708034796,                     !- Feature Value 46
+  annual_electricity_operating_emissions_kg_co2e, !- Feature Name 47
+  Double,                                 !- Feature Data Type 47
+  35874.833251220123,                     !- Feature Value 47
+  annual_gas_operating_emissions_kg_co2e, !- Feature Name 48
+  Double,                                 !- Feature Data Type 48
+  819.56875967321582;                     !- Feature Value 48
 
 OS:AdditionalProperties,
   {2bae0836-c0bd-441d-891c-a8720fa115aa}, !- Handle
