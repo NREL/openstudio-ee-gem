@@ -1978,7 +1978,7 @@ CUSTOM_COMBOS = [
         "wf_option": "wood window frame",
         "film_option": "safety film",
         "caulking_option": "acrylic",
-        "use_custom_costs": True,
+        "use_custom_costs": False,
         "wall_insulation_custom_cost_per_cf": 0.9,
         "roof_insulation_custom_cost_per_cf": 0.9,
         "glass_cost_per_cf": 499.199388,
@@ -2009,7 +2009,7 @@ CUSTOM_COMBOS = [
         "wf_option": "wood window frame",
         "film_option": "anti-graffiti film",
         "caulking_option": "polyurethane",
-        "use_custom_costs": True,
+        "use_custom_costs": False,
         "wall_insulation_custom_cost_per_cf": 0.981819,
         "roof_insulation_custom_cost_per_cf": 0.981819,
         "glass_cost_per_cf": 499.199388,
@@ -2040,7 +2040,7 @@ CUSTOM_COMBOS = [
         "wf_option": "wood-aluminium window frame",
         "film_option": "low-e film",
         "caulking_option": "polyurethane",
-        "use_custom_costs": True,
+        "use_custom_costs": False,
         "wall_insulation_custom_cost_per_cf": 2.64,
         "roof_insulation_custom_cost_per_cf": 2.64,
         "glass_cost_per_cf": 499.199388,
@@ -2137,18 +2137,28 @@ if __name__ == "__main__":
             scenario_name = generate_scenario_name(scenario)
             print(f"\n[{sim_count}/{total_sims}] {scenario_name}")
             sim_start = time.time()
-            result = create_simulation(
-                city=city,
-                base_run_dir=base_run_dir,
-                measure_dir_path=measure_dir_path,
-                base_weather_path=base_weather_path,
-                scenario_dict=scenario,
-                overwrite_existing=OVERWRITE_EXISTING,
-                building_type=building_type,
-                template=TEMPLATE,
-                climate_zone=climate_zone,
-                openstudio_path=OPENSTUDIO_PATH,
-            )
+            _raw_log_env_key = "RSMEANS_SCENARIO_RAW_LOG_PATH"
+            _had_raw_log_env = _raw_log_env_key in os.environ
+            _prev_raw_log_env = os.environ.get(_raw_log_env_key)
+            os.environ[_raw_log_env_key] = os.path.join(base_run_dir, scenario_name, "rsmeans_api_raw_fields.jsonl")
+            try:
+                result = create_simulation(
+                    city=city,
+                    base_run_dir=base_run_dir,
+                    measure_dir_path=measure_dir_path,
+                    base_weather_path=base_weather_path,
+                    scenario_dict=scenario,
+                    overwrite_existing=OVERWRITE_EXISTING,
+                    building_type=building_type,
+                    template=TEMPLATE,
+                    climate_zone=climate_zone,
+                    openstudio_path=OPENSTUDIO_PATH,
+                )
+            finally:
+                if _had_raw_log_env:
+                    os.environ[_raw_log_env_key] = _prev_raw_log_env if _prev_raw_log_env is not None else ""
+                else:
+                    os.environ.pop(_raw_log_env_key, None)
             if result:
                 successful_scenarios.append(result)
             else:
@@ -2844,7 +2854,11 @@ def generate_html_report(df, html_report_path, run_name="run"):
         if upgrade_status == "upgraded":
             return True
 
-        material_cost = _as_float(row.get("window_enhancement_material_cost_usd"))
+        material_cost = _as_float(
+            row.get("window_material_cost_$")
+            if row.get("window_material_cost_$") is not None
+            else row.get("window_enhancement_material_cost_usd")
+        )
         if material_cost is None or material_cost <= 0:
             return False
 
@@ -2874,10 +2888,26 @@ def generate_html_report(df, html_report_path, run_name="run"):
         frame_opt = _arg_value(scenario_name, "window", "wf_option")
         caulking_opt = _arg_value(scenario_name, "window", "caulking_option")
         secondary_opt = _arg_value(scenario_name, "window", "secondary_glazing_option")
-        frame_area = _as_float(row.get("window_enhancement_renovated_frame_area_m2"))
-        glazing_area = _as_float(row.get("window_enhancement_renovated_glazing_area_m2"))
-        caulking_volume = _as_float(row.get("window_enhancement_renovated_caulking_volume_m3"))
-        weatherstrip_length = _as_float(row.get("window_enhancement_renovated_weatherstrip_length_m"))
+        frame_area = _as_float(
+            row.get("window_renovated_frame_area_m2")
+            if row.get("window_renovated_frame_area_m2") is not None
+            else row.get("window_enhancement_renovated_frame_area_m2")
+        )
+        glazing_area = _as_float(
+            row.get("window_renovated_glazing_area_m2")
+            if row.get("window_renovated_glazing_area_m2") is not None
+            else row.get("window_enhancement_renovated_glazing_area_m2")
+        )
+        caulking_volume = _as_float(
+            row.get("window_renovated_caulking_volume_m3")
+            if row.get("window_renovated_caulking_volume_m3") is not None
+            else row.get("window_enhancement_renovated_caulking_volume_m3")
+        )
+        weatherstrip_length = _as_float(
+            row.get("window_renovated_weatherstrip_length_m")
+            if row.get("window_renovated_weatherstrip_length_m") is not None
+            else row.get("window_enhancement_renovated_weatherstrip_length_m")
+        )
         operable_count = _as_float(row.get("window_operable_count"))
 
         if _has_meaningful_value(panes):
