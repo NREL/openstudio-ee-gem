@@ -1974,7 +1974,7 @@ CUSTOM_COMBOS = [
         "door_top_side_seal_option": "jamb weatherstrip",
         "window_num_panes": 1,
         "window_infiltration_reduction_percent": 30.0,
-        "weatherstrip_option": "brush weatherstrip",
+        "weatherstrip_option": "silicone adhesive smoke gasket",
         "wf_option": "wood window frame",
         "film_option": "safety film",
         "caulking_option": "acrylic",
@@ -2053,7 +2053,7 @@ CUSTOM_COMBOS = [
         "custom_top_side_seal_cost": 1.575,
         "u_factor_modification_percentage": -30.0,
         "shgc_modification_percentage": -30.0,
-        "visible_transmittance_modification_percentage": 20.0,
+        "visible_transmittance_modification_percentage": 0.0,
     },
 ]
 
