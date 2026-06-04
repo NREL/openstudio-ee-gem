@@ -1868,7 +1868,7 @@ def generate_parametric_recap(target_path, city_climate_zones=None):
 # (used by run_all_tests.py to drive multiple sequential runs without editing this file).
 # RUN_NAME is purely a folder label under simulations/ -- it has no effect on
 # the model itself. Defaults to "run_test_009" for this branch's ad-hoc standalone runs.
-RUN_NAME = "run_test_019_rsmeans_api"
+RUN_NAME = "run_test_20_rsmeans_api"
 def detect_openstudio_cli_path():
     """Find the OpenStudio CLI executable on this machine.
 

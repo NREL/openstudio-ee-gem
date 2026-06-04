@@ -400,7 +400,9 @@ def _compute_total_cost_for_material(
               (CY lines are scaled by 1/27 to put unit cost in $/CF)
           * otherwise           : total = (unit_cost / line_thickness_ft) * volume_CF
               The thickness is parsed from the matched RSMeans description
-              string or falls back to the value stored in the material dict.
+              string. If the description has no parseable thickness, this
+              function raises ValueError and the caller must reject the line
+              (no fallback to a project-supplied thickness).
 
     Args:
         material:            The retrofit material dict (name, quantity, unit, etc.).
@@ -447,16 +449,26 @@ def _compute_total_cost_for_material(
             "line_uom": line_uom_norm,
         }
 
-    line_thickness_ft = _extract_thickness_ft_from_description(matched_description)
-    if line_thickness_ft is None:
-        line_thickness_ft = material.get("rsmeans_thickness_ft")
+    line_thickness_ft_raw = _extract_thickness_ft_from_description(matched_description)
+    if line_thickness_ft_raw is None:
+        raise ValueError(
+            "RSMeans line description has no parseable thickness; cannot compute "
+            f"volume-based cost for material {material.get('name', '?')!r}. "
+            f"Description: {matched_description!r}"
+        )
     try:
-        line_thickness_ft = float(line_thickness_ft)
-    except (TypeError, ValueError):
-        return default
+        line_thickness_ft = float(line_thickness_ft_raw)
+    except (TypeError, ValueError) as exc:
+        raise ValueError(
+            f"RSMeans line thickness is not numeric ({line_thickness_ft_raw!r}); "
+            f"cannot compute volume-based cost. Description: {matched_description!r}"
+        ) from exc
 
     if line_thickness_ft <= 0.0:
-        return default
+        raise ValueError(
+            f"RSMeans line thickness is non-positive ({line_thickness_ft} ft); "
+            f"cannot compute volume-based cost. Description: {matched_description!r}"
+        )
 
     unit_cost_per_cf = float(unit_cost) / line_thickness_ft
     total_cost = unit_cost_per_cf * float(quantity_volume)

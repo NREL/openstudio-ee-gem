@@ -551,8 +551,9 @@ def _compute_total_cost_for_material(
         - Otherwise (line is per SF), RSMeans prices insulation per SF at a
           specific thickness listed in the description (e.g., "3-1/2 inch").
           We extract that thickness, convert the $/SF to $/CF, then multiply
-          by the actual added volume (CF). Falls back to standard mode if
-          thickness cannot be parsed.
+          by the actual added volume (CF). If the description has no
+          parseable thickness, raises ValueError instead of falling back to
+          a project-supplied thickness — the caller must reject this line.
     """
     quantity = float(material.get("quantity", 1.0) or 1.0)
     default = {
@@ -587,14 +588,24 @@ def _compute_total_cost_for_material(
 
     line_thickness_ft_raw = _extract_thickness_ft_from_description(matched_description)
     if line_thickness_ft_raw is None:
-        line_thickness_ft_raw = material.get("rsmeans_thickness_ft")
+        raise ValueError(
+            "RSMeans line description has no parseable thickness; cannot compute "
+            f"volume-based cost for material {material.get('name', '?')!r}. "
+            f"Description: {matched_description!r}"
+        )
     try:
         line_thickness_ft = float(line_thickness_ft_raw)
-    except (TypeError, ValueError):
-        return default
+    except (TypeError, ValueError) as exc:
+        raise ValueError(
+            f"RSMeans line thickness is not numeric ({line_thickness_ft_raw!r}); "
+            f"cannot compute volume-based cost. Description: {matched_description!r}"
+        ) from exc
 
     if line_thickness_ft <= 0.0:
-        return default
+        raise ValueError(
+            f"RSMeans line thickness is non-positive ({line_thickness_ft} ft); "
+            f"cannot compute volume-based cost. Description: {matched_description!r}"
+        )
 
     unit_cost_per_cf = float(unit_cost) / line_thickness_ft
     total_cost = unit_cost_per_cf * float(quantity_volume)
