@@ -1599,8 +1599,6 @@ def search_materials_across_catalogs(
                                 unit_cost = item.get("localizedCosts", {}).get("totalOpCost", 0.0)
                                 _bare = _extract_bare_components(item)
                                 _bare_unit = _bare["material"] + _bare["labor"] + _bare["equipment"]
-                                if _bare_unit > 0:
-                                    unit_cost = _bare_unit  # sum of Op components (Incl. O&P)
                                 if unit_cost > 0:
                                     computed = _compute_total_cost_for_material(
                                         material,
@@ -1774,8 +1772,6 @@ def search_materials_across_catalogs(
                                     unit_cost = item.get("localizedCosts", {}).get("totalOpCost", 0.0)
                                     _bare = _extract_bare_components(item)
                                     _bare_unit = _bare["material"] + _bare["labor"] + _bare["equipment"]
-                                    if _bare_unit > 0:
-                                        unit_cost = _bare_unit
 
                                     if unit_cost > 0:
                                         _matched_desc = str(item.get("description", "")) if _force_fallback_multi else str(match.get("description", ""))

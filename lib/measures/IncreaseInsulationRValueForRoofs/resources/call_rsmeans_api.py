@@ -324,6 +324,7 @@ def _compute_total_costs_by_component(
     components: Dict[str, float],
     matched_description: str,
     line_uom: Any = None,
+    op_total_unit_cost: Optional[float] = None,
 ) -> Dict[str, Any]:
     """Run the unit→quantity conversion for each cost component independently.
 
@@ -368,12 +369,22 @@ def _compute_total_costs_by_component(
     out["line_uom"] = sample.get("line_uom", line_uom)
     if "source_unit_cost_per_sf" in sample:
         out["source_line_thickness_ft"] = sample.get("source_line_thickness_ft")
-    out["unit_cost"] = (
-        out["unit_material_cost"] + out["unit_labor_cost"] + out["unit_equipment_cost"]
-    )
-    out["total_cost"] = (
-        out["total_material_cost"] + out["total_labor_cost"] + out["total_equipment_cost"]
-    )
+    if op_total_unit_cost is not None:
+        total_calc = _compute_total_cost_for_material(
+            material,
+            float(op_total_unit_cost),
+            matched_description,
+            line_uom=line_uom,
+        )
+        out["unit_cost"] = total_calc["unit_cost"]
+        out["total_cost"] = total_calc["total_cost"]
+    else:
+        out["unit_cost"] = (
+            out["unit_material_cost"] + out["unit_labor_cost"] + out["unit_equipment_cost"]
+        )
+        out["total_cost"] = (
+            out["total_material_cost"] + out["total_labor_cost"] + out["total_equipment_cost"]
+        )
     out["unit_bare_total_cost"] = (
         out["unit_bare_material_cost"] + out["unit_bare_labor_cost"] + out["unit_bare_equipment_cost"]
     )
@@ -1450,6 +1461,7 @@ def search_materials_across_catalogs(
                                     components,
                                     item.get("description", ""),
                                     line_uom=line_uom,
+                                        op_total_unit_cost=float(item.get("localizedCosts", {}).get("totalOpCost", 0.0) or 0.0),
                                 )
                                 if cost_calc["total_cost"] > 0:
                                     best_match = item
@@ -1574,6 +1586,7 @@ def search_materials_across_catalogs(
                                         components,
                                         match.get("description", ""),
                                         line_uom=line_uom,
+                                        op_total_unit_cost=float(item.get("localizedCosts", {}).get("totalOpCost", 0.0) or 0.0),
                                     )
 
                                     if cost_calc["total_cost"] > 0:
@@ -1679,6 +1692,13 @@ def search_materials_across_catalogs(
             mat_cost = float(calc.get("total_material_cost", best_cost) or 0.0)
             lab_cost = float(calc.get("total_labor_cost", 0.0) or 0.0)
             eqp_cost = float(calc.get("total_equipment_cost", 0.0) or 0.0)
+            _raw_comp = _extract_unit_cost_components(best_match)
+            _raw_unit_cost = float(_raw_comp.get("op_total", 0.0) or 0.0)
+            _raw_uom = _normalize_uom(best_match.get("unitOfMeasure", ""))
+            if _raw_unit_cost <= 0.0:
+                _raw_unit_cost = float(calc.get("unit_cost", 0.0) or 0.0)
+            if not _raw_uom:
+                _raw_uom = str(calc.get("line_uom") or calc.get("effective_unit", material.get("unit", "")))
             material_result = {
                 **material,
                 "catalog": best_catalog,

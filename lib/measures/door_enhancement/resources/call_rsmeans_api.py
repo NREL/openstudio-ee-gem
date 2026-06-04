@@ -1427,9 +1427,7 @@ def search_materials_across_catalogs(
                     measurement_system=measurement_system,
                 )
                 if explicit_item:
-                    _bare = _extract_bare_components(explicit_item)
-                    _bare_unit = _bare["material"] + _bare["labor"] + _bare["equipment"]
-                    unit_cost = _bare_unit if _bare_unit > 0 else float(explicit_item.get("localizedCosts", {}).get("totalOpCost", 0.0))
+                    unit_cost = float(explicit_item.get("localizedCosts", {}).get("totalOpCost", 0.0) or 0.0)
                     line_uom = explicit_item.get("unitOfMeasure", "")
                     line_id = explicit_item.get("id", explicit_rsmeans_id)
                     if unit_cost > 0 and division_code and not _id_matches_division(line_id, division_code):
@@ -1516,17 +1514,7 @@ def search_materials_across_catalogs(
                     break
 
             if forced_item:
-                _bare_forced = _extract_bare_components(forced_item)
-                _bare_forced_unit = (
-                    _bare_forced["material"]
-                    + _bare_forced["labor"]
-                    + _bare_forced["equipment"]
-                )
-                unit_cost = (
-                    _bare_forced_unit
-                    if _bare_forced_unit > 0
-                    else float(forced_item.get("localizedCosts", {}).get("totalOpCost", 0.0))
-                )
+                unit_cost = float(forced_item.get("localizedCosts", {}).get("totalOpCost", 0.0) or 0.0)
                 line_uom = forced_item.get("unitOfMeasure", "")
                 line_id = forced_item.get("id", forced_fallback_id)
                 if unit_cost > 0 and division_code and not _id_matches_division(line_id, division_code):
@@ -1667,9 +1655,7 @@ def search_materials_across_catalogs(
                         if cost_line and "items" in cost_line:
                             for item in cost_line["items"]:
                                 if item.get("id") == division_id:
-                                    _bare3 = _extract_bare_components(item)
-                                    _bare3_unit = _bare3["material"] + _bare3["labor"] + _bare3["equipment"]
-                                    unit_cost = _bare3_unit if _bare3_unit > 0 else item.get("localizedCosts", {}).get("totalOpCost", 0.0)
+                                    unit_cost = float(item.get("localizedCosts", {}).get("totalOpCost", 0.0) or 0.0)
                                     line_uom = item.get("unitOfMeasure", "")
                                     if unit_cost > 0 and division_code and not _id_matches_division(division_id, division_code):
                                         search_log.append({
@@ -1809,9 +1795,7 @@ def search_materials_across_catalogs(
                         break
 
             if fallback_item:
-                _bare4 = _extract_bare_components(fallback_item)
-                _bare4_unit = _bare4["material"] + _bare4["labor"] + _bare4["equipment"]
-                unit_cost = _bare4_unit if _bare4_unit > 0 else float(fallback_item.get("localizedCosts", {}).get("totalOpCost", 0.0))
+                unit_cost = float(fallback_item.get("localizedCosts", {}).get("totalOpCost", 0.0) or 0.0)
                 line_uom = fallback_item.get("unitOfMeasure", "")
                 line_id = fallback_item.get("id", fallback_id)
                 if unit_cost > 0 and division_code and not _id_matches_division(line_id, division_code):

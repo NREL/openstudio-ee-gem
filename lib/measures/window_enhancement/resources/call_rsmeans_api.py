@@ -397,9 +397,8 @@ def _fetch_unit_cost_for_costline_id(
     """Fetch unit cost and description for a given RSMeans costline ID.
 
     Returns (unit_cost, description, catalog, bare_components) or
-    (None, None, None, None). ``unit_cost`` is the BARE unit cost
-    (material+labor+equipment, without OHP) when bare components are
-    available; otherwise falls back to ``totalOpCost``.
+    (None, None, None, None). ``unit_cost`` is ``localizedCosts.totalOpCost``
+    (Total Incl. O&P).
     """
     for catalog in catalogs:
         try:
@@ -416,11 +415,7 @@ def _fetch_unit_cost_for_costline_id(
             for item in cost_line["items"]:
                 if item.get("id") == rsmeans_id:
                     bare = _extract_bare_components(item)
-                    bare_unit = bare["material"] + bare["labor"] + bare["equipment"]
-                    if bare_unit > 0.0:
-                        unit_cost = bare_unit
-                    else:
-                        unit_cost = float(item.get("localizedCosts", {}).get("totalOpCost", 0.0) or 0.0)
+                    unit_cost = float(item.get("localizedCosts", {}).get("totalOpCost", 0.0) or 0.0)
                     if unit_cost > 0.0:
                         return unit_cost, str(item.get("description", "")), catalog, bare
         except Exception:
@@ -2013,8 +2008,6 @@ def search_materials_across_catalogs(
                                 if unit_cost > 0:
                                     _bare = _extract_bare_components(item)
                                     _bare_unit = _bare["material"] + _bare["labor"] + _bare["equipment"]
-                                    if _bare_unit > 0:
-                                        unit_cost = _bare_unit
                                     material["_rsmeans_line_uom"] = line_uom
                                     computed = _compute_total_cost_for_material(
                                         material,
@@ -2089,8 +2082,6 @@ def search_materials_across_catalogs(
                                     continue
                                 _bare = _extract_bare_components(item)
                                 _bare_unit = _bare["material"] + _bare["labor"] + _bare["equipment"]
-                                if _bare_unit > 0:
-                                    unit_cost = _bare_unit
                                 material["_rsmeans_line_uom"] = item.get("unitOfMeasure", "")
                                 computed = _compute_total_cost_for_material(
                                     material,
@@ -2185,8 +2176,6 @@ def search_materials_across_catalogs(
 
                         _bare = _extract_bare_components(item)
                         _bare_unit = _bare["material"] + _bare["labor"] + _bare["equipment"]
-                        if _bare_unit > 0:
-                            unit_cost = _bare_unit
                         material["_rsmeans_line_uom"] = line_uom
                         computed = _compute_total_cost_for_material(
                             material,
@@ -2350,8 +2339,6 @@ def search_materials_across_catalogs(
                                     if unit_cost > 0:
                                         _bare = _extract_bare_components(item)
                                         _bare_unit = _bare["material"] + _bare["labor"] + _bare["equipment"]
-                                        if _bare_unit > 0:
-                                            unit_cost = _bare_unit
                                         material["_rsmeans_line_uom"] = line_uom
                                         computed = _compute_total_cost_for_material(
                                             material,
