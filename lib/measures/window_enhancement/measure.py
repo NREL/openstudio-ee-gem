@@ -138,12 +138,20 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
         if not callable(fallback_resolver):
             raise ValueError("RSMeans fallback ID resolver '_get_default_fallback_rsmeans_id' is unavailable.")
 
-        fallback_id = fallback_resolver(material_name, material_payload)
+        payload_name = str((material_payload or {}).get("name", "") or "").strip()
+        payload_desc = str((material_payload or {}).get("description", "") or "").strip()
+        fallback_lookup_name = payload_name or material_name
+
+        fallback_id = fallback_resolver(fallback_lookup_name, material_payload)
+        if not fallback_id and fallback_lookup_name != material_name:
+            # Retry with caller-provided semantic material key.
+            fallback_id = fallback_resolver(material_name, material_payload)
         if fallback_id:
             return str(fallback_id).strip()
 
         raise ValueError(
-            f"No RSMeans ID available for '{material_name}': user-specified ID and fallback ID are both missing."
+            "No RSMeans ID available: user-specified ID and fallback ID are both missing. "
+            f"material_name='{material_name}', payload_name='{payload_name}', payload_description='{payload_desc}'."
         )
 
     def arguments(self, model: typing.Optional[openstudio.model.Model] = None):
@@ -1753,6 +1761,8 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
         rsmeans_frame_cost_per_sf = cost_metrics["rsmeans_frame_cost_per_sf"]
         rsmeans_caulking_cost_per_cy = cost_metrics["rsmeans_caulking_cost_per_cy"]
         rsmeans_caulking_cost_per_lf = cost_metrics.get("rsmeans_caulking_cost_per_lf", "N/A")
+        rsmeans_caulking_pricing_unit_cost = cost_metrics.get("rsmeans_caulking_pricing_unit_cost", "N/A")
+        rsmeans_caulking_pricing_unit_uom = cost_metrics.get("rsmeans_caulking_pricing_unit_uom", "N/A")
         rsmeans_film_cost_per_sf = cost_metrics["rsmeans_film_cost_per_sf"]
         rsmeans_weatherstrip_cost_per_lf = cost_metrics["rsmeans_weatherstrip_cost_per_lf"]
 
@@ -1779,6 +1789,8 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
             rsmeans_frame_cost_per_sf=rsmeans_frame_cost_per_sf,
             rsmeans_caulking_cost_per_cy=rsmeans_caulking_cost_per_cy,
             rsmeans_caulking_cost_per_lf=rsmeans_caulking_cost_per_lf,
+            rsmeans_caulking_pricing_unit_cost=rsmeans_caulking_pricing_unit_cost,
+            rsmeans_caulking_pricing_unit_uom=rsmeans_caulking_pricing_unit_uom,
             rsmeans_film_cost_per_sf=rsmeans_film_cost_per_sf,
             rsmeans_weatherstrip_cost_per_lf=rsmeans_weatherstrip_cost_per_lf,
             cost_source=cost_metrics["cost_source"],
@@ -4117,6 +4129,8 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
         rsmeans_frame_cost_per_sf = "N/A"
         rsmeans_caulking_cost_per_cy = "N/A"
         rsmeans_caulking_cost_per_lf = "N/A"
+        rsmeans_caulking_pricing_unit_cost = "N/A"
+        rsmeans_caulking_pricing_unit_uom = "N/A"
         rsmeans_film_cost_per_sf = "N/A"
         rsmeans_weatherstrip_cost_per_lf = "N/A"
         cost_source = "none"
@@ -4306,7 +4320,11 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
                         _film_cost_total = 0.0
                         _weatherstrip_cost_total = 0.0
                         _glass_unit_cost_cf = None
+                        _glass_unit_cost_sf = None
+                        _frame_unit_cost_sf = None
                         _caulking_unit_cost_cy = None
+                        _caulking_pricing_unit_cost = None
+                        _caulking_pricing_unit_uom = None
                         _film_unit_cost_sf = None
                         _weatherstrip_unit_cost_lf = None
 
@@ -4316,6 +4334,10 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
                             _basis = str(_m.get("bare_material_unit_basis", _m.get("unit_cost_basis", _m.get("unit", "")))).upper().replace(" ", "")
                             _mode = str(_m.get("costing_mode", "")).strip().lower()
                             _bare_unit = float(_m.get("bare_material_unit_cost", 0.0) or 0.0)
+                            _pricing_eff = float(_m.get("pricing_unit_cost_effective", 0.0) or 0.0)
+                            _pricing_eff_uom = str(_m.get("pricing_unit_uom_effective", "")).upper().replace(" ", "")
+                            _pricing_raw = float(_m.get("pricing_unit_cost_raw", 0.0) or 0.0)
+                            _pricing_raw_uom = str(_m.get("pricing_unit_uom_raw", "")).upper().replace(" ", "")
                             # API unit-rate fields are intentionally bare material
                             # unit costs (pre-lifetime). Do not use installed totals
                             # in this chain, so API vs CUSTOM stays comparable.
@@ -4331,14 +4353,23 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
                             )
                             if _mn == "glazing film":
                                 _film_cost_total += _mc
+                                if _pricing_eff > 0.0 and _pricing_eff_uom == "SF":
+                                    _film_unit_cost_sf = _pricing_eff
                                 if _bare_unit > 0.0:
                                     if _basis == "SF":
                                         _film_unit_cost_sf = _bare_unit
                             elif _mn in ["window glazing", "glazing", "secondary glazing"]:
                                 _glass_cost_total += _mc
+                                if _pricing_eff > 0.0:
+                                    if _pricing_eff_uom == "CF":
+                                        _glass_unit_cost_cf = _pricing_eff
+                                    elif _pricing_eff_uom == "SF":
+                                        _glass_unit_cost_sf = _pricing_eff
                                 if _bare_unit > 0.0:
                                     if _basis == "CF":
                                         _glass_unit_cost_cf = _bare_unit
+                                    elif _basis == "SF":
+                                        _glass_unit_cost_sf = _bare_unit
                                     elif _basis == "SF" and _mode == "volume_from_area":
                                         _src_thk_ft = float(_m.get("source_line_thickness_ft", 0.0) or 0.0)
                                         if _src_thk_ft > 0.0:
@@ -4346,8 +4377,15 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
                             elif _mn == "window frame":
                                 _frame_cost_total += _mc
                                 _frame_window_area_sf = float(_m.get("window_area_sf", 0.0) or 0.0)
+                                if _pricing_eff > 0.0 and _pricing_eff_uom == "SF":
+                                    _frame_unit_cost_sf = _pricing_eff
                             elif _mn in ["sealant", "caulking"]:
                                 _caulking_cost_total += _mc
+                                if _pricing_raw > 0.0 and _pricing_raw_uom:
+                                    _caulking_pricing_unit_cost = _pricing_raw
+                                    _caulking_pricing_unit_uom = _pricing_raw_uom
+                                if _pricing_eff > 0.0 and _pricing_eff_uom == "CY":
+                                    _caulking_unit_cost_cy = _pricing_eff
                                 if _bare_unit > 0.0:
                                     if _basis == "CY":
                                         _caulking_unit_cost_cy = _bare_unit
@@ -4355,6 +4393,8 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
                                         _caulking_unit_cost_cy = _bare_unit * 201.974
                             elif _mn == "weatherstrip":
                                 _weatherstrip_cost_total += _mc
+                                if _pricing_eff > 0.0 and _pricing_eff_uom == "LF":
+                                    _weatherstrip_unit_cost_lf = _pricing_eff
                                 if _bare_unit > 0.0:
                                     if _basis == "LF":
                                         _weatherstrip_unit_cost_lf = _bare_unit
@@ -4376,41 +4416,19 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
 
                         if _glass_unit_cost_cf is not None and _glass_unit_cost_cf > 0.0:
                             rsmeans_glass_cost_per_cf = _glass_unit_cost_cf
-                        elif _glass_volume_cf > 0.0 and _glass_cost_total > 0.0:
-                            rsmeans_glass_cost_per_cf = _glass_cost_total / _glass_volume_cf
-                        # Companion $/SF metric: RSMeans glass cost-lines are
-                        # priced per square foot of glazing area, so reporting
-                        # per-CF (which divides by pane thickness in feet,
-                        # ~0.02 ft) inflates the number by ~50x. Provide an
-                        # intuitive $/SF figure alongside.
-                        _glass_area_sf_total = (
-                            (float(total_glazing_area_m2) + float(total_secondary_glazing_area_m2))
-                            * 10.7639
-                        )
-                        if _glass_area_sf_total > 0.0 and _glass_cost_total > 0.0:
-                            rsmeans_glass_cost_per_sf = _glass_cost_total / _glass_area_sf_total
-                        _frame_denom_sf = _frame_window_area_sf if _frame_window_area_sf > 0.0 else _frame_area_sf
-                        if _frame_denom_sf > 0.0 and _frame_cost_total > 0.0:
-                            rsmeans_frame_cost_per_sf = _frame_cost_total / _frame_denom_sf
+                        if _glass_unit_cost_sf is not None and _glass_unit_cost_sf > 0.0:
+                            rsmeans_glass_cost_per_sf = _glass_unit_cost_sf
+                        if _frame_unit_cost_sf is not None and _frame_unit_cost_sf > 0.0:
+                            rsmeans_frame_cost_per_sf = _frame_unit_cost_sf
                         if _caulking_unit_cost_cy is not None and _caulking_unit_cost_cy > 0.0:
                             rsmeans_caulking_cost_per_cy = _caulking_unit_cost_cy
-                        elif _caulking_volume_cy > 0.0 and _caulking_cost_total > 0.0:
-                            rsmeans_caulking_cost_per_cy = _caulking_cost_total / _caulking_volume_cy
-                        # Companion $/LF metric: RSMeans joint-sealant cost-lines
-                        # are priced per linear foot of bead, so the back-derived
-                        # $/CY (which divides by the tiny bead volume) becomes
-                        # huge and misleading. Provide an intuitive $/LF figure
-                        # alongside.
-                        if _caulking_length_lf > 0.0 and _caulking_cost_total > 0.0:
-                            rsmeans_caulking_cost_per_lf = _caulking_cost_total / _caulking_length_lf
+                        if _caulking_pricing_unit_cost is not None and _caulking_pricing_unit_cost > 0.0:
+                            rsmeans_caulking_pricing_unit_cost = _caulking_pricing_unit_cost
+                            rsmeans_caulking_pricing_unit_uom = _caulking_pricing_unit_uom or "N/A"
                         if _film_unit_cost_sf is not None and _film_unit_cost_sf > 0.0:
                             rsmeans_film_cost_per_sf = _film_unit_cost_sf
-                        elif _film_area_sf > 0.0 and _film_cost_total > 0.0:
-                            rsmeans_film_cost_per_sf = _film_cost_total / _film_area_sf
                         if _weatherstrip_unit_cost_lf is not None and _weatherstrip_unit_cost_lf > 0.0:
                             rsmeans_weatherstrip_cost_per_lf = _weatherstrip_unit_cost_lf
-                        elif _weatherstrip_length_lf > 0.0 and _weatherstrip_cost_total > 0.0:
-                            rsmeans_weatherstrip_cost_per_lf = _weatherstrip_cost_total / _weatherstrip_length_lf
 
                     self.apply_rsmeans_glazing_updates_to_model(
                         runner,
@@ -4486,6 +4504,8 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
             "rsmeans_frame_cost_per_sf": rsmeans_frame_cost_per_sf,
             "rsmeans_caulking_cost_per_cy": rsmeans_caulking_cost_per_cy,
             "rsmeans_caulking_cost_per_lf": rsmeans_caulking_cost_per_lf,
+            "rsmeans_caulking_pricing_unit_cost": rsmeans_caulking_pricing_unit_cost,
+            "rsmeans_caulking_pricing_unit_uom": rsmeans_caulking_pricing_unit_uom,
             "rsmeans_film_cost_per_sf": rsmeans_film_cost_per_sf,
             "rsmeans_weatherstrip_cost_per_lf": rsmeans_weatherstrip_cost_per_lf,
             "cost_source": cost_source,
@@ -4516,6 +4536,8 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
         rsmeans_frame_cost_per_sf,
         rsmeans_caulking_cost_per_cy,
         rsmeans_caulking_cost_per_lf,
+        rsmeans_caulking_pricing_unit_cost,
+        rsmeans_caulking_pricing_unit_uom,
         rsmeans_film_cost_per_sf,
         rsmeans_weatherstrip_cost_per_lf,
         cost_source,
@@ -4542,6 +4564,8 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
                 "window_api_caulking_cost_per_cy": rsmeans_caulking_cost_per_cy,
                 "window_api_film_cost_per_sf": rsmeans_film_cost_per_sf,
                 "window_api_weatherstrip_cost_per_lf": rsmeans_weatherstrip_cost_per_lf,
+                "window_api_caulking_pricing_unit_cost": rsmeans_caulking_pricing_unit_cost,
+                "window_api_caulking_pricing_unit_uom": rsmeans_caulking_pricing_unit_uom,
             })
         if cost_source in ("custom_input", "custom_input_fallback"):
             # Keep custom factors as user-entered bare material unit costs.

@@ -793,6 +793,8 @@ class IncreaseInsulationRValueForExteriorWalls(openstudio.measure.ModelMeasure):
         cost_source = "none"
         cost_factor_basis = "not_calculated"
         rsmeans_cost_per_cf_feature_value = "N/A"
+        rsmeans_pricing_unit_cost_raw_feature_value = "N/A"
+        rsmeans_pricing_unit_uom_raw_feature_value = "N/A"
 
         rsmeans_materials = []
         if total_wall_area > 0.0:
@@ -907,6 +909,10 @@ class IncreaseInsulationRValueForExteriorWalls(openstudio.measure.ModelMeasure):
                                 _basis = str(_selected_mat.get("bare_material_unit_basis", _selected_mat.get("unit_cost_basis", _selected_mat.get("unit", "")))).upper().replace(" ", "")
                                 _mode = str(_selected_mat.get("costing_mode", "")).strip().lower()
                                 _cost_per_cf = 0.0
+                                _pricing_eff = float(_selected_mat.get("pricing_unit_cost_effective", 0.0) or 0.0)
+                                _pricing_eff_uom = str(_selected_mat.get("pricing_unit_uom_effective", "")).upper().replace(" ", "")
+                                _pricing_raw = float(_selected_mat.get("pricing_unit_cost_raw", 0.0) or 0.0)
+                                _pricing_raw_uom = str(_selected_mat.get("pricing_unit_uom_raw", "")).upper().replace(" ", "")
                                 if _bare_unit > 0.0:
                                     if _basis == "CF":
                                         _cost_per_cf = _bare_unit
@@ -916,16 +922,23 @@ class IncreaseInsulationRValueForExteriorWalls(openstudio.measure.ModelMeasure):
                                         _thk_ft = float(_selected_mat.get("source_line_thickness_ft", 0.0) or 0.0)
                                         if _thk_ft > 0.0:
                                             _cost_per_cf = _bare_unit / _thk_ft
+                                if _cost_per_cf <= 0.0 and _pricing_eff > 0.0:
+                                    if _pricing_eff_uom == "CF":
+                                        _cost_per_cf = _pricing_eff
+                                    elif _pricing_eff_uom == "CY":
+                                        _cost_per_cf = _pricing_eff / 27.0
                                 if _cost_per_cf > 0.0:
                                     # API cost-per-CF feature is bare material-only
                                     # from selected RSMeans line unit pricing.
                                     rsmeans_cost_per_cf_feature_value = _cost_per_cf
-                                elif total_added_volume_cf > 0.0:
+                                else:
                                     runner.registerWarning(
-                                        "Could not derive wall API unit rate from RSMeans bare unit fields; "
-                                        "falling back to summary/material volume back-calculation."
+                                        "Could not derive wall API unit rate from RSMeans direct unit fields; "
+                                        "AP unit-rate feature will remain N/A instead of using back-calculation."
                                     )
-                                    rsmeans_cost_per_cf_feature_value = float(summary.get("total_material_cost", 0.0)) / total_added_volume_cf
+                                if _pricing_raw > 0.0 and _pricing_raw_uom:
+                                    rsmeans_pricing_unit_cost_raw_feature_value = _pricing_raw
+                                    rsmeans_pricing_unit_uom_raw_feature_value = _pricing_raw_uom
                             mode_values = {
                                 str(mat.get("costing_mode", "")).strip().lower()
                                 for mat in materials_results
@@ -1164,6 +1177,8 @@ class IncreaseInsulationRValueForExteriorWalls(openstudio.measure.ModelMeasure):
             factors.setFeature("wall_insulation_custom_cost_per_cf", custom_cost_per_cf)
         if cost_source == "rsmeans_api":
             factors.setFeature("wall_insulation_api_material_cost_per_cf", rsmeans_cost_per_cf_feature_value)
+            factors.setFeature("wall_insulation_api_pricing_unit_cost", rsmeans_pricing_unit_cost_raw_feature_value)
+            factors.setFeature("wall_insulation_api_pricing_unit_uom", rsmeans_pricing_unit_uom_raw_feature_value)
         if material_gwp.get("gwp_per_kg", 0.0) > 0.0:
             factors.setFeature("wall_insulation_material_gwp_per_kg", material_gwp.get("gwp_per_kg", 0.0))
         if material_gwp.get("gwp_per_m2", 0.0) > 0.0:

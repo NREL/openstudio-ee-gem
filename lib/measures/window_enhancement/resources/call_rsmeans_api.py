@@ -240,8 +240,46 @@ def _get_double_pane_fallback_rsmeans_id(area_sf: float) -> str:
     return "088130100400"
 
 
-def _get_default_fallback_rsmeans_id(material_name: str, material: Optional[Dict[str, Any]] = None) -> Optional[str]:
+def _canonicalize_window_material_name(material_name: str, material: Optional[Dict[str, Any]] = None) -> str:
+    """Normalize material naming variants before fallback resolution.
+
+    This does not add new fallback IDs; it only maps common aliases to
+    existing canonical keys so the current fallback table is reached more
+    consistently.
+    """
     name_norm = _normalize_search_text(material_name)
+    description_norm = _normalize_search_text((material or {}).get("description", ""))
+
+    if name_norm in {"sealant", "caulking", "joint sealant", "joint sealants"}:
+        return "sealant"
+
+    if name_norm in {"weather strip", "weatherstrip", "weather stripping", "weatherstripping"}:
+        return "weatherstrip"
+
+    if name_norm in {"glazing film", "window film", "film"}:
+        return "glazing film"
+
+    if name_norm in {"secondary glazing", "secondary glass", "secondary window glazing"}:
+        return "secondary glazing"
+
+    if name_norm in {"window frame", "frame"} or ("window" in name_norm and "frame" in name_norm):
+        return "window frame"
+
+    if name_norm in {"window glazing", "glazing", "window glass", "glass glazing"}:
+        return "window glazing"
+
+    # If the incoming material name is generic but description clearly points
+    # to one supported canonical type, route to that canonical key.
+    if name_norm == "film" and "glaz" in description_norm:
+        return "glazing film"
+    if name_norm == "frame" and "window" in description_norm:
+        return "window frame"
+
+    return name_norm
+
+
+def _get_default_fallback_rsmeans_id(material_name: str, material: Optional[Dict[str, Any]] = None) -> Optional[str]:
+    name_norm = _canonicalize_window_material_name(material_name, material)
     description_norm = _normalize_search_text((material or {}).get("description", ""))
     # Prefer explicit glazing_area_sf (preserved total area) over quantity, which may be an
     # EA count when the material was built with num_windows-based pricing.
@@ -312,7 +350,7 @@ def _get_forced_fallback_rsmeans_id(material_name: str, material: Optional[Dict[
     For this change-set we force weatherstrip to use curated fallback IDs when
     user did not provide a usable explicit ID.
     """
-    name_norm = _normalize_search_text(material_name)
+    name_norm = _canonicalize_window_material_name(material_name, material)
     if name_norm == "weatherstrip":
         return _get_default_fallback_rsmeans_id(material_name, material)
     return None
@@ -1870,7 +1908,7 @@ def search_materials_across_catalogs(
         best_component_source = None
         _derived_window_area_sf = 0.0
         chosen_source_type = "search"
-        material_name_norm = _normalize_search_text(material_name)
+        material_name_norm = _canonicalize_window_material_name(material_name, material)
         sealant_requires_volume = material_name_norm in {"sealant", "caulking"}
         explicit_id_non_volume_uom_rejected = False
 
@@ -2382,6 +2420,13 @@ def search_materials_across_catalogs(
                 match_type = "fallback_id"
             _qty = float(material.get("quantity", 0.0) or 0.0)
             _bare_unit = (float(best_total_material_cost or 0.0) / _qty) if _qty > 0.0 else 0.0
+            _raw_comp = _extract_bare_components(best_match)
+            _raw_unit_cost = float(_raw_comp.get("material", 0.0) or 0.0) + float(_raw_comp.get("labor", 0.0) or 0.0) + float(_raw_comp.get("equipment", 0.0) or 0.0)
+            _raw_uom = _normalize_uom(best_match.get("unitOfMeasure", ""))
+            if _raw_unit_cost <= 0.0:
+                _raw_unit_cost = float(best_unit_cost or 0.0)
+            if not _raw_uom:
+                _raw_uom = str(best_unit_basis or unit or "")
             material_result = {
                 **material,
                 "catalog": best_catalog,
@@ -2400,6 +2445,11 @@ def search_materials_across_catalogs(
                 "chosen_source_type": chosen_source_type,
                 "unit_cost_basis": best_unit_basis,
                 "costing_mode": best_costing_mode,
+                "pricing_unit_cost_raw": _raw_unit_cost,
+                "pricing_unit_uom_raw": _raw_uom,
+                "pricing_unit_cost_effective": float(best_unit_cost or 0.0),
+                "pricing_unit_uom_effective": best_unit_basis,
+                "pricing_source": "rsmeans_direct" if float(best_unit_cost or 0.0) > 0.0 else "unavailable",
             }
             if _derived_window_area_sf > 0.0:
                 material_result["window_area_sf"] = _derived_window_area_sf
@@ -2414,6 +2464,10 @@ def search_materials_across_catalogs(
             search_log.append({
                 "material": material_name,
                 "status": "no_match",
+                "requested_unit": unit,
+                "requested_division": division_code,
+                "resolved_material_name": material_name_norm,
+                "has_user_specified_id": bool(specified_id),
                 "catalogs_searched": catalogs,
                 "alternatives_tried": len(search_alternatives)
             })

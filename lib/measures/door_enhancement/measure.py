@@ -2201,6 +2201,12 @@ class DoorEnhancement(openstudio.measure.ModelMeasure):
         door_rsmeans_cost_per_area_feature_value = "N/A"
         door_rsmeans_bottom_seal_cost_per_m_feature_value = "N/A"
         door_rsmeans_top_side_seal_cost_per_m_feature_value = "N/A"
+        door_rsmeans_door_pricing_unit_cost = "N/A"
+        door_rsmeans_door_pricing_unit_uom = "N/A"
+        door_rsmeans_bottom_pricing_unit_cost = "N/A"
+        door_rsmeans_bottom_pricing_unit_uom = "N/A"
+        door_rsmeans_top_side_pricing_unit_cost = "N/A"
+        door_rsmeans_top_side_pricing_unit_uom = "N/A"
 
         if rsmeans_lookup is not None and rsmeans_lookup.get("status") == "ok":
             rsmeans_summary_dict = rsmeans_lookup.get("summary", {})
@@ -2224,9 +2230,6 @@ class DoorEnhancement(openstudio.measure.ModelMeasure):
                     unit_set.add(u)
 
             if cost_source_val != "custom_input":
-                _door_cost_total = 0.0
-                _bottom_seal_cost_total = 0.0
-                _top_side_seal_cost_total = 0.0
                 _door_unit_cost_per_m2 = None
                 _bottom_unit_cost_per_m = None
                 _top_side_unit_cost_per_m = None
@@ -2234,24 +2237,12 @@ class DoorEnhancement(openstudio.measure.ModelMeasure):
                     _mat_name = str(mat.get("name", "")).lower()
                     _basis = str(mat.get("bare_material_unit_basis", mat.get("unit_cost_basis", mat.get("rsmeans_unit_of_measure", mat.get("unit", ""))))).upper().replace(" ", "")
                     _bare_unit = float(mat.get("bare_material_unit_cost", 0.0) or 0.0)
-                    _mat_cost = float(
-                        mat.get(
-                            "total_material_cost_pre_lifetime",
-                            mat.get(
-                                "total_material_cost_area_adjusted",
-                                mat.get(
-                                    "total_material_cost",
-                                    mat.get(
-                                        "total_cost_pre_lifetime",
-                                        mat.get("total_cost_area_adjusted", mat.get("total_cost", 0.0)),
-                                    ),
-                                ),
-                            ),
-                        )
-                        or 0.0
-                    )
+                    _pricing_raw = float(mat.get("pricing_unit_cost_raw", 0.0) or 0.0)
+                    _pricing_raw_uom = str(mat.get("pricing_unit_uom_raw", "")).upper().replace(" ", "")
                     if "door" in _mat_name and "seal" not in _mat_name:
-                        _door_cost_total += _mat_cost
+                        if _pricing_raw > 0.0 and _pricing_raw_uom:
+                            door_rsmeans_door_pricing_unit_cost = _pricing_raw
+                            door_rsmeans_door_pricing_unit_uom = _pricing_raw_uom
                         if _bare_unit > 0.0:
                             if _basis == "EA" and rsmeans_door_area_per_unit_m2 and rsmeans_door_area_per_unit_m2 > 0.0:
                                 _door_unit_cost_per_m2 = _bare_unit / float(rsmeans_door_area_per_unit_m2)
@@ -2260,7 +2251,9 @@ class DoorEnhancement(openstudio.measure.ModelMeasure):
                             elif _basis == "SF":
                                 _door_unit_cost_per_m2 = _bare_unit * 10.7639
                     elif "bottom seal" in _mat_name:
-                        _bottom_seal_cost_total += _mat_cost
+                        if _pricing_raw > 0.0 and _pricing_raw_uom:
+                            door_rsmeans_bottom_pricing_unit_cost = _pricing_raw
+                            door_rsmeans_bottom_pricing_unit_uom = _pricing_raw_uom
                         if _bare_unit > 0.0:
                             if _basis == "LF":
                                 _bottom_unit_cost_per_m = _bare_unit * 3.28084
@@ -2279,7 +2272,9 @@ class DoorEnhancement(openstudio.measure.ModelMeasure):
                                         f"{_len_each_m:.6f} m per each ({_len_source})."
                                     )
                     elif "top side seal" in _mat_name or "top/side" in _mat_name or "jamb" in _mat_name:
-                        _top_side_seal_cost_total += _mat_cost
+                        if _pricing_raw > 0.0 and _pricing_raw_uom:
+                            door_rsmeans_top_side_pricing_unit_cost = _pricing_raw
+                            door_rsmeans_top_side_pricing_unit_uom = _pricing_raw_uom
                         if _bare_unit > 0.0:
                             if _basis == "LF":
                                 _top_side_unit_cost_per_m = _bare_unit * 3.28084
@@ -2300,16 +2295,10 @@ class DoorEnhancement(openstudio.measure.ModelMeasure):
 
                 if _door_unit_cost_per_m2 is not None and _door_unit_cost_per_m2 > 0.0:
                     door_rsmeans_cost_per_area_feature_value = _door_unit_cost_per_m2
-                elif total_eligible_door_area_m2 > 0.0 and _door_cost_total > 0.0:
-                    door_rsmeans_cost_per_area_feature_value = _door_cost_total / float(total_eligible_door_area_m2)
                 if _bottom_unit_cost_per_m is not None and _bottom_unit_cost_per_m > 0.0:
                     door_rsmeans_bottom_seal_cost_per_m_feature_value = _bottom_unit_cost_per_m
-                elif total_sealing_bottom_length_m > 0.0 and _bottom_seal_cost_total > 0.0:
-                    door_rsmeans_bottom_seal_cost_per_m_feature_value = _bottom_seal_cost_total / float(total_sealing_bottom_length_m)
                 if _top_side_unit_cost_per_m is not None and _top_side_unit_cost_per_m > 0.0:
                     door_rsmeans_top_side_seal_cost_per_m_feature_value = _top_side_unit_cost_per_m
-                elif total_sealing_side_length_m > 0.0 and _top_side_seal_cost_total > 0.0:
-                    door_rsmeans_top_side_seal_cost_per_m_feature_value = _top_side_seal_cost_total / float(total_sealing_side_length_m)
 
             if cost_source_val == "custom_input":
                 cost_factor_basis = "custom_cost_per_area"
@@ -2340,6 +2329,12 @@ class DoorEnhancement(openstudio.measure.ModelMeasure):
                 factors.setFeature("door_api_door_cost_per_area", door_rsmeans_cost_per_area_feature_value)
                 factors.setFeature("door_api_bottom_seal_cost_per_m", door_rsmeans_bottom_seal_cost_per_m_feature_value)
                 factors.setFeature("door_api_top_side_seal_cost_per_m", door_rsmeans_top_side_seal_cost_per_m_feature_value)
+                factors.setFeature("door_api_door_pricing_unit_cost", door_rsmeans_door_pricing_unit_cost)
+                factors.setFeature("door_api_door_pricing_unit_uom", door_rsmeans_door_pricing_unit_uom)
+                factors.setFeature("door_api_bottom_seal_pricing_unit_cost", door_rsmeans_bottom_pricing_unit_cost)
+                factors.setFeature("door_api_bottom_seal_pricing_unit_uom", door_rsmeans_bottom_pricing_unit_uom)
+                factors.setFeature("door_api_top_side_seal_pricing_unit_cost", door_rsmeans_top_side_pricing_unit_cost)
+                factors.setFeature("door_api_top_side_seal_pricing_unit_uom", door_rsmeans_top_side_pricing_unit_uom)
 
             # -- SimulationControl (results) bucket: mirrored scalars + JSON --
             results.setFeature("door_material_cost_$", rsmeans_material_cost)

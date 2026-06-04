@@ -1865,6 +1865,13 @@ def search_materials_across_catalogs(
                 match_type = "exact_id_match"
             elif chosen_source_type == "fallback":
                 match_type = "fallback_id"
+            _raw_comp = _extract_bare_components(best_match)
+            _raw_unit_cost = float(_raw_comp.get("material", 0.0) or 0.0) + float(_raw_comp.get("labor", 0.0) or 0.0) + float(_raw_comp.get("equipment", 0.0) or 0.0)
+            _raw_uom = _normalize_uom(best_match.get("unitOfMeasure", ""))
+            if _raw_unit_cost <= 0.0:
+                _raw_unit_cost = float(best_unit_cost or 0.0)
+            if not _raw_uom:
+                _raw_uom = str(best_line_uom or best_unit_basis or material.get("unit", ""))
             material_result = {
                 **material,
                 "catalog": best_catalog,
@@ -1885,6 +1892,11 @@ def search_materials_across_catalogs(
                 "chosen_source_type": chosen_source_type,
                 "unit_cost_basis": best_unit_basis,
                 "costing_mode": best_costing_mode,
+                "pricing_unit_cost_raw": _raw_unit_cost,
+                "pricing_unit_uom_raw": _raw_uom,
+                "pricing_unit_cost_effective": float(best_unit_cost or 0.0),
+                "pricing_unit_uom_effective": best_unit_basis,
+                "pricing_source": "rsmeans_direct" if float(best_unit_cost or 0.0) > 0.0 else "unavailable",
             }
             all_results.append(material_result)
             _append_rsmeans_raw_log(material, best_match, best_catalog, match_type, matched_term)

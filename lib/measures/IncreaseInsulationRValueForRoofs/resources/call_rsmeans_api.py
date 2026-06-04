@@ -255,6 +255,13 @@ def _extract_thickness_ft_from_description(description: str) -> Optional[float]:
 def _extract_unit_cost_components(item: Dict[str, Any]) -> Dict[str, Any]:
     """Pull material/labor/equipment unit costs from a RSMeans line item.
 
+            _raw_comp = _extract_bare_components(best_match)
+            _raw_unit_cost = float(_raw_comp.get("material", 0.0) or 0.0) + float(_raw_comp.get("labor", 0.0) or 0.0) + float(_raw_comp.get("equipment", 0.0) or 0.0)
+            _raw_uom = _normalize_uom(best_match.get("unitOfMeasure", ""))
+            if _raw_unit_cost <= 0.0:
+                _raw_unit_cost = float(calc.get("unit_cost", 0.0) or 0.0)
+            if not _raw_uom:
+                _raw_uom = str(calc.get("line_uom") or calc.get("effective_unit", material.get("unit", "")))
     The Gordian/RSMeans cost API returns a ``localizedCosts`` object containing
     both bare and "Op" (already includes overhead & profit) variants of the
     material, labor and equipment cost components:
@@ -1700,6 +1707,11 @@ def search_materials_across_catalogs(
                 "chosen_source_type": chosen_source_type,
                 "unit_cost_basis": calc.get("effective_unit", material.get("unit", "")),
                 "costing_mode": calc.get("costing_mode", "area"),
+                "pricing_unit_cost_raw": _raw_unit_cost,
+                "pricing_unit_uom_raw": _raw_uom,
+                "pricing_unit_cost_effective": float(calc.get("unit_cost", 0.0) or 0.0),
+                "pricing_unit_uom_effective": calc.get("effective_unit", material.get("unit", "")),
+                "pricing_source": "rsmeans_direct" if float(calc.get("unit_cost", 0.0) or 0.0) > 0.0 else "unavailable",
             }
             all_results.append(material_result)
             _append_rsmeans_raw_log(material, best_match, best_catalog, match_type, matched_term)
