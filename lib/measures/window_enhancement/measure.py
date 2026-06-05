@@ -1271,13 +1271,30 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
                         f"shgc_modification_percentage, visible_transmittance_modification_percentage). "
                         f"To modify this window's properties, please set one or more of these parameters.")
                 
-                # Glass, film, and secondary glazing options remain enabled for SimpleGlazing
+                # For Simple Glazing, keep cost/carbon accounting but skip layered-construction conversion.
                 runner.registerInfo(
-                    f"  ℹ Simple Glazing detected. Glass replacement and glazing film will be attempted on this window. "
-                    f"U-factor/SHGC/VT modifications are also available via parameters.")
+                    f"  ℹ Simple Glazing detected. Construction conversion (glass/film/secondary glazing layered updates) "
+                    f"is skipped for this window. Cost/carbon accounting still follows selected options; "
+                    f"use U-factor/SHGC/VT modification parameters for Simple Glazing thermal updates.")
 
             # Determine number of panes to be installed
-            if layered_construction is not None or glass_option_for_this_window == "none":
+            if is_simple_glazing and glass_option_for_this_window != "none":
+                # Accounting-only pane count for Simple Glazing: do not convert construction type.
+                if user_num_panes > 3:
+                    num_panes = 3
+                    runner.registerWarning(
+                        f"  ⚠ user_num_panes={user_num_panes} exceeds supported range; using 3 panes for cost/carbon accounting in {subsurface_name}."
+                    )
+                elif user_num_panes > 0:
+                    num_panes = user_num_panes
+                else:
+                    num_panes = 1
+                    runner.registerWarning(
+                        f"  ⚠ Simple Glazing window {subsurface_name}: user_num_panes is 0 while glass option is selected. "
+                        f"Using 1 pane for cost/carbon accounting; construction type is unchanged."
+                    )
+                continue_processing = True
+            elif layered_construction is not None or glass_option_for_this_window == "none":
                 num_panes, continue_processing = self.determine_num_panes(runner, user_num_panes, glass_option_for_this_window, layered_construction, subsurface)
             else:
                 # SimpleGlazing without glass replacement - set num_panes to 0
@@ -1298,7 +1315,7 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
                                               num_horizontal_dividers, num_vertical_dividers)
 
             # Create new window construction if glass_option is not none
-            if glass_option_for_this_window != "none" and num_panes > 0:
+            if glass_option_for_this_window != "none" and num_panes > 0 and not is_simple_glazing:
                 runner.registerInfo(f"\n  → Creating new {num_panes}-pane window construction for {subsurface_name}")
                 new_construction = self.create_new_window_construction(model, runner, subsurface, num_panes, effective_glass_pane_thickness, effective_gap_thickness,
                                                                        glass_solar_transmittance, glass_visible_transmittance,
@@ -1310,8 +1327,13 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
                     subsurface_dict[subsurface_name]["glass"]["object"] = new_construction
                     runner.registerInfo(f"    ✓ Applied new construction '{new_construction.nameString()}' to {subsurface_name}")
 
-            # Apply glazing film if requested
-            if film_option_for_this_window != "none" and subsurface.construction().is_initialized():
+            # Apply glazing film if requested (layered constructions only)
+            if film_option_for_this_window != "none" and is_simple_glazing:
+                runner.registerInfo(
+                    f"\n  → Simple Glazing window {subsurface_name}: glazing film construction conversion skipped; "
+                    f"film cost/carbon accounting remains enabled.")
+                subsurface_dict[subsurface_name]["film"]["cost_executed"] = True
+            elif film_option_for_this_window != "none" and subsurface.construction().is_initialized():
                 current_construction = subsurface.construction().get()
                 if glass_option_for_this_window != "none":
                     runner.registerInfo(f"\n  → Adding glazing film effects to newly created construction for {subsurface_name}")
@@ -1320,13 +1342,27 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
                 new_construction = self.convert_to_equivalent_layer(model, runner, subsurface, current_construction, film_option_for_this_window,
                                                                       film_visible_transmittance, film_solar_transmittance,
                                                                       film_thermal_emissivity, film_thermal_resistance)
-                subsurface_dict[subsurface_name]["glass"]["object"] = new_construction
-                subsurface_dict[subsurface_name]["film"]["cost_executed"] = new_construction is not None
+                film_applied = (
+                    new_construction is not None
+                    and new_construction.nameString() != current_construction.nameString()
+                )
+                if film_applied:
+                    subsurface_dict[subsurface_name]["glass"]["object"] = new_construction
+                    subsurface_dict[subsurface_name]["film"]["cost_executed"] = True
+                else:
+                    runner.registerWarning(
+                        f"    ✗ Glazing film was not applied to {subsurface_name}; construction remains unchanged.")
+                    subsurface_dict[subsurface_name]["film"]["cost_executed"] = False
             
             # Apply secondary glazing if requested
             if secondary_glazing_option_for_this_window == "install secondary glazing":
                 secondary_glazing_applied = False
-                if glass_option_for_this_window != "none":
+                if is_simple_glazing:
+                    runner.registerInfo(
+                        f"\n  → Simple Glazing window {subsurface_name}: secondary glazing construction conversion skipped; "
+                        f"secondary glazing cost/carbon accounting remains enabled."
+                    )
+                elif glass_option_for_this_window != "none":
                     runner.registerWarning(f"Both secondary glazing and glass option are selected for {subsurface_name}. Secondary glazing adds a layer to existing windows, while glass option replaces all glass panes. These options conflict. Skipping secondary glazing installation.")
                     subsurface_dict[subsurface_name]["second_glazing"]["renovation_option"] = "none"
                 elif subsurface.construction().is_initialized():
@@ -2070,11 +2106,8 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
         """
         num_panes = 0
 
-        # If glass replacement is disabled (e.g. user selected 'none' or this
-        # subsurface is SimpleGlazing and glass replacement was demoted), then
-        # no panes are installed -- regardless of any non-zero user_num_panes.
-        # This prevents glass cost/embodied carbon from being billed for a
-        # window where glass was never actually replaced.
+        # If glass replacement is disabled (user selected 'none'), then no
+        # panes are installed regardless of user_num_panes.
         if glass_option == "none":
             return 0, True
 
@@ -2273,7 +2306,13 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
             elif subsurface.construction().is_initialized():
                 current_construction = subsurface.construction().get()
                 if self.is_simple_glazing_system(runner, current_construction):
-                    runner.registerWarning(f"Simple glazing system detected in {subsurface_name}, skipping secondary glazing EPD fetch.")
+                    runner.registerInfo(
+                        f"Simple glazing system detected in {subsurface_name}; fetching secondary glazing EPD for accounting-only carbon/cost calculations."
+                    )
+                    urls["second_glazing"] = generate_url_byname(
+                        category='6daae3d967104f5c8c85199b259f58c8',
+                        name_like='monolithic glass'
+                    )
                 else:
                     glazing_count = self.count_glazing_layers(current_construction)
                     if glazing_count == 1:
