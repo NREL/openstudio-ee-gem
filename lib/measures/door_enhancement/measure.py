@@ -1497,6 +1497,11 @@ class DoorEnhancement(openstudio.measure.ModelMeasure):
         rsmeans_door_match_description = ""
         rsmeans_applied_door_option = None
         rsmeans_area_cost_adjusted = False
+        # Precompute converted quantities for all cost paths, including
+        # RSMeans->custom fallback when no eligible subsurfaces are selected.
+        door_area_ft2 = float(total_eligible_door_area_m2) * 10.7639
+        bottom_seal_length_lf = float(total_sealing_bottom_length_m) * 3.28084
+        top_side_seal_length_lf = float(total_sealing_side_length_m) * 3.28084
 
         if len(sub_surfaces_to_change) > 0:
             first_name = next(iter(subsurface_dict.keys()))
