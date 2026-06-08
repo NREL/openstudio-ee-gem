@@ -1,0 +1,82 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Repo-wide pre-commit secret guard.
+# Scans staged additions for common credential patterns and blocks commit on matches.
+
+if ! command -v git >/dev/null 2>&1; then
+  echo "pre-commit: git is required" >&2
+  exit 1
+fi
+
+staged_files=$(git diff --cached --name-only --diff-filter=ACMR)
+if [ -z "${staged_files}" ]; then
+  exit 0
+fi
+
+# Never allow common secret files to be committed.
+blocked_files_regex='(^|/)(\.env(\..+)?|[^/]*\.env|config\.env|\.secrets)$'
+blocked=$(printf '%s\n' "${staged_files}" | grep -E "${blocked_files_regex}" || true)
+if [ -n "${blocked}" ]; then
+  echo "ERROR: blocked secret file(s) staged for commit:"
+  printf '%s\n' "${blocked}" | sed 's/^/  - /'
+  echo "Remove them from staging and keep secrets in ignored local files."
+  exit 1
+fi
+
+# High-confidence secret patterns for added lines.
+secret_patterns=(
+  'AKIA[0-9A-Z]{16}'
+  'ASIA[0-9A-Z]{16}'
+  'ghp_[A-Za-z0-9]{36,}'
+  'github_pat_[A-Za-z0-9_]{20,}'
+  'AIza[0-9A-Za-z_-]{35}'
+  'sk-[A-Za-z0-9]{20,}'
+  'xox[baprs]-[A-Za-z0-9-]{10,}'
+  'api[_-]?key[[:space:]]*[:=][[:space:]]*["\x27][^"\x27[:space:]]{8,}["\x27]'
+  'access[_-]?token[[:space:]]*[:=][[:space:]]*["\x27][^"\x27[:space:]]{8,}["\x27]'
+  'client[_-]?secret[[:space:]]*[:=][[:space:]]*["\x27][^"\x27[:space:]]{8,}["\x27]'
+  'secret[_-]?key[[:space:]]*[:=][[:space:]]*["\x27][^"\x27[:space:]]{8,}["\x27]'
+  'Bearer[[:space:]]+[A-Za-z0-9._-]{12,}'
+)
+
+# Known placeholders / safe examples.
+safe_regex='(REPLACE_WITH|YOUR_|example|EXAMPLE|changeme|CHANGEME|dummy|DUMMY|\[REDACTED\]|os\.getenv|os\.environ|ENV\[|process\.env|System\.getenv|config\[|config\.)'
+
+found=0
+
+while IFS= read -r file; do
+  [ -z "${file}" ] && continue
+
+  # Added lines only; drop diff metadata lines.
+  added_lines=$(git diff --cached --unified=0 -- "${file}" | grep -E '^\+[^+]' || true)
+  [ -z "${added_lines}" ] && continue
+
+  for pattern in "${secret_patterns[@]}"; do
+    matches=$(printf '%s\n' "${added_lines}" | grep -E -i "${pattern}" || true)
+    [ -z "${matches}" ] && continue
+
+    # Filter obvious placeholders / env lookups to reduce noise.
+    actionable=$(printf '%s\n' "${matches}" | grep -E -iv "${safe_regex}" || true)
+    [ -z "${actionable}" ] && continue
+
+    if [ ${found} -eq 0 ]; then
+      echo "ERROR: potential secrets detected in staged changes:"
+    fi
+    found=1
+
+    sample=$(printf '%s\n' "${actionable}" | head -n 1 | sed 's/^+//' | cut -c1-160)
+    echo "  - ${file}"
+    echo "    pattern: ${pattern}"
+    echo "    sample : ${sample}"
+  done
+done <<< "${staged_files}"
+
+if [ ${found} -ne 0 ]; then
+  echo "Commit blocked. Remove secrets or move them to local ignored files."
+  echo "Use --no-verify only after manual review."
+  exit 1
+fi
+
+echo "pre-commit: secret scan passed"
+exit 0

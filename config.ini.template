@@ -1,0 +1,12 @@
+[EC3_API_TOKEN]
+# Get your EC3 API token from https://buildingtransparency.org
+# Instructions:
+#   1. Create an account at https://buildingtransparency.org
+#   2. Go to your account settings and generate an API token
+#   3. Copy the token and paste it below (replacing "your_ec3_api_token_here")
+# 
+# SECURITY WARNING: Never commit this file with a real token to version control.
+# This file is listed in .gitignore to prevent accidental commits.
+# For CI/CD or production environments, use environment variables instead.
+#
+API_TOKEN=your_ec3_api_token_here

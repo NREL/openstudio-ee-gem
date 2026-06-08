@@ -1,0 +1,294 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<measure>
+  <schema_version>3.1</schema_version>
+  <name>operating_cost_carbon_reporting_measure</name>
+  <uid>a8d7e2f4-3b5c-4a1d-9e8f-1c2d3e4f5a6b</uid>
+  <version_id>b9e8f3a5-4c6d-5b2e-af9g-2d3e4f5a6b7c</version_id>
+  <version_modified>2026-02-16T00:00:00Z</version_modified>
+  <xml_checksum>NEW_CHECKSUM</xml_checksum>
+  <class_name>OperatingCostCarbonReport</class_name>
+  <display_name>Operating Cost Carbon Reporting Measure</display_name>
+  <description>This measure calculates annual emissions and utility costs based on hourly electricity and gas consumption from EnergyPlus simulations. It applies user-specified emission factors and electricity rate structures (on-peak, off-peak, and demand charges) along with gas rates.</description>
+  <modeler_description>Reads 'Electricity:Facility' and 'NaturalGas:Facility' hourly output variables from the SQL file. Calculates total emissions using emission factors for electricity and natural gas. Calculates electricity costs using time-of-use rates and demand charges. Calculates natural gas costs using a flat rate. Reports results as measure outputs.</modeler_description>
+  <arguments>
+    <argument>
+      <name>state_location</name>
+      <display_name>State Location</display_name>
+      <description>State location for default emission factors and utility rates. Select 'Custom' to use manually entered values.</description>
+      <type>Choice</type>
+      <required>true</required>
+      <model_dependent>false</model_dependent>
+      <default_value>US Average</default_value>
+      <choices>
+        <choice>
+          <value>US Average</value>
+          <display_name>US Average</display_name>
+        </choice>
+        <choice>
+          <value>California</value>
+          <display_name>California</display_name>
+        </choice>
+        <choice>
+          <value>Texas</value>
+          <display_name>Texas</display_name>
+        </choice>
+        <choice>
+          <value>New York</value>
+          <display_name>New York</display_name>
+        </choice>
+        <choice>
+          <value>Florida</value>
+          <display_name>Florida</display_name>
+        </choice>
+        <choice>
+          <value>Illinois</value>
+          <display_name>Illinois</display_name>
+        </choice>
+        <choice>
+          <value>Colorado</value>
+          <display_name>Colorado</display_name>
+        </choice>
+        <choice>
+          <value>Washington</value>
+          <display_name>Washington</display_name>
+        </choice>
+        <choice>
+          <value>Massachusetts</value>
+          <display_name>Massachusetts</display_name>
+        </choice>
+        <choice>
+          <value>Pennsylvania</value>
+          <display_name>Pennsylvania</display_name>
+        </choice>
+        <choice>
+          <value>Custom</value>
+          <display_name>Custom</display_name>
+        </choice>
+      </choices>
+    </argument>
+    <argument>
+      <name>electricity_emission_factor</name>
+      <display_name>Electricity Emission Factor (kg CO2e/kWh)</display_name>
+      <description>Annual average electricity emission factor. US average ~0.42 kg CO2e/kWh. Leave 0 to use state default.</description>
+      <type>Double</type>
+      <required>true</required>
+      <model_dependent>false</model_dependent>
+      <default_value>0.0</default_value>
+    </argument>
+    <argument>
+      <name>gas_emission_factor</name>
+      <display_name>Natural Gas Emission Factor (kg CO2e/therm)</display_name>
+      <description>Natural gas emission factor. US average ~5.3 kg CO2e/therm. Leave 0 to use default.</description>
+      <type>Double</type>
+      <required>true</required>
+      <model_dependent>false</model_dependent>
+      <default_value>0.0</default_value>
+    </argument>
+    <argument>
+      <name>on_peak_rate</name>
+      <display_name>On-Peak Electricity Rate ($/kWh)</display_name>
+      <description>Electricity rate during on-peak hours (typically weekdays 12pm-6pm). Leave 0 to use state default.</description>
+      <type>Double</type>
+      <required>true</required>
+      <model_dependent>false</model_dependent>
+      <default_value>0.0</default_value>
+    </argument>
+    <argument>
+      <name>off_peak_rate</name>
+      <display_name>Off-Peak Electricity Rate ($/kWh)</display_name>
+      <description>Electricity rate during off-peak hours (nights and weekends). Leave 0 to use state default.</description>
+      <type>Double</type>
+      <required>true</required>
+      <model_dependent>false</model_dependent>
+      <default_value>0.0</default_value>
+    </argument>
+    <argument>
+      <name>demand_charge</name>
+      <display_name>Monthly Demand Charge ($/kW)</display_name>
+      <description>Monthly demand charge based on peak demand. Leave 0 to use state default or skip if not applicable.</description>
+      <type>Double</type>
+      <required>true</required>
+      <model_dependent>false</model_dependent>
+      <default_value>0.0</default_value>
+    </argument>
+    <argument>
+      <name>gas_rate</name>
+      <display_name>Natural Gas Rate ($/therm)</display_name>
+      <description>Natural gas cost per therm. Leave 0 to use state default.</description>
+      <type>Double</type>
+      <required>true</required>
+      <model_dependent>false</model_dependent>
+      <default_value>0.0</default_value>
+    </argument>
+    <argument>
+      <name>on_peak_start_hour</name>
+      <display_name>On-Peak Start Hour (0-23)</display_name>
+      <description>Hour when on-peak period starts (24-hour format)</description>
+      <type>Integer</type>
+      <required>true</required>
+      <model_dependent>false</model_dependent>
+      <default_value>12</default_value>
+    </argument>
+    <argument>
+      <name>on_peak_end_hour</name>
+      <display_name>On-Peak End Hour (0-23)</display_name>
+      <description>Hour when on-peak period ends (24-hour format)</description>
+      <type>Integer</type>
+      <required>true</required>
+      <model_dependent>false</model_dependent>
+      <default_value>18</default_value>
+    </argument>
+    <argument>
+      <name>weekend_on_peak</name>
+      <display_name>Include Weekends in On-Peak</display_name>
+      <description>Check if weekends should be considered on-peak</description>
+      <type>Boolean</type>
+      <required>true</required>
+      <model_dependent>false</model_dependent>
+      <default_value>false</default_value>
+    </argument>
+  </arguments>
+  <outputs>
+    <output>
+      <name>annual_electricity_kwh</name>
+      <display_name>Annual Electricity Consumption (kWh)</display_name>
+      <type>Double</type>
+      <units>kWh</units>
+      <model_dependent>false</model_dependent>
+    </output>
+    <output>
+      <name>annual_gas_therm</name>
+      <display_name>Annual Natural Gas Consumption (therms)</display_name>
+      <type>Double</type>
+      <units>therms</units>
+      <model_dependent>false</model_dependent>
+    </output>
+    <output>
+      <name>annual_electricity_emissions_kg</name>
+      <display_name>Annual Electricity Emissions (kg CO2e)</display_name>
+      <type>Double</type>
+      <units>kg</units>
+      <model_dependent>false</model_dependent>
+    </output>
+    <output>
+      <name>annual_gas_emissions_kg</name>
+      <display_name>Annual Gas Emissions (kg CO2e)</display_name>
+      <type>Double</type>
+      <units>kg</units>
+      <model_dependent>false</model_dependent>
+    </output>
+    <output>
+      <name>annual_total_emissions_kg</name>
+      <display_name>Annual Total Emissions (kg CO2e)</display_name>
+      <type>Double</type>
+      <units>kg</units>
+      <model_dependent>false</model_dependent>
+    </output>
+    <output>
+      <name>annual_total_emissions_mt</name>
+      <display_name>Annual Total Emissions (metric tons CO2e)</display_name>
+      <type>Double</type>
+      <units>metric tons</units>
+      <model_dependent>false</model_dependent>
+    </output>
+    <output>
+      <name>on_peak_electricity_kwh</name>
+      <display_name>On-Peak Electricity Consumption (kWh)</display_name>
+      <type>Double</type>
+      <units>kWh</units>
+      <model_dependent>false</model_dependent>
+    </output>
+    <output>
+      <name>off_peak_electricity_kwh</name>
+      <display_name>Off-Peak Electricity Consumption (kWh)</display_name>
+      <type>Double</type>
+      <units>kWh</units>
+      <model_dependent>false</model_dependent>
+    </output>
+    <output>
+      <name>peak_demand_kw</name>
+      <display_name>Peak Demand (kW)</display_name>
+      <type>Double</type>
+      <units>kW</units>
+      <model_dependent>false</model_dependent>
+    </output>
+    <output>
+      <name>annual_electricity_cost</name>
+      <display_name>Annual Electricity Cost ($)</display_name>
+      <type>Double</type>
+      <units>$</units>
+      <model_dependent>false</model_dependent>
+    </output>
+    <output>
+      <name>annual_gas_cost</name>
+      <display_name>Annual Gas Cost ($)</display_name>
+      <type>Double</type>
+      <units>$</units>
+      <model_dependent>false</model_dependent>
+    </output>
+    <output>
+      <name>annual_total_utility_cost</name>
+      <display_name>Annual Total Utility Cost ($)</display_name>
+      <type>Double</type>
+      <units>$</units>
+      <model_dependent>false</model_dependent>
+    </output>
+  </outputs>
+  <provenances />
+  <tags>
+    <tag>Reporting.QAQC</tag>
+  </tags>
+  <attributes>
+    <attribute>
+      <name>Measure Type</name>
+      <value>ReportingMeasure</value>
+      <datatype>string</datatype>
+    </attribute>
+    <attribute>
+      <name>Measure Function</name>
+      <value>Measure</value>
+      <datatype>string</datatype>
+    </attribute>
+    <attribute>
+      <name>Requires EnergyPlus Results</name>
+      <value>true</value>
+      <datatype>boolean</datatype>
+    </attribute>
+    <attribute>
+      <name>Uses SketchUp API</name>
+      <value>false</value>
+      <datatype>boolean</datatype>
+    </attribute>
+  </attributes>
+  <files>
+    <file>
+      <filename>LICENSE.md</filename>
+      <filetype>md</filetype>
+      <usage_type>license</usage_type>
+      <checksum>FFCBFF29</checksum>
+    </file>
+    <file>
+      <filename>README.md</filename>
+      <filetype>md</filetype>
+      <usage_type>readme</usage_type>
+      <checksum>UPDATED</checksum>
+    </file>
+    <file>
+      <filename>README.md.erb</filename>
+      <filetype>erb</filetype>
+      <usage_type>readmeerb</usage_type>
+      <checksum>UPDATED</checksum>
+    </file>
+    <file>
+      <version>
+        <software_program>OpenStudio</software_program>
+        <identifier>3.0.0</identifier>
+        <min_compatible>3.0.0</min_compatible>
+      </version>
+      <filename>measure.py</filename>
+      <filetype>py</filetype>
+      <usage_type>script</usage_type>
+      <checksum>UPDATED</checksum>
+    </file>
+  </files>
+</measure>

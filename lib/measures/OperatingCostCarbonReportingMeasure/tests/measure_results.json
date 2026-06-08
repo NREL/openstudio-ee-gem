@@ -1,0 +1,14 @@
+{
+  "annual_electricity_kwh": 53134.32421875,
+  "annual_gas_gj": 0.3940630257129669,
+  "annual_electricity_emissions_kg": 26567.162109375,
+  "annual_gas_emissions_kg": 19.82137107849121,
+  "annual_total_emissions_kg": 26586.982421875,
+  "annual_total_emissions_mt": 26.58698272705078,
+  "on_peak_electricity_kwh": 8606.521484375,
+  "off_peak_electricity_kwh": 44527.80078125,
+  "peak_demand_kw": 18.96527671813965,
+  "annual_electricity_cost": 9273.677734375,
+  "annual_gas_cost": 3.761341094970703,
+  "annual_total_utility_cost": 9277.4384765625
+}

@@ -1,0 +1,13 @@
+{
+  "weather_file": "c:\\All repos\\openstudio-ee-gem\\lib\\parametric_run\\weather\\Buffalo\\USA_NY_Buffalo-Greater.Buffalo.Intl.AP.725280_TMY3.epw",
+  "seed_file": "c:\\All repos\\openstudio-ee-gem\\lib\\parametric_run\\simulations\\run_test_017_custom_rsmeans\\scenario_3_SmallOffice_Buffalo\\model_to_run.osm",
+  "file_paths": [
+    "c:\\All repos\\openstudio-ee-gem\\lib\\parametric_run\\weather",
+    "c:\\All repos\\openstudio-ee-gem\\lib\\parametric_run\\weather\\Buffalo"
+  ],
+  "measure_paths": [
+    "c:\\All repos\\openstudio-ee-gem\\lib\\measures"
+  ],
+  "steps": [],
+  "name": "scenario_3_SmallOffice_Buffalo"
+}

@@ -1,0 +1,32 @@
+# Door Enhancement Building AdditionalProperties
+,Scenario_1: none none none infilt-300,Scenario_2: none none none infilt-200,Scenario_3: none none none infilt-100,Scenario_4: none none none infilt0,Scenario_5: none none none infilt30,Scenario_6: none none none infilt60,Scenario_7: none none none infilt90
+door_enhancement_doors_with_r_value_change_count,0,0,0,0,0,0,0
+door_enhancement_doors_processed_count,0,0,0,0,0,0,0
+door_enhancement_total_sealing_side_length_m,0.0,0.0,0.0,0.0,0.0,0.0,0.0
+door_enhancement_total_sealing_bottom_length_m,0.0,0.0,0.0,0.0,0.0,0.0,0.0
+door_enhancement_total_door_area_m2,0,0,0,0,0,0,0
+door_enhancement_total_embodied_carbon_kgCO2eq,0,0,0,0,0,0,0
+door_enhancement_top_side_seal_option,none,none,none,none,none,none,none
+door_enhancement_bottom_seal_option,none,none,none,none,none,none,none
+door_enhancement_door_option,none,none,none,none,none,none,none
+door_enhancement_gwp_statistic,median,median,median,median,median,median,median
+door_enhancement_door_area_per_unit_m2,1.95,1.95,1.95,1.95,1.95,1.95,1.95
+door_enhancement_door_lifetime_years,30,30,30,30,30,30,30
+door_enhancement_strip_lifetime_years,15,15,15,15,15,15,15
+door_enhancement_analysis_period_years,30,30,30,30,30,30,30
+
+# EnergyPlus Simulation Summary
+,Scenario_1: none none none infilt-300,Scenario_2: none none none infilt-200,Scenario_3: none none none infilt-100,Scenario_4: none none none infilt0,Scenario_5: none none none infilt30,Scenario_6: none none none infilt60,Scenario_7: none none none infilt90
+building_name,90.1-2004|SmallOffice,90.1-2004|SmallOffice,90.1-2004|SmallOffice,90.1-2004|SmallOffice,90.1-2004|SmallOffice,90.1-2004|SmallOffice,90.1-2004|SmallOffice
+environment,RUN PERIOD 1 ** Denver-Aurora-Buckley AFB CO USA TMY3 WMO#=724695,RUN PERIOD 1 ** Denver-Aurora-Buckley AFB CO USA TMY3 WMO#=724695,RUN PERIOD 1 ** Denver-Aurora-Buckley AFB CO USA TMY3 WMO#=724695,RUN PERIOD 1 ** Denver-Aurora-Buckley AFB CO USA TMY3 WMO#=724695,RUN PERIOD 1 ** Denver-Aurora-Buckley AFB CO USA TMY3 WMO#=724695,RUN PERIOD 1 ** Denver-Aurora-Buckley AFB CO USA TMY3 WMO#=724695,RUN PERIOD 1 ** Denver-Aurora-Buckley AFB CO USA TMY3 WMO#=724695
+simulation_hours,8760.00,8760.00,8760.00,8760.00,8760.00,8760.00,8760.00
+total_site_energy_GJ,290.30,271.06,252.24,233.98,228.64,223.37,218.19
+net_site_energy_GJ,290.30,271.06,252.24,233.98,228.64,223.37,218.19
+total_source_energy_GJ,630.86,607.06,583.81,561.27,554.68,548.18,541.80
+net_source_energy_GJ,630.86,607.06,583.81,561.27,554.68,548.18,541.80
+total_building_area_m2,464.52,464.52,464.52,464.52,464.52,464.52,464.52
+net_conditioned_building_area_m2,464.52,464.52,464.52,464.52,464.52,464.52,464.52
+total_end_uses_electricity_GJ,151.79,150.37,149.00,147.69,147.31,146.93,146.56
+total_end_uses_natural_gas_GJ,138.51,120.69,103.24,86.29,81.33,76.44,71.63
+total_end_uses_water_m3,21.30,21.30,21.30,21.30,21.30,21.30,21.30
+total_operational_carbon_kgCO2e,22402.83,21361.49,20343.84,19357.47,19069.17,18784.39,18504.66

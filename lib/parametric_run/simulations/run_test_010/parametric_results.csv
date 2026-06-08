@@ -1,0 +1,78 @@
+scenario,baseline_SmallOffice_Duluth,scenario_1_SmallOffice_Duluth,scenario_2_SmallOffice_Duluth,scenario_3_SmallOffice_Duluth,scenario_4_SmallOffice_Duluth,scenario_5_SmallOffice_Duluth
+city,Duluth,Duluth,Duluth,Duluth,Duluth,Duluth
+building_type,SmallOffice,SmallOffice,SmallOffice,SmallOffice,SmallOffice,SmallOffice
+climate_zone,ASHRAE 169-2013-7A,ASHRAE 169-2013-7A,ASHRAE 169-2013-7A,ASHRAE 169-2013-7A,ASHRAE 169-2013-7A,ASHRAE 169-2013-7A
+building_area_m2,511.15740000000005,511.15740000000005,511.15740000000005,511.15740000000005,511.15740000000005,511.15740000000005
+renovation_details,Baseline (no envelope renovation),Envelope renovation applied (details generated at report time),Envelope renovation applied (details generated at report time),Envelope renovation applied (details generated at report time),Envelope renovation applied (details generated at report time),Envelope renovation applied (details generated at report time)
+annual_electricity_cost_usd,9416.858076153963,9416.858076153963,9416.858076153963,9416.858076153963,9416.858076153963,9335.835742050076
+annual_gas_cost_usd,424.25291824792123,424.25291824792123,424.25291824792123,424.25291824792123,424.25291824792123,394.4696584445772
+annual_electricity_operating_emissions_kg_co2e,18658.320050471153,18658.320050471153,18658.320050471153,18658.320050471153,18658.320050471153,18535.592634092965
+annual_gas_operating_emissions_kg_co2e,2235.711766256535,2235.711766256535,2235.711766256535,2235.711766256535,2235.711766256535,2078.7610853872047
+total_site_energy_gj,236.54,236.54,236.54,236.54,236.54,232.16
+window_total_count,20,20,20,20,20,20
+window_fixed_count,20,20,20,20,20,20
+window_operable_count,0,0,0,0,0,0
+window_skylight_count,0,0,0,0,0,0
+window_simple_glazing_count,20,20,20,20,20,20
+window_upgrade_status,,,,,,
+window_enhancement_infiltration_reduction_percent,,0.0,0.0,0.0,0.0,25.0
+window_glass_pane_thickness_m,,0.003,0.003,0.003,0.003,0.003
+window_glass_gap_thickness_m,,0.013,0.013,0.013,0.013,0.013
+window_enhancement_renovated_area_m2,,55.778400000000005,55.778400000000005,55.778400000000005,55.778400000000005,55.778400000000005
+window_enhancement_renovated_glazing_area_m2,,55.778400000000005,55.778400000000005,55.778400000000005,55.778400000000005,55.778400000000005
+window_enhancement_renovated_frame_area_m2,,0.0,0.0,0.0,0.0,0.0
+window_enhancement_renovated_perimeter_m,,134.16,134.16,134.16,134.16,134.16
+window_enhancement_renovated_caulking_volume_m3,,0.003371808563244853,0.00758656926730092,0.003371808563244853,0.003371808563244853,0.003371808563244853
+window_enhancement_renovated_weatherstrip_length_m,,0.0,0.0,0.0,0.0,0.0
+window_weatherstrip_length_per_unit,,5.1816,5.1816,5.1816,5.1816,5.1816
+window_glass_lifetime_years,,15,15,15,15,15
+window_frame_lifetime_years,,15,15,15,15,15
+window_caulking_lifetime_years,,10,10,10,10,10
+window_film_lifetime_years,,10,10,10,10,10
+window_weatherstrip_lifetime_years,,10,10,10,10,10
+window_enhancement_custom_labor_cost_multiplier,,1.0,1.0,1.0,1.0,1.0
+window_custom_glass_cost_per_cf,,0.0,0.0,0.0,0.0,0.0
+window_custom_frame_cost_per_sf,,0.0,0.0,0.0,0.0,0.0
+window_custom_caulking_cost_per_cy,,0.0,0.0,0.0,0.0,0.0
+window_custom_film_cost_per_sf,,0.0,0.0,0.0,0.0,0.0
+window_custom_weatherstrip_cost_per_lf,,0.0,0.0,0.0,0.0,0.0
+window_enhancement_embodied_carbon_kgCO2eq,,51.973057193856164,0.0,51.973057193856164,0.0,51.973057193856164
+window_enhancement_total_cost_with_overhead_and_profit_usd,,4953.092284483199,5229.071033472001,4953.092284483199,0.0,4953.092284483199
+window_enhancement_material_cost_usd,,2403.259919424,2561.716617408,2403.259919424,0.0,2403.259919424
+window_enhancement_labor_cost_usd,,2099.551248288,2191.984322112,2099.551248288,0.0,2099.551248288
+window_enhancement_overhead_profit_cost_usd,,450.28111677119995,475.37009395200005,450.28111677119995,0.0,450.28111677119995
+total_additional_construction_cost_usd,0.0,4953.092284483199,5229.071033472001,4953.092284483199,0.0,4953.092284483199
+total_construction_cost_usd,0.0,4953.092284483199,5229.071033472001,4953.092284483199,0.0,4953.092284483199
+lpd_fraction_linear_fluorescent,1.0,1.0,1.0,1.0,1.0,1.0
+measure_name,Operating Cost Carbon Reporting Measure,Operating Cost Carbon Reporting Measure,Operating Cost Carbon Reporting Measure,Operating Cost Carbon Reporting Measure,Operating Cost Carbon Reporting Measure,Operating Cost Carbon Reporting Measure
+total_additional_embodied_carbon_kg,0.0,51.973057193856164,0.0,51.973057193856164,0.0,51.973057193856164
+window_caulking_gwp_per_m3_kgCO2eq,,5138.0,,5138.0,,5138.0
+window_caulking_option,,polyurethane,acrylic,polyurethane,none,polyurethane
+window_caulking_rsmeans_description,,"Joint sealants, caulking and sealants, polyurethane, bulk, in place, 1 or 2 component, 1/4"" x 1/4""","Joint sealants, caulking and sealants, bulk acrylic latex, 1/4"" x 1/2"", in place","Joint sealants, caulking and sealants, polyurethane, bulk, in place, 1 or 2 component, 1/4"" x 1/4""",,"Joint sealants, caulking and sealants, polyurethane, bulk, in place, 1 or 2 component, 1/4"" x 1/4"""
+window_caulking_rsmeans_id,,079213203500,079213200065,079213203500,,079213203500
+window_enhancement_analysis_period_years,,30,30,30,30,30
+window_enhancement_caulking_cost_per_cy,,544937.496287154,258163.30715435377,544937.496287154,N/A,544937.496287154
+window_enhancement_caulking_cost_per_lf,,5.460000000000001,5.82,5.460000000000001,N/A,5.460000000000001
+window_enhancement_cost_factor_basis,,rsmeans_api,rsmeans_api,rsmeans_api,not_calculated,rsmeans_api
+window_enhancement_equipment_cost_$,,0.0,0.0,0.0,0.0,0.0
+window_enhancement_film_cost_per_sf,,N/A,N/A,N/A,N/A,N/A
+window_enhancement_frame_cost_per_sf,,N/A,N/A,N/A,N/A,N/A
+window_enhancement_glass_cost_per_cf,,N/A,N/A,N/A,N/A,N/A
+window_enhancement_glass_cost_per_sf,,N/A,N/A,N/A,N/A,N/A
+window_enhancement_gwp_statistic,,median,median,median,median,median
+window_enhancement_labor_cost_$,,2099.551248288,2191.984322112,2099.551248288,0.0,2099.551248288
+window_enhancement_material_cost_$,,2403.259919424,2561.716617408,2403.259919424,0.0,2403.259919424
+window_enhancement_measure_name,,Window Enhancement,Window Enhancement,Window Enhancement,Window Enhancement,Window Enhancement
+window_enhancement_overhead_profit_cost_$,,450.28111677119995,475.37009395200005,450.28111677119995,0.0,450.28111677119995
+window_enhancement_overhead_profit_percent,,10.0,10.0,10.0,10.0,10.0
+window_enhancement_simple_glazing_objects_count,,20,20,20,20,20
+window_enhancement_summary_notes,,"Requested: caulking (polyurethane). Outcome: Window enhancement completed without option conflicts. Context: window constructions=20, simple glazing objects=20; available subsurface counts -> FixedWindow=20, OperableWindow=0, Skylight=0.","Requested: caulking (acrylic). Outcome: Window enhancement completed without option conflicts. Context: window constructions=20, simple glazing objects=20; available subsurface counts -> FixedWindow=20, OperableWindow=0, Skylight=0.","Requested: caulking (polyurethane), secondary glazing (install secondary glazing). Outcome: Completed with option conflicts; one or more requested actions were skipped or partially applied. Reason(s): Secondary glazing selected but all window constructions are SimpleGlazing. Context: window constructions=20, simple glazing objects=20; available subsurface counts -> FixedWindow=20, OperableWindow=0, Skylight=0.","Requested: secondary glazing (install secondary glazing). Outcome: Completed with option conflicts; one or more requested actions were skipped or partially applied. Reason(s): Secondary glazing selected but all window constructions are SimpleGlazing. Context: window constructions=20, simple glazing objects=20; available subsurface counts -> FixedWindow=20, OperableWindow=0, Skylight=0.","Requested: glass upgrade (provide user_num_panes), frame upgrade (wood-aluminium window frame), caulking (polyurethane), film (low-e film), weatherstrip (silicone adhesive smoke gasket). Outcome: Completed with option conflicts; one or more requested actions were skipped or partially applied. Reason(s): Weatherstrip selected but no OperableWindow subsurfaces found | Film selected but all window constructions are SimpleGlazing | Glass replacement selected but all window constructions are SimpleGlazing. Context: window constructions=20, simple glazing objects=20; available subsurface counts -> FixedWindow=20, OperableWindow=0, Skylight=0."
+window_enhancement_total_cost_with_overhead_and_profit_$,,4953.092284483199,5229.071033472001,4953.092284483199,0.0,4953.092284483199
+window_enhancement_weatherstrip_cost_per_lf,,N/A,N/A,N/A,N/A,N/A
+window_enhancement_windows_processed_count,,20,20,20,20,20
+window_film_option,,none,none,none,none,low-e film
+window_frame_gwp_per_m2_kgCO2eq,,,,,,109.00500000000002
+window_frame_option,,none,none,none,none,wood-aluminium window frame
+window_glass_option,,none,none,none,none,provide user_num_panes
+window_secondary_glazing_option,,none,none,install secondary glazing,install secondary glazing,none
+window_weatherstrip_option,,none,none,none,none,silicone adhesive smoke gasket

@@ -1,0 +1,92 @@
+scenario,baseline_SmallOffice_Duluth,scenario_1_SmallOffice_Duluth,scenario_2_SmallOffice_Duluth,scenario_3_SmallOffice_Duluth
+city,Duluth,Duluth,Duluth,Duluth
+building_type,SmallOffice,SmallOffice,SmallOffice,SmallOffice
+climate_zone,ASHRAE 169-2013-7A,ASHRAE 169-2013-7A,ASHRAE 169-2013-7A,ASHRAE 169-2013-7A
+building_area_m2,511.15740000000005,511.15740000000005,511.15740000000005,511.15740000000005
+renovation_details,Baseline (no envelope renovation),Envelope renovation applied (details generated at report time),Envelope renovation applied (details generated at report time),Envelope renovation applied (details generated at report time)
+annual_electricity_cost_usd,9416.858076153963,9333.262976237858,9325.28474084852,9325.28474084852
+annual_gas_cost_usd,424.25291824792123,416.80378591148474,416.4843455148195,416.4843455148195
+annual_electricity_operating_emissions_kg_co2e,18658.320050471153,18545.079664039884,18539.870796359086,18539.870796359086
+annual_gas_operating_emissions_kg_co2e,2235.711766256535,2196.456614207726,2194.7732394500663,2194.7732394500663
+total_site_energy_gj,236.54,234.6,234.51,234.51
+wall_insulation_renovated_area_m2,,0,0,0
+wall_insulation_added_volume_m3,,0,0,0
+roof_insulation_renovated_area_m2,,598.7616811798497,598.7616811798497,598.7616811798497
+roof_insulation_added_volume_m3,,82.44238634383217,101.00123956302585,101.00123956302585
+wall_insulation_material_thermal_conductivity_W_per_mK,,0.033,0.033,0.034
+wall_insulation_material_density_kg_per_m3,,30,30,20
+wall_insulation_material_lifetime_years,,60.0,60.0,60.0
+roof_insulation_material_thermal_conductivity_W_per_mK,,0.033,0.033,0.033
+roof_insulation_material_density_kg_per_m3,,30,30,25.63
+roof_insulation_material_lifetime_years,,67.5,67.5,75.0
+window_total_count,20,20,20,20
+window_fixed_count,20,20,20,20
+window_operable_count,0,0,0,0
+window_skylight_count,0,0,0,0
+window_simple_glazing_count,20,20,20,20
+window_upgrade_status,,,,
+wall_insulation_embodied_carbon_kgCO2eq,,0,0,0
+roof_insulation_embodied_carbon_kgCO2eq,,5551.072805503929,6800.691478315582,29412.121285265537
+wall_insulation_custom_labor_cost_multiplier,,1.0,1.0,1.0
+wall_insulation_custom_cost_per_cf,,0.0,0.0,0.0
+roof_insulation_custom_labor_cost_multiplier,,1.0,1.0,1.0
+roof_insulation_custom_cost_per_cf,,0.0,0.0,0.0
+wall_insulation_total_cost_with_overhead_and_profit_usd,,0.0,0.0,0.0
+roof_insulation_total_cost_with_overhead_and_profit_usd,,5240.5657154219425,6420.285204525875,52261.12156484063
+wall_insulation_material_cost_usd,,0.0,0.0,0.0
+wall_insulation_labor_cost_usd,,0.0,0.0,0.0
+wall_insulation_overhead_profit_cost_usd,,0.0,0.0,0.0
+roof_insulation_material_cost_usd,,1715.0942341380905,2101.184248753923,38093.6922135202
+roof_insulation_labor_cost_usd,,1969.182268825215,2412.4708041248746,9416.418299971285
+roof_insulation_equipment_cost_usd,,1079.8741474202793,1322.9678603265443,0.0
+roof_insulation_overhead_profit_cost_usd,,476.4150650383585,583.6622913205341,4751.011051349148
+total_additional_construction_cost_usd,0.0,5240.5657154219425,6420.285204525875,52261.12156484063
+total_construction_cost_usd,0.0,5240.5657154219425,6420.285204525875,52261.12156484063
+lpd_fraction_linear_fluorescent,1.0,1.0,1.0,1.0
+measure_name,Operating Cost Carbon Reporting Measure,Operating Cost Carbon Reporting Measure,Operating Cost Carbon Reporting Measure,Operating Cost Carbon Reporting Measure
+roof_insulation_analysis_period_years,,30,30,30
+roof_insulation_cost_factor_basis,,cost_per_volume,cost_per_volume,cost_per_volume
+roof_insulation_cost_source,,rsmeans_api,rsmeans_api,rsmeans_api
+roof_insulation_equipment_cost_$,,1079.8741474202793,1322.9678603265443,0.0
+roof_insulation_gwp_statistic,,median,median,median
+roof_insulation_labor_cost_$,,1969.182268825215,2412.4708041248746,9416.418299971285
+roof_insulation_material_cost_$,,1715.0942341380905,2101.184248753923,38093.6922135202
+roof_insulation_material_gwp_per_kg,,2.2404694902499998,2.2404694902499998,26.207800006136367
+roof_insulation_material_gwp_per_m2,,1.1476000000000002,1.1476000000000002,18.727763535238097
+roof_insulation_material_gwp_per_m3,,,,656.99323505506
+roof_insulation_material_rsmeans_cost_per_cf,,1.6363636363636362,1.6363636363636365,13.320000000000002
+roof_insulation_material_rsmeans_description,,"Blown-in insulation, ceilings, with open access, fiberglass, 5.5"" thick, R11","Blown-in insulation, ceilings, with open access, fiberglass, 5.5"" thick, R11","Extruded polystyrene insulation, for roof decks, 1"" thick, R5, 15 psi compressive strength, fastening excluded"
+roof_insulation_material_rsmeans_id,,072126101000,072126101000,072216101910
+roof_insulation_material_type,,Blown Fiberglass,Blown Fiberglass,Extruded Polystyrene (XPS) Foam Board
+roof_insulation_measure_name,,Increase Insulation R-Value for Roofs,Increase Insulation R-Value for Roofs,Increase Insulation R-Value for Roofs
+roof_insulation_modified_constructions_count,,1,1,1
+roof_insulation_overhead_profit_cost_$,,476.4150650383585,583.6622913205341,4751.011051349148
+roof_insulation_overhead_profit_percent,,10.0,10.0,10.0
+roof_insulation_renovated_construction_names,,Typical Uninsulated Wood Joist Attic Roof adj roof insulation,Typical Uninsulated Wood Joist Attic Roof adj roof insulation,Typical Uninsulated Wood Joist Attic Roof adj roof insulation
+roof_insulation_renovated_embodied_carbon_kgCO2eq,,5551.072805503929,6800.691478315582,29412.121285265537
+roof_insulation_renovated_exterior_roof_area_m2,,598.7616811798497,598.7616811798497,598.7616811798497
+roof_insulation_retrofit_materials_json,,"[{""name"": ""Blown Fiberglass roof insulation (Typical Uninsulated Wood Joist Attic Roof)"", ""description"": ""Added insulation to reach R-20.0; actual added thickness 5.42 in"", ""quantity"": 6445.017097178409, ""unit"": ""SF"", ""quantity_volume"": 2911.425397456635, ""unit_volume"": ""CF"", ""rsmeans_thickness_ft"": 0.4517327655703567, ""costing_mode"": ""volume_from_area"", ""quantity_si"": 598.7616811798497, ""unit_si"": ""m2"", ""division_code"": ""07"", ""rsmeans_id"": null}]","[{""name"": ""Blown Fiberglass roof insulation (Typical Uninsulated Wood Joist Attic Roof)"", ""description"": ""Added insulation to reach R-24.4; actual added thickness 6.64 in"", ""quantity"": 6445.017097178409, ""unit"": ""SF"", ""quantity_volume"": 3566.825113625486, ""unit_volume"": ""CF"", ""rsmeans_thickness_ft"": 0.5534236852819244, ""costing_mode"": ""volume_from_area"", ""quantity_si"": 598.7616811798497, ""unit_si"": ""m2"", ""division_code"": ""07"", ""rsmeans_id"": null}]","[{""name"": ""Extruded Polystyrene (XPS) Foam Board roof insulation (Typical Uninsulated Wood Joist Attic Roof)"", ""description"": ""Added insulation to reach R-24.4; actual added thickness 6.64 in"", ""quantity"": 6445.017097178409, ""unit"": ""SF"", ""quantity_volume"": 3566.825113625486, ""unit_volume"": ""CF"", ""rsmeans_thickness_ft"": 0.5534236852819244, ""costing_mode"": ""volume_from_area"", ""quantity_si"": 598.7616811798497, ""unit_si"": ""m2"", ""division_code"": ""07"", ""rsmeans_id"": null}]"
+roof_insulation_rsmeans_materials_detail_json,,"[{""name"": ""Blown Fiberglass roof insulation (Typical Uninsulated Wood Joist Attic Roof)"", ""description"": ""Added insulation to reach R-20.0; actual added thickness 5.42 in"", ""quantity"": 6445.017097178409, ""unit"": ""SF"", ""division_code"": ""07"", ""rsmeans_id"": ""072126101000"", ""rsmeans_description"": ""Blown-in insulation, ceilings, with open access, fiberglass, 5.5\"" thick, R11"", ""unit_cost"": 1.6363636363636367, ""total_cost"": 4764.150650383584, ""unit_cost_basis"": ""CF"", ""costing_mode"": ""volume_from_area"", ""match_type"": ""fallback_id"", ""catalog"": ""bc-mf"", ""search_term_used"": ""fallback:072126101000"", ""source"": """"}]","[{""name"": ""Blown Fiberglass roof insulation (Typical Uninsulated Wood Joist Attic Roof)"", ""description"": ""Added insulation to reach R-24.4; actual added thickness 6.64 in"", ""quantity"": 6445.017097178409, ""unit"": ""SF"", ""division_code"": ""07"", ""rsmeans_id"": ""072126101000"", ""rsmeans_description"": ""Blown-in insulation, ceilings, with open access, fiberglass, 5.5\"" thick, R11"", ""unit_cost"": 1.6363636363636367, ""total_cost"": 5836.622913205341, ""unit_cost_basis"": ""CF"", ""costing_mode"": ""volume_from_area"", ""match_type"": ""fallback_id"", ""catalog"": ""bc-mf"", ""search_term_used"": ""fallback:072126101000"", ""source"": """"}]","[{""name"": ""Extruded Polystyrene (XPS) Foam Board roof insulation (Typical Uninsulated Wood Joist Attic Roof)"", ""description"": ""Added insulation to reach R-24.4; actual added thickness 6.64 in"", ""quantity"": 6445.017097178409, ""unit"": ""SF"", ""division_code"": ""07"", ""rsmeans_id"": ""072216101910"", ""rsmeans_description"": ""Extruded polystyrene insulation, for roof decks, 1\"" thick, R5, 15 psi compressive strength, fastening excluded"", ""unit_cost"": 13.320000000000002, ""total_cost"": 47510.11051349148, ""unit_cost_basis"": ""CF"", ""costing_mode"": ""volume_from_area"", ""match_type"": ""fallback_id"", ""catalog"": ""bc-mf"", ""search_term_used"": ""fallback:072216101910"", ""source"": """"}]"
+roof_insulation_summary_notes,,"Roof insulation renovation completed. Modified constructions=1, target-already-met skips=0.","Roof insulation renovation completed. Modified constructions=1, target-already-met skips=0.","Roof insulation renovation completed. Modified constructions=1, target-already-met skips=0."
+roof_insulation_target_r_value_ip,,20.0,24.4,24.4
+roof_insulation_total_cost_with_overhead_and_profit_$,,5240.5657154219425,6420.285204525875,52261.12156484063
+total_additional_embodied_carbon_kg,0.0,5551.072805503929,6800.691478315582,29412.121285265537
+wall_insulation_analysis_period_years,,30,30,30
+wall_insulation_cost_factor_basis,,not_calculated,not_calculated,not_calculated
+wall_insulation_cost_source,,none,none,none
+wall_insulation_equipment_cost_$,,0.0,0.0,0.0
+wall_insulation_gwp_statistic,,median,median,median
+wall_insulation_labor_cost_$,,0.0,0.0,0.0
+wall_insulation_material_cost_$,,0.0,0.0,0.0
+wall_insulation_material_gwp_per_kg,,0.8125334259000001,0.8125334259000001,3.72
+wall_insulation_material_gwp_per_m2,,0.9445,0.9445,2.79
+wall_insulation_material_gwp_per_m3,,4.414821428220001,4.414821428220001,
+wall_insulation_material_rsmeans_cost_per_cf,,N/A,N/A,N/A
+wall_insulation_material_type,,Fiberglass Batts,Fiberglass Batts,Expanded Polystyrene (EPS) Foam Board
+wall_insulation_measure_name,,Increase Insulation R-Value for Exterior Walls,Increase Insulation R-Value for Exterior Walls,Increase Insulation R-Value for Exterior Walls
+wall_insulation_modified_constructions_count,,0,0,0
+wall_insulation_overhead_profit_cost_$,,0.0,0.0,0.0
+wall_insulation_overhead_profit_percent,,10.0,10.0,10.0
+wall_insulation_summary_notes,,"Requested: wall insulation upgrade to target R-10.00 using 'Fiberglass Batts'. Outcome: Not implemented. Reason: All eligible wall constructions already met or exceeded the target R-value. Context: modified constructions=0, target-already-met skips=1, renovated area=0.000 m2, added volume=0.000 m3.","Requested: wall insulation upgrade to target R-13.00 using 'Fiberglass Batts'. Outcome: Not implemented. Reason: All eligible wall constructions already met or exceeded the target R-value. Context: modified constructions=0, target-already-met skips=1, renovated area=0.000 m2, added volume=0.000 m3.","Requested: wall insulation upgrade to target R-13.00 using 'Expanded Polystyrene (EPS) Foam Board'. Outcome: Not implemented. Reason: All eligible wall constructions already met or exceeded the target R-value. Context: modified constructions=0, target-already-met skips=1, renovated area=0.000 m2, added volume=0.000 m3."
+wall_insulation_target_r_value_ip,,10.0,13.0,13.0
+wall_insulation_total_cost_with_overhead_and_profit_$,,0.0,0.0,0.0

@@ -1,0 +1,2120 @@
+"""
+Apply reporting measure to extract AdditionalProperties from roof insulation models.
+
+Usage:
+    python apply_reporting_measure.py
+"""
+
+import sys
+import os
+
+# Set UTF-8 encoding for console output to handle Unicode characters
+if sys.platform == 'win32':
+    import codecs
+    sys.stdout = codecs.getwriter('utf-8')(sys.stdout.buffer, 'strict')
+    sys.stderr = codecs.getwriter('utf-8')(sys.stderr.buffer, 'strict')
+
+from pathlib import Path
+
+# Add the measure directory to Python path
+measure_dir = Path(__file__).parent.absolute()
+sys.path.insert(0, str(measure_dir))
+
+# Import OpenStudio
+try:
+    import openstudio
+except ImportError:
+    print("Error: OpenStudio Python bindings not found.")
+    print("Make sure OpenStudio is installed and Python bindings are available.")
+    sys.exit(1)
+
+def load_emission_factors():
+    """Load emission factors from CSV file."""
+    emission_factors_path = Path(__file__).parent.parent.parent / "ReportRetrofitImpacts" / "resources" / "emission_factors_for_operational_carbon.csv"
+    
+    import pandas as pd
+    if not emission_factors_path.exists():
+        print(f"Warning: Emission factors file not found at {emission_factors_path}")
+        print("  Using default emission factors")
+        return {
+            'elec_emission_factor': 101.588886,  # kgCO2e_per_GJ
+            'gas_emission_factor': 50.3419231,    # kgCO2e_per_GJ
+            'water_emission_factor': 0.46         # kgCO2e_per_m3
+        }
+    
+    try:
+        df = pd.read_csv(emission_factors_path)
+        factors = {}
+        for _, row in df.iterrows():
+            factors[row['Item']] = float(row['Value'])
+        print(f"✓ Loaded emission factors from {emission_factors_path.name}")
+        print(f"  Electricity: {factors['elec_emission_factor']:.2f} kgCO2e/GJ")
+        print(f"  Natural Gas: {factors['gas_emission_factor']:.2f} kgCO2e/GJ")
+        print(f"  Water: {factors['water_emission_factor']:.2f} kgCO2e/m³")
+        return factors
+    except Exception as e:
+        print(f"⚠ Warning: Error reading emission factors: {e}")
+        print("  Using default emission factors")
+        return {
+            'elec_emission_factor': 101.588886,
+            'gas_emission_factor': 50.3419231,
+            'water_emission_factor': 0.46
+        }
+
+def extract_model_data(osm_path, emission_factors):
+    """Extract AdditionalProperties from OSM file and energy results from SQL file."""
+    print(f"\n{'='*80}")
+    print(f"Processing: {osm_path.name}")
+    print(f"{'='*80}")
+    
+    # Load the model
+    translator = openstudio.osversion.VersionTranslator()
+    model_opt = translator.loadModel(str(osm_path))
+    
+    if not model_opt.is_initialized():
+        print(f"✗ Error: Could not load model from {osm_path}")
+        return None, None
+    
+    model = model_opt.get()
+    print(f"✓ Model loaded successfully. Contains {len(model.getConstructions())} constructions.")
+    
+    # Extract AdditionalProperties directly
+    import pandas as pd
+    props_data = []
+    
+    for construction in model.getConstructions():
+        props = construction.additionalProperties()
+        feature_names = props.featureNames()
+        
+        if len(feature_names) > 0:
+            item = {}
+            
+            for feature_name in feature_names:
+                value = None
+                
+                # Try Double first
+                value_double = props.getFeatureAsDouble(feature_name)
+                if value_double.is_initialized():
+                    value = value_double.get()
+                else:
+                    # Try Integer
+                    value_int = props.getFeatureAsInteger(feature_name)
+                    if value_int.is_initialized():
+                        value = value_int.get()
+                    else:
+                        # Try String
+                        value_str = props.getFeatureAsString(feature_name)
+                        if value_str.is_initialized():
+                            value = value_str.get()
+                
+                if value is not None:
+                    item[feature_name] = value
+            
+            if item:
+                item["construction_handle"] = construction.handle().__str__()
+                props_data.append(item)
+    
+    props_df = pd.DataFrame(props_data) if props_data else pd.DataFrame()
+    
+    # Extract energy results from eplustbl.html file
+    scenario_name = osm_path.stem
+    run_dir = osm_path.parent / f"run_{scenario_name[4:]}"  # Remove 'out_' prefix
+    
+    # Try multiple possible eplustbl.html locations
+    eplustbl_paths = [
+        run_dir / "run" / "eplustbl.html",
+        run_dir / "reports" / "eplustbl.html",
+        run_dir / "eplustbl.html"
+    ]
+    
+    energy_data = {}
+    eplustbl_path = None
+    for possible_path in eplustbl_paths:
+        if possible_path.exists():
+            eplustbl_path = possible_path
+            break
+    
+    if eplustbl_path and eplustbl_path.exists():
+        try:
+            # Parse EnergyPlus HTML report
+            html_text = eplustbl_path.read_text(encoding="utf-8", errors="ignore")
+            
+            # Use inline parsing functions
+            import re
+            def extract_field(pattern, text):
+                m = re.search(pattern, text, flags=re.IGNORECASE | re.DOTALL)
+                return m.group(1).strip() if m else ""
+            
+            def extract_building_string(text):
+                m = re.search(r'Building:\s*<b>([^<]+)</b>', text, flags=re.IGNORECASE)
+                if m:
+                    return m.group(1).strip()
+                return ""
+            
+            energy_data["building_name"] = extract_building_string(html_text)
+            energy_data["environment"] = extract_field(r'Environment:\s*<b>([^<]+)</b>', html_text)
+            energy_data["simulation_hours"] = extract_field(r'Values gathered over\s+([0-9.]+)\s+hours', html_text)
+            energy_data["total_site_energy_GJ"] = extract_field(r'Total Site Energy</td>\s*<td[^>]*>\s*([0-9.]+)', html_text)
+            energy_data["net_site_energy_GJ"] = extract_field(r'Net Site Energy</td>\s*<td[^>]*>\s*([0-9.]+)', html_text)
+            energy_data["total_source_energy_GJ"] = extract_field(r'Total Source Energy</td>\s*<td[^>]*>\s*([0-9.]+)', html_text)
+            energy_data["net_source_energy_GJ"] = extract_field(r'Net Source Energy</td>\s*<td[^>]*>\s*([0-9.]+)', html_text)
+            energy_data["total_building_area_m2"] = extract_field(r'Total Building Area</td>\s*<td[^>]*>\s*([0-9.]+)', html_text)
+            energy_data["net_conditioned_building_area_m2"] = extract_field(r'Net Conditioned Building Area</td>\s*<td[^>]*>\s*([0-9.]+)', html_text)
+            
+            # Extract End Uses data
+            # Pattern explanation: After "Total End Uses", capture electricity (1st td), natural gas (2nd td), and water (14th/last td)
+            energy_data["total_end_uses_electricity_GJ"] = extract_field(
+                r'Total End Uses</td>\s*<td[^>]*>\s*([0-9.]+)\s*</td>', html_text)
+            energy_data["total_end_uses_natural_gas_GJ"] = extract_field(
+                r'Total End Uses</td>\s*<td[^>]*>\s*[0-9.]+\s*</td>\s*<td[^>]*>\s*([0-9.]+)\s*</td>', html_text)
+            
+            # Water is in the 14th column (last column before </tr>)
+            # Match Total End Uses, then skip 13 columns, then capture the 14th value
+            water_pattern = r'Total End Uses</td>' + r'(?:\s*<td[^>]*>\s*[0-9.]+\s*</td>)' * 13 + r'\s*<td[^>]*>\s*([0-9.]+)\s*</td>'
+            energy_data["total_end_uses_water_m3"] = extract_field(water_pattern, html_text)
+            
+            # Extract individual end use categories
+            # Each category has: Electricity (1st col), Natural Gas (2nd col), Water (14th col)
+            end_use_categories = [
+                'Heating', 'Cooling', 'Interior Lighting', 'Exterior Lighting',
+                'Interior Equipment', 'Exterior Equipment', 'Fans', 'Pumps',
+                'Heat Rejection', 'Humidification', 'Heat Recovery', 'Water Systems',
+                'Refrigeration', 'Generators'
+            ]
+            
+            for category in end_use_categories:
+                # Create clean field names
+                field_prefix = category.lower().replace(' ', '_')
+                
+                # Electricity (1st column after category name)
+                elec_pattern = rf'{category}</td>\s*<td[^>]*>\s*([0-9.]+)\s*</td>'
+                energy_data[f"{field_prefix}_electricity_GJ"] = extract_field(elec_pattern, html_text)
+                
+                # Natural Gas (2nd column after category name)
+                gas_pattern = rf'{category}</td>\s*<td[^>]*>\s*[0-9.]+\s*</td>\s*<td[^>]*>\s*([0-9.]+)\s*</td>'
+                energy_data[f"{field_prefix}_natural_gas_GJ"] = extract_field(gas_pattern, html_text)
+                
+                # Water (14th column after category name)
+                water_pattern = rf'{category}</td>' + r'(?:\s*<td[^>]*>\s*[0-9.]+\s*</td>)' * 13 + r'\s*<td[^>]*>\s*([0-9.]+)\s*</td>'
+                energy_data[f"{field_prefix}_water_m3"] = extract_field(water_pattern, html_text)
+            
+            # Debug: Print End Uses values
+            print(f"  DEBUG - End Uses parsed:")
+            print(f"    Total Electricity: {energy_data.get('total_end_uses_electricity_GJ', 'N/A')}")
+            print(f"    Total Natural Gas: {energy_data.get('total_end_uses_natural_gas_GJ', 'N/A')}")
+            print(f"    Total Water: {energy_data.get('total_end_uses_water_m3', 'N/A')}")
+            print(f"    Heating Electricity: {energy_data.get('heating_electricity_GJ', 'N/A')}")
+            print(f"    Cooling Electricity: {energy_data.get('cooling_electricity_GJ', 'N/A')}")
+            print(f"    Interior Lighting Electricity: {energy_data.get('interior_lighting_electricity_GJ', 'N/A')}")
+            
+            # Calculate total operational carbon
+            try:
+                elec_gj = float(energy_data.get('total_end_uses_electricity_GJ', 0) or 0)
+                gas_gj = float(energy_data.get('total_end_uses_natural_gas_GJ', 0) or 0)
+                water_m3 = float(energy_data.get('total_end_uses_water_m3', 0) or 0)
+                
+                total_operational_carbon = (
+                    elec_gj * emission_factors['elec_emission_factor'] +
+                    gas_gj * emission_factors['gas_emission_factor'] +
+                    water_m3 * emission_factors['water_emission_factor']
+                )
+                
+                energy_data['total_operational_carbon_kgCO2e'] = f"{total_operational_carbon:.2f}"
+                print(f"  ✓ Operational carbon calculated: {total_operational_carbon:.2f} kgCO2e")
+                print(f"    = {elec_gj:.2f} GJ × {emission_factors['elec_emission_factor']:.2f}")
+                print(f"    + {gas_gj:.2f} GJ × {emission_factors['gas_emission_factor']:.2f}")
+                print(f"    + {water_m3:.2f} m³ × {emission_factors['water_emission_factor']:.2f}")
+            except (ValueError, TypeError, KeyError) as e:
+                print(f"  ⚠ Could not calculate operational carbon: {e}")
+                energy_data['total_operational_carbon_kgCO2e'] = ''
+            
+            # Check if we actually got any data
+            non_empty_fields = sum(1 for v in energy_data.values() if v)
+            if non_empty_fields > 0:
+                print(f"✓ Energy data extracted from HTML: {non_empty_fields}/{len(energy_data)} fields")
+            else:
+                print(f"  ⚠ No EnergyPlus data extracted from HTML")
+                energy_data = {}
+                
+        except Exception as e:
+            print(f"  ⚠ Error reading HTML: {str(e)[:100]}")
+            energy_data = {}
+    else:
+        print(f"  ⚠ eplustbl.html not found in run directory")
+    
+    # Calculate totals across all constructions (if multiple roofs were renovated)
+    if not props_df.empty:
+        if 'renovated_roof_area_m2' in props_df.columns:
+            total_area = props_df['renovated_roof_area_m2'].sum()
+            energy_data['total_renovated_roof_area_m2'] = total_area
+            print(f"  ✓ Total renovated roof area: {total_area:.2f} m²")
+        
+        if 'total_embodied_carbon_kgCO2eq' in props_df.columns:
+            total_carbon = props_df['total_embodied_carbon_kgCO2eq'].sum()
+            energy_data['total_embodied_carbon_all_constructions_kgCO2eq'] = total_carbon
+            print(f"  ✓ Total embodied carbon (all constructions): {total_carbon:.2f} kgCO2eq")
+    
+    return props_df, energy_data
+
+def create_scatterplot(csv_path, measure_dir):
+    """Create a scatterplot with dual y-axes showing energy and carbon vs insulation R-value."""
+    print(f"\n{'='*80}")
+    print("Creating scatterplot...")
+    print(f"{'='*80}")
+    print(f"  DEBUG: CSV path = {csv_path}")
+    print(f"  DEBUG: CSV exists = {os.path.exists(csv_path)}")
+    
+    try:
+        import plotly.graph_objects as go
+        from plotly.subplots import make_subplots
+        import numpy as np
+    except ImportError:
+        print("✗ plotly not found. Installing plotly...")
+        import subprocess
+        try:
+            subprocess.check_call([sys.executable, "-m", "pip", "install", "plotly", "kaleido"])
+            import plotly.graph_objects as go
+            from plotly.subplots import make_subplots
+            import numpy as np
+            print("✓ plotly installed successfully")
+        except Exception as e:
+            print(f"✗ Failed to install plotly: {e}")
+            print("  Skipping plot generation")
+            return
+    
+    import pandas as pd
+    import re
+    
+    # Read CSV file - it has two sections
+    try:
+        # Read the entire file to find section boundaries
+        with open(csv_path, 'r', encoding='utf-8') as f:
+            lines = f.readlines()
+        
+        # Find the start of each section
+        construction_start = None
+        energyplus_start = None
+        
+        for i, line in enumerate(lines):
+            if '# Roof Construction AdditionalProperties' in line:
+                construction_start = i + 1
+            elif '# EnergyPlus Simulation Summary' in line:
+                energyplus_start = i + 1
+        
+        # Read construction section
+        construction_lines = []
+        if construction_start is not None:
+            i = construction_start
+            while i < len(lines) and lines[i].strip() and not lines[i].startswith('#'):
+                construction_lines.append(lines[i])
+                i += 1
+        
+        # Read energyplus section
+        energyplus_lines = []
+        if energyplus_start is not None:
+            i = energyplus_start
+            while i < len(lines) and lines[i].strip():
+                energyplus_lines.append(lines[i])
+                i += 1
+        
+        # Parse both sections
+        from io import StringIO
+        construction_df = pd.read_csv(StringIO(''.join(construction_lines)))
+        construction_df = construction_df.set_index(construction_df.columns[0]).T
+        
+        energyplus_df = pd.read_csv(StringIO(''.join(energyplus_lines)))
+        energyplus_df = energyplus_df.set_index(energyplus_df.columns[0]).T
+        
+        # Merge both dataframes
+        df = pd.concat([construction_df, energyplus_df], axis=1)
+        
+        print(f"  ✓ Read {len(df)} scenarios from CSV")
+        print(f"  Construction columns: {list(construction_df.columns)[:3]}...")
+        print(f"  EnergyPlus columns: {list(energyplus_df.columns)[:3]}...")
+        print(f"  Merged df has columns: {list(df.columns)[:5]}...")
+        print(f"  Checking for required columns:")
+        print(f"    - total_embodied_carbon_kgCO2eq: {'total_embodied_carbon_kgCO2eq' in df.columns}")
+        print(f"    - insulation_material_type: {'insulation_material_type' in df.columns}")
+        print(f"    - total_site_energy_GJ: {'total_site_energy_GJ' in df.columns}")
+        
+        # Sample data for first scenario
+        if len(df) > 0:
+            first_scenario = df.index[0]
+            print(f"  Sample data for {first_scenario}:")
+            print(f"    Carbon: {df.loc[first_scenario, 'total_embodied_carbon_kgCO2eq'] if 'total_embodied_carbon_kgCO2eq' in df.columns else 'NOT FOUND'}")
+            print(f"    Material: {df.loc[first_scenario, 'insulation_material_type'] if 'insulation_material_type' in df.columns else 'NOT FOUND'}")
+            print(f"    Energy: {df.loc[first_scenario, 'total_site_energy_GJ'] if 'total_site_energy_GJ' in df.columns else 'NOT FOUND'}")
+        
+    except Exception as e:
+        print(f"✗ Error reading CSV: {e}")
+        import traceback
+        traceback.print_exc()
+        return
+    
+    # Extract data for plotting
+    r_values = []
+    carbon_values = []
+    energy_values = []
+    scenario_names = []
+    material_types = []
+    
+    print(f"  Processing {len(df)} scenarios from CSV...")
+    
+    baseline_energy = None
+    baseline_r_value = None
+    
+    for scenario in df.index:
+        try:
+            # Extract R-value from scenario name
+            r_value_match = re.search(r'R(\d+\.?\d*)', scenario)
+            r_value = float(r_value_match.group(1)) if r_value_match else None
+            
+            # Check if this is a baseline scenario
+            is_baseline = (r_value == 0.0 or 'R0' in scenario or 'baseline' in scenario.lower())
+            
+            if is_baseline:
+                # For baseline, we only need energy data (no carbon or material)
+                energy = df.loc[scenario, 'total_site_energy_GJ'] if 'total_site_energy_GJ' in df.columns else None
+                
+                if energy is not None and not pd.isna(energy):
+                    energy = float(energy)
+                    baseline_energy = energy
+                    baseline_r_value = r_value
+                    # Add baseline to the list with zero carbon and 'Baseline' material
+                    r_values.append(r_value)
+                    carbon_values.append(0)  # Baseline has no embodied carbon
+                    energy_values.append(energy)
+                    scenario_names.append(scenario)
+                    material_types.append('Baseline (No Added Insulation)')
+                    print(f"  ✓ Added baseline scenario: R={r_value}, Energy={energy:.2f} GJ")
+                continue
+            
+            # For non-baseline scenarios, get carbon and material from construction data
+            carbon = df.loc[scenario, 'total_embodied_carbon_kgCO2eq'] if 'total_embodied_carbon_kgCO2eq' in df.columns else None
+            material_type = df.loc[scenario, 'insulation_material_type'] if 'insulation_material_type' in df.columns else 'Unknown'
+            energy = df.loc[scenario, 'total_site_energy_GJ'] if 'total_site_energy_GJ' in df.columns else None
+            
+            # Convert to proper types
+            if carbon is not None and not pd.isna(carbon):
+                carbon = float(carbon)
+            else:
+                carbon = None
+                
+            if energy is not None and not pd.isna(energy):
+                energy = float(energy)
+            else:
+                energy = None
+            
+            # Debug: Print first few values
+            if len(r_values) < 3:
+                print(f"  {scenario}: R={r_value}, Carbon={carbon}, Energy={energy}, Material={material_type}")
+            
+            # Add to lists if all values are valid
+            if r_value is not None and carbon is not None and energy is not None and r_value >= 0:
+                r_values.append(r_value)
+                carbon_values.append(carbon)
+                energy_values.append(energy)
+                scenario_names.append(scenario)
+                material_types.append(material_type)
+        except Exception as e:
+            print(f"  ⚠ Error processing {scenario}: {e}")
+            continue
+    
+    if not r_values:
+        print("✗ No valid data found for plotting")
+        return
+    
+    # Define color map for insulation materials (includes all 11 material types from the measure)
+    material_colors = {
+        'Blown Cellulose': '#bcbd22',
+        'Blown Fiberglass': '#17becf',
+        'Blown Mineral Wool': '#aec7e8',
+        'Expanded Polystyrene (EPS) Foam Board': '#1f77b4',
+        'Extruded Polystyrene (XPS) Foam Board': '#ff7f0e',
+        'Fiberglass Batts': '#2ca02c',
+        'Graphite Polystyrene (GPS) Foam Board': '#d62728',
+        'Mineral Wool Heavy Density Blanket': '#9467bd',
+        'Mineral Wool Light Density Blanket': '#8c564b',
+        'Polyiso Insulation Foam Board': '#e377c2',
+        'Pure Wool Batts': '#7f7f7f',
+        'Baseline (No Added Insulation)': '#000000',
+    }
+    
+    # Sort materials by average embodied carbon (descending) for legend ordering
+    material_avg_carbon = {}
+    for material in set(material_types):
+        material_carbon = [c for c, m in zip(carbon_values, material_types) if m == material and c > 0]
+        if material_carbon:
+            material_avg_carbon[material] = sum(material_carbon) / len(material_carbon)
+        else:
+            material_avg_carbon[material] = 0
+    
+    sorted_materials = sorted(material_avg_carbon.keys(), key=lambda m: material_avg_carbon[m], reverse=True)
+    
+    # Create figure with dual y-axes using Plotly
+    fig = make_subplots(specs=[[{"secondary_y": True}]])
+    
+    # Check if we have energy data
+    energy_with_data = [e for e in energy_values if e is not None]
+    if energy_with_data:
+        # Separate baseline and non-baseline for energy plot
+        baseline_r = [r for r, m in zip(r_values, material_types) if 'Baseline' in m]
+        baseline_e = [e for e, m in zip(energy_values, material_types) if 'Baseline' in m]
+        
+        non_baseline_r = [r for r, m in zip(r_values, material_types) if 'Baseline' not in m]
+        non_baseline_e = [e for e, m in zip(energy_values, material_types) if 'Baseline' not in m]
+        
+        # Plot baseline as horizontal line (if it exists)
+        if baseline_e:
+            baseline_energy_value = baseline_e[0]
+            x_min, x_max = min(r_values), max(r_values)
+            fig.add_trace(
+                go.Scatter(
+                    x=[x_min, x_max],
+                    y=[baseline_energy_value, baseline_energy_value],
+                    mode='lines',
+                    name='Op. Baseline (R=0)',
+                    line=dict(color='purple', width=3, dash='dash'),
+                    showlegend=True
+                ),
+                secondary_y=False
+            )
+        
+        # Plot non-baseline as star markers
+        if non_baseline_r:
+            fig.add_trace(
+                go.Scatter(
+                    x=non_baseline_r,
+                    y=non_baseline_e,
+                    mode='markers',
+                    name='Site Energy',
+                    marker=dict(color='purple', size=18, symbol='star'),
+                    showlegend=True
+                ),
+                secondary_y=False
+            )
+    
+    # Plot embodied carbon on right axis with different colors for each material (sorted by carbon)
+    for material in sorted_materials:
+        if material == 'Baseline (No Added Insulation)':
+            continue  # Skip baseline for embodied carbon plot
+            
+        # Filter data for this material
+        mask = [mat == material for mat in material_types]
+        r_vals_mat = [r for r, m in zip(r_values, mask) if m]
+        carbon_vals_mat = [c for c, m in zip(carbon_values, mask) if m]
+        
+        if r_vals_mat:
+            # Simplify legend labels
+            label = material.replace(' Foam Board', '').replace(' Blanket', '').replace(' Batts', '')
+            
+            # Plot embodied carbon with material-specific colors
+            fig.add_trace(
+                go.Scatter(
+                    x=r_vals_mat,
+                    y=carbon_vals_mat,
+                    mode='markers',
+                    name=label,
+                    marker=dict(
+                        color=material_colors[material],
+                        size=12,
+                        symbol='square',
+                        line=dict(color='black', width=1)
+                    ),
+                    showlegend=True
+                ),
+                secondary_y=True
+            )
+    
+    # Update layout
+    fig.update_xaxes(
+        title_text='Target R-value ((hr·ft²·°F)/BTU)',
+        title_font=dict(size=16),
+        tickfont=dict(size=13),
+        showgrid=False,
+        showline=True,
+        linewidth=2,
+        linecolor='black',
+        ticks='inside',
+        ticklen=5,
+        mirror=True
+    )
+    
+    fig.update_yaxes(
+        title_text='Total Site Energy (GJ)',
+        title_font=dict(size=16, color='purple'),
+        tickfont=dict(size=13, color='purple'),
+        showgrid=False,
+        showline=True,
+        linewidth=2,
+        linecolor='black',
+        ticks='inside',
+        tickcolor='purple',
+        ticklen=5,
+        mirror=True,
+        secondary_y=False
+    )
+    
+    fig.update_yaxes(
+        title_text='Total Embodied Carbon (kg CO₂ eq)',
+        title_font=dict(size=16),
+        tickfont=dict(size=13),
+        showgrid=False,
+        showline=True,
+        linewidth=2,
+        linecolor='black',
+        ticks='inside',
+        ticklen=5,
+        mirror=True,
+        secondary_y=True
+    )
+    
+    fig.update_layout(
+        title=dict(
+            text='Energy and Carbon Impact vs. Roof Insulation R-Value',
+            font=dict(size=18),
+            x=0.5,
+            xanchor='center'
+        ),
+        width=1100,
+        height=700,
+        plot_bgcolor='white',
+        paper_bgcolor='white',
+        legend=dict(
+            x=0.02,
+            y=0.98,
+            xanchor='left',
+            yanchor='top',
+            font=dict(size=11),
+            bgcolor='rgba(255,255,255,0.9)',
+            bordercolor='black',
+            borderwidth=1
+        ),
+        margin=dict(l=80, r=80, t=80, b=80)
+    )
+    
+    # Save the plot
+    output_plot_jpeg = measure_dir / "resources" / "roof_insulation_carbon_impact_year1.jpeg"
+    output_plot_html = measure_dir / "resources" / "roof_insulation_carbon_impact_year1.html"
+    output_plot_jpeg.parent.mkdir(parents=True, exist_ok=True)
+    
+    fig.write_image(str(output_plot_jpeg), scale=2)
+    fig.write_html(str(output_plot_html))
+    
+    print(f"✓ Scatterplot saved: {output_plot_jpeg} and {output_plot_html}")
+    print(f"  Data points plotted: {len(r_values)}")
+    print(f"  R-value range: {min(r_values):.1f} - {max(r_values):.1f}")
+    print(f"  Carbon range: {min(carbon_values):.2f} - {max(carbon_values):.2f} kgCO2eq")
+    
+    energy_with_data = [e for e in energy_values if e is not None]
+    if energy_with_data:
+        print(f"  Energy range: {min(energy_with_data):.2f} - {max(energy_with_data):.2f} GJ")
+        print(f"  Energy data points: {len(energy_with_data)}/{len(energy_values)}")
+    else:
+        print(f"  ⚠ No energy data available - run simulations with apply_measure.py first")
+
+def create_carbon_comparison_plot(csv_path, measure_dir):
+    """Create a scatterplot with dual y-axes showing operational carbon and embodied carbon vs insulation R-value."""
+    print(f"\n{'='*80}")
+    print("Creating carbon comparison plot...")
+    print(f"{'='*80}")
+    
+    try:
+        import plotly.graph_objects as go
+        from plotly.subplots import make_subplots
+        import numpy as np
+    except ImportError:
+        print("✗ plotly not found. Skipping carbon comparison plot.")
+        return
+    
+    import pandas as pd
+    import re
+    
+    # Read CSV file - it has two sections
+    try:
+        # Read the entire file to find section boundaries
+        with open(csv_path, 'r', encoding='utf-8') as f:
+            lines = f.readlines()
+        
+        # Find the start of each section
+        construction_start = None
+        energyplus_start = None
+        
+        for i, line in enumerate(lines):
+            if '# Roof Construction AdditionalProperties' in line:
+                construction_start = i + 1
+            elif '# EnergyPlus Simulation Summary' in line:
+                energyplus_start = i + 1
+        
+        # Read construction section
+        construction_lines = []
+        if construction_start is not None:
+            i = construction_start
+            while i < len(lines) and lines[i].strip() and not lines[i].startswith('#'):
+                construction_lines.append(lines[i])
+                i += 1
+        
+        # Read energyplus section
+        energyplus_lines = []
+        if energyplus_start is not None:
+            i = energyplus_start
+            while i < len(lines) and lines[i].strip():
+                energyplus_lines.append(lines[i])
+                i += 1
+        
+        # Parse both sections
+        from io import StringIO
+        construction_df = pd.read_csv(StringIO(''.join(construction_lines)))
+        construction_df = construction_df.set_index(construction_df.columns[0]).T
+        
+        energyplus_df = pd.read_csv(StringIO(''.join(energyplus_lines)))
+        energyplus_df = energyplus_df.set_index(energyplus_df.columns[0]).T
+        
+        # Merge both dataframes
+        df = pd.concat([construction_df, energyplus_df], axis=1)
+        
+        print(f"  ✓ Read {len(df)} scenarios from CSV")
+        
+    except Exception as e:
+        print(f"✗ Error reading CSV: {e}")
+        import traceback
+        traceback.print_exc()
+        return
+    
+    # Extract data for plotting
+    r_values = []
+    embodied_carbon_values = []
+    operational_carbon_values = []
+    scenario_names = []
+    material_types = []
+    
+    print(f"  Processing {len(df)} scenarios with carbon data from CSV...")
+    
+    baseline_operational_carbon = None
+    baseline_r_value = None
+    
+    for scenario in df.index:
+        try:
+            # Extract R-value from scenario name
+            r_value_match = re.search(r'R(\d+\.?\d*)', scenario)
+            r_value = float(r_value_match.group(1)) if r_value_match else None
+            
+            # Check if this is a baseline scenario
+            is_baseline = (r_value == 0.0 or 'R0' in scenario or 'baseline' in scenario.lower())
+            
+            if is_baseline:
+                # For baseline, we only need operational carbon data
+                operational_carbon = df.loc[scenario, 'total_operational_carbon_kgCO2e'] if 'total_operational_carbon_kgCO2e' in df.columns else None
+                
+                if operational_carbon is not None and not pd.isna(operational_carbon):
+                    operational_carbon = float(operational_carbon)
+                    baseline_operational_carbon = operational_carbon
+                    baseline_r_value = r_value
+                    # Add baseline to the list with zero embodied carbon and 'Baseline' material
+                    r_values.append(r_value)
+                    embodied_carbon_values.append(0)  # Baseline has no embodied carbon
+                    operational_carbon_values.append(operational_carbon)
+                    scenario_names.append(scenario)
+                    material_types.append('Baseline (No Added Insulation)')
+                    print(f"  ✓ Added baseline scenario: R={r_value}, Op. Carbon={operational_carbon:.2f} kgCO2e")
+                continue
+            
+            # Get carbon values and material from CSV
+            embodied_carbon = df.loc[scenario, 'total_embodied_carbon_kgCO2eq'] if 'total_embodied_carbon_kgCO2eq' in df.columns else None
+            operational_carbon = df.loc[scenario, 'total_operational_carbon_kgCO2e'] if 'total_operational_carbon_kgCO2e' in df.columns else None
+            material_type = df.loc[scenario, 'insulation_material_type'] if 'insulation_material_type' in df.columns else 'Unknown'
+            
+            # Convert to proper types
+            if embodied_carbon is not None and not pd.isna(embodied_carbon):
+                embodied_carbon = float(embodied_carbon)
+            else:
+                embodied_carbon = None
+                
+            if operational_carbon is not None and not pd.isna(operational_carbon):
+                operational_carbon = float(operational_carbon)
+            else:
+                operational_carbon = None
+            
+            # Add to lists if all values are valid
+            if r_value is not None and embodied_carbon is not None and operational_carbon is not None and r_value >= 0:
+                r_values.append(r_value)
+                embodied_carbon_values.append(embodied_carbon)
+                operational_carbon_values.append(operational_carbon)
+                scenario_names.append(scenario)
+                material_types.append(material_type)
+        except Exception as e:
+            print(f"  ⚠ Error processing {scenario}: {e}")
+            continue
+    
+    if not r_values:
+        print("✗ No valid carbon data found for plotting")
+        return
+    
+    # Define color map for insulation materials
+    material_colors = {
+        'Blown Cellulose': '#bcbd22',
+        'Blown Fiberglass': '#17becf',
+        'Blown Mineral Wool': '#aec7e8',
+        'Expanded Polystyrene (EPS) Foam Board': '#1f77b4',
+        'Extruded Polystyrene (XPS) Foam Board': '#ff7f0e',
+        'Fiberglass Batts': '#2ca02c',
+        'Graphite Polystyrene (GPS) Foam Board': '#d62728',
+        'Mineral Wool Heavy Density Blanket': '#9467bd',
+        'Mineral Wool Light Density Blanket': '#8c564b',
+        'Polyiso Insulation Foam Board': '#e377c2',
+        'Pure Wool Batts': '#7f7f7f',
+        'Baseline (No Added Insulation)': '#000000',
+    }
+    
+    # Sort materials by average embodied carbon (descending) for legend ordering
+    material_avg_carbon = {}
+    for material in set(material_types):
+        material_carbon = [ec for ec, m in zip(embodied_carbon_values, material_types) if m == material and ec > 0]
+        if material_carbon:
+            material_avg_carbon[material] = sum(material_carbon) / len(material_carbon)
+        else:
+            material_avg_carbon[material] = 0
+    
+    sorted_materials = sorted(material_avg_carbon.keys(), key=lambda m: material_avg_carbon[m], reverse=True)
+    
+    # Create figure with dual y-axes using Plotly
+    fig = make_subplots(specs=[[{"secondary_y": True}]])
+    
+    # Separate baseline and non-baseline for operational carbon plot
+    baseline_r = [r for r, m in zip(r_values, material_types) if 'Baseline' in m]
+    baseline_oc = [oc for oc, m in zip(operational_carbon_values, material_types) if 'Baseline' in m]
+    
+    non_baseline_r = [r for r, m in zip(r_values, material_types) if 'Baseline' not in m]
+    non_baseline_oc = [oc for oc, m in zip(operational_carbon_values, material_types) if 'Baseline' not in m]
+    
+    # Plot baseline as horizontal line (if it exists)
+    if baseline_oc:
+        baseline_oc_value = baseline_oc[0]
+        x_min, x_max = min(r_values), max(r_values)
+        fig.add_trace(
+            go.Scatter(
+                x=[x_min, x_max],
+                y=[baseline_oc_value, baseline_oc_value],
+                mode='lines',
+                name='Baseline (R=0)',
+                line=dict(color='purple', width=3, dash='dash'),
+                showlegend=True
+            ),
+            secondary_y=False
+        )
+    
+    # Plot non-baseline operational carbon as star markers
+    if non_baseline_r:
+        unique_r_values = sorted(set(non_baseline_r))
+        print(f"\n  Operational Carbon data summary:")
+        for r_val in unique_r_values:
+            op_carbon_at_r = [oc for r, oc in zip(non_baseline_r, non_baseline_oc) if r == r_val]
+            if op_carbon_at_r:
+                print(f"    R={r_val:.1f}: {op_carbon_at_r[0]:.2f} kgCO2e")
+        
+        fig.add_trace(
+            go.Scatter(
+                x=non_baseline_r,
+                y=non_baseline_oc,
+                mode='markers',
+                name='Operational Carbon',
+                marker=dict(color='purple', size=18, symbol='star'),
+                showlegend=True
+            ),
+            secondary_y=False
+        )
+    
+    # Plot embodied carbon on right axis with material-specific colors (sorted by carbon)
+    for material in sorted_materials:
+        if material == 'Baseline (No Added Insulation)':
+            continue  # Skip baseline for embodied carbon plot
+            
+        # Filter data for this material
+        mask = [mat == material for mat in material_types]
+        r_vals_mat = [r for r, m in zip(r_values, mask) if m]
+        embodied_vals_mat = [ec for ec, m in zip(embodied_carbon_values, mask) if m]
+        
+        if r_vals_mat:
+            # Simplify legend labels
+            label = material.replace(' Foam Board', '').replace(' Blanket', '').replace(' Batts', '')
+            
+            # Plot embodied carbon with material-specific colors
+            fig.add_trace(
+                go.Scatter(
+                    x=r_vals_mat,
+                    y=embodied_vals_mat,
+                    mode='markers',
+                    name=label,
+                    marker=dict(
+                        color=material_colors[material],
+                        size=12,
+                        symbol='square',
+                        line=dict(color='black', width=1)
+                    ),
+                    showlegend=True
+                ),
+                secondary_y=True
+            )
+    
+    # Update layout
+    fig.update_xaxes(
+        title_text='Target Insulation R-Value (IP)',
+        title_font=dict(size=16),
+        tickfont=dict(size=13),
+        showgrid=False,
+        showline=True,
+        linewidth=2,
+        linecolor='black',
+        ticks='inside',
+        ticklen=5,
+        mirror=True
+    )
+    
+    fig.update_yaxes(
+        title_text='Operational Carbon (kg CO₂ eq/year)',
+        title_font=dict(size=16, color='purple'),
+        tickfont=dict(size=13, color='purple'),
+        showgrid=False,
+        showline=True,
+        linewidth=2,
+        linecolor='purple',
+        ticks='inside',
+        tickcolor='purple',
+        ticklen=5,
+        mirror=True,
+        secondary_y=False
+    )
+    
+    fig.update_yaxes(
+        title_text='Embodied Carbon (kg CO₂ eq)',
+        title_font=dict(size=16),
+        tickfont=dict(size=13),
+        showgrid=False,
+        showline=True,
+        linewidth=2,
+        linecolor='black',
+        ticks='inside',
+        ticklen=5,
+        mirror=True,
+        secondary_y=True
+    )
+    
+    fig.update_layout(
+        title=dict(
+            text='Operational carbon vs. Embodied carbon by Roof Insulation R-Value',
+            font=dict(size=18),
+            x=0.5,
+            xanchor='center'
+        ),
+        width=1100,
+        height=700,
+        plot_bgcolor='white',
+        paper_bgcolor='white',
+        legend=dict(
+            x=0.02,
+            y=0.9,
+            xanchor='left',
+            yanchor='top',
+            font=dict(size=11),
+            bgcolor='rgba(255,255,255,0.9)',
+            bordercolor='black',
+            borderwidth=1
+        ),
+        margin=dict(l=80, r=80, t=80, b=80)
+    )
+    
+    # Save the plot
+    output_plot_jpeg = measure_dir / "resources" / "roof_insulation_carbon_comparison_year1.jpeg"
+    output_plot_html = measure_dir / "resources" / "roof_insulation_carbon_comparison_year1.html"
+    output_plot_jpeg.parent.mkdir(parents=True, exist_ok=True)
+    
+    fig.write_image(str(output_plot_jpeg), scale=2)
+    fig.write_html(str(output_plot_html))
+    
+    fig.write_image(str(output_plot_jpeg), scale=2)
+    fig.write_html(str(output_plot_html))
+    
+    print(f"✓ Carbon comparison plot saved: {output_plot_jpeg} and {output_plot_html}")
+    print(f"  Data points plotted: {len(r_values)}")
+    print(f"  R-value range: {min(r_values):.1f} - {max(r_values):.1f}")
+    print(f"  Operational carbon range: {min(operational_carbon_values):.2f} - {max(operational_carbon_values):.2f} kgCO2e")
+    print(f"  Embodied carbon range: {min(embodied_carbon_values):.2f} - {max(embodied_carbon_values):.2f} kgCO2e")
+
+def create_stacked_bar_chart(csv_path, measure_dir):
+    """Create a stacked bar chart showing operational carbon, operational carbon reduction, and embodied carbon."""
+    print(f"\n{'='*80}")
+    print("Creating stacked bar chart...")
+    print(f"{'='*80}")
+    
+    try:
+        import matplotlib
+        matplotlib.use('Agg')
+        import matplotlib.pyplot as plt
+        import numpy as np
+    except ImportError:
+        print("✗ matplotlib not found. Skipping stacked bar chart generation")
+        return
+    
+    import pandas as pd
+    import re
+    
+    # Read CSV file - it has two sections
+    try:
+        with open(csv_path, 'r', encoding='utf-8') as f:
+            lines = f.readlines()
+        
+        # Find the start of each section
+        construction_start = None
+        energyplus_start = None
+        
+        for i, line in enumerate(lines):
+            if '# Roof Construction AdditionalProperties' in line:
+                construction_start = i + 1
+            elif '# EnergyPlus Simulation Summary' in line:
+                energyplus_start = i + 1
+        
+        # Read construction section
+        construction_lines = []
+        if construction_start is not None:
+            i = construction_start
+            while i < len(lines) and lines[i].strip() and not lines[i].startswith('#'):
+                construction_lines.append(lines[i])
+                i += 1
+        
+        # Read energyplus section
+        energyplus_lines = []
+        if energyplus_start is not None:
+            i = energyplus_start
+            while i < len(lines) and lines[i].strip():
+                energyplus_lines.append(lines[i])
+                i += 1
+        
+        # Parse both sections
+        from io import StringIO
+        construction_df = pd.read_csv(StringIO(''.join(construction_lines)))
+        construction_df = construction_df.set_index(construction_df.columns[0]).T
+        
+        energyplus_df = pd.read_csv(StringIO(''.join(energyplus_lines)))
+        energyplus_df = energyplus_df.set_index(energyplus_df.columns[0]).T
+        
+        # Merge both dataframes
+        df = pd.concat([construction_df, energyplus_df], axis=1)
+        
+        print(f"  ✓ Read {len(df)} scenarios from CSV")
+        
+    except Exception as e:
+        print(f"✗ Error reading CSV: {e}")
+        import traceback
+        traceback.print_exc()
+        return
+    
+    # Extract data for plotting
+    scenario_names = []
+    operational_carbon = []
+    embodied_carbon = []
+    embodied_carbon_30yr = []  # Adjusted for 30 years based on lifetime
+    r_values = []
+    
+    print(f"  Processing {len(df)} scenarios from CSV...")
+    
+    for scenario in df.index:
+        try:
+            # Get carbon values
+            op_carbon = df.loc[scenario, 'total_operational_carbon_kgCO2e'] if 'total_operational_carbon_kgCO2e' in df.columns else None
+            em_carbon = df.loc[scenario, 'total_embodied_carbon_kgCO2eq'] if 'total_embodied_carbon_kgCO2eq' in df.columns else None
+            lifetime = df.loc[scenario, 'insulation_material_lifetime_years'] if 'insulation_material_lifetime_years' in df.columns else None
+            
+            # Extract R-value from scenario name
+            r_match = re.search(r'R(\d+\.?\d*)', scenario)
+            r_val = float(r_match.group(1)) if r_match else None
+            
+            # Convert to proper types
+            if op_carbon is not None and not pd.isna(op_carbon):
+                op_carbon = float(op_carbon)
+            else:
+                op_carbon = 0.0
+                
+            if em_carbon is not None and not pd.isna(em_carbon):
+                em_carbon = float(em_carbon)
+            else:
+                em_carbon = 0.0
+            
+            if lifetime is not None and not pd.isna(lifetime):
+                lifetime = float(lifetime)
+            else:
+                lifetime = 30.0  # Default to 30 years if not specified
+            
+            # Calculate total embodied carbon over 30 years
+            # Number of replacements needed in 30 years = ceil(30 / lifetime)
+            import math
+            replacements = math.ceil(30.0 / lifetime)
+            em_carbon_30yr = em_carbon * replacements
+            
+            if r_val is not None:
+                scenario_names.append(scenario)
+                operational_carbon.append(op_carbon)
+                embodied_carbon.append(em_carbon)
+                embodied_carbon_30yr.append(em_carbon_30yr)
+                r_values.append(r_val)
+            
+        except Exception as e:
+            print(f"  ⚠ Error processing {scenario}: {e}")
+    
+    if not scenario_names:
+        print("✗ No valid data found for plotting")
+        return
+    
+    # Find baseline operational carbon (R=0.0)
+    baseline_op_carbon = None
+    for r_val, op_carbon in zip(r_values, operational_carbon):
+        if r_val == 0.0:
+            baseline_op_carbon = op_carbon
+            break
+    
+    if baseline_op_carbon is None:
+        print("✗ Baseline (R=0.0) operational carbon not found")
+        return
+    
+    print(f"  ✓ Baseline operational carbon (R=0.0): {baseline_op_carbon:.2f} kgCO2e")
+    
+    # Group scenarios by R-value - for Year 1 chart
+    r_value_groups = {}
+    for scenario, op_carbon, em_carbon, em_carbon_30yr, r_val in zip(scenario_names, operational_carbon, embodied_carbon, embodied_carbon_30yr, r_values):
+        if r_val not in r_value_groups:
+            r_value_groups[r_val] = {'scenarios': [], 'op_carbon': [], 'em_carbon': [], 'em_carbon_30yr': []}
+        r_value_groups[r_val]['scenarios'].append(scenario)
+        r_value_groups[r_val]['op_carbon'].append(op_carbon)
+        r_value_groups[r_val]['em_carbon'].append(em_carbon)
+        r_value_groups[r_val]['em_carbon_30yr'].append(em_carbon_30yr)
+    
+    # Filter to only include the specified R-values: 0, 24.4, 27.0, 32.3, 34.5, 38.5
+    target_r_values = [0.0, 24.4, 27.0, 32.3, 34.5, 38.5]
+    sorted_r_values = [r for r in target_r_values if r in r_value_groups]
+    
+    if not sorted_r_values:
+        print("✗ No target R-values found in data")
+        return
+    
+    print(f"  ✓ Plotting R-values: {sorted_r_values}")
+    
+    n_subplots = len(sorted_r_values)
+    n_cols = n_subplots  # One column per R-value
+    
+    # Create figure with subplots
+    fig, axes = plt.subplots(1, n_cols, figsize=(4 * n_cols, 8))
+    
+    # Handle case where there's only one subplot column
+    if n_cols == 1:
+        axes = [axes]
+    
+    # Find global max and min for consistent y-axis scaling
+    all_totals = []
+    all_reductions = []
+    for r_val in sorted_r_values:
+        group = r_value_groups[r_val]
+        for op_carbon, em_carbon in zip(group['op_carbon'], group['em_carbon']):
+            # Operational carbon + embodied carbon (stacked above 0)
+            total = (op_carbon / 1000) + (em_carbon / 1000)
+            all_totals.append(total)
+            # Operational carbon reduction (below 0)
+            op_reduction = abs(baseline_op_carbon - op_carbon)
+            all_reductions.append(op_reduction / 1000)
+    
+    y_max = max(all_totals) * 1.15 if all_totals else 1
+    y_min = -max(all_reductions) * 1.15 if all_reductions else 0
+    
+    # Create a subplot for each R-value
+    for col_idx, r_val in enumerate(sorted_r_values):
+        ax = axes[col_idx]
+        group = r_value_groups[r_val]
+        
+        # Get data for this R-value and sort by embodied carbon (low to high)
+        scenarios = group['scenarios']
+        op_carbon = group['op_carbon']
+        em_carbon = group['em_carbon']
+        
+        # Sort by embodied carbon values
+        sorted_data = sorted(zip(em_carbon, scenarios, op_carbon))
+        em_carbon_sorted, scenarios_sorted, op_carbon_sorted = zip(*sorted_data)
+        
+        scenarios = list(scenarios_sorted)
+        op_carbon_tons = [oc / 1000 for oc in op_carbon_sorted]
+        op_reduction_tons = [abs(baseline_op_carbon - oc) / 1000 for oc in op_carbon_sorted]
+        em_carbon_tons = [ec / 1000 for ec in em_carbon_sorted]
+        
+        # Set up x-axis positions
+        x_pos = np.arange(len(scenarios))
+        
+        # Extract material names from scenario names
+        material_labels = []
+        for scenario in scenarios:
+            material = re.sub(r'^out_R\d+\.?\d*_', '', scenario)
+            material_labels.append(material)
+        
+        # Create stacked bars
+        # Layer 1 (below 0): Operational Carbon Reduction (as negative values)
+        bars1 = ax.bar(x_pos, [-r for r in op_reduction_tons], 
+                       color='#70AD47', label='Op. Carbon Reduction',
+                       edgecolor='white', linewidth=0.5)
+        
+        # Layer 2 (bottom, above 0): Operational Carbon
+        bars2 = ax.bar(x_pos, op_carbon_tons,
+                       color='#4472C4', label='Operational Carbon',
+                       edgecolor='white', linewidth=0.5)
+        
+        # Layer 3 (top): Embodied Carbon
+        bars3 = ax.bar(x_pos, em_carbon_tons, bottom=op_carbon_tons,
+                       color='#ED7D31', label='Embodied Carbon',
+                       edgecolor='white', linewidth=0.5)
+        
+        # Customize subplot
+        ax.set_xlabel('Insulation Material', fontsize=10, fontweight='bold')
+        ax.set_ylabel('Carbon Emission at Year 1 (ton CO2e)', fontsize=10, fontweight='bold')
+        ax.set_title(f'R = {r_val:.1f}', fontsize=12, fontweight='bold', pad=10)
+        ax.set_xticks(x_pos)
+        ax.set_xticklabels(material_labels, rotation=45, ha='right', fontsize=8)
+        ax.set_ylim(y_min, y_max)
+        ax.axhline(y=0, color='black', linewidth=0.8, linestyle='-')
+        ax.grid(axis='y', alpha=0.3, linestyle='--', linewidth=0.5)
+        ax.set_axisbelow(True)
+        ax.yaxis.set_major_formatter(plt.FuncFormatter(lambda x, p: f'{x:,.0f}'))
+        
+        # Add legend to first subplot only
+        if col_idx == 0:
+            ax.legend(loc='upper right', frameon=True, shadow=True, fontsize=9)
+    
+    # Add main title
+    fig.suptitle('Carbon Impact by Target R-Value and Material\n(Baseline: R=0.0)', 
+                 fontsize=14, fontweight='bold', y=0.98)
+    
+    # Tight layout
+    plt.tight_layout(rect=[0, 0, 1, 0.96])
+    
+    # Save the plot
+    output_plot = measure_dir / "resources" / "roof_insulation_stacked_bar_year1.png"
+    output_plot.parent.mkdir(parents=True, exist_ok=True)
+    plt.savefig(output_plot, dpi=300, bbox_inches='tight')
+    plt.close()
+    
+    # Calculate statistics
+    print(f"✓ Stacked bar chart saved: {output_plot}")
+    print(f"  R-values plotted: {sorted_r_values}")
+    print(f"  Baseline operational carbon (R=0.0): {baseline_op_carbon:.2f} kgCO2e")
+    print(f"  Operational carbon range: {min(operational_carbon):.2f} - {max(operational_carbon):.2f} kgCO2e")
+    print(f"  Embodied carbon range: {min(embodied_carbon):.2f} - {max(embodied_carbon):.2f} kgCO2e")
+
+def create_stacked_bar_chart_year30(csv_path, measure_dir):
+    """Create a stacked bar chart showing 30-year operational carbon reduction and embodied carbon."""
+    print(f"\n{'='*80}")
+    print("Creating stacked bar chart for Year 30...")
+    print(f"{'='*80}")
+    
+    try:
+        import matplotlib
+        matplotlib.use('Agg')
+        import matplotlib.pyplot as plt
+        import numpy as np
+    except ImportError:
+        print("✗ matplotlib not found. Skipping stacked bar chart generation")
+        return
+    
+    import pandas as pd
+    import re
+    
+    # Read CSV file - it has two sections
+    try:
+        with open(csv_path, 'r', encoding='utf-8') as f:
+            lines = f.readlines()
+        
+        # Find the start of each section
+        construction_start = None
+        energyplus_start = None
+        
+        for i, line in enumerate(lines):
+            if '# Roof Construction AdditionalProperties' in line:
+                construction_start = i + 1
+            elif '# EnergyPlus Simulation Summary' in line:
+                energyplus_start = i + 1
+        
+        # Read construction section
+        construction_lines = []
+        if construction_start is not None:
+            i = construction_start
+            while i < len(lines) and lines[i].strip() and not lines[i].startswith('#'):
+                construction_lines.append(lines[i])
+                i += 1
+        
+        # Read energyplus section
+        energyplus_lines = []
+        if energyplus_start is not None:
+            i = energyplus_start
+            while i < len(lines) and lines[i].strip():
+                energyplus_lines.append(lines[i])
+                i += 1
+        
+        # Parse both sections
+        from io import StringIO
+        construction_df = pd.read_csv(StringIO(''.join(construction_lines)))
+        construction_df = construction_df.set_index(construction_df.columns[0]).T
+        
+        energyplus_df = pd.read_csv(StringIO(''.join(energyplus_lines)))
+        energyplus_df = energyplus_df.set_index(energyplus_df.columns[0]).T
+        
+        # Merge both dataframes
+        df = pd.concat([construction_df, energyplus_df], axis=1)
+        
+        print(f"  ✓ Read {len(df)} scenarios from CSV")
+        
+    except Exception as e:
+        print(f"✗ Error reading CSV: {e}")
+        import traceback
+        traceback.print_exc()
+        return
+    
+    # Extract data for plotting - for Year 30 chart
+    scenario_names = []
+    operational_carbon = []
+    embodied_carbon = []
+    embodied_carbon_30yr = []  # Adjusted for 30 years based on lifetime
+    r_values = []
+    
+    print(f"  Processing {len(df)} scenarios from CSV...")
+    
+    for scenario in df.index:
+        try:
+            # Get carbon values
+            op_carbon = df.loc[scenario, 'total_operational_carbon_kgCO2e'] if 'total_operational_carbon_kgCO2e' in df.columns else None
+            em_carbon = df.loc[scenario, 'total_embodied_carbon_kgCO2eq'] if 'total_embodied_carbon_kgCO2eq' in df.columns else None
+            lifetime = df.loc[scenario, 'insulation_material_lifetime_years'] if 'insulation_material_lifetime_years' in df.columns else None
+            
+            # Extract R-value from scenario name
+            r_match = re.search(r'R(\d+\.?\d*)', scenario)
+            r_val = float(r_match.group(1)) if r_match else None
+            
+            # Convert to proper types
+            if op_carbon is not None and not pd.isna(op_carbon):
+                op_carbon = float(op_carbon)
+            else:
+                op_carbon = 0.0
+                
+            if em_carbon is not None and not pd.isna(em_carbon):
+                em_carbon = float(em_carbon)
+            else:
+                em_carbon = 0.0
+            
+            if lifetime is not None and not pd.isna(lifetime):
+                lifetime = float(lifetime)
+            else:
+                lifetime = 30.0  # Default to 30 years if not specified
+            
+            # Calculate total embodied carbon over 30 years
+            # Number of replacements needed in 30 years = ceil(30 / lifetime)
+            import math
+            replacements = math.ceil(30.0 / lifetime)
+            em_carbon_30yr = em_carbon * replacements
+            
+            if r_val is not None:
+                scenario_names.append(scenario)
+                operational_carbon.append(op_carbon)
+                embodied_carbon.append(em_carbon)
+                embodied_carbon_30yr.append(em_carbon_30yr)
+                r_values.append(r_val)
+            
+        except Exception as e:
+            print(f"  ⚠ Error processing {scenario}: {e}")
+    
+    if not scenario_names:
+        print("✗ No valid data found for plotting")
+        return
+    
+    # Find baseline operational carbon (R=0.0)
+    baseline_op_carbon = None
+    for r_val, op_carbon in zip(r_values, operational_carbon):
+        if r_val == 0.0:
+            baseline_op_carbon = op_carbon
+            break
+    
+    if baseline_op_carbon is None:
+        print("✗ Baseline (R=0.0) operational carbon not found")
+        return
+    
+    print(f"  ✓ Baseline operational carbon (R=0.0): {baseline_op_carbon:.2f} kgCO2e")
+    
+    # Group scenarios by R-value - for Year 30 chart
+    r_value_groups = {}
+    for scenario, op_carbon, em_carbon, em_carbon_30yr, r_val in zip(scenario_names, operational_carbon, embodied_carbon, embodied_carbon_30yr, r_values):
+        if r_val not in r_value_groups:
+            r_value_groups[r_val] = {'scenarios': [], 'op_carbon': [], 'em_carbon': [], 'em_carbon_30yr': []}
+        r_value_groups[r_val]['scenarios'].append(scenario)
+        r_value_groups[r_val]['op_carbon'].append(op_carbon)
+        r_value_groups[r_val]['em_carbon'].append(em_carbon)
+        r_value_groups[r_val]['em_carbon_30yr'].append(em_carbon_30yr)
+    
+    # Filter to only include the specified R-values: 0, 24.4, 27.0, 32.3, 34.5, 38.5
+    target_r_values = [0.0, 24.4, 27.0, 32.3, 34.5, 38.5]
+    sorted_r_values = [r for r in target_r_values if r in r_value_groups]
+    
+    if not sorted_r_values:
+        print("✗ No target R-values found in data")
+        return
+    
+    print(f"  ✓ Plotting R-values: {sorted_r_values}")
+    
+    n_subplots = len(sorted_r_values)
+    n_cols = n_subplots  # One column per R-value
+    
+    # Create figure with subplots
+    fig, axes = plt.subplots(1, n_cols, figsize=(4 * n_cols, 8))
+    
+    # Handle case where there's only one subplot column
+    if n_cols == 1:
+        axes = [axes]
+    
+    # Find global max and min for consistent y-axis scaling
+    all_totals = []
+    all_reductions = []
+    for r_val in sorted_r_values:
+        group = r_value_groups[r_val]
+        for op_carbon, em_carbon_30yr in zip(group['op_carbon'], group['em_carbon_30yr']):
+            # Embodied carbon only (above 0)
+            total = em_carbon_30yr / 1000
+            all_totals.append(total)
+            # 30-year operational carbon reduction (below 0)
+            op_reduction_30yr = abs(baseline_op_carbon - op_carbon) * 30
+            all_reductions.append(op_reduction_30yr / 1000)
+    
+    y_max = max(all_totals) * 1.15 if all_totals else 1
+    y_min = -max(all_reductions) * 1.15 if all_reductions else 0
+    
+    # Create a subplot for each R-value
+    for col_idx, r_val in enumerate(sorted_r_values):
+        ax = axes[col_idx]
+        group = r_value_groups[r_val]
+        
+        # Get data for this R-value and sort by embodied carbon (low to high)
+        scenarios = group['scenarios']
+        op_carbon = group['op_carbon']
+        em_carbon = group['em_carbon']
+        em_carbon_30yr = group['em_carbon_30yr']
+        
+        # Sort by embodied carbon values (single installation)
+        sorted_data = sorted(zip(em_carbon, scenarios, op_carbon, em_carbon_30yr))
+        em_carbon_sorted, scenarios_sorted, op_carbon_sorted, em_carbon_30yr_sorted = zip(*sorted_data)
+        
+        scenarios = list(scenarios_sorted)
+        # Calculate 30-year operational carbon reduction
+        op_reduction_30yr_tons = [abs(baseline_op_carbon - oc) * 30 / 1000 for oc in op_carbon_sorted]
+        em_carbon_30yr_tons = [ec / 1000 for ec in em_carbon_30yr_sorted]
+        
+        # Set up x-axis positions
+        x_pos = np.arange(len(scenarios))
+        
+        # Extract material names from scenario names
+        material_labels = []
+        for scenario in scenarios:
+            material = re.sub(r'^out_R\d+\.?\d*_', '', scenario)
+            material_labels.append(material)
+        
+        # Create stacked bars
+        # Layer 1 (below 0): Operational Carbon Reduction (30 years, as negative values)
+        bars1 = ax.bar(x_pos, [-r for r in op_reduction_30yr_tons], 
+                       color='#70AD47', label='Op. Carbon Reduction (30yr)',
+                       edgecolor='white', linewidth=0.5)
+        
+        # Layer 2 (above 0): Embodied Carbon (adjusted for 30 years and replacements)
+        bars2 = ax.bar(x_pos, em_carbon_30yr_tons,
+                       color='#ED7D31', label='Embodied Carbon (30yr)',
+                       edgecolor='white', linewidth=0.5)
+        
+        # Customize subplot
+        ax.set_xlabel('Insulation Material', fontsize=10, fontweight='bold')
+        ax.set_ylabel('Carbon Emission at Year 30 (ton CO2e)', fontsize=10, fontweight='bold')
+        ax.set_title(f'R = {r_val:.1f}', fontsize=12, fontweight='bold', pad=10)
+        ax.set_xticks(x_pos)
+        ax.set_xticklabels(material_labels, rotation=45, ha='right', fontsize=8)
+        ax.set_ylim(y_min, y_max)
+        ax.axhline(y=0, color='black', linewidth=0.8, linestyle='-')
+        ax.grid(axis='y', alpha=0.3, linestyle='--', linewidth=0.5)
+        ax.set_axisbelow(True)
+        ax.yaxis.set_major_formatter(plt.FuncFormatter(lambda x, p: f'{x:,.0f}'))
+        
+        # Add legend to first subplot only
+        if col_idx == 0:
+            ax.legend(loc='upper right', frameon=True, shadow=True, fontsize=9)
+    
+    # Add main title
+    fig.suptitle('30-Year Carbon Impact by Target R-Value and Material\n(Baseline: R=0.0)', 
+                 fontsize=14, fontweight='bold', y=0.98)
+    
+    # Tight layout
+    plt.tight_layout(rect=[0, 0, 1, 0.96])
+    
+    # Save the plot
+    output_plot = measure_dir / "resources" / "roof_insulation_stacked_bar_year30.png"
+    output_plot.parent.mkdir(parents=True, exist_ok=True)
+    plt.savefig(output_plot, dpi=300, bbox_inches='tight')
+    plt.close()
+    
+    # Calculate statistics
+    print(f"✓ Stacked bar chart (Year 30) saved: {output_plot}")
+    print(f"  R-values plotted: {sorted_r_values}")
+    print(f"  Baseline operational carbon (R=0.0): {baseline_op_carbon:.2f} kgCO2e/year")
+    print(f"  30-year operational carbon reduction range: {min([abs(baseline_op_carbon - oc) * 30 for oc in operational_carbon]):.2f} - {max([abs(baseline_op_carbon - oc) * 30 for oc in operational_carbon]):.2f} kgCO2e")
+    print(f"  Embodied carbon range: {min(embodied_carbon):.2f} - {max(embodied_carbon):.2f} kgCO2e")
+
+def create_time_series_chart(csv_path, measure_dir):
+    """Create time series chart showing embodied carbon vs operational carbon reduction over 30 years."""
+    print(f"\n{'='*80}")
+    print("Creating time series chart (Year 1-30)...")
+    print(f"{'='*80}")
+    
+    try:
+        import matplotlib
+        matplotlib.use('Agg')
+        import matplotlib.pyplot as plt
+        import numpy as np
+    except ImportError:
+        print("✗ matplotlib not found. Skipping time series chart generation")
+        return
+    
+    import pandas as pd
+    import re
+    
+    # Read CSV file
+    try:
+        with open(csv_path, 'r', encoding='utf-8') as f:
+            lines = f.readlines()
+        
+        construction_start = None
+        energyplus_start = None
+        
+        for i, line in enumerate(lines):
+            if '# Roof Construction AdditionalProperties' in line:
+                construction_start = i + 1
+            elif '# EnergyPlus Simulation Summary' in line:
+                energyplus_start = i + 1
+        
+        construction_lines = []
+        if construction_start is not None:
+            i = construction_start
+            while i < len(lines) and lines[i].strip() and not lines[i].startswith('#'):
+                construction_lines.append(lines[i])
+                i += 1
+        
+        energyplus_lines = []
+        if energyplus_start is not None:
+            i = energyplus_start
+            while i < len(lines) and lines[i].strip():
+                energyplus_lines.append(lines[i])
+                i += 1
+        
+        from io import StringIO
+        construction_df = pd.read_csv(StringIO(''.join(construction_lines)))
+        construction_df = construction_df.set_index(construction_df.columns[0]).T
+        
+        energyplus_df = pd.read_csv(StringIO(''.join(energyplus_lines)))
+        energyplus_df = energyplus_df.set_index(energyplus_df.columns[0]).T
+        
+        df = pd.concat([construction_df, energyplus_df], axis=1)
+        
+        print(f"  ✓ Read {len(df)} scenarios from CSV")
+        
+    except Exception as e:
+        print(f"✗ Error reading CSV: {e}")
+        import traceback
+        traceback.print_exc()
+        return
+    
+    # Extract data
+    scenario_data = {}
+    
+    for scenario in df.index:
+        try:
+            op_carbon = df.loc[scenario, 'total_operational_carbon_kgCO2e'] if 'total_operational_carbon_kgCO2e' in df.columns else None
+            em_carbon = df.loc[scenario, 'total_embodied_carbon_kgCO2eq'] if 'total_embodied_carbon_kgCO2eq' in df.columns else None
+            lifetime = df.loc[scenario, 'insulation_material_lifetime_years'] if 'insulation_material_lifetime_years' in df.columns else None
+            material_type = df.loc[scenario, 'insulation_material_type'] if 'insulation_material_type' in df.columns else 'Unknown'
+            
+            r_match = re.search(r'R(\d+\.?\d*)', scenario)
+            r_val = float(r_match.group(1)) if r_match else None
+            
+            if op_carbon is not None and not pd.isna(op_carbon):
+                op_carbon = float(op_carbon)
+            else:
+                continue
+                
+            if em_carbon is not None and not pd.isna(em_carbon):
+                em_carbon = float(em_carbon)
+            else:
+                continue
+            
+            if lifetime is not None and not pd.isna(lifetime):
+                lifetime = float(lifetime)
+            else:
+                lifetime = 30.0
+            
+            if r_val is not None and r_val > 0:  # Skip R=0
+                scenario_data[scenario] = {
+                    'r_val': r_val,
+                    'op_carbon': op_carbon,
+                    'em_carbon': em_carbon,
+                    'lifetime': lifetime,
+                    'material': material_type
+                }
+            
+        except Exception as e:
+            print(f"  ⚠ Error processing {scenario}: {e}")
+    
+    if not scenario_data:
+        print("✗ No valid data found for plotting")
+        return
+    
+    # Find baseline operational carbon (R=0.0)
+    baseline_op_carbon = None
+    for scenario in df.index:
+        r_match = re.search(r'R(\d+\.?\d*)', scenario)
+        if r_match and float(r_match.group(1)) == 0.0:
+            op_carbon = df.loc[scenario, 'total_operational_carbon_kgCO2e']
+            if op_carbon is not None and not pd.isna(op_carbon):
+                baseline_op_carbon = float(op_carbon)
+                break
+    
+    if baseline_op_carbon is None:
+        print("✗ Baseline (R=0.0) operational carbon not found")
+        return
+    
+    print(f"  ✓ Baseline operational carbon (R=0.0): {baseline_op_carbon:.2f} kgCO2e")
+    
+    # Select all scenarios with R=24.4, grouped by material type
+    target_r_value = 24.4
+    scenarios_to_plot = []
+    
+    for scenario, data in scenario_data.items():
+        if abs(data['r_val'] - target_r_value) < 0.1:  # R=24.4 with tolerance
+            scenarios_to_plot.append({
+                'scenario': scenario,
+                'r_val': data['r_val'],
+                'op_carbon': data['op_carbon'],
+                'em_carbon': data['em_carbon'],
+                'lifetime': data['lifetime'],
+                'material': data['material']
+            })
+    
+    # Sort by material type for consistent coloring
+    scenarios_to_plot = sorted(scenarios_to_plot, key=lambda x: x['material'])
+    
+    if not scenarios_to_plot:
+        print(f"✗ No scenarios found with R={target_r_value}")
+        return
+    
+    print(f"  ✓ Plotting {len(scenarios_to_plot)} scenarios with R={target_r_value}")
+    for s in scenarios_to_plot:
+        print(f"    - {s['material']}: lifetime={s['lifetime']:.0f}yr, embodied={s['em_carbon']:.0f}kgCO2e")
+    
+    # Create time series (1-30 years)
+    years = np.arange(1, 31)
+    
+    # Create figure with dual y-axes
+    fig, ax1 = plt.subplots(figsize=(14, 8))
+    ax2 = ax1.twinx()
+    
+    # Define colors for different materials (expand color palette)
+    colors = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', 
+              '#8c564b', '#e377c2', '#7f7f7f', '#bcbd22', '#17becf']
+    
+    # Left axis: Operational Carbon Reduction (solid lines)
+    ax1.set_xlabel('Year', fontsize=12, fontweight='bold')
+    ax1.set_ylabel('Total Operational Carbon Reduction (ton CO2e)', 
+                   fontsize=12, fontweight='bold', color='tab:blue')
+    
+    for idx, scenario_info in enumerate(scenarios_to_plot):
+        op_carbon = scenario_info['op_carbon']
+        r_val = scenario_info['r_val']
+        material = scenario_info['material']
+        
+        # Calculate cumulative operational carbon reduction
+        annual_reduction = abs(baseline_op_carbon - op_carbon)
+        reduction_over_time = [annual_reduction * year / 1000 for year in years]  # Convert to tons
+        
+        ax1.plot(years, reduction_over_time,
+                label=f'{material}',
+                color=colors[idx % len(colors)],
+                linewidth=2.5,
+                linestyle='-')
+    
+    ax1.tick_params(axis='y', labelcolor='tab:blue')
+    ax1.grid(True, alpha=0.3)
+    
+    # Right axis: Embodied Carbon (dashed lines with steps)
+    ax2.set_ylabel('Total Embodied Carbon (ton CO2e)', 
+                   fontsize=12, fontweight='bold', color='tab:red')
+    
+    for idx, scenario_info in enumerate(scenarios_to_plot):
+        em_carbon = scenario_info['em_carbon']
+        lifetime = scenario_info['lifetime']
+        r_val = scenario_info['r_val']
+        material = scenario_info['material']
+        
+        # Calculate embodied carbon at each year (increases at replacement)
+        embodied_over_time = []
+        for year in years:
+            import math
+            num_installations = math.ceil(year / lifetime)
+            embodied_over_time.append(em_carbon * num_installations / 1000)  # Convert to tons
+        
+        ax2.plot(years, embodied_over_time, 
+                label=f'{material} ({lifetime:.0f}yr)',
+                color=colors[idx % len(colors)],
+                linewidth=2,
+                linestyle='--',
+                drawstyle='steps-post')
+    
+    ax2.tick_params(axis='y', labelcolor='tab:red')
+    
+    # Set x-axis limits
+    ax1.set_xlim(1, 30)
+    
+    # Add legends
+    lines1, labels1 = ax1.get_legend_handles_labels()
+    ax1.legend(lines1, labels1, loc='upper left', fontsize=10, 
+              title='Operational Carbon Reduction', framealpha=0.9)
+    
+    lines2, labels2 = ax2.get_legend_handles_labels()
+    ax2.legend(lines2, labels2, loc='upper right', fontsize=10,
+              title='Embodied Carbon (with replacements)', framealpha=0.9)
+    
+    # Add title
+    plt.title(f'30-Year Carbon Impact for R={target_r_value:.1f} by Material Type\n(Baseline: R=0.0)', 
+             fontsize=14, fontweight='bold', pad=20)
+    
+    plt.tight_layout()
+    
+    # Save the plot
+    output_plot = measure_dir / "resources" / "roof_insulation_time_series_year1_to_30.png"
+    output_plot.parent.mkdir(parents=True, exist_ok=True)
+    plt.savefig(output_plot, dpi=300, bbox_inches='tight')
+    plt.close()
+    
+    print(f"✓ Time series chart saved: {output_plot}")
+    print(f"  Years plotted: 1-30")
+    print(f"  Scenarios: {len(scenarios_to_plot)}")
+
+def create_carbon_payback_chart(csv_path, measure_dir):
+    """Create a chart showing carbon payback period for each scenario."""
+    print(f"\n{'='*80}")
+    print("Creating carbon payback period chart...")
+    print(f"{'='*80}")
+    
+    try:
+        import matplotlib
+        matplotlib.use('Agg')
+        import matplotlib.pyplot as plt
+        import numpy as np
+    except ImportError:
+        print("✗ matplotlib not found. Skipping carbon payback chart generation")
+        return
+    
+    import pandas as pd
+    import re
+    
+    # Read CSV file - it has two sections
+    try:
+        with open(csv_path, 'r', encoding='utf-8') as f:
+            lines = f.readlines()
+        
+        # Find the start of each section
+        construction_start = None
+        energyplus_start = None
+        
+        for i, line in enumerate(lines):
+            if '# Roof Construction AdditionalProperties' in line:
+                construction_start = i + 1
+            elif '# EnergyPlus Simulation Summary' in line:
+                energyplus_start = i + 1
+        
+        # Read construction section
+        construction_lines = []
+        if construction_start is not None:
+            i = construction_start
+            while i < len(lines) and lines[i].strip() and not lines[i].startswith('#'):
+                construction_lines.append(lines[i])
+                i += 1
+        
+        # Read energyplus section
+        energyplus_lines = []
+        if energyplus_start is not None:
+            i = energyplus_start
+            while i < len(lines) and lines[i].strip():
+                energyplus_lines.append(lines[i])
+                i += 1
+        
+        # Parse both sections
+        from io import StringIO
+        construction_df = pd.read_csv(StringIO(''.join(construction_lines)))
+        construction_df = construction_df.set_index(construction_df.columns[0]).T
+        
+        energyplus_df = pd.read_csv(StringIO(''.join(energyplus_lines)))
+        energyplus_df = energyplus_df.set_index(energyplus_df.columns[0]).T
+        
+        # Merge both dataframes
+        df = pd.concat([construction_df, energyplus_df], axis=1)
+        
+        print(f"  ✓ Read {len(df)} scenarios from CSV")
+        
+    except Exception as e:
+        print(f"✗ Error reading CSV: {e}")
+        import traceback
+        traceback.print_exc()
+        return
+    
+    # Extract data for plotting
+    scenario_names = []
+    operational_carbon = []
+    embodied_carbon = []
+    r_values = []
+    
+    print(f"  Processing {len(df)} scenarios from CSV...")
+    
+    for scenario in df.index:
+        try:
+            # Get carbon values
+            op_carbon = df.loc[scenario, 'total_operational_carbon_kgCO2e'] if 'total_operational_carbon_kgCO2e' in df.columns else None
+            em_carbon = df.loc[scenario, 'total_embodied_carbon_kgCO2eq'] if 'total_embodied_carbon_kgCO2eq' in df.columns else None
+            
+            # Extract R-value from scenario name
+            r_match = re.search(r'R(\d+\.?\d*)', scenario)
+            r_val = float(r_match.group(1)) if r_match else None
+            
+            # Convert to proper types
+            if op_carbon is not None and not pd.isna(op_carbon):
+                op_carbon = float(op_carbon)
+            else:
+                op_carbon = 0.0
+                
+            if em_carbon is not None and not pd.isna(em_carbon):
+                em_carbon = float(em_carbon)
+            else:
+                em_carbon = 0.0
+            
+            if r_val is not None:
+                scenario_names.append(scenario)
+                operational_carbon.append(op_carbon)
+                embodied_carbon.append(em_carbon)
+                r_values.append(r_val)
+            
+        except Exception as e:
+            print(f"  ⚠ Error processing {scenario}: {e}")
+    
+    if not scenario_names:
+        print("✗ No valid data found for plotting")
+        return
+    
+    # Find baseline operational carbon (R=0.0)
+    baseline_op_carbon = None
+    for r_val, op_carbon in zip(r_values, operational_carbon):
+        if r_val == 0.0:
+            baseline_op_carbon = op_carbon
+            break
+    
+    if baseline_op_carbon is None:
+        print("✗ Baseline (R=0.0) operational carbon not found")
+        return
+    
+    print(f"  ✓ Baseline operational carbon (R=0.0): {baseline_op_carbon:.2f} kgCO2e")
+    
+    # Group scenarios by R-value
+    r_value_groups = {}
+    for scenario, op_carbon, em_carbon, r_val in zip(scenario_names, operational_carbon, embodied_carbon, r_values):
+        if r_val not in r_value_groups:
+            r_value_groups[r_val] = {'scenarios': [], 'op_carbon': [], 'em_carbon': [], 'payback': []}
+        
+        # Calculate payback period (years)
+        annual_reduction = abs(baseline_op_carbon - op_carbon)
+        if annual_reduction > 0:
+            payback_years = em_carbon / annual_reduction
+        else:
+            payback_years = float('inf')  # No reduction, no payback
+        
+        r_value_groups[r_val]['scenarios'].append(scenario)
+        r_value_groups[r_val]['op_carbon'].append(op_carbon)
+        r_value_groups[r_val]['em_carbon'].append(em_carbon)
+        r_value_groups[r_val]['payback'].append(payback_years)
+    
+    # Filter to only include the specified R-values: 0, 24.4, 27.0, 32.3, 34.5, 38.5
+    target_r_values = [0.0, 24.4, 27.0, 32.3, 34.5, 38.5]
+    sorted_r_values = [r for r in target_r_values if r in r_value_groups]
+    
+    # Remove R=0.0 as it has no reduction
+    sorted_r_values = [r for r in sorted_r_values if r != 0.0]
+    
+    if not sorted_r_values:
+        print("✗ No target R-values found in data")
+        return
+    
+    print(f"  ✓ Plotting R-values: {sorted_r_values}")
+    
+    n_subplots = len(sorted_r_values)
+    n_cols = n_subplots  # One column per R-value
+    
+    # Create figure with subplots
+    fig, axes = plt.subplots(1, n_cols, figsize=(4 * n_cols, 8))
+    
+    # Handle case where there's only one subplot column
+    if n_cols == 1:
+        axes = [axes]
+    
+    # Find global max for consistent y-axis scaling
+    all_payback = []
+    for r_val in sorted_r_values:
+        group = r_value_groups[r_val]
+        valid_payback = [p for p in group['payback'] if p != float('inf') and p < 100]  # Cap at 100 years for visualization
+        all_payback.extend(valid_payback)
+    
+    y_max = max(all_payback) * 1.15 if all_payback else 50
+    
+    # Create a subplot for each R-value
+    for col_idx, r_val in enumerate(sorted_r_values):
+        ax = axes[col_idx]
+        group = r_value_groups[r_val]
+        
+        # Get data for this R-value and sort by payback period (low to high)
+        scenarios = group['scenarios']
+        payback = group['payback']
+        
+        # Sort by payback period
+        sorted_data = sorted(zip(payback, scenarios))
+        payback_sorted, scenarios_sorted = zip(*sorted_data)
+        
+        scenarios = list(scenarios_sorted)
+        payback_years = list(payback_sorted)
+        
+        # Cap extremely high values for visualization
+        payback_years_capped = [min(p, 100) for p in payback_years]
+        
+        # Set up x-axis positions
+        x_pos = np.arange(len(scenarios))
+        
+        # Extract material names from scenario names
+        material_labels = []
+        for scenario in scenarios:
+            material = re.sub(r'^out_R\d+\.?\d*_', '', scenario)
+            material_labels.append(material)
+        
+        # Create bars with color gradient based on payback period
+        colors = []
+        for p in payback_years:
+            if p == float('inf'):
+                colors.append('#D3D3D3')  # Gray for no payback
+            elif p <= 10:
+                colors.append('#2E7D32')  # Dark green for fast payback
+            elif p <= 20:
+                colors.append('#66BB6A')  # Medium green
+            elif p <= 30:
+                colors.append('#FDD835')  # Yellow
+            elif p <= 50:
+                colors.append('#FB8C00')  # Orange
+            else:
+                colors.append('#C62828')  # Red for slow payback
+        
+        bars = ax.bar(x_pos, payback_years_capped, 
+                      color=colors,
+                      edgecolor='white', linewidth=0.5)
+        
+        # Add value labels on top of bars
+        for i, (p, p_capped) in enumerate(zip(payback_years, payback_years_capped)):
+            if p == float('inf'):
+                ax.text(i, p_capped + y_max * 0.02, 'N/A', 
+                       ha='center', va='bottom', fontsize=7, rotation=0)
+            elif p >= 100:
+                ax.text(i, p_capped + y_max * 0.02, f'>100', 
+                       ha='center', va='bottom', fontsize=7, rotation=0)
+            else:
+                ax.text(i, p_capped + y_max * 0.02, f'{p:.1f}', 
+                       ha='center', va='bottom', fontsize=7, rotation=0)
+        
+        # Customize subplot
+        ax.set_xlabel('Insulation Material', fontsize=10, fontweight='bold')
+        ax.set_ylabel('Carbon Payback Period (Years)', fontsize=10, fontweight='bold')
+        ax.set_title(f'R = {r_val:.1f}', fontsize=12, fontweight='bold', pad=10)
+        ax.set_xticks(x_pos)
+        ax.set_xticklabels(material_labels, rotation=45, ha='right', fontsize=8)
+        ax.set_ylim(0, y_max)
+        ax.grid(axis='y', alpha=0.3, linestyle='--', linewidth=0.5)
+        ax.set_axisbelow(True)
+        ax.yaxis.set_major_formatter(plt.FuncFormatter(lambda x, p: f'{x:.0f}'))
+        
+        # Add reference line at 30 years
+        ax.axhline(y=30, color='red', linestyle='--', linewidth=1.5, alpha=0.7, label='30-year reference')
+        
+        if col_idx == 0:
+            ax.legend(loc='upper right', fontsize=8)
+    
+    # Add main title
+    fig.suptitle('Carbon Payback Period: Years for Op. Carbon Reduction to Equal Embodied Carbon\n(Baseline: R=0.0)', 
+                 fontsize=14, fontweight='bold', y=0.98)
+    
+    # Tight layout
+    plt.tight_layout(rect=[0, 0, 1, 0.96])
+    
+    # Save the plot
+    output_plot = measure_dir / "resources" / "roof_insulation_carbon_payback.png"
+    output_plot.parent.mkdir(parents=True, exist_ok=True)
+    plt.savefig(output_plot, dpi=300, bbox_inches='tight')
+    plt.close()
+    
+    # Calculate and print statistics
+    print(f"✓ Carbon payback period chart saved: {output_plot}")
+    print(f"  R-values plotted: {sorted_r_values}")
+    print(f"\n  Carbon payback periods:")
+    for r_val in sorted_r_values:
+        group = r_value_groups[r_val]
+        valid_payback = [p for p in group['payback'] if p != float('inf')]
+        if valid_payback:
+            print(f"    R={r_val:.1f}: {min(valid_payback):.1f} - {max(valid_payback):.1f} years")
+
+def main():
+    # Find all output OSM files from the roof insulation measure
+    output_dir = Path(__file__).parent / "tests" / "output"
+    
+    if not output_dir.exists():
+        print(f"Error: Output directory not found: {output_dir}")
+        print("\nPlease run the apply_measure.py script first.")
+        sys.exit(1)
+    
+    # Find all OSM files matching the pattern out_R*_*.osm
+    osm_files = sorted(output_dir.glob("out_R*.osm"))
+    
+    if not osm_files:
+        print(f"Error: No output OSM files found in {output_dir}")
+        print("Expected files matching pattern: out_R*.osm")
+        print("\nPlease run the apply_measure.py script first.")
+        sys.exit(1)
+    
+    print(f"\n{'='*80}")
+    print(f"Found {len(osm_files)} output model(s) to process")
+    print(f"{'='*80}")
+    for osm_file in osm_files:
+        print(f"  - {osm_file.name}")
+    
+    # Load emission factors once
+    print(f"\n{'='*80}")
+    print("Loading emission factors...")
+    print(f"{'='*80}")
+    emission_factors = load_emission_factors()
+    
+    # Track results
+    all_model_data = []
+    all_energy_data = []  # List to store energy data (not dict)
+    successful = 0
+    failed = 0
+    
+    # Process each model and collect data
+    for idx, osm_path in enumerate(osm_files, 1):
+        print(f"\n[Model {idx}/{len(osm_files)}]")
+        
+        props_df, energy_data = extract_model_data(osm_path, emission_factors)
+        
+        if props_df is not None and not props_df.empty:
+            # Add scenario identifier column
+            props_df['scenario_name'] = osm_path.stem
+            
+            all_model_data.append(props_df)
+            
+            # Store energy data if available
+            if energy_data:
+                energy_data['scenario_name'] = osm_path.stem
+                all_energy_data.append(energy_data)
+            
+            print(f"✓ Data extracted successfully from {osm_path.name}")
+            successful += 1
+        else:
+            failed += 1
+            print(f"✗ Failed to extract data from {osm_path.name}")
+    
+    # Combine all data into a single CSV
+    if all_model_data:
+        import pandas as pd
+        combined_df = pd.concat(all_model_data, ignore_index=True)
+        
+        # Reorder columns to put scenario_name first
+        cols = combined_df.columns.tolist()
+        if 'scenario_name' in cols:
+            cols.remove('scenario_name')
+            cols = ['scenario_name'] + cols
+            combined_df = combined_df[cols]
+        
+        # Save combined report with both sections
+        output_csv = measure_dir / "resources" / "roof_insulation_report.csv"
+        output_csv.parent.mkdir(parents=True, exist_ok=True)
+        
+        try:
+            with open(output_csv, 'w', newline='', encoding='utf-8') as f:
+                # First, write Construction AdditionalProperties section (transposed and reversed)
+                f.write("# Roof Construction AdditionalProperties\n")
+                
+                construction_transposed = combined_df.set_index('scenario_name').T
+                construction_transposed = construction_transposed.iloc[::-1]
+                construction_transposed.to_csv(f)
+                f.write("\n")
+                
+                # Second, write EnergyPlus Simulation Summary section
+                if all_energy_data:
+                    f.write("# EnergyPlus Simulation Summary\n")
+                    
+                    # Convert energy data list to DataFrame
+                    energyplus_df = pd.DataFrame(all_energy_data)
+                    energyplus_transposed = energyplus_df.set_index('scenario_name').T
+                    energyplus_transposed.to_csv(f)
+            
+            construction_features = len(combined_df.columns) - 1  # -1 for scenario_name
+            energyplus_metrics = len(all_energy_data[0]) - 1 if all_energy_data else 0  # -1 for scenario_name
+            
+            print(f"\n✓ Combined report saved: {output_csv}")
+            print(f"  Scenarios: {len(all_model_data)}")
+            print(f"  Construction features: {construction_features}")
+            if all_energy_data:
+                print(f"  EnergyPlus metrics: {energyplus_metrics}")
+        
+        except PermissionError:
+            print(f"\n✗ ERROR: Cannot write to {output_csv}")
+            print(f"  The file may be open in Excel or another program.")
+            print(f"  Please close the file and run this script again.")
+            return 1
+        
+        # Create scatterplot with energy data
+        create_scatterplot(output_csv, measure_dir)
+        
+        # Create carbon comparison plot
+        create_carbon_comparison_plot(output_csv, measure_dir)
+        
+        # Create stacked bar chart
+        create_stacked_bar_chart(output_csv, measure_dir)
+        
+        # Create stacked bar chart for Year 30
+        create_stacked_bar_chart_year30(output_csv, measure_dir)
+        
+        # Create time series chart (Year 1-30)
+        create_time_series_chart(output_csv, measure_dir)
+        
+        # Create carbon payback period chart
+        create_carbon_payback_chart(output_csv, measure_dir)
+    
+    # Print final summary
+    print(f"\n\n{'='*80}")
+    print("PROCESSING SUMMARY")
+    print(f"{'='*80}")
+    print(f"Total models processed: {len(osm_files)}")
+    print(f"Successful: {successful}")
+    print(f"Failed: {failed}")
+    print(f"\nSuccess rate: {successful/len(osm_files)*100:.1f}%")
+    
+    if all_model_data:
+        print(f"\n✓ All scenario data combined into single CSV:")
+        print(f"  {output_csv}")
+    
+    print(f"{'='*80}\n")
+    
+    return 0 if failed == 0 else 1
+
+if __name__ == "__main__":
+    sys.exit(main())

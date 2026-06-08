@@ -44,6 +44,30 @@ Or install it yourself as:
 
 Please review the [OpenStudio Contribution Policy](https://openstudio.net/openstudio-contribution-policy) if you would like to contribute code to this gem.
 
+## Pre-Commit Secret Check
+
+This repository includes a tracked git pre-commit hook at `.githooks/pre-commit`.
+It blocks commits that contain likely API keys, tokens, or common secret files
+such as `.env` and `config.env`.
+
+Enable it once per local clone:
+
+```powershell
+./scripts/install-git-hooks.ps1
+```
+
+or
+
+```bash
+./scripts/install-git-hooks.sh
+```
+
+You can verify it is active with:
+
+```bash
+git config --get core.hooksPath
+```
+
 
 # Releasing
 

@@ -1,0 +1,24 @@
+{
+  "materials": [
+    {
+      "name": "ready mix concrete",
+      "quantity": 10.0,
+      "unit": "cubic yards"
+    },
+    {
+      "name": "gypsum board 1/2 in",
+      "quantity": 2000.0,
+      "unit": "square feet"
+    },
+    {
+      "name": "fiberglass batt insulation",
+      "quantity": 1500.0,
+      "unit": "square feet"
+    },
+    {
+      "name": "acoustic ceiling tile",
+      "quantity": 1200.0,
+      "unit": "square feet"
+    }
+  ]
+}
