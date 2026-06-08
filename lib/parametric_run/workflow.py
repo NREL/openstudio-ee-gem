@@ -653,10 +653,15 @@ def _isolate_measure_resources_imports(measure_folder_str):
     return _restore
 
 
-def apply_python_measure(model, measure_folder, measure_class_name, arguments_dict):
+def apply_python_measure(model, measure_folder, measure_class_name, arguments_dict, failure_logger=None):
     """
     Apply a Python OpenStudio ModelMeasure directly to a model in-process.
     Returns True if successful, False otherwise.
+
+    If `failure_logger` is provided, it is called with a multi-line detail
+    string when the measure fails (runner errors or a Python exception),
+    so callers can persist the reason to scenario_failure.log instead of
+    relying on stdout capture.
     """
     measure_folder_str = str(measure_folder)
     restore_imports = _isolate_measure_resources_imports(measure_folder_str)
@@ -677,14 +682,25 @@ def apply_python_measure(model, measure_folder, measure_class_name, arguments_di
         result_value = runner.result().value().valueName()
         if result_value != "Success":
             print(f"  Measure result: {result_value}")
-            for error in runner.result().errors():
-                print(f"    ERROR: {error.logMessage()}")
+            error_messages = [error.logMessage() for error in runner.result().errors()]
+            for msg in error_messages:
+                print(f"    ERROR: {msg}")
+            if failure_logger is not None:
+                detail_lines = [f"{measure_class_name} result: {result_value}"]
+                if error_messages:
+                    detail_lines.extend(f"  ERROR: {msg}" for msg in error_messages)
+                else:
+                    detail_lines.append("  (no runner errors recorded)")
+                failure_logger("\n".join(detail_lines))
             return False
         return True
     except Exception as e:
         print(f"  ERROR applying measure: {str(e)}")
         import traceback
+        tb_str = traceback.format_exc()
         traceback.print_exc()
+        if failure_logger is not None:
+            failure_logger(f"{measure_class_name} raised {type(e).__name__}: {e}\n{tb_str}")
         return False
     finally:
         restore_imports()
@@ -1077,7 +1093,7 @@ def create_simulation(
                 "overhead_profit_percent": float(scenario_dict.get("overhead_profit_percent") or 10.0),
             }
             print(f"  Applying wall insulation (R={scenario_dict['wall_r_value']}, material={wall_material_type})...")
-            if not apply_python_measure(model, Path(measure_dir_path) / "IncreaseInsulationRValueForExteriorWalls", "IncreaseInsulationRValueForExteriorWalls", wall_args):
+            if not apply_python_measure(model, Path(measure_dir_path) / "IncreaseInsulationRValueForExteriorWalls", "IncreaseInsulationRValueForExteriorWalls", wall_args, failure_logger=log_failure):
                 print(f"   {scenario_name}: wall measure failed")
                 log_failure("wall measure failed")
                 del model
@@ -1104,7 +1120,7 @@ def create_simulation(
                 "overhead_profit_percent": float(scenario_dict.get("overhead_profit_percent") or 10.0),
             }
             print(f"  Applying roof insulation (R={scenario_dict['roof_r_value']}, material={roof_material_type})...")
-            if not apply_python_measure(model, Path(measure_dir_path) / "IncreaseInsulationRValueForRoofs", "IncreaseInsulationRValueForRoofs", roof_args):
+            if not apply_python_measure(model, Path(measure_dir_path) / "IncreaseInsulationRValueForRoofs", "IncreaseInsulationRValueForRoofs", roof_args, failure_logger=log_failure):
                 print(f"   {scenario_name}: roof measure failed")
                 log_failure("roof measure failed")
                 del model
@@ -1172,7 +1188,7 @@ def create_simulation(
                 "overhead_profit_percent": float(scenario_dict.get("overhead_profit_percent") or 10.0),
             }
             print(f"  Applying window enhancement (num_panes={num_panes}, glass_option={glass_option})...")
-            if not apply_python_measure(model, Path(measure_dir_path) / "window_enhancement", "WindowEnhancement", window_args):
+            if not apply_python_measure(model, Path(measure_dir_path) / "window_enhancement", "WindowEnhancement", window_args, failure_logger=log_failure):
                 print(f"    {scenario_name}: window measure failed")
                 log_failure("window measure failed")
                 del model
@@ -1211,7 +1227,7 @@ def create_simulation(
                 "overhead_profit_percent": float(scenario_dict.get("overhead_profit_percent") or 0.0),
             }
             print(f"  Applying door enhancement (door={door_args['door_option']})...")
-            if not apply_python_measure(model, Path(measure_dir_path) / "door_enhancement", "DoorEnhancement", door_args):
+            if not apply_python_measure(model, Path(measure_dir_path) / "door_enhancement", "DoorEnhancement", door_args, failure_logger=log_failure):
                 print(f"    {scenario_name}: door measure failed")
                 log_failure("door measure failed")
                 del model
@@ -1608,13 +1624,15 @@ def extract_scenario_data(osm_path, scenario_name):
                 found_any = True
 
     # Prefer already-computed measure totals when available.
-    # If missing, fall back to component sums.
+    # If missing, fall back to component sums. Wall/roof use *_usd keys;
+    # window/door measures expose *_$ keys (window_material_cost_$, etc.).
     wall_total = float(results.get("wall_insulation_total_cost_with_overhead_and_profit_usd", 0.0) or 0.0)
     roof_total = float(results.get("roof_insulation_total_cost_with_overhead_and_profit_usd", 0.0) or 0.0)
     if wall_total <= 0.0:
         wall_total = (
             float(results.get("wall_insulation_material_cost_usd", 0.0) or 0.0)
             + float(results.get("wall_insulation_labor_cost_usd", 0.0) or 0.0)
+            + float(results.get("wall_insulation_equipment_cost_usd", 0.0) or 0.0)
             + float(results.get("wall_insulation_overhead_profit_cost_usd", 0.0) or 0.0)
         )
     if roof_total <= 0.0:
@@ -1625,16 +1643,22 @@ def extract_scenario_data(osm_path, scenario_name):
             + float(results.get("roof_insulation_overhead_profit_cost_usd", 0.0) or 0.0)
         )
 
-    window_total = (
-        float(results.get("window_enhancement_material_cost_usd", 0.0) or 0.0)
-        + float(results.get("window_enhancement_labor_cost_usd", 0.0) or 0.0)
-        + float(results.get("window_enhancement_overhead_profit_cost_usd", 0.0) or 0.0)
-    )
-    door_total = (
-        float(results.get("door_enhancement_material_cost_usd", 0.0) or 0.0)
-        + float(results.get("door_enhancement_labor_cost_usd", 0.0) or 0.0)
-        + float(results.get("door_enhancement_overhead_profit_cost_usd", 0.0) or 0.0)
-    )
+    window_total = float(results.get("window_total_cost_with_overhead_and_profit_$", 0.0) or 0.0)
+    if window_total <= 0.0:
+        window_total = (
+            float(results.get("window_material_cost_$", 0.0) or 0.0)
+            + float(results.get("window_labor_cost_$", 0.0) or 0.0)
+            + float(results.get("window_equipment_cost_$", 0.0) or 0.0)
+            + float(results.get("window_overhead_profit_cost_$", 0.0) or 0.0)
+        )
+    door_total = float(results.get("door_total_cost_with_overhead_and_profit_$", 0.0) or 0.0)
+    if door_total <= 0.0:
+        door_total = (
+            float(results.get("door_material_cost_$", 0.0) or 0.0)
+            + float(results.get("door_labor_cost_$", 0.0) or 0.0)
+            + float(results.get("door_equipment_cost_$", 0.0) or 0.0)
+            + float(results.get("door_overhead_profit_cost_$", 0.0) or 0.0)
+        )
     results["total_additional_construction_cost_usd"] = wall_total + roof_total + window_total + door_total
     results["total_construction_cost_usd"] = results["total_additional_construction_cost_usd"]
     # Total site energy (GJ): prefer Site AdditionalProperties; fallback to SQL tabular data
@@ -2074,6 +2098,47 @@ def scenario_output_exists(base_run_dir, scenario_dict):
 # Pipeline: validate CLI -> generate scenarios -> run sims -> recap CSV
 # -> HTML/PDF report (the report stage lives further down, after the spider
 # chart helpers; it runs against parametric_results.csv produced here).
+class _TeeStream:
+    """Write-through wrapper that mirrors writes to a stream and a log file."""
+
+    def __init__(self, primary, log_file):
+        self._primary = primary
+        self._log_file = log_file
+
+    def write(self, data):
+        self._primary.write(data)
+        try:
+            self._log_file.write(data)
+            self._log_file.flush()
+        except Exception:
+            pass
+        return len(data) if isinstance(data, str) else 0
+
+    def flush(self):
+        self._primary.flush()
+        try:
+            self._log_file.flush()
+        except Exception:
+            pass
+
+    def __getattr__(self, name):
+        return getattr(self._primary, name)
+
+
+def _install_workflow_log_tee(log_path):
+    """Tee stdout/stderr to log_path so failure detail isn't lost on console close."""
+    try:
+        os.makedirs(os.path.dirname(log_path), exist_ok=True)
+        log_file = open(log_path, "a", encoding="utf-8", buffering=1)
+        log_file.write(f"\n===== workflow run started {time.strftime('%Y-%m-%d %H:%M:%S')} =====\n")
+        sys.stdout = _TeeStream(sys.stdout, log_file)
+        sys.stderr = _TeeStream(sys.stderr, log_file)
+        return log_file
+    except Exception as tee_err:
+        print(f"Warning: failed to enable workflow log tee at {log_path}: {tee_err}")
+        return None
+
+
 if __name__ == "__main__":
     # Phase 0: sanity-check that the OpenStudio CLI was found.
     if not OPENSTUDIO_PATH:
@@ -2081,6 +2146,10 @@ if __name__ == "__main__":
             "OpenStudio CLI not found. Set OPENSTUDIO_PATH to your openstudio executable, "
             "or add openstudio to PATH."
         )
+
+    # Tee all stdout/stderr to simulations/<RUN_NAME>/workflow.log so that
+    # measure errors and tracebacks survive after the console closes.
+    _install_workflow_log_tee(os.path.join(base_run_dir, "workflow.log"))
 
     print("\n" + "=" * 70)
     print("PARAMETRIC STUDY: BUILDING ENERGY EFFICIENCY MEASURES")

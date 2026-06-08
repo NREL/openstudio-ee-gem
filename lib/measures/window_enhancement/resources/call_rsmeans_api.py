@@ -88,7 +88,9 @@ WINDOW_DEFAULT_FALLBACK_COSTLINES = {
     "silicone adhesive smoke gasket": "087125105050",
     "brush weatherstrip": "087125103700",
     "num pane 1 secondary glazing": "088155100015",
+    "num pane 1": "088155100015",
     "num pane 2": "088130100400",
+    "num pane 3": "084126100020",
     "wood operatble window": "085210700100",
     "wood operable window": "085210700100",
     "wood fixed window": "085210550100",
@@ -296,6 +298,37 @@ def _get_default_fallback_rsmeans_id(material_name: str, material: Optional[Dict
         or "double" in description_norm
     ):
         return _get_double_pane_fallback_rsmeans_id(quantity_sf)
+
+    # Triple-pane glazing replacement: curated stand-in until a dedicated
+    # triple-pane line item is sourced. 084126100020 (Window wall, aluminum,
+    # stock, including glazing, minimum) is what API closest-match has
+    # historically chosen for 3-pane window glazing in this codebase
+    # (see tests/output/DOE_small_office_window_enhanced.osm fixtures).
+    # NOTE: must precede the 1-pane branch because pane descriptions also
+    # include "single-pane thickness ..." text describing the per-pane
+    # thickness regardless of pane count.
+    if (
+        "num pane 3" in name_norm
+        or "triple pane" in name_norm
+        or "3 pane" in description_norm
+        or "3-pane" in description_norm
+        or "triple" in description_norm
+    ):
+        return "084126100020"
+
+    # Single-pane glazing replacement falls back to the secondary single-glazing
+    # line item; there is no separate single-pane "primary" replacement line in
+    # the curated RSMeans set. Match on explicit "1-pane"/"single pane" markers
+    # only; never on a bare "single" token (it also appears in per-pane
+    # thickness text for 2- and 3-pane configurations).
+    if (
+        "num pane 1" in name_norm
+        or "single pane" in name_norm
+        or "1 pane" in description_norm
+        or "1-pane" in description_norm
+        or "single pane" in description_norm
+    ):
+        return "088155100015"
 
     if name_norm in WINDOW_DEFAULT_FALLBACK_COSTLINES:
         return WINDOW_DEFAULT_FALLBACK_COSTLINES[name_norm]
