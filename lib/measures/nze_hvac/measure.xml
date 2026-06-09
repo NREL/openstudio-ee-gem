@@ -3,8 +3,8 @@
   <schema_version>3.1</schema_version>
   <name>nze_hvac</name>
   <uid>f060dff2-b28d-4194-a6af-e66d88ddb33c</uid>
-  <version_id>9ef6d0b1-beec-4b75-a119-476f2fa9d4dc</version_id>
-  <version_modified>2025-09-25T16:10:25Z</version_modified>
+  <version_id>dc683602-6101-43a8-86b7-3da2063658a8</version_id>
+  <version_modified>2026-06-08T03:32:17Z</version_modified>
   <xml_checksum>0E5E4776</xml_checksum>
   <class_name>NzeHvac</class_name>
   <display_name>NZEHVAC</display_name>
@@ -253,12 +253,12 @@
       <version>
         <software_program>OpenStudio</software_program>
         <identifier>3.8.0</identifier>
-        <min_compatible>3.8.0</min_compatible>
+        <min_compatible>3.11.0</min_compatible>
       </version>
       <filename>measure.rb</filename>
       <filetype>rb</filetype>
       <usage_type>script</usage_type>
-      <checksum>59C247DF</checksum>
+      <checksum>3A279C6D</checksum>
     </file>
     <file>
       <filename>NZEHVAC_Test.rb</filename>
