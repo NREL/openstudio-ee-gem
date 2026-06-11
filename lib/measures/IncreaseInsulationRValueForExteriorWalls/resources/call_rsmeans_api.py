@@ -1878,7 +1878,7 @@ def search_materials_across_catalogs(
                 "total_labor_cost": best_total_labor_cost,
                 "total_equipment_cost": best_total_equipment_cost,
                 "bare_material_unit_cost": best_bare_material_unit_cost,
-                "bare_material_unit_basis": best_line_uom if best_line_uom else best_unit_basis,
+                "bare_material_unit_basis": best_unit_basis,
                 "bare_material_total_cost": best_bare_material_total_cost,
                 "line_uom": best_line_uom,
                 "cost_component_source": best_component_source,

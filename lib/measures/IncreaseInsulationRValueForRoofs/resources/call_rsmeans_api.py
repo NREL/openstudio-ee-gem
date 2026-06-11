@@ -1715,7 +1715,7 @@ def search_materials_across_catalogs(
                 "total_labor_cost": lab_cost,
                 "total_equipment_cost": eqp_cost,
                 "bare_material_unit_cost": calc.get("unit_bare_material_cost", 0.0),
-                "bare_material_unit_basis": calc.get("line_uom") or calc.get("effective_unit", material.get("unit", "")),
+                "bare_material_unit_basis": calc.get("effective_unit", material.get("unit", "")),
                 "bare_material_total_cost": calc.get("total_bare_material_cost", 0.0),
                 "bare_total_unit_cost": calc.get("unit_bare_total_cost", 0.0),
                 "bare_total_total_cost": calc.get("total_bare_total_cost", 0.0),
@@ -1789,7 +1789,7 @@ def search_materials_across_catalogs(
                                             "total_labor_cost": cost_calc["total_labor_cost"],
                                             "total_equipment_cost": cost_calc["total_equipment_cost"],
                                             "bare_material_unit_cost": cost_calc.get("unit_bare_material_cost", 0.0),
-                                            "bare_material_unit_basis": cost_calc.get("line_uom") or cost_calc.get("effective_unit", ""),
+                                            "bare_material_unit_basis": cost_calc.get("effective_unit", ""),
                                             "bare_material_total_cost": cost_calc.get("total_bare_material_cost", 0.0),
                                             "bare_total_unit_cost": cost_calc.get("unit_bare_total_cost", 0.0),
                                             "bare_total_total_cost": cost_calc.get("total_bare_total_cost", 0.0),
@@ -1801,6 +1801,22 @@ def search_materials_across_catalogs(
                                             "chosen_source_type": "fallback",
                                             "unit_cost_basis": cost_calc.get("effective_unit", ""),
                                             "costing_mode": cost_calc.get("costing_mode", "area"),
+                                            "pricing_unit_cost_raw": float(
+                                                _extract_unit_cost_components(item).get("op_total", 0.0) or 0.0
+                                            ),
+                                            "pricing_unit_uom_raw": _normalize_uom(
+                                                item.get("unitOfMeasure", "")
+                                            ) or str(
+                                                cost_calc.get("line_uom")
+                                                or cost_calc.get("effective_unit", material.get("unit", ""))
+                                            ),
+                                            "pricing_unit_cost_effective": float(
+                                                cost_calc.get("unit_cost", 0.0) or 0.0
+                                            ),
+                                            "pricing_unit_uom_effective": cost_calc.get(
+                                                "effective_unit", material.get("unit", "")
+                                            ),
+                                            "pricing_source": "rsmeans_direct" if float(cost_calc.get("unit_cost", 0.0) or 0.0) > 0.0 else "unavailable",
                                         }
                                         all_results.append(material_result)
                                         _append_rsmeans_raw_log(material, item, catalog, "fallback_id", f"fallback:{fallback_id}")

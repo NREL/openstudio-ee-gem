@@ -52,8 +52,8 @@ roof_insulation_material_cost_usd,,5020.552717482944,3319.373697509385,13040.396
 roof_insulation_labor_cost_usd,,18205.842682589668,5089.706336181057,10780.061246197143
 roof_insulation_equipment_cost_usd,,0.0,1991.6242185056308,0.0
 roof_insulation_overhead_profit_cost_usd,,0.0,0.0,0.0
-total_additional_construction_cost_usd,0.0,175188.74172131225,190482.6418498981,490351.5290660417
-total_construction_cost_usd,0.0,175188.74172131225,190482.6418498981,490351.5290660417
+total_additional_construction_cost_usd,0.0,161670.3343213777,174311.66289673682,152897.89901176366
+total_construction_cost_usd,0.0,161670.3343213777,174311.66289673682,152897.89901176366
 baseline_door_glass_count,1,1,1,1
 baseline_door_overhead_count,0,0,0,0
 baseline_door_standard_count,2,2,2,2
@@ -108,9 +108,9 @@ door_total_cost_with_overhead_and_profit_$,,595.3952755905507,970.742627759765,3
 lpd_fraction_linear_fluorescent,1.0,1.0,1.0,1.0
 measure_name,Operating Cost Carbon Reporting Measure,Operating Cost Carbon Reporting Measure,Operating Cost Carbon Reporting Measure,Operating Cost Carbon Reporting Measure
 roof_insulation_analysis_period_years,,30,30,30
-roof_insulation_api_material_cost_per_cf,,0.9,N/A,N/A
-roof_insulation_api_pricing_unit_cost,,N/A,N/A,N/A
-roof_insulation_api_pricing_unit_uom,,N/A,N/A,N/A
+roof_insulation_api_material_cost_per_cf,,0.9,0.5890909090909091,2.3314285714285714
+roof_insulation_api_pricing_unit_cost,,4.58,0.94,1.37
+roof_insulation_api_pricing_unit_uom,,CF,SF,SF
 roof_insulation_cost_factor_basis,,cost_per_volume,cost_per_volume,cost_per_volume
 roof_insulation_cost_source,,rsmeans_api,rsmeans_api,rsmeans_api
 roof_insulation_equipment_cost_$,,0.0,1991.6242185056308,0.0
@@ -125,7 +125,7 @@ roof_insulation_material_type,,Blown Mineral Wool,Blown Fiberglass,Fiberglass Ba
 roof_insulation_measure_name,,Increase Insulation R-Value for Roofs,Increase Insulation R-Value for Roofs,Increase Insulation R-Value for Roofs
 roof_insulation_modified_constructions_count,,1,1,1
 roof_insulation_overhead_profit_cost_$,,0.0,0.0,0.0
-roof_insulation_overhead_profit_percent,,10.0,10.0,10.0
+roof_insulation_overhead_profit_percent,,0.0,0.0,0.0
 roof_insulation_renovated_construction_names,,Typical Uninsulated Wood Joist Attic Roof adj roof insulation,Typical Uninsulated Wood Joist Attic Roof adj roof insulation,Typical Uninsulated Wood Joist Attic Roof adj roof insulation
 roof_insulation_renovated_embodied_carbon_kgCO2eq,,0.0,0.0,0.0
 roof_insulation_renovated_exterior_roof_area_m2,,598.7616811798497,598.7616811798497,598.7616811798497
@@ -136,10 +136,10 @@ roof_insulation_target_r_value_ip,,34.5,34.5,34.5
 roof_insulation_total_cost_with_overhead_and_profit_$,,23226.39540007261,10400.704252196072,23820.45791498401
 total_doors_with_r_value_change_count,,0,0,2
 wall_insulation_analysis_period_years,,30,30,30
-wall_insulation_api_material_cost_per_cf,,4.58,2.050909090909091,4.6971428571428575
+wall_insulation_api_material_cost_per_cf,,0.9,0.5890909090909092,2.331428571428572
 wall_insulation_api_pricing_unit_cost,,4.58,0.94,1.37
 wall_insulation_api_pricing_unit_uom,,CF,SF,SF
-wall_insulation_cost_factor_basis,,other,cost_per_volume,cost_per_volume
+wall_insulation_cost_factor_basis,,cost_per_volume,cost_per_volume,cost_per_volume
 wall_insulation_cost_source,,rsmeans_api,rsmeans_api,rsmeans_api
 wall_insulation_equipment_cost_$,,0.0,235.6135822662751,0.0
 wall_insulation_gwp_source,,custom_user_inputs,custom_user_inputs,custom_user_inputs
@@ -152,7 +152,7 @@ wall_insulation_material_type,,Blown Mineral Wool,Blown Fiberglass,Fiberglass Ba
 wall_insulation_measure_name,,Increase Insulation R-Value for Exterior Walls,Increase Insulation R-Value for Exterior Walls,Increase Insulation R-Value for Exterior Walls
 wall_insulation_modified_constructions_count,,1,1,1
 wall_insulation_overhead_profit_cost_$,,0.0,0.0,0.0
-wall_insulation_overhead_profit_percent,,10.0,10.0,10.0
+wall_insulation_overhead_profit_percent,,0.0,0.0,0.0
 wall_insulation_renovated_construction_names,,Typical Insulated Wood Framed Exterior Wall R-12.2 1,Typical Insulated Wood Framed Exterior Wall R-12.2 1,Typical Insulated Wood Framed Exterior Wall R-12.2 1
 wall_insulation_renovated_embodied_carbon_kgCO2eq,,0.0,0.0,0.0
 wall_insulation_renovated_exterior_wall_area_m2,,281.515,281.515,281.515
@@ -162,12 +162,12 @@ wall_insulation_summary_notes,,"Requested: wall insulation upgrade to target R-2
 wall_insulation_target_r_value_ip,,20.4,20.4,20.4
 wall_insulation_total_cost_with_overhead_and_profit_$,,2664.4696463692353,1230.4264851683256,2818.0132418672747
 window_analysis_period_years,,30,30,30
-window_api_caulking_cost_per_cy,,42.99997970333401,77.99996318279194,77.99996318279194
+window_api_caulking_cost_per_cy,,8684.883118,15753.974028,15753.974028
 window_api_caulking_pricing_unit_cost,,43.0,78.0,78.0
 window_api_caulking_pricing_unit_uom,,GAL,GAL,GAL
 window_api_film_cost_per_sf,,1.84,1.33,0.92
 window_api_frame_cost_per_sf,,67.04666666666667,67.04666666666667,67.04666666666667
-window_api_glass_cost_per_cf,,4.960630079999999,23.622048000000003,205.50000000000003
+window_api_glass_cost_per_cf,,503.9999999999999,1200.0000000000002,N/A
 window_api_weatherstrip_cost_per_lf,,N/A,N/A,N/A
 window_caulking_option,,acrylic,polyurethane,polyurethane
 window_caulking_rsmeans_description,,"Joint sealants, caulking and sealants, bulk acrylic latex","Joint sealants, caulking and sealants, polyurethane, bulk, 1 or 2 component","Joint sealants, caulking and sealants, polyurethane, bulk, 1 or 2 component"
@@ -183,17 +183,17 @@ window_frame_option,,wood window frame,wood window frame,wood-aluminium window f
 window_frame_rsmeans_description,,window frame (derived from window unit - glazing),window frame (derived from window unit - glazing),window frame (derived from window unit - glazing)
 window_frame_rsmeans_id,,derived_window_frame,derived_window_frame,derived_window_frame
 window_glass_option,,provide user_num_panes,provide user_num_panes,provide user_num_panes
-window_glass_rsmeans_description,,"Window glass, clear float, stops, putty bed, 1/8"" thick","Insulating glass, double glazed, clear, 1/4"" float, for 1"" thick unit, 30-70 SF","Window wall, aluminum, stock, including glazing, minimum"
-window_glass_rsmeans_id,,088155100015,088130100400,084126100020
+window_glass_rsmeans_description,,"Window glass, clear float, stops, putty bed, 1/8"" thick","Insulating glass, double glazed, clear, 1/4"" float, for 1"" thick unit, 30-70 SF",N/A
+window_glass_rsmeans_id,,088155100015,088130100400,N/A
 window_gwp_source,,custom_user_inputs,custom_user_inputs,custom_user_inputs
 window_gwp_statistic,,median,median,median
 window_infiltration_reduction_percent,,30.0,60.0,90.0
-window_labor_cost_$,,26232.316852207543,29957.194955115774,62176.9534548176
+window_labor_cost_$,,26232.316852207543,29957.194955115774,23355.9440482256
 window_layered_glazing_count,0,0,0,0
-window_material_cost_$,,108951.75714713775,131752.59457649686,356234.9422745221
+window_material_cost_$,,108951.75714713775,131752.59457649686,99443.51119977002
 window_measure_name,,Window Enhancement for Infiltration Reduction,Window Enhancement for Infiltration Reduction,Window Enhancement for Infiltration Reduction
-window_overhead_profit_cost_$,,13518.407399934531,16170.978953161266,41841.18957293397
-window_overhead_profit_percent,,10.0,10.0,10.0
+window_overhead_profit_cost_$,,0.0,0.0,0.0
+window_overhead_profit_percent,,0.0,0.0,0.0
 window_processed_count,,20,20,20
 window_renovated_area_m2,,55.778400000000005,55.778400000000005,55.778400000000005
 window_renovated_caulking_volume_m3,,0.003371808563244853,0.003371808563244853,0.003371808563244853
@@ -206,7 +206,7 @@ window_secondary_glazing_rsmeans_description,,N/A,N/A,N/A
 window_secondary_glazing_rsmeans_id,,N/A,N/A,N/A
 window_simple_glazing_objects_count,,20,20,20
 window_summary_notes,,"Requested: glass upgrade (provide user_num_panes), frame upgrade (wood window frame), caulking (acrylic), film (safety film), weatherstrip (silicone adhesive smoke gasket). Outcome: Completed with option conflicts; one or more requested actions were skipped or partially applied. Reason(s): Weatherstrip selected but no OperableWindow subsurfaces found. Context: window constructions=20, simple glazing objects=20; available subsurface counts -> FixedWindow=20, OperableWindow=0, Skylight=0.","Requested: glass upgrade (provide user_num_panes), frame upgrade (wood window frame), caulking (polyurethane), film (anti-graffiti film), weatherstrip (silicone adhesive smoke gasket). Outcome: Completed with option conflicts; one or more requested actions were skipped or partially applied. Reason(s): Weatherstrip selected but no OperableWindow subsurfaces found. Context: window constructions=20, simple glazing objects=20; available subsurface counts -> FixedWindow=20, OperableWindow=0, Skylight=0.","Requested: glass upgrade (provide user_num_panes), frame upgrade (wood-aluminium window frame), caulking (polyurethane), film (low-e film), weatherstrip (silicone adhesive smoke gasket). Outcome: Completed with option conflicts; one or more requested actions were skipped or partially applied. Reason(s): Weatherstrip selected but no OperableWindow subsurfaces found. Context: window constructions=20, simple glazing objects=20; available subsurface counts -> FixedWindow=20, OperableWindow=0, Skylight=0."
-window_total_cost_with_overhead_and_profit_$,,148702.48139927984,177880.76848477393,460253.0853022736
+window_total_cost_with_overhead_and_profit_$,,135184.0739993453,161709.78953161265,122799.45524799562
 window_weatherstrip_option,,silicone adhesive smoke gasket,silicone adhesive smoke gasket,silicone adhesive smoke gasket
 window_weatherstrip_rsmeans_description,,N/A,N/A,N/A
 window_weatherstrip_rsmeans_id,,N/A,N/A,N/A

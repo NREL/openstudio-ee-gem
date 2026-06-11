@@ -2187,14 +2187,15 @@ class DoorEnhancement(openstudio.measure.ModelMeasure):
                     _adj_material += _m["total_cost"]
                     _adj_labor += _m["total_labor_cost"]
                     _adj_equipment += _m["total_equipment_cost"]
-                _ohp_pct = float(_lc_summary.get("overhead_profit_percent", 0.0))
-                _adj_overhead = (_adj_material + _adj_labor + _adj_equipment) * _ohp_pct * 0.01
+                # RSMeans totalOpCost-derived components already include O&P;
+                # no additional markup is layered on top.
+                _adj_overhead = 0.0
                 _lc_summary["total_material_cost"] = _adj_material
                 _lc_summary["total_labor_cost"] = _adj_labor
                 _lc_summary["total_equipment_cost"] = _adj_equipment
                 _lc_summary["total_overhead_profit_cost"] = _adj_overhead
                 _lc_summary["total_cost_with_overhead_profit"] = (
-                    _adj_material + _adj_labor + _adj_equipment + _adj_overhead
+                    _adj_material + _adj_labor + _adj_equipment
                 )
                 runner.registerInfo(
                     f"RSMeans costs scaled by lifetime multipliers: "
@@ -2323,7 +2324,10 @@ class DoorEnhancement(openstudio.measure.ModelMeasure):
 
             # -- Facility (factors) bucket: cost totals and basis metadata --
             factors.setFeature("door_cost_source", cost_source_val)
-            factors.setFeature("door_overhead_profit_percent", rsmeans_overhead_percent)
+            factors.setFeature(
+                "door_overhead_profit_percent",
+                0.0 if cost_source_val == "rsmeans_api" else rsmeans_overhead_percent,
+            )
             factors.setFeature("door_cost_factor_basis", cost_factor_basis)
             if cost_source_val in ("custom_input", "custom_input_fallback"):
                 factors.setFeature("door_custom_labor_cost_multiplier", labor_cost_multiplier)

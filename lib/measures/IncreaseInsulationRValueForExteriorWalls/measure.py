@@ -944,11 +944,16 @@ class IncreaseInsulationRValueForExteriorWalls(openstudio.measure.ModelMeasure):
                                 for mat in materials_results
                                 if str(mat.get("costing_mode", "")).strip()
                             }
+                            unit_values = {
+                                str(mat.get("unit_cost_basis", "")).strip().upper()
+                                for mat in materials_results
+                                if str(mat.get("unit_cost_basis", "")).strip()
+                            }
                             if mode_values == {"area"}:
                                 cost_factor_basis = "cost_per_area"
-                            elif mode_values == {"volume_from_area"}:
+                            elif mode_values == {"volume_from_area"} or mode_values == {"volume_direct"} or unit_values == {"CF"}:
                                 cost_factor_basis = "cost_per_volume"
-                            elif len(mode_values) > 1:
+                            elif len(mode_values) > 1 or len(unit_values) > 1:
                                 cost_factor_basis = "mixed"
                             else:
                                 cost_factor_basis = "other"
@@ -1170,7 +1175,10 @@ class IncreaseInsulationRValueForExteriorWalls(openstudio.measure.ModelMeasure):
         
         # Facility bucket: emission/cost factors
         factors.setFeature("wall_insulation_cost_source", cost_source)
-        factors.setFeature("wall_insulation_overhead_profit_percent", overhead_profit_percent)
+        factors.setFeature(
+            "wall_insulation_overhead_profit_percent",
+            0.0 if cost_source == "rsmeans_api" else overhead_profit_percent,
+        )
         factors.setFeature("wall_insulation_cost_factor_basis", cost_factor_basis)
         if cost_source in ("custom_input", "custom_input_fallback"):
             factors.setFeature("wall_insulation_custom_labor_cost_multiplier", labor_cost_multiplier)

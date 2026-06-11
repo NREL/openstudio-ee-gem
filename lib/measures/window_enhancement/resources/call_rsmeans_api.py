@@ -24,7 +24,7 @@ import os
 import re
 import sys
 from pathlib import Path
-from typing import Optional, Dict, Any, List
+from typing import Optional, Dict, Any, List, Tuple
 
 import requests
 import urllib3
@@ -90,7 +90,6 @@ WINDOW_DEFAULT_FALLBACK_COSTLINES = {
     "num pane 1 secondary glazing": "088155100015",
     "num pane 1": "088155100015",
     "num pane 2": "088130100400",
-    "num pane 3": "084126100020",
     "wood operatble window": "085210700100",
     "wood operable window": "085210700100",
     "wood fixed window": "085210550100",
@@ -103,6 +102,17 @@ WINDOW_DEFAULT_FALLBACK_COSTLINES = {
     "decorative film": "088726100050",
     "low e film": "088713101020",
 }
+
+# Glazing-division prefixes used when filtering RSMeans search hits to
+# triple-pane *glass* lines (excludes full window assemblies in 0852, etc.).
+TRIPLE_PANE_GLAZING_DIVISION_PREFIXES = ("0881",)
+TRIPLE_PANE_SEARCH_TERMS = (
+    "triple glazed insulating glass",
+    "insulating glass triple",
+    "triple pane glass",
+    "triple glazed",
+    "triple pane",
+)
 
 # Minimum clamped candidate score [0-100] required to accept a closest match.
 # Below this threshold, helper falls back to material-specific fallback IDs.
@@ -242,6 +252,75 @@ def _get_double_pane_fallback_rsmeans_id(area_sf: float) -> str:
     return "088130100400"
 
 
+def _is_triple_pane_glazing(
+    material_name: str, material: Optional[Dict[str, Any]] = None
+) -> bool:
+    """Return True when this material represents triple-pane glazing.
+
+    Mirrors the triple-pane detection in :func:`_get_default_fallback_rsmeans_id`
+    so the main lookup loop can trigger a dedicated triple-pane search and
+    fail cleanly when no glazing-only triple-pane line exists in RSMeans.
+    """
+    name_norm = _canonicalize_window_material_name(material_name, material)
+    description_norm = _normalize_search_text((material or {}).get("description", ""))
+    return (
+        "num pane 3" in name_norm
+        or "triple pane" in name_norm
+        or "3 pane" in description_norm
+        or "3-pane" in description_norm
+        or "triple" in description_norm
+    )
+
+
+def _search_triple_pane_glazing_costline_id(
+    client: "RSMeansAPIClient",
+    catalogs: List[str],
+    release_id: str,
+    location_id: str,
+    labor_type: str,
+    measurement_system: str,
+) -> Tuple[Optional[str], Optional[str], Optional[str]]:
+    """Search RSMeans for a glazing-only triple-pane cost line.
+
+    Returns ``(id, description, catalog)`` for the first hit whose division
+    prefix is in :data:`TRIPLE_PANE_GLAZING_DIVISION_PREFIXES` and whose
+    description references a triple-pane configuration. Returns ``(None,
+    None, None)`` when no such line is found in any catalog — the caller is
+    expected to fail the material lookup rather than approximate the cost
+    by stacking another glass ply onto a double-pane line.
+    """
+    triple_tokens = ("triple", "3 pane", "3-pane", "three pane", "three-pane")
+    exclude_tokens = ("window", "sash", "door", "skylight", "curtain wall")
+    for catalog in catalogs:
+        for term in TRIPLE_PANE_SEARCH_TERMS:
+            try:
+                resp = client.search_unit_costlines(
+                    release_id=release_id,
+                    catalog=catalog,
+                    location_id=location_id,
+                    labor_type=labor_type,
+                    measurement_system=measurement_system,
+                    search_term=term,
+                )
+            except Exception:
+                continue
+            items = ((resp or {}).get("unitLines") or {}).get("items") or []
+            for it in items:
+                _id = str(it.get("id", "")).strip()
+                desc_lower = str(it.get("description", "")).lower()
+                if not any(_id.startswith(p) for p in TRIPLE_PANE_GLAZING_DIVISION_PREFIXES):
+                    continue
+                if any(tok in desc_lower for tok in exclude_tokens):
+                    continue
+                if not any(tok in desc_lower for tok in triple_tokens):
+                    continue
+                op_total = float(((it.get("localizedCosts") or {}).get("totalOpCost") or 0.0))
+                if op_total <= 0.0:
+                    continue
+                return _id, str(it.get("description", "")), catalog
+    return None, None, None
+
+
 def _canonicalize_window_material_name(material_name: str, material: Optional[Dict[str, Any]] = None) -> str:
     """Normalize material naming variants before fallback resolution.
 
@@ -299,14 +378,13 @@ def _get_default_fallback_rsmeans_id(material_name: str, material: Optional[Dict
     ):
         return _get_double_pane_fallback_rsmeans_id(quantity_sf)
 
-    # Triple-pane glazing replacement: curated stand-in until a dedicated
-    # triple-pane line item is sourced. 084126100020 (Window wall, aluminum,
-    # stock, including glazing, minimum) is what API closest-match has
-    # historically chosen for 3-pane window glazing in this codebase
-    # (see tests/output/DOE_small_office_window_enhanced.osm fixtures).
-    # NOTE: must precede the 1-pane branch because pane descriptions also
-    # include "single-pane thickness ..." text describing the per-pane
-    # thickness regardless of pane count.
+    # Triple-pane glazing replacement: no curated fallback ID. The main
+    # search loop runs a dedicated RSMeans description search for a
+    # glazing-only triple-pane cost line and fails the material lookup if
+    # none is found, rather than approximating with a double-pane line.
+    # NOTE: this branch must still precede the 1-pane branch because pane
+    # descriptions also include "single-pane thickness ..." text describing
+    # the per-pane thickness regardless of pane count.
     if (
         "num pane 3" in name_norm
         or "triple pane" in name_norm
@@ -314,7 +392,7 @@ def _get_default_fallback_rsmeans_id(material_name: str, material: Optional[Dict
         or "3-pane" in description_norm
         or "triple" in description_norm
     ):
-        return "084126100020"
+        return None
 
     # Single-pane glazing replacement falls back to the secondary single-glazing
     # line item; there is no separate single-pane "primary" replacement line in
@@ -1940,6 +2018,44 @@ def search_materials_across_catalogs(
         sealant_requires_volume = material_name_norm in {"sealant", "caulking"}
         explicit_id_non_volume_uom_rejected = False
 
+        # Triple-pane glazing has no curated fallback. Run a dedicated
+        # RSMeans description search for a glazing-only triple-pane cost
+        # line; if no match is found, fail this material (do not stack a
+        # third glass ply onto a double-pane line). The measure leaves
+        # `rsmeans_id` blank for triple-pane glazing so this branch runs.
+        if not specified_id and _is_triple_pane_glazing(material_name, material):
+            _tp_id, _tp_desc, _tp_catalog = _search_triple_pane_glazing_costline_id(
+                client=client,
+                catalogs=catalogs,
+                release_id=release_id,
+                location_id=location_id,
+                labor_type=labor_type,
+                measurement_system=measurement_system,
+            )
+            if _tp_id:
+                specified_id = _tp_id
+                material["rsmeans_id"] = _tp_id
+                print(
+                    f"  Triple-pane glazing match: {_tp_id} | {_tp_desc} (catalog={_tp_catalog})"
+                )
+            else:
+                msg = (
+                    f"No RSMeans triple-pane glazing match found for: {material_name}. "
+                    "RSMeans does not currently catalog a glazing-only triple-pane "
+                    "insulating-glass cost line; supply a user-specified rsmeans_id "
+                    "or choose a different glazing option."
+                )
+                print(f"  {msg}")
+                errors.append(msg)
+                search_log.append({
+                    "material": material_name,
+                    "status": "no_triple_pane_match",
+                    "requested_unit": unit,
+                    "resolved_material_name": material_name_norm,
+                    "catalogs_searched": catalogs,
+                })
+                continue
+
         # For window frame, derive cost when direct frame RSMeans lines are not available:
         # frame_cost = window_unit_cost - glazing_cost.
         if not specified_id and _normalize_search_text(material_name) == "window frame":
@@ -2438,8 +2554,16 @@ def search_materials_across_catalogs(
                 match_type = "exact_id_match"
             elif chosen_source_type == "fallback":
                 match_type = "fallback_id"
-            _qty = float(material.get("quantity", 0.0) or 0.0)
-            _bare_unit = (float(best_total_material_cost or 0.0) / _qty) if _qty > 0.0 else 0.0
+            # Bare-material rate must pair with `bare_material_unit_basis`,
+            # which is the effective unit (e.g. CF for volume_from_area).
+            # Use total/unit_cost to recover the effective quantity rather
+            # than dividing by `material.quantity` (always source UOM).
+            _eff_qty = (
+                float(best_cost or 0.0) / float(best_unit_cost or 0.0)
+                if best_unit_cost and float(best_unit_cost) > 0.0
+                else float(material.get("quantity", 0.0) or 0.0)
+            )
+            _bare_unit = (float(best_total_material_cost or 0.0) / _eff_qty) if _eff_qty > 0.0 else 0.0
             _raw_comp = _extract_bare_components(best_match)
             _raw_unit_cost = float(_raw_comp.get("material", 0.0) or 0.0) + float(_raw_comp.get("labor", 0.0) or 0.0) + float(_raw_comp.get("equipment", 0.0) or 0.0)
             _raw_uom = _normalize_uom(best_match.get("unitOfMeasure", ""))

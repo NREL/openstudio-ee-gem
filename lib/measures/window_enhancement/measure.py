@@ -149,6 +149,14 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
         if fallback_id:
             return str(fallback_id).strip()
 
+        # Triple-pane glazing has no curated fallback. Return an empty string
+        # so the helper runs its dedicated triple-pane RSMeans search and
+        # fails the material lookup cleanly if no glazing-only triple-pane
+        # line exists (rather than approximating with a double-pane line).
+        is_triple_resolver = getattr(rsmeans_module, "_is_triple_pane_glazing", None)
+        if callable(is_triple_resolver) and is_triple_resolver(fallback_lookup_name, material_payload):
+            return ""
+
         raise ValueError(
             "No RSMeans ID available: user-specified ID and fallback ID are both missing. "
             f"material_name='{material_name}', payload_name='{payload_name}', payload_description='{payload_desc}'."
@@ -4252,6 +4260,13 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
                     runner.registerInfo(f"  Total cost with O&P: ${total_material_cost:,.2f}")
                     materials_results = rsmeans_lookup.get("results", {}).get("materials", [])
 
+                    # Surface helper-side per-material errors (e.g. triple-pane
+                    # glazing with no RSMeans match) so the user is alerted that
+                    # one or more materials were dropped from the cost roll-up.
+                    _rsmeans_errors = rsmeans_lookup.get("results", {}).get("errors", []) or []
+                    for _err_msg in _rsmeans_errors:
+                        runner.registerWarning(f"RSMeans: {_err_msg}")
+
                     if materials_results:
                         for mat in materials_results:
                             mat_name = str(mat.get("name", "")).strip().lower()
@@ -4328,14 +4343,12 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
                             _adj_mat_total += _m["total_cost"]
                             _adj_lab_total += _m["total_labor_cost"]
                             _adj_eq_total += _m["total_equipment_cost"]
-                        _ohp_pct = float(summary.get("overhead_profit_percent", 0.0))
                         total_material_cost = _adj_mat_total
                         total_labor_cost = _adj_lab_total
                         total_equipment_cost = _adj_eq_total
-                        total_overhead_profit_cost = (
-                            (_adj_mat_total + _adj_lab_total + _adj_eq_total)
-                            * _ohp_pct * 0.01
-                        )
+                        # RSMeans totalOpCost-derived components already include O&P;
+                        # no additional markup is layered on top.
+                        total_overhead_profit_cost = 0.0
                         summary["total_material_cost"] = total_material_cost
                         summary["total_labor_cost"] = total_labor_cost
                         summary["total_equipment_cost"] = total_equipment_cost
@@ -4344,7 +4357,6 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
                             total_material_cost
                             + total_labor_cost
                             + total_equipment_cost
-                            + total_overhead_profit_cost
                         )
                         runner.registerInfo(
                             f"RSMeans costs scaled by lifetime multipliers. "
@@ -4592,7 +4604,9 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
 
         factors_features.update({
             "window_cost_source": cost_source,
-            "window_overhead_profit_percent": overhead_profit_percent,
+            "window_overhead_profit_percent": (
+                0.0 if cost_source == "rsmeans_api" else overhead_profit_percent
+            ),
             "window_cost_factor_basis": cost_factor_basis,
         })
         if cost_source == "rsmeans_api":

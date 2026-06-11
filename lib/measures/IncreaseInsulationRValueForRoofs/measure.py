@@ -1642,7 +1642,10 @@ class IncreaseInsulationRValueForRoofs(openstudio.measure.ModelMeasure):
 
         # Facility bucket: emission/cost factors
         factors.setFeature("roof_insulation_cost_source", cost_source)
-        factors.setFeature("roof_insulation_overhead_profit_percent", overhead_profit_percent)
+        factors.setFeature(
+            "roof_insulation_overhead_profit_percent",
+            0.0 if cost_source == "rsmeans_api" else overhead_profit_percent,
+        )
         factors.setFeature("roof_insulation_cost_factor_basis", cost_factor_basis)
         if cost_source in ("custom_input", "custom_input_fallback"):
             factors.setFeature("roof_insulation_custom_labor_cost_multiplier", labor_cost_multiplier)
