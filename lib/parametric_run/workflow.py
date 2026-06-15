@@ -2058,7 +2058,7 @@ CUSTOM_COMBOS = [
         "door_infiltration_reduction_percent": 90.0,
         "door_bottom_seal_option": "automatic door bottom",
         "door_top_side_seal_option": "silicone adhesive smoke gasket",
-        "window_num_panes": 3,
+        "window_num_panes": 2,
         "window_infiltration_reduction_percent": 90.0,
         "weatherstrip_option": "silicone adhesive smoke gasket",
         "wf_option": "wood-aluminium window frame",

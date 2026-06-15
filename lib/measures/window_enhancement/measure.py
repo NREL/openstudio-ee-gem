@@ -408,9 +408,9 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
         user_num_panes.setDescription(
             "When glass option is not none, this is the number of glass panes to be installed as determined "
             "by user. Otherwise, the number of panes will be derived from the model. Valid values are 0, 1, "
-            "2, or 3. 0 means do not install any new glass panes. 1 means single pane, 2 means double pane, "
-            "and 3 means triple pane. If the value provided is more than 3, it will be changed to 3 because "
-            "currently the measure is unable to handle more complex scenarios due to the lack of EPD data.")
+            "or 2. 0 means do not install any new glass panes. 1 means single pane, 2 means double pane. "
+            "If the value provided is more than 2, it will be changed to 2 because "
+            "currently the measure is unable to handle more complex scenarios due to the lack of construction cost data.")
         user_num_panes.setDefaultValue(0) # 0 means do not install any new glass panes
         args.append(user_num_panes)
 
@@ -1288,10 +1288,10 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
             # Determine number of panes to be installed
             if is_simple_glazing and glass_option_for_this_window != "none":
                 # Accounting-only pane count for Simple Glazing: do not convert construction type.
-                if user_num_panes > 3:
-                    num_panes = 3
+                if user_num_panes > 2:
+                    num_panes = 2
                     runner.registerWarning(
-                        f"  ⚠ user_num_panes={user_num_panes} exceeds supported range; using 3 panes for cost/carbon accounting in {subsurface_name}."
+                        f"  ⚠ user_num_panes={user_num_panes} exceeds supported range; using 2 panes for cost/carbon accounting in {subsurface_name}."
                     )
                 elif user_num_panes > 0:
                     num_panes = user_num_panes
@@ -2119,11 +2119,11 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
         if glass_option == "none":
             return 0, True
 
-        if user_num_panes > 0 and user_num_panes <= 3:
+        if user_num_panes > 0 and user_num_panes <= 2:
             num_panes = user_num_panes
             runner.registerInfo(f"  ℹ Number of panes: {num_panes} (user-specified, applied to all windows)")
-        elif user_num_panes > 3:
-            num_panes = 3
+        elif user_num_panes > 2:
+            num_panes = 2
         elif glass_option != "none" and user_num_panes == 0:
             if layered_construction is None:
                 runner.registerError(f"Cannot derive number of panes from SimpleGlazing construction. Please specify num_panes explicitly.")
