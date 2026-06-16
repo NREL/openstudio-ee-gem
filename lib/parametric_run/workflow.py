@@ -1585,9 +1585,12 @@ def extract_scenario_data(osm_path, scenario_name):
         "door_density_kg_per_m3",
         "door_conductivity_W_per_mK",
         "door_enhancement_custom_labor_cost_multiplier",
-        "door_enhancement_custom_door_cost_per_area",
-        "door_enhancement_custom_bottom_seal_cost_per_lf",
-        "door_enhancement_custom_top_side_seal_cost_per_lf",
+        "door_custom_door_cost_per_sf",
+        "door_custom_bottom_seal_cost_per_lf",
+        "door_custom_top_side_seal_cost_per_lf",
+        "door_api_door_cost_per_sf",
+        "door_api_bottom_seal_cost_per_lf",
+        "door_api_top_side_seal_cost_per_lf",
     ]
     all_ap_sources = [
         model.getBuilding().additionalProperties(),
@@ -1611,6 +1614,31 @@ def extract_scenario_data(osm_path, scenario_name):
                 if val is not None:
                     results[key] = val
                     found_any = True
+
+    _legacy_door_unit_keys = {
+        "door_custom_door_cost_per_area",
+        "door_api_door_cost_per_area",
+        "door_api_bottom_seal_cost_per_m",
+        "door_api_top_side_seal_cost_per_m",
+    }
+    _new_door_unit_keys = {
+        "door_custom_door_cost_per_sf",
+        "door_api_door_cost_per_sf",
+        "door_api_bottom_seal_cost_per_lf",
+        "door_api_top_side_seal_cost_per_lf",
+    }
+    _legacy_key_found = any(key in results for key in _legacy_door_unit_keys)
+    _new_key_found = any(key in results for key in _new_door_unit_keys)
+    if _legacy_key_found and not _new_key_found:
+        print("Warning: Found legacy door unit-cost keys without new sf/lf keys in AdditionalProperties.")
+
+    for key in _new_door_unit_keys:
+        if key not in results:
+            continue
+        num_val = _safe_float(results.get(key))
+        if num_val is None or num_val < 0.0:
+            print(f"Warning: Invalid value for '{key}' in AdditionalProperties; treating as empty.")
+            results[key] = ""
 
     # Capture any remaining AdditionalProperties keys so new measure outputs
     # are automatically included in CSV without manual allowlist updates.
@@ -1651,14 +1679,7 @@ def extract_scenario_data(osm_path, scenario_name):
             + float(results.get("window_equipment_cost_$", 0.0) or 0.0)
             + float(results.get("window_overhead_profit_cost_$", 0.0) or 0.0)
         )
-    door_total = float(results.get("door_total_cost_with_overhead_and_profit_$", 0.0) or 0.0)
-    if door_total <= 0.0:
-        door_total = (
-            float(results.get("door_material_cost_$", 0.0) or 0.0)
-            + float(results.get("door_labor_cost_$", 0.0) or 0.0)
-            + float(results.get("door_equipment_cost_$", 0.0) or 0.0)
-            + float(results.get("door_overhead_profit_cost_$", 0.0) or 0.0)
-        )
+    door_total = float(results.get("door_enhancement_total_cost_with_overhead_and_profit_usd", 0.0) or 0.0)
     results["total_additional_construction_cost_usd"] = wall_total + roof_total + window_total + door_total
     results["total_construction_cost_usd"] = results["total_additional_construction_cost_usd"]
     # Total site energy (GJ): prefer Site AdditionalProperties; fallback to SQL tabular data
@@ -1832,9 +1853,12 @@ def generate_parametric_recap(target_path, city_climate_zones=None):
         "door_sealing_side_length_m",
         "door_enhancement_renovated_area_m2",
         "door_enhancement_custom_labor_cost_multiplier",
-        "door_enhancement_custom_door_cost_per_area",
-        "door_enhancement_custom_bottom_seal_cost_per_lf",
-        "door_enhancement_custom_top_side_seal_cost_per_lf",
+        "door_custom_door_cost_per_sf",
+        "door_custom_bottom_seal_cost_per_lf",
+        "door_custom_top_side_seal_cost_per_lf",
+        "door_api_door_cost_per_sf",
+        "door_api_bottom_seal_cost_per_lf",
+        "door_api_top_side_seal_cost_per_lf",
         "wall_insulation_embodied_carbon_kgCO2eq",
         "roof_insulation_embodied_carbon_kgCO2eq",
         "window_enhancement_embodied_carbon_kgCO2eq",

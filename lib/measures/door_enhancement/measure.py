@@ -2213,6 +2213,9 @@ class DoorEnhancement(openstudio.measure.ModelMeasure):
         door_rsmeans_bottom_pricing_unit_uom = "N/A"
         door_rsmeans_top_side_pricing_unit_cost = "N/A"
         door_rsmeans_top_side_pricing_unit_uom = "N/A"
+        door_rsmeans_cost_per_sf_feature_value = "N/A"
+        door_rsmeans_bottom_seal_cost_per_lf_feature_value = "N/A"
+        door_rsmeans_top_side_seal_cost_per_lf_feature_value = "N/A"
 
         if rsmeans_lookup is not None and rsmeans_lookup.get("status") == "ok":
             rsmeans_summary_dict = rsmeans_lookup.get("summary", {})
@@ -2306,6 +2309,41 @@ class DoorEnhancement(openstudio.measure.ModelMeasure):
                 if _top_side_unit_cost_per_m is not None and _top_side_unit_cost_per_m > 0.0:
                     door_rsmeans_top_side_seal_cost_per_m_feature_value = _top_side_unit_cost_per_m
 
+                def _safe_positive_float(raw_value):
+                    try:
+                        numeric_value = float(raw_value)
+                    except Exception:
+                        return None
+                    return numeric_value if numeric_value > 0.0 else None
+
+                _door_cost_per_m2_numeric = _safe_positive_float(door_rsmeans_cost_per_area_feature_value)
+                if _door_cost_per_m2_numeric is not None:
+                    door_rsmeans_cost_per_sf_feature_value = _door_cost_per_m2_numeric / 10.7639
+                elif door_rsmeans_cost_per_area_feature_value not in ["N/A", None, ""]:
+                    runner.registerWarning(
+                        "door_api_door_cost_per_sf not written because source door cost per m2 is invalid."
+                    )
+
+                _bottom_cost_per_m_numeric = _safe_positive_float(door_rsmeans_bottom_seal_cost_per_m_feature_value)
+                if _bottom_cost_per_m_numeric is not None:
+                    door_rsmeans_bottom_seal_cost_per_lf_feature_value = _bottom_cost_per_m_numeric / 3.28084
+                elif door_rsmeans_bottom_seal_cost_per_m_feature_value not in ["N/A", None, ""]:
+                    runner.registerWarning(
+                        "door_api_bottom_seal_cost_per_lf not written because source bottom seal cost per m is invalid."
+                    )
+
+                _top_side_cost_per_m_numeric = _safe_positive_float(door_rsmeans_top_side_seal_cost_per_m_feature_value)
+                if _top_side_cost_per_m_numeric is not None:
+                    door_rsmeans_top_side_seal_cost_per_lf_feature_value = _top_side_cost_per_m_numeric / 3.28084
+                elif door_rsmeans_top_side_seal_cost_per_m_feature_value not in ["N/A", None, ""]:
+                    runner.registerWarning(
+                        "door_api_top_side_seal_cost_per_lf not written because source top/side seal cost per m is invalid."
+                    )
+
+                runner.registerInfo(
+                    "Door API unit alignment applied (when numeric): door cost m2->sf, bottom seal m->lf, top/side seal m->lf."
+                )
+
             if cost_source_val == "custom_input":
                 cost_factor_basis = "custom_cost_per_area"
             elif rsmeans_area_cost_adjusted:
@@ -2329,15 +2367,17 @@ class DoorEnhancement(openstudio.measure.ModelMeasure):
                 0.0 if cost_source_val == "rsmeans_api" else rsmeans_overhead_percent,
             )
             factors.setFeature("door_cost_factor_basis", cost_factor_basis)
-            if cost_source_val in ("custom_input", "custom_input_fallback"):
+            # Custom AP fields are written only when user explicitly chooses
+            # the custom-cost pathway.
+            if use_custom_costs:
                 factors.setFeature("door_custom_labor_cost_multiplier", labor_cost_multiplier)
-                factors.setFeature("door_custom_door_cost_per_area", custom_door_cost_per_area)
+                factors.setFeature("door_custom_door_cost_per_sf", custom_door_cost_per_area)
                 factors.setFeature("door_custom_bottom_seal_cost_per_lf", custom_bottom_seal_cost)
                 factors.setFeature("door_custom_top_side_seal_cost_per_lf", custom_top_side_seal_cost)
             else:
-                factors.setFeature("door_api_door_cost_per_area", door_rsmeans_cost_per_area_feature_value)
-                factors.setFeature("door_api_bottom_seal_cost_per_m", door_rsmeans_bottom_seal_cost_per_m_feature_value)
-                factors.setFeature("door_api_top_side_seal_cost_per_m", door_rsmeans_top_side_seal_cost_per_m_feature_value)
+                factors.setFeature("door_api_door_cost_per_sf", door_rsmeans_cost_per_sf_feature_value)
+                factors.setFeature("door_api_bottom_seal_cost_per_lf", door_rsmeans_bottom_seal_cost_per_lf_feature_value)
+                factors.setFeature("door_api_top_side_seal_cost_per_lf", door_rsmeans_top_side_seal_cost_per_lf_feature_value)
                 factors.setFeature("door_api_door_pricing_unit_cost", door_rsmeans_door_pricing_unit_cost)
                 factors.setFeature("door_api_door_pricing_unit_uom", door_rsmeans_door_pricing_unit_uom)
                 factors.setFeature("door_api_bottom_seal_pricing_unit_cost", door_rsmeans_bottom_pricing_unit_cost)
