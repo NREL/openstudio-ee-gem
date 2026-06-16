@@ -49,7 +49,7 @@ def test_thickness_extraction():
             print(f"     → {result}")
         print()
     
-    return True
+    # If we reached here without exceptions, parsing checks are considered passed.
 
 
 def test_scoring():
@@ -83,10 +83,18 @@ def test_scoring():
     best, ranked = _select_best_rsmeans_candidate(material_name, mock_items)
     print(f"\nBest match: {best['description']}")
     print(f"Ranked alternatives:")
-    for i, (item, score) in enumerate(ranked[:3], 1):
-        print(f"  {i}. ({score:6.1f}) {item['description']}")
+    for i, entry in enumerate(ranked[:3], 1):
+        # Newer helpers return ranked entries as dicts; keep backward compatibility
+        # with older tuple-style `(item, score)` for local runs.
+        if isinstance(entry, dict):
+            score = float(entry.get("score", 0.0) or 0.0)
+            desc = entry.get("description", "")
+        else:
+            item, score = entry
+            desc = item.get("description", "") if isinstance(item, dict) else str(item)
+        print(f"  {i}. ({score:6.1f}) {desc}")
     
-    return True
+    assert best is not None
 
 
 def test_volume_conversion():
@@ -143,9 +151,9 @@ def test_volume_conversion():
         print(f"  (Expected ratio: 2.0x because thickness doubled)")
     else:
         print("✗ FAIL: Costs are identical - volume conversion not working!")
-        return False
-    
-    return True
+        assert False, "Volume conversion produced identical total costs"
+
+    assert result_thin['total_cost'] != result_thick['total_cost']
 
 
 def main():

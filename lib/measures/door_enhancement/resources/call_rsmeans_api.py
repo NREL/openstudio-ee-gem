@@ -78,6 +78,10 @@ _UOM_NORMALIZE = {
 }
 
 
+# Hardcoded conversion for silicone adhesive smoke gasket weatherstrip pricing.
+WEATHERSTRIP_SILICONE_LENGTH_FT_PER_EA = 12.0
+
+
 def _normalize_uom(uom: Any) -> str:
     """Normalize an RSMeans unitOfMeasure string to a canonical token."""
     if uom is None:
@@ -88,7 +92,62 @@ def _normalize_uom(uom: Any) -> str:
     return _UOM_NORMALIZE.get(text, text.upper().replace(".", "").replace(" ", ""))
 
 
-def _uom_compatible(requested_unit: Any, returned_uom: Any) -> bool:
+def _is_weatherstrip_like(material_name: Any, material_description: Any = "") -> bool:
+    text = _normalize_text(f"{material_name or ''} {material_description or ''}")
+    if "weatherstrip" in text or "weatherstripping" in text:
+        return True
+    if "smoke gasket" in text:
+        return True
+    return False
+
+
+def _lookup_unit_for_material(requested_unit: Any, material_name: Any, material_description: Any = "") -> Any:
+    req = _normalize_uom(requested_unit)
+    if _is_weatherstrip_like(material_name, material_description) and req == "LF":
+        return "EA"
+    return requested_unit
+
+
+def _convert_total_op_cost_unit(
+    total_op_cost: Any,
+    requested_unit: Any,
+    returned_uom: Any,
+    material_name: Any,
+    material_description: Any = "",
+) -> tuple:
+    """Convert totalOpCost to requested unit when safe and required.
+
+    Returns (effective_unit_cost, effective_uom, conversion_applied).
+    When conversion is impossible, returns (None, "", False).
+    """
+    unit_cost = float(total_op_cost or 0.0)
+    req = _normalize_uom(requested_unit)
+    ret = _normalize_uom(returned_uom)
+
+    if unit_cost <= 0.0:
+        return None, "", False
+    if not req or not ret or req == ret:
+        return unit_cost, (ret or req or str(returned_uom or "")), False
+
+    interchangeable = {"EA", "OPNG"}
+    if req in interchangeable and ret in interchangeable:
+        return unit_cost, req, False
+
+    if _is_weatherstrip_like(material_name, material_description):
+        if req == "LF" and ret == "EA":
+            return unit_cost / WEATHERSTRIP_SILICONE_LENGTH_FT_PER_EA, "LF", True
+        if req == "EA" and ret == "LF":
+            return unit_cost * WEATHERSTRIP_SILICONE_LENGTH_FT_PER_EA, "EA", True
+
+    return None, "", False
+
+
+def _uom_compatible(
+    requested_unit: Any,
+    returned_uom: Any,
+    material_name: Any = "",
+    material_description: Any = "",
+) -> bool:
     """Return True if a cost-line priced in ``returned_uom`` can be safely
     multiplied by a quantity expressed in ``requested_unit``.
 
@@ -109,7 +168,52 @@ def _uom_compatible(requested_unit: Any, returned_uom: Any) -> bool:
     interchangeable = {"EA", "OPNG"}
     if req in interchangeable and ret in interchangeable:
         return True
+    if _is_weatherstrip_like(material_name, material_description):
+        if req == "LF" and ret == "EA":
+            return True
+        if req == "EA" and ret == "LF":
+            return True
+        if req in interchangeable and ret == "LF":
+            return True
+        if ret in interchangeable and req == "LF":
+            return True
     return False
+
+
+def _effective_total_op_cost_for_material(
+    unit_cost: Any,
+    requested_unit: Any,
+    returned_uom: Any,
+    material_name: Any,
+    material_description: Any = "",
+) -> tuple:
+    """Return unit cost to use for totals with requested quantity units."""
+    converted_cost, converted_uom, converted = _convert_total_op_cost_unit(
+        total_op_cost=unit_cost,
+        requested_unit=requested_unit,
+        returned_uom=returned_uom,
+        material_name=material_name,
+        material_description=material_description,
+    )
+    if converted_cost is not None:
+        return converted_cost, converted_uom, converted
+    req = _normalize_uom(requested_unit)
+    return None, req or str(requested_unit or ""), False
+
+
+def _uom_for_material_result_basis(
+    requested_unit: Any,
+    returned_uom: Any,
+    material_name: Any,
+    material_description: Any = "",
+) -> str:
+    req = _normalize_uom(requested_unit)
+    ret = _normalize_uom(returned_uom)
+    if req:
+        return req
+    if ret:
+        return ret
+    return str(returned_uom or "")
 
 
 DOOR_FALLBACK_RSMEANS_IDS = {
@@ -392,13 +496,13 @@ def _extract_bare_components(item: Dict[str, Any]) -> Dict[str, Any]:
             "material": float(lc.get("materialOpCost", 0.0) or 0.0),
             "labor": float(lc.get("laborOpCost", 0.0) or 0.0),
             "equipment": float(lc.get("equipmentOpCost", 0.0) or 0.0),
-            "source": "op_components",
+            "source": "total_op_cost_primary",
         }
     return {
         "material": float(lc.get("totalOpCost", 0.0) or 0.0),
         "labor": 0.0,
         "equipment": 0.0,
-        "source": "total_op_cost_fallback",
+        "source": "total_op_cost_primary",
     }
 
 
@@ -1395,8 +1499,10 @@ def search_materials_across_catalogs(
     
     for material in materials:
         material_name = material.get("name", "unknown")
+        material_description = material.get("description", "")
         quantity = material.get("quantity", 1.0)
         unit = material.get("unit", "")
+        lookup_unit = _lookup_unit_for_material(unit, material_name, material_description)
         division_code = material.get("division_code")
         explicit_rsmeans_id = str(
             material.get("explicit_rsmeans_id")
@@ -1407,6 +1513,8 @@ def search_materials_across_catalogs(
         print("\n" + "-" * 70)
         print(f"RSMeans lookup for material: {material_name}")
         print(f"Quantity: {quantity} {unit} | Division: {division_code or 'auto'}")
+        if _normalize_uom(lookup_unit) != _normalize_uom(unit):
+            print(f"Lookup unit override for search: {lookup_unit} (requested {unit})")
         
         best_match = None
         best_cost = None
@@ -1437,7 +1545,7 @@ def search_materials_across_catalogs(
                             f"Rejecting to avoid cross-division contamination."
                         )
                         unit_cost = 0.0
-                    if unit_cost > 0 and not _uom_compatible(unit, line_uom):
+                    if unit_cost > 0 and not _uom_compatible(lookup_unit, line_uom, material_name, material_description):
                         warnings.append(
                             f"User-provided RSMeans ID {explicit_rsmeans_id} for '{material_name}' "
                             f"has UOM '{line_uom}' which is incompatible with requested unit '{unit}'. "
@@ -1445,19 +1553,32 @@ def search_materials_across_catalogs(
                         )
                         unit_cost = 0.0
                     if unit_cost > 0:
-                        total = unit_cost * quantity
+                        effective_unit_cost, effective_uom, _ = _effective_total_op_cost_for_material(
+                            unit_cost=unit_cost,
+                            requested_unit=unit,
+                            returned_uom=line_uom,
+                            material_name=material_name,
+                            material_description=material_description,
+                        )
+                        if effective_unit_cost is None:
+                            warnings.append(
+                                f"User-provided RSMeans ID {explicit_rsmeans_id} for '{material_name}' "
+                                f"cannot be converted from UOM '{line_uom}' to requested '{unit}'."
+                            )
+                            continue
+                        total = effective_unit_cost * quantity
                         _split = _split_total_by_bare(explicit_item, total)
                         all_results.append({
                             **material,
                             "catalog": catalog,
                             "search_term_used": "user_rsmeans_id",
-                            "unit_cost": unit_cost,
+                            "unit_cost": effective_unit_cost,
                             "total_cost": total,
                             "total_material_cost": _split["material"],
                             "total_labor_cost": _split["labor"],
                             "total_equipment_cost": _split["equipment"],
                             "bare_material_unit_cost": (float(_split["material"] or 0.0) / float(quantity or 1.0)) if float(quantity or 0.0) > 0.0 else 0.0,
-                            "bare_material_unit_basis": line_uom,
+                            "bare_material_unit_basis": _uom_for_material_result_basis(unit, line_uom, material_name, material_description),
                             "cost_component_source": _split["source"],
                             "rsmeans_id": explicit_item.get("id", explicit_rsmeans_id),
                             "rsmeans_description": explicit_item.get("description", ""),
@@ -1476,8 +1597,8 @@ def search_materials_across_catalogs(
                             "status": "explicit_id_match",
                             "explicit_rsmeans_id": explicit_rsmeans_id,
                             "catalog": catalog,
-                            "unit_cost": unit_cost,
-                            "unit_of_measure": line_uom,
+                            "unit_cost": effective_unit_cost,
+                            "unit_of_measure": effective_uom,
                             "quantity": quantity,
                             "total_cost": total,
                         })
@@ -1524,7 +1645,7 @@ def search_materials_across_catalogs(
                         f"Falling back to search logic."
                     )
                     unit_cost = 0.0
-                if unit_cost > 0 and not _uom_compatible(unit, line_uom):
+                if unit_cost > 0 and not _uom_compatible(lookup_unit, line_uom, material_name, material_description):
                     warnings.append(
                         f"Forced RSMeans ID {forced_fallback_id} for '{material_name}' "
                         f"has UOM '{line_uom}' incompatible with requested unit '{unit}'. "
@@ -1533,50 +1654,64 @@ def search_materials_across_catalogs(
                     unit_cost = 0.0
 
                 if unit_cost > 0:
-                    total = unit_cost * quantity
-                    _split = _split_total_by_bare(forced_item, total)
-                    all_results.append({
-                        **material,
-                        "catalog": forced_catalog,
-                        "search_term_used": "forced_fallback_rsmeans_id",
-                        "unit_cost": unit_cost,
-                        "total_cost": total,
-                        "total_material_cost": _split["material"],
-                        "total_labor_cost": _split["labor"],
-                        "total_equipment_cost": _split["equipment"],
-                        "bare_material_unit_cost": (float(_split["material"] or 0.0) / float(quantity or 1.0)) if float(quantity or 0.0) > 0.0 else 0.0,
-                        "bare_material_unit_basis": line_uom,
-                        "cost_component_source": _split["source"],
-                        "rsmeans_id": line_id,
-                        "rsmeans_description": forced_item.get("description", ""),
-                        "rsmeans_unit_of_measure": line_uom,
-                        "source": "rsmeans_forced_fallback_id",
-                        "match_type": "forced_fallback_id",
-                        "chosen_source_type": "forced_fallback",
-                    })
-                    _append_rsmeans_raw_log(
-                        material,
-                        forced_item,
-                        forced_catalog,
-                        "forced_fallback_rsmeans_id",
-                        "forced_fallback_rsmeans_id",
+                    effective_unit_cost, effective_uom, _ = _effective_total_op_cost_for_material(
+                        unit_cost=unit_cost,
+                        requested_unit=unit,
+                        returned_uom=line_uom,
+                        material_name=material_name,
+                        material_description=material_description,
                     )
-                    total_cost += total
-                    total_material_cost_bare += _split["material"]
-                    total_labor_cost_bare += _split["labor"]
-                    total_equipment_cost_bare += _split["equipment"]
-                    fallback_count += 1
-                    search_log.append({
-                        "material": material_name,
-                        "status": "forced_fallback_match",
-                        "forced_rsmeans_id": forced_fallback_id,
-                        "catalog": forced_catalog,
-                        "unit_cost": unit_cost,
-                        "unit_of_measure": line_uom,
-                        "quantity": quantity,
-                        "total_cost": total,
-                    })
-                    continue
+                    if effective_unit_cost is None:
+                        warnings.append(
+                            f"Forced RSMeans ID {forced_fallback_id} for '{material_name}' "
+                            f"cannot be converted from UOM '{line_uom}' to requested '{unit}'."
+                        )
+                        unit_cost = 0.0
+                    else:
+                        total = effective_unit_cost * quantity
+                        _split = _split_total_by_bare(forced_item, total)
+                        all_results.append({
+                            **material,
+                            "catalog": forced_catalog,
+                            "search_term_used": "forced_fallback_rsmeans_id",
+                            "unit_cost": effective_unit_cost,
+                            "total_cost": total,
+                            "total_material_cost": _split["material"],
+                            "total_labor_cost": _split["labor"],
+                            "total_equipment_cost": _split["equipment"],
+                            "bare_material_unit_cost": (float(_split["material"] or 0.0) / float(quantity or 1.0)) if float(quantity or 0.0) > 0.0 else 0.0,
+                            "bare_material_unit_basis": _uom_for_material_result_basis(unit, line_uom, material_name, material_description),
+                            "cost_component_source": _split["source"],
+                            "rsmeans_id": line_id,
+                            "rsmeans_description": forced_item.get("description", ""),
+                            "rsmeans_unit_of_measure": line_uom,
+                            "source": "rsmeans_forced_fallback_id",
+                            "match_type": "forced_fallback_id",
+                            "chosen_source_type": "forced_fallback",
+                        })
+                        _append_rsmeans_raw_log(
+                            material,
+                            forced_item,
+                            forced_catalog,
+                            "forced_fallback_rsmeans_id",
+                            "forced_fallback_rsmeans_id",
+                        )
+                        total_cost += total
+                        total_material_cost_bare += _split["material"]
+                        total_labor_cost_bare += _split["labor"]
+                        total_equipment_cost_bare += _split["equipment"]
+                        fallback_count += 1
+                        search_log.append({
+                            "material": material_name,
+                            "status": "forced_fallback_match",
+                            "forced_rsmeans_id": forced_fallback_id,
+                            "catalog": forced_catalog,
+                            "unit_cost": effective_unit_cost,
+                            "unit_of_measure": effective_uom,
+                            "quantity": quantity,
+                            "total_cost": total,
+                        })
+                        continue
                 warnings.append(
                     f"Forced RSMeans ID {forced_fallback_id} for '{material_name}' was found but unusable; falling back to search logic."
                 )
@@ -1640,7 +1775,7 @@ def search_materials_across_catalogs(
                                     "forced_fallback_costline_id": division_id,
                                     "candidate_scores": ranked_candidates[:5],
                                 })
-                        print(f"    ✓ Match: {match.get('description', '')} (id {division_id})")
+                        print(f"    [MATCH] {match.get('description', '')} (id {division_id})")
                         
                         # Get detailed cost data
                         cost_line = client.get_unit_costlines(
@@ -1669,7 +1804,7 @@ def search_materials_across_catalogs(
                                             "rsmeans_description": item.get("description", ""),
                                         })
                                         unit_cost = 0.0
-                                    if unit_cost > 0 and not _uom_compatible(unit, line_uom):
+                                    if unit_cost > 0 and not _uom_compatible(lookup_unit, line_uom, material_name, material_description):
                                         # Reject: skip this candidate and keep searching.
                                         search_log.append({
                                             "material": material_name,
@@ -1678,14 +1813,35 @@ def search_materials_across_catalogs(
                                             "division": alt_division,
                                             "status": "uom_incompatible",
                                             "unit_of_measure": line_uom,
-                                            "requested_unit": unit,
+                                            "requested_unit": lookup_unit,
                                             "rsmeans_id": division_id,
                                             "rsmeans_description": item.get("description", ""),
                                         })
                                         unit_cost = 0.0
                                     if unit_cost > 0:
+                                        effective_unit_cost, effective_uom, converted = _effective_total_op_cost_for_material(
+                                            unit_cost=unit_cost,
+                                            requested_unit=unit,
+                                            returned_uom=line_uom,
+                                            material_name=material_name,
+                                            material_description=material_description,
+                                        )
+                                        if effective_unit_cost is None:
+                                            search_log.append({
+                                                "material": material_name,
+                                                "search_term": alt_term,
+                                                "catalog": catalog,
+                                                "division": alt_division,
+                                                "status": "uom_conversion_failed",
+                                                "unit_of_measure": line_uom,
+                                                "requested_unit": unit,
+                                                "rsmeans_id": division_id,
+                                                "rsmeans_description": item.get("description", ""),
+                                            })
+                                            unit_cost = 0.0
+                                            continue
                                         best_match = item
-                                        best_cost = unit_cost * quantity
+                                        best_cost = effective_unit_cost * quantity
                                         best_catalog = catalog
                                         if _force_fallback_multi or match.get("is_fallback"):
                                             matched_term = "fallback_rsmeans_id"
@@ -1705,10 +1861,11 @@ def search_materials_across_catalogs(
                                             "catalog": catalog,
                                             "division": alt_division,
                                             "status": status_msg,
-                                            "unit_cost": unit_cost,
-                                            "unit_of_measure": line_uom,
+                                            "unit_cost": effective_unit_cost,
+                                            "unit_of_measure": effective_uom,
                                             "quantity": quantity,
                                             "total_cost": best_cost,
+                                            "conversion_applied": converted,
                                             "candidate_scores": ranked_candidates[:5],
                                         })
                                         break
@@ -1740,7 +1897,7 @@ def search_materials_across_catalogs(
                 **material,
                 "catalog": best_catalog,
                 "search_term_used": matched_term,
-                "unit_cost": best_match.get("localizedCosts", {}).get("totalOpCost", 0.0),
+                "unit_cost": (float(best_cost or 0.0) / float(quantity or 1.0)) if float(quantity or 0.0) > 0.0 else 0.0,
                 "total_cost": best_cost,
                 "rsmeans_id": best_match.get("id", ""),
                 "rsmeans_description": best_match.get("description", ""),
@@ -1749,11 +1906,11 @@ def search_materials_across_catalogs(
                 "match_type": "fallback_id" if best_source == "rsmeans_fallback_id" else "closest_match",
                 "chosen_source_type": "fallback" if best_source == "rsmeans_fallback_id" else "search",
                 "bare_material_unit_cost": _bare_unit,
-                "bare_material_unit_basis": best_match.get("unitOfMeasure", ""),
+                "bare_material_unit_basis": _uom_for_material_result_basis(unit, best_match.get("unitOfMeasure", ""), material_name, material_description),
                 "pricing_unit_cost_raw": _raw_unit_cost,
                 "pricing_unit_uom_raw": _raw_uom,
-                "pricing_unit_cost_effective": float(best_match.get("localizedCosts", {}).get("totalOpCost", 0.0) or 0.0),
-                "pricing_unit_uom_effective": _raw_uom,
+                "pricing_unit_cost_effective": (float(best_cost or 0.0) / float(quantity or 1.0)) if float(quantity or 0.0) > 0.0 else 0.0,
+                "pricing_unit_uom_effective": _uom_for_material_result_basis(unit, best_match.get("unitOfMeasure", ""), material_name, material_description),
                 "pricing_source": "rsmeans_direct" if float(best_match.get("localizedCosts", {}).get("totalOpCost", 0.0) or 0.0) > 0.0 else "unavailable",
             }
             material_result["total_material_cost"] = _split["material"]
@@ -1772,81 +1929,124 @@ def search_materials_across_catalogs(
                     f"Used fallback RSMeans ID {best_match.get('id', '')} for '{material_name}' due to candidate score bounds"
                 )
         else:
-            fallback_id = _get_default_fallback_rsmeans_id(
+            forced_fallback_id = _get_forced_fallback_rsmeans_id(
                 material_name,
                 material.get("description", ""),
             )
+            default_fallback_id = _get_default_fallback_rsmeans_id(
+                material_name,
+                material.get("description", ""),
+            )
+            fallback_chain: List[str] = []
+            if forced_fallback_id:
+                fallback_chain.append(forced_fallback_id)
+            if default_fallback_id and default_fallback_id not in fallback_chain:
+                fallback_chain.append(default_fallback_id)
+
             fallback_item = None
             fallback_catalog = None
+            chosen_fallback_id = None
+            fallback_division_blocked = False
+            fallback_uom_blocked = False
 
-            if fallback_id:
+            for candidate_fallback_id in fallback_chain:
+                candidate_item = None
+                candidate_catalog = None
                 for catalog in catalogs:
-                    fallback_item = _lookup_cost_item_by_rsmeans_id(
+                    candidate_item = _lookup_cost_item_by_rsmeans_id(
                         client=client,
-                        rsmeans_id=fallback_id,
+                        rsmeans_id=candidate_fallback_id,
                         catalog=catalog,
                         release_id=release_id,
                         location_id=location_id,
                         labor_type=labor_type,
                         measurement_system=measurement_system,
                     )
-                    if fallback_item:
-                        fallback_catalog = catalog
+                    if candidate_item:
+                        candidate_catalog = catalog
                         break
 
-            if fallback_item:
-                unit_cost = float(fallback_item.get("localizedCosts", {}).get("totalOpCost", 0.0) or 0.0)
-                line_uom = fallback_item.get("unitOfMeasure", "")
-                line_id = fallback_item.get("id", fallback_id)
+                if not candidate_item:
+                    continue
+
+                unit_cost = float(candidate_item.get("localizedCosts", {}).get("totalOpCost", 0.0) or 0.0)
+                line_uom = candidate_item.get("unitOfMeasure", "")
+                line_id = candidate_item.get("id", candidate_fallback_id)
+
                 if unit_cost > 0 and division_code and not _id_matches_division(line_id, division_code):
+                    fallback_division_blocked = True
                     warnings.append(
-                        f"Final fallback RSMeans ID {fallback_id} for '{material_name}' "
-                        f"resolved to id '{line_id}' outside division '{division_code}'. Skipping."
-                    )
-                    errors.append(
-                        f"No division-compatible RSMeans match found for: {material_name} (division {division_code})"
+                        f"Final fallback RSMeans ID {candidate_fallback_id} for '{material_name}' "
+                        f"resolved to id '{line_id}' outside division '{division_code}'. Trying next fallback."
                     )
                     search_log.append({
                         "material": material_name,
                         "status": "fallback_division_mismatch",
-                        "fallback_rsmeans_id": fallback_id,
-                        "catalog": fallback_catalog,
+                        "fallback_rsmeans_id": candidate_fallback_id,
+                        "catalog": candidate_catalog,
                         "requested_division": division_code,
                     })
                     continue
-                if unit_cost > 0 and not _uom_compatible(unit, line_uom):
+
+                if unit_cost > 0 and not _uom_compatible(lookup_unit, line_uom, material_name, material_description):
+                    fallback_uom_blocked = True
                     warnings.append(
-                        f"Final fallback RSMeans ID {fallback_id} for '{material_name}' "
-                        f"has UOM '{line_uom}' incompatible with requested unit '{unit}'. "
-                        f"Skipping cost assignment to avoid unit-mismatch errors."
-                    )
-                    errors.append(
-                        f"No UOM-compatible RSMeans match found for: {material_name} (requested {unit})"
+                        f"Final fallback RSMeans ID {candidate_fallback_id} for '{material_name}' "
+                        f"has UOM '{line_uom}' incompatible with requested lookup unit '{lookup_unit}'. Trying next fallback."
                     )
                     search_log.append({
                         "material": material_name,
                         "status": "fallback_uom_incompatible",
-                        "fallback_rsmeans_id": fallback_id,
+                        "fallback_rsmeans_id": candidate_fallback_id,
+                        "catalog": candidate_catalog,
+                        "unit_of_measure": line_uom,
+                        "requested_unit": unit,
+                    })
+                    continue
+
+                fallback_item = candidate_item
+                fallback_catalog = candidate_catalog
+                chosen_fallback_id = candidate_fallback_id
+                break
+
+            if fallback_item and chosen_fallback_id:
+                unit_cost = float(fallback_item.get("localizedCosts", {}).get("totalOpCost", 0.0) or 0.0)
+                line_uom = fallback_item.get("unitOfMeasure", "")
+                effective_unit_cost, effective_uom, _ = _effective_total_op_cost_for_material(
+                    unit_cost=unit_cost,
+                    requested_unit=unit,
+                    returned_uom=line_uom,
+                    material_name=material_name,
+                    material_description=material_description,
+                )
+                if effective_unit_cost is None:
+                    errors.append(
+                        f"No convertible RSMeans fallback found for: {material_name} (requested {unit}, matched {line_uom})"
+                    )
+                    search_log.append({
+                        "material": material_name,
+                        "status": "fallback_uom_conversion_failed",
+                        "fallback_rsmeans_id": chosen_fallback_id,
                         "catalog": fallback_catalog,
                         "unit_of_measure": line_uom,
                         "requested_unit": unit,
                     })
                     continue
-                total = unit_cost * quantity
+                total = effective_unit_cost * quantity
                 _split = _split_total_by_bare(fallback_item, total)
                 all_results.append({
                     **material,
                     "catalog": fallback_catalog,
                     "search_term_used": "fallback_rsmeans_id",
-                    "unit_cost": unit_cost,
+                    "unit_cost": effective_unit_cost,
                     "total_cost": total,
                     "total_material_cost": _split["material"],
                     "total_labor_cost": _split["labor"],
                     "total_equipment_cost": _split["equipment"],
                     "bare_material_unit_cost": (float(_split["material"] or 0.0) / float(quantity or 1.0)) if float(quantity or 0.0) > 0.0 else 0.0,
-                    "bare_material_unit_basis": line_uom,
+                    "bare_material_unit_basis": _uom_for_material_result_basis(unit, line_uom, material_name, material_description),
                     "cost_component_source": _split["source"],
-                    "rsmeans_id": fallback_item.get("id", fallback_id),
+                    "rsmeans_id": fallback_item.get("id", chosen_fallback_id),
                     "rsmeans_description": fallback_item.get("description", ""),
                     "rsmeans_unit_of_measure": line_uom,
                     "source": "rsmeans_fallback_id",
@@ -1859,29 +2059,36 @@ def search_materials_across_catalogs(
                 total_labor_cost_bare += _split["labor"]
                 total_equipment_cost_bare += _split["equipment"]
                 fallback_count += 1
-                warning_message = (
-                    f"Used fallback RSMeans ID {fallback_id} for '{material_name}' "
-                    f"after no direct search match"
+                warnings.append(
+                    f"Used fallback RSMeans ID {chosen_fallback_id} for '{material_name}' after no direct search match"
                 )
-                warnings.append(warning_message)
                 search_log.append({
                     "material": material_name,
                     "status": "fallback_match",
-                    "fallback_rsmeans_id": fallback_id,
+                    "fallback_rsmeans_id": chosen_fallback_id,
                     "catalog": fallback_catalog,
-                    "unit_cost": unit_cost,
-                    "unit_of_measure": line_uom,
+                    "unit_cost": effective_unit_cost,
+                    "unit_of_measure": effective_uom,
                     "quantity": quantity,
                     "total_cost": total,
                 })
             else:
-                errors.append(f"No RSMeans match found in any catalog for: {material_name}")
+                if fallback_division_blocked:
+                    errors.append(
+                        f"No division-compatible RSMeans match found for: {material_name} (division {division_code})"
+                    )
+                elif fallback_uom_blocked:
+                    errors.append(
+                        f"No UOM-compatible RSMeans match found for: {material_name} (requested {unit})"
+                    )
+                else:
+                    errors.append(f"No RSMeans match found in any catalog for: {material_name}")
                 search_log.append({
                     "material": material_name,
                     "status": "no_match",
                     "catalogs_searched": catalogs,
                     "alternatives_tried": len(search_alternatives),
-                    "fallback_rsmeans_id": fallback_id,
+                    "fallback_rsmeans_id": fallback_chain[0] if fallback_chain else None,
                 })
     
     return {

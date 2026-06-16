@@ -1558,13 +1558,17 @@ class DoorEnhancement(openstudio.measure.ModelMeasure):
                 else:
                     _side_qty = float(total_sealing_side_length_m * 3.28084)
                     _side_unit = "LF"
+                # Top/side seal division depends on selected material option.
+                # - jamb weatherstrip -> 0833
+                # - silicone adhesive smoke gasket -> 0871
+                _top_side_division = "0833" if str(door_top_side_seal_option).strip().lower() == "jamb weatherstrip" else "0871"
                 rsmeans_materials.append(
                     {
                         "name": f"door top side seal {door_top_side_seal_option}",
                         "description": f"Top/side seal material ({door_top_side_seal_option})",
                         "quantity": _side_qty,
                         "unit": _side_unit,
-                        "division_code": "0871",  # Door Hardware (incl. weatherstripping); avoid stray door/glass matches
+                        "division_code": _top_side_division,
                         "explicit_rsmeans_id": rsmeans_id_top_side_seal,
                     }
                 )

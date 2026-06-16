@@ -1,16 +1,16 @@
 
 OS:Version,
-  {9b550f55-9c8d-4082-baf1-b1191025fa7a}, !- Handle
-  3.11.0;                                 !- Version Identifier
+  {00df042c-d595-4c50-9eb9-269735a90008}, !- Handle
+  3.9.0;                                  !- Version Identifier
 
 OS:Schedule:Constant,
-  {22fed796-9f1d-4fc4-898d-980048a541c2}, !- Handle
+  {6172234c-a871-4069-9658-21dc3363c2cd}, !- Handle
   Always On Discrete,                     !- Name
-  {ba936e65-8d8a-44c3-ae0a-d1afe4646129}, !- Schedule Type Limits Name
+  {17458ee1-da7a-4efe-84bd-e97a63fa43af}, !- Schedule Type Limits Name
   1;                                      !- Value
 
 OS:ScheduleTypeLimits,
-  {ba936e65-8d8a-44c3-ae0a-d1afe4646129}, !- Handle
+  {17458ee1-da7a-4efe-84bd-e97a63fa43af}, !- Handle
   Always On Discrete Limits,              !- Name
   0,                                      !- Lower Limit Value
   1,                                      !- Upper Limit Value
@@ -7522,48 +7522,28 @@ OS:Output:Variable,
   hourly;                                 ! Reporting Frequency
 
 OS:People,
-  {b912ebe5-9036-4a1b-9943-43b405401312}, !- Handle
-  ASHRAE_189.1-2009_ClimateZone 1-3_LargeHotel_Banquet_PeopInst, !- Name
-  {69b3529f-6a0a-4fdc-94e4-7690a6ca4767}, !- People Definition Name
-  {a884fab3-af47-4b65-a74c-6bae35abf749}, !- Space or SpaceType Name
-  ,                                       !- Number of People Schedule Name
-  ,                                       !- Activity Level Schedule Name
-  ,                                       !- Surface Name/Angle Factor List Name
-  ,                                       !- Work Efficiency Schedule Name
-  ClothingInsulationSchedule;             !- Clothing Insulation Calculation Method
+  {b912ebe5-9036-4a1b-9943-43b405401312}, ! Handle
+  ASHRAE_189.1-2009_ClimateZone 1-3_LargeHotel_Banquet_PeopInst, ! Name
+  {69b3529f-6a0a-4fdc-94e4-7690a6ca4767}, ! People Definition Name
+  {a884fab3-af47-4b65-a74c-6bae35abf749}; ! Space or SpaceType Name
 
 OS:People,
-  {f077a84b-5e42-479b-96a5-62e46debcdbe}, !- Handle
-  ASHRAE_189.1-2009_ClimateZone 1-3_LargeHotel_Cafe_PeopInst, !- Name
-  {909c2897-04f1-4ad4-9841-e7a213abff2f}, !- People Definition Name
-  {0144628a-269a-47cd-920f-d481c9b1fcec}, !- Space or SpaceType Name
-  ,                                       !- Number of People Schedule Name
-  ,                                       !- Activity Level Schedule Name
-  ,                                       !- Surface Name/Angle Factor List Name
-  ,                                       !- Work Efficiency Schedule Name
-  ClothingInsulationSchedule;             !- Clothing Insulation Calculation Method
+  {f077a84b-5e42-479b-96a5-62e46debcdbe}, ! Handle
+  ASHRAE_189.1-2009_ClimateZone 1-3_LargeHotel_Cafe_PeopInst, ! Name
+  {909c2897-04f1-4ad4-9841-e7a213abff2f}, ! People Definition Name
+  {0144628a-269a-47cd-920f-d481c9b1fcec}; ! Space or SpaceType Name
 
 OS:People,
-  {3f16cb09-213f-4b09-b9c9-35a49dff38b3}, !- Handle
-  ASHRAE_189.1-2009_ClimateZone 1-3_LargeHotel_Lobby_PeopInst, !- Name
-  {670f9220-6d46-46c4-9ad7-47b23c0ac56c}, !- People Definition Name
-  {1de0b449-d869-41e7-823d-e00e41262f0e}, !- Space or SpaceType Name
-  ,                                       !- Number of People Schedule Name
-  ,                                       !- Activity Level Schedule Name
-  ,                                       !- Surface Name/Angle Factor List Name
-  ,                                       !- Work Efficiency Schedule Name
-  ClothingInsulationSchedule;             !- Clothing Insulation Calculation Method
+  {3f16cb09-213f-4b09-b9c9-35a49dff38b3}, ! Handle
+  ASHRAE_189.1-2009_ClimateZone 1-3_LargeHotel_Lobby_PeopInst, ! Name
+  {670f9220-6d46-46c4-9ad7-47b23c0ac56c}, ! People Definition Name
+  {1de0b449-d869-41e7-823d-e00e41262f0e}; ! Space or SpaceType Name
 
 OS:People,
-  {998c420e-ac83-4af5-b94c-f9acbed345cd}, !- Handle
-  ASHRAE_189.1-2009_ClimateZone 4-8_LargeHotel_GuestRoom_PeopInst, !- Name
-  {63edc983-19d4-4687-8b32-d40bd0c2ea69}, !- People Definition Name
-  {fdc1ec39-4cdf-4a87-a904-9f065ff19427}, !- Space or SpaceType Name
-  ,                                       !- Number of People Schedule Name
-  ,                                       !- Activity Level Schedule Name
-  ,                                       !- Surface Name/Angle Factor List Name
-  ,                                       !- Work Efficiency Schedule Name
-  ClothingInsulationSchedule;             !- Clothing Insulation Calculation Method
+  {998c420e-ac83-4af5-b94c-f9acbed345cd}, ! Handle
+  ASHRAE_189.1-2009_ClimateZone 4-8_LargeHotel_GuestRoom_PeopInst, ! Name
+  {63edc983-19d4-4687-8b32-d40bd0c2ea69}, ! People Definition Name
+  {fdc1ec39-4cdf-4a87-a904-9f065ff19427}; ! Space or SpaceType Name
 
 OS:People:Definition,
   {69b3529f-6a0a-4fdc-94e4-7690a6ca4767}, !- Handle
@@ -10101,68 +10081,64 @@ OS:SimulationControl,
   25;                                     ! Maximum Number of Warmup Days
 
 OS:SpaceInfiltration:DesignFlowRate,
-  {777d8163-60da-4c06-8b4e-ae1035a1774e}, !- Handle
-  ASHRAE_189.1-2009_ClimateZone 1-3_LargeHotel_Banquet_Infil 30.0 percent reduction, !- Name
-  {a884fab3-af47-4b65-a74c-6bae35abf749}, !- Space or SpaceType Name
-  ,                                       !- Schedule Name
-  AirChanges/Hour,                        !- Design Flow Rate Calculation Method
-  ,                                       !- Design Flow Rate {m3/s}
-  ,                                       !- Flow per Space Floor Area {m3/s-m2}
-  ,                                       !- Flow per Exterior Surface Area {m3/s-m2}
-  0.112,                                  !- Air Changes per Hour {1/hr}
-  ,                                       !- Constant Term Coefficient
-  ,                                       !- Temperature Term Coefficient
-  ,                                       !- Velocity Term Coefficient
-  ,                                       !- Velocity Squared Term Coefficient
-  Outdoor;                                !- Density Basis
+  {777d8163-60da-4c06-8b4e-ae1035a1774e}, ! Handle
+  ASHRAE_189.1-2009_ClimateZone 1-3_LargeHotel_Banquet_Infil 30.0 percent reduction, ! Name
+  {a884fab3-af47-4b65-a74c-6bae35abf749}, ! Space or SpaceType Name
+  ,                                       ! Schedule Name
+  AirChanges/Hour,                        ! Design Flow Rate Calculation Method
+  ,                                       ! Design Flow Rate
+  ,                                       ! Flow per Space Floor Area
+  ,                                       ! Flow per Exterior Surface Area
+  0.112,                                  ! Air Changes per Hour
+  ,                                       ! Constant Term Coefficient
+  ,                                       ! Temperature Term Coefficient
+  ,                                       ! Velocity Term Coefficient
+  ;                                       ! Velocity Squared Term Coefficient
 
 OS:SpaceInfiltration:DesignFlowRate,
-  {0d44c037-9b76-4fc6-bcda-d635ca1a7078}, !- Handle
-  ASHRAE_189.1-2009_ClimateZone 1-3_LargeHotel_Cafe_Infil 30.0 percent reduction, !- Name
-  {0144628a-269a-47cd-920f-d481c9b1fcec}, !- Space or SpaceType Name
-  ,                                       !- Schedule Name
-  AirChanges/Hour,                        !- Design Flow Rate Calculation Method
-  ,                                       !- Design Flow Rate {m3/s}
-  ,                                       !- Flow per Space Floor Area {m3/s-m2}
-  ,                                       !- Flow per Exterior Surface Area {m3/s-m2}
-  0.112,                                  !- Air Changes per Hour {1/hr}
-  ,                                       !- Constant Term Coefficient
-  ,                                       !- Temperature Term Coefficient
-  ,                                       !- Velocity Term Coefficient
-  ,                                       !- Velocity Squared Term Coefficient
-  Outdoor;                                !- Density Basis
+  {0d44c037-9b76-4fc6-bcda-d635ca1a7078}, ! Handle
+  ASHRAE_189.1-2009_ClimateZone 1-3_LargeHotel_Cafe_Infil 30.0 percent reduction, ! Name
+  {0144628a-269a-47cd-920f-d481c9b1fcec}, ! Space or SpaceType Name
+  ,                                       ! Schedule Name
+  AirChanges/Hour,                        ! Design Flow Rate Calculation Method
+  ,                                       ! Design Flow Rate
+  ,                                       ! Flow per Space Floor Area
+  ,                                       ! Flow per Exterior Surface Area
+  0.112,                                  ! Air Changes per Hour
+  ,                                       ! Constant Term Coefficient
+  ,                                       ! Temperature Term Coefficient
+  ,                                       ! Velocity Term Coefficient
+  ;                                       ! Velocity Squared Term Coefficient
 
 OS:SpaceInfiltration:DesignFlowRate,
-  {21aa7a9b-1c58-4905-8e54-42e0ae7c043c}, !- Handle
-  ASHRAE_189.1-2009_ClimateZone 1-3_LargeHotel_Lobby_Infil 30.0 percent reduction, !- Name
-  {1de0b449-d869-41e7-823d-e00e41262f0e}, !- Space or SpaceType Name
-  ,                                       !- Schedule Name
-  AirChanges/Hour,                        !- Design Flow Rate Calculation Method
-  ,                                       !- Design Flow Rate {m3/s}
-  ,                                       !- Flow per Space Floor Area {m3/s-m2}
-  ,                                       !- Flow per Exterior Surface Area {m3/s-m2}
-  0.112,                                  !- Air Changes per Hour {1/hr}
-  ,                                       !- Constant Term Coefficient
-  ,                                       !- Temperature Term Coefficient
-  ,                                       !- Velocity Term Coefficient
-  ,                                       !- Velocity Squared Term Coefficient
-  Outdoor;                                !- Density Basis
+  {21aa7a9b-1c58-4905-8e54-42e0ae7c043c}, ! Handle
+  ASHRAE_189.1-2009_ClimateZone 1-3_LargeHotel_Lobby_Infil 30.0 percent reduction, ! Name
+  {1de0b449-d869-41e7-823d-e00e41262f0e}, ! Space or SpaceType Name
+  ,                                       ! Schedule Name
+  AirChanges/Hour,                        ! Design Flow Rate Calculation Method
+  ,                                       ! Design Flow Rate
+  ,                                       ! Flow per Space Floor Area
+  ,                                       ! Flow per Exterior Surface Area
+  0.112,                                  ! Air Changes per Hour
+  ,                                       ! Constant Term Coefficient
+  ,                                       ! Temperature Term Coefficient
+  ,                                       ! Velocity Term Coefficient
+  ;                                       ! Velocity Squared Term Coefficient
 
 OS:SpaceInfiltration:DesignFlowRate,
-  {4674214a-884c-4ad5-8fb7-ef456b154652}, !- Handle
-  ASHRAE_189.1-2009_ClimateZone 4-8_LargeHotel_GuestRoom_Infil, !- Name
-  {fdc1ec39-4cdf-4a87-a904-9f065ff19427}, !- Space or SpaceType Name
-  ,                                       !- Schedule Name
-  AirChanges/Hour,                        !- Design Flow Rate Calculation Method
-  0,                                      !- Design Flow Rate {m3/s}
-  ,                                       !- Flow per Space Floor Area {m3/s-m2}
-  ,                                       !- Flow per Exterior Surface Area {m3/s-m2}
-  0.12,                                   !- Air Changes per Hour {1/hr}
-  ,                                       !- Constant Term Coefficient
-  ,                                       !- Temperature Term Coefficient
-  ,                                       !- Velocity Term Coefficient
-  ,                                       !- Velocity Squared Term Coefficient
-  Outdoor;                                !- Density Basis
+  {4674214a-884c-4ad5-8fb7-ef456b154652}, ! Handle
+  ASHRAE_189.1-2009_ClimateZone 4-8_LargeHotel_GuestRoom_Infil, ! Name
+  {fdc1ec39-4cdf-4a87-a904-9f065ff19427}, ! Space or SpaceType Name
+  ,                                       ! Schedule Name
+  AirChanges/Hour,                        ! Design Flow Rate Calculation Method
+  0,                                      ! Design Flow Rate
+  ,                                       ! Flow per Space Floor Area
+  ,                                       ! Flow per Exterior Surface Area
+  0.12,                                   ! Air Changes per Hour
+  ,                                       ! Constant Term Coefficient
+  ,                                       ! Temperature Term Coefficient
+  ,                                       ! Velocity Term Coefficient
+  ;                                       ! Velocity Squared Term Coefficient
 
 OS:SpaceType,
   {a884fab3-af47-4b65-a74c-6bae35abf749}, !- Handle
@@ -13808,7 +13784,7 @@ OS:ThermalZone,
   {f67692ec-98c9-4fcb-aa14-c24925ca9c37}, !- Zone Air Inlet Port List
   {da31c779-989a-432e-bc0e-d2e2c8490488}, !- Zone Air Exhaust Port List
   {75964a60-ddb2-4909-9546-3231bc7afc73}, !- Zone Air Node Name
-  {f9d5eaba-5339-4526-bb63-853a9fe04db0}, !- Zone Return Air Port List
+  {f98ed6ec-a390-4ad2-8a52-415b215a98f5}, !- Zone Return Air Port List
   ,                                       !- Primary Daylighting Control Name
   ,                                       !- Fraction of Zone Controlled by Primary Daylighting Control
   ,                                       !- Secondary Daylighting Control Name
@@ -13819,7 +13795,7 @@ OS:ThermalZone,
   No;                                     !- Use Ideal Air Loads
 
 OS:PortList,
-  {f9d5eaba-5339-4526-bb63-853a9fe04db0}, !- Handle
+  {f98ed6ec-a390-4ad2-8a52-415b215a98f5}, !- Handle
   {730a0d5f-2a84-49f2-8aca-3aa856964442}, !- HVAC Component
   ;                                       !- Port 1
 
@@ -13876,9 +13852,7 @@ OS:Sizing:Zone,
   ,                                       !- Design Zone Air Distribution Effectiveness in Heating Mode
   ,                                       !- Design Zone Secondary Recirculation Fraction {dimensionless}
   ,                                       !- Design Minimum Zone Ventilation Efficiency {dimensionless}
-  Coincident,                             !- Sizing Option
-  None,                                   !- Heating Coil Sizing Method
-  1;                                      !- Maximum Heating Capacity To Cooling Load Sizing Ratio {W/W}
+  Coincident;                             !- Sizing Option
 
 OS:ZoneHVAC:EquipmentList,
   {0995ae80-e138-4527-b0fb-3b510a82d5d1}, !- Handle
@@ -13906,7 +13880,7 @@ OS:ThermalZone,
   {0baf9e23-8e6e-4631-b4c7-9dc1ea95c281}, !- Zone Air Inlet Port List
   {218dfde9-9163-467a-b9ab-1828bae7e981}, !- Zone Air Exhaust Port List
   {4b843015-8d89-444c-8faa-01aad37f85b8}, !- Zone Air Node Name
-  {c9271b6d-40ea-46f8-b4cc-9bffdcec5930}, !- Zone Return Air Port List
+  {26e07cf5-5988-4456-a6b9-0178af84180c}, !- Zone Return Air Port List
   ,                                       !- Primary Daylighting Control Name
   ,                                       !- Fraction of Zone Controlled by Primary Daylighting Control
   ,                                       !- Secondary Daylighting Control Name
@@ -13917,7 +13891,7 @@ OS:ThermalZone,
   No;                                     !- Use Ideal Air Loads
 
 OS:PortList,
-  {c9271b6d-40ea-46f8-b4cc-9bffdcec5930}, !- Handle
+  {26e07cf5-5988-4456-a6b9-0178af84180c}, !- Handle
   {fb8e6946-ac33-400c-87e2-cb484f18fa42}, !- HVAC Component
   ;                                       !- Port 1
 
@@ -13974,9 +13948,7 @@ OS:Sizing:Zone,
   ,                                       !- Design Zone Air Distribution Effectiveness in Heating Mode
   ,                                       !- Design Zone Secondary Recirculation Fraction {dimensionless}
   ,                                       !- Design Minimum Zone Ventilation Efficiency {dimensionless}
-  Coincident,                             !- Sizing Option
-  None,                                   !- Heating Coil Sizing Method
-  1;                                      !- Maximum Heating Capacity To Cooling Load Sizing Ratio {W/W}
+  Coincident;                             !- Sizing Option
 
 OS:ZoneHVAC:EquipmentList,
   {0facef9e-3404-4a0a-ad50-b07c8088a044}, !- Handle
@@ -14004,7 +13976,7 @@ OS:ThermalZone,
   {2441c4f1-1d52-4c02-8b12-a5403bf334d3}, !- Zone Air Inlet Port List
   {d283501c-30c3-423d-bdc3-4640e4a118b7}, !- Zone Air Exhaust Port List
   {a616a7c3-6301-4809-aac2-13fe321f1fb1}, !- Zone Air Node Name
-  {58fa17aa-c22b-4c16-8eda-a56e5a87b725}, !- Zone Return Air Port List
+  {1d501bc7-3175-4e50-b50b-36ed6982a729}, !- Zone Return Air Port List
   ,                                       !- Primary Daylighting Control Name
   ,                                       !- Fraction of Zone Controlled by Primary Daylighting Control
   ,                                       !- Secondary Daylighting Control Name
@@ -14015,7 +13987,7 @@ OS:ThermalZone,
   No;                                     !- Use Ideal Air Loads
 
 OS:PortList,
-  {58fa17aa-c22b-4c16-8eda-a56e5a87b725}, !- Handle
+  {1d501bc7-3175-4e50-b50b-36ed6982a729}, !- Handle
   {05a7f872-0045-4ee5-8de5-d543bb2c7746}, !- HVAC Component
   ;                                       !- Port 1
 
@@ -14072,9 +14044,7 @@ OS:Sizing:Zone,
   ,                                       !- Design Zone Air Distribution Effectiveness in Heating Mode
   ,                                       !- Design Zone Secondary Recirculation Fraction {dimensionless}
   ,                                       !- Design Minimum Zone Ventilation Efficiency {dimensionless}
-  Coincident,                             !- Sizing Option
-  None,                                   !- Heating Coil Sizing Method
-  1;                                      !- Maximum Heating Capacity To Cooling Load Sizing Ratio {W/W}
+  Coincident;                             !- Sizing Option
 
 OS:ZoneHVAC:EquipmentList,
   {2e30fe7d-8176-4d43-bab9-ef1cbc09dcd4}, !- Handle
@@ -14102,7 +14072,7 @@ OS:ThermalZone,
   {316d17a6-9a04-492e-9c42-15b9ebccff06}, !- Zone Air Inlet Port List
   {b0f98a70-e8ce-49a0-9ead-5605d51176f1}, !- Zone Air Exhaust Port List
   {d2599b0f-612e-4f18-a46e-93b0276198aa}, !- Zone Air Node Name
-  {cdfc2c25-fb75-4733-8f2a-e1ab0089fa9e}, !- Zone Return Air Port List
+  {27d66911-477f-479d-bc56-8599a805e5ea}, !- Zone Return Air Port List
   ,                                       !- Primary Daylighting Control Name
   ,                                       !- Fraction of Zone Controlled by Primary Daylighting Control
   ,                                       !- Secondary Daylighting Control Name
@@ -14113,7 +14083,7 @@ OS:ThermalZone,
   No;                                     !- Use Ideal Air Loads
 
 OS:PortList,
-  {cdfc2c25-fb75-4733-8f2a-e1ab0089fa9e}, !- Handle
+  {27d66911-477f-479d-bc56-8599a805e5ea}, !- Handle
   {e9fb6424-8bb6-415d-8d63-04d1ad8d70d1}, !- HVAC Component
   ;                                       !- Port 1
 
@@ -14170,9 +14140,7 @@ OS:Sizing:Zone,
   ,                                       !- Design Zone Air Distribution Effectiveness in Heating Mode
   ,                                       !- Design Zone Secondary Recirculation Fraction {dimensionless}
   ,                                       !- Design Minimum Zone Ventilation Efficiency {dimensionless}
-  Coincident,                             !- Sizing Option
-  None,                                   !- Heating Coil Sizing Method
-  1;                                      !- Maximum Heating Capacity To Cooling Load Sizing Ratio {W/W}
+  Coincident;                             !- Sizing Option
 
 OS:ZoneHVAC:EquipmentList,
   {75d200a3-3564-4c8d-bf3e-f5f8db217152}, !- Handle
@@ -14408,7 +14376,7 @@ OS:SubSurface,
   {5ea6d469-5a95-4b07-b80f-9487863aff7d}, !- Handle
   Sub Surface 2,                          !- Name
   Door,                                   !- Sub Surface Type
-  {865aea12-e246-4b51-b06e-e1dc28159d19}, !- Construction Name
+  {f5bd673a-a164-45ff-acac-60db265453dd}, !- Construction Name
   {93f57866-ae75-4a92-b768-292e81d968b3}, !- Surface Name
   ,                                       !- Outside Boundary Condition Object
   ,                                       !- View Factor to Ground
@@ -14517,13 +14485,13 @@ OS:Building,
   ;                                       !- Default Schedule Set Name
 
 OS:Construction,
-  {865aea12-e246-4b51-b06e-e1dc28159d19}, ! Handle
+  {f5bd673a-a164-45ff-acac-60db265453dd}, ! Handle
   000_Exterior Door - polystyrene core steel door R-0.43, ! Name
   {5a66d4b6-907e-49fb-a958-11262e4c09a5}, ! Surface Rendering Name
-  {1e39a23e-621e-4880-aa09-85b5f3eea28c}; !- Layer 1
+  {e6d92e20-8d54-4532-b8f3-2dd50733f8e3}; !- Layer 1
 
 OS:Material,
-  {1e39a23e-621e-4880-aa09-85b5f3eea28c}, !- Handle
+  {e6d92e20-8d54-4532-b8f3-2dd50733f8e3}, !- Handle
   polystyrene core steel door R-0.43,     !- Name
   Smooth,                                 !- Roughness
   0.04445,                                !- Thickness {m}
@@ -14532,20 +14500,26 @@ OS:Material,
   1000;                                   !- Specific Heat {J/kg-K}
 
 OS:AdditionalProperties,
-  {15b98ba5-14d8-4b35-98f1-1e8558229072}, !- Handle
+  {6e752313-f50b-4c9c-9ca0-5b652bb4e633}, !- Handle
   {a3a51906-9a84-471c-8162-778785896008}, !- Object Name
-  door_enhancement_measure_name,          !- Feature Name 1
+  door_measure_name,                      !- Feature Name 1
   String,                                 !- Feature Data Type 1
-  Door Enhancement,                       !- Feature Value 1
-  door_enhancement_analysis_period_years, !- Feature Name 2
+  Door Enhancement for Infiltration Reduction, !- Feature Value 1
+  door_analysis_period_years,             !- Feature Name 2
   Integer,                                !- Feature Data Type 2
   30,                                     !- Feature Value 2
-  door_enhancement_gwp_statistic,         !- Feature Name 3
+  door_gwp_statistic,                     !- Feature Name 3
   String,                                 !- Feature Data Type 3
-  median;                                 !- Feature Value 3
+  median,                                 !- Feature Value 3
+  door_gwp_source,                        !- Feature Name 4
+  String,                                 !- Feature Data Type 4
+  ec3,                                    !- Feature Value 4
+  door_construction_names,                !- Feature Name 5
+  String,                                 !- Feature Data Type 5
+  000_Exterior Door - polystyrene core steel door R-0.43; !- Feature Value 5
 
 OS:Site,
-  {e9637af1-f37c-471e-917e-288364a01e74}, !- Handle
+  {730f1014-e77e-4c26-b944-b8e2cfbe258a}, !- Handle
   Site 1,                                 !- Name
   ,                                       !- Latitude {deg}
   ,                                       !- Longitude {deg}
@@ -14554,35 +14528,44 @@ OS:Site,
   ;                                       !- Terrain
 
 OS:AdditionalProperties,
-  {4c865211-1d43-4bb6-a882-344a9e006c49}, !- Handle
-  {e9637af1-f37c-471e-917e-288364a01e74}, !- Object Name
-  door_enhancement_door_area_per_unit_m2, !- Feature Name 1
-  Double,                                 !- Feature Data Type 1
-  1.95,                                   !- Feature Value 1
-  door_enhancement_infiltration_reduction_percent, !- Feature Name 2
+  {1847c39e-245d-4bfb-baf7-829aa5d49943}, !- Handle
+  {730f1014-e77e-4c26-b944-b8e2cfbe258a}, !- Object Name
+  door_processed_door_count,              !- Feature Name 1
+  Integer,                                !- Feature Data Type 1
+  1,                                      !- Feature Value 1
+  door_area_per_unit_m2,                  !- Feature Name 2
   Double,                                 !- Feature Data Type 2
-  30,                                     !- Feature Value 2
-  door_bottom_seal_option,                !- Feature Name 3
-  String,                                 !- Feature Data Type 3
-  automatic door bottom,                  !- Feature Value 3
-  door_top_side_seal_option,              !- Feature Name 4
+  1.95,                                   !- Feature Value 2
+  door_infiltration_reduction_percent,    !- Feature Name 3
+  Double,                                 !- Feature Data Type 3
+  30,                                     !- Feature Value 3
+  door_bottom_seal_option,                !- Feature Name 4
   String,                                 !- Feature Data Type 4
-  jamb weatherstrip,                      !- Feature Value 4
-  door_option,                            !- Feature Name 5
-  String,                                 !- Feature Data Type 5
-  polystyrene core steel door,            !- Feature Value 5
-  total_renovated_door_area_m2,           !- Feature Name 6
-  Double,                                 !- Feature Data Type 6
-  3.6865551268749956,                     !- Feature Value 6
-  total_doors_processed_count,            !- Feature Name 7
-  Integer,                                !- Feature Data Type 7
-  1,                                      !- Feature Value 7
-  total_doors_with_r_value_change_count,  !- Feature Name 8
-  Integer,                                !- Feature Data Type 8
-  1;                                      !- Feature Value 8
+  automatic door bottom,                  !- Feature Value 4
+  door_sealing_bottom_length_m,           !- Feature Name 5
+  Double,                                 !- Feature Data Type 5
+  1.593849999999998,                      !- Feature Value 5
+  door_top_side_seal_option,              !- Feature Name 6
+  String,                                 !- Feature Data Type 6
+  jamb weatherstrip,                      !- Feature Value 6
+  door_sealing_side_length_m,             !- Feature Name 7
+  Double,                                 !- Feature Data Type 7
+  6.2198249999999984,                     !- Feature Value 7
+  door_option,                            !- Feature Name 8
+  String,                                 !- Feature Data Type 8
+  polystyrene core steel door,            !- Feature Value 8
+  door_renovated_area_m2,                 !- Feature Name 9
+  Double,                                 !- Feature Data Type 9
+  3.6865551268749956,                     !- Feature Value 9
+  door_summary_notes,                     !- Feature Name 10
+  String,                                 !- Feature Data Type 10
+  door enhancement successfully completed&#33, !- Feature Value 10
+  total_doors_with_r_value_change_count,  !- Feature Name 11
+  Integer,                                !- Feature Data Type 11
+  1;                                      !- Feature Value 11
 
 OS:AdditionalProperties,
-  {4c44c1fb-323b-4b95-8275-9ecb58893014}, !- Handle
+  {c1d729cf-9c06-4b31-8e1a-99b55cb9c2bd}, !- Handle
   {15eb8824-a9d4-470a-ae72-e2de57af7224}, !- Object Name
   door_gwp_per_m2_kgCO2eq,                !- Feature Name 1
   Double,                                 !- Feature Data Type 1
@@ -14596,25 +14579,70 @@ OS:AdditionalProperties,
   door_side_seal_gwp_per_m_kgCO2eq,       !- Feature Name 4
   Double,                                 !- Feature Data Type 4
   1.0306890561667632,                     !- Feature Value 4
-  door_enhancement_cost_source,           !- Feature Name 5
+  door_cost_source,                       !- Feature Name 5
   String,                                 !- Feature Data Type 5
-  none,                                   !- Feature Value 5
-  door_enhancement_cost_factor_basis,     !- Feature Name 6
-  String,                                 !- Feature Data Type 6
-  not_calculated,                         !- Feature Value 6
-  door_enhancement_overhead_profit_percent, !- Feature Name 7
-  Double,                                 !- Feature Data Type 7
-  0;                                      !- Feature Value 7
+  custom_input_fallback,                  !- Feature Value 5
+  door_overhead_profit_percent,           !- Feature Name 6
+  Double,                                 !- Feature Data Type 6
+  0,                                      !- Feature Value 6
+  door_cost_factor_basis,                 !- Feature Name 7
+  String,                                 !- Feature Data Type 7
+  not_calculated,                         !- Feature Value 7
+  door_api_door_cost_per_sf,              !- Feature Name 8
+  String,                                 !- Feature Data Type 8
+  N/A,                                    !- Feature Value 8
+  door_api_bottom_seal_cost_per_lf,       !- Feature Name 9
+  String,                                 !- Feature Data Type 9
+  N/A,                                    !- Feature Value 9
+  door_api_top_side_seal_cost_per_lf,     !- Feature Name 10
+  String,                                 !- Feature Data Type 10
+  N/A,                                    !- Feature Value 10
+  door_api_door_pricing_unit_cost,        !- Feature Name 11
+  String,                                 !- Feature Data Type 11
+  N/A,                                    !- Feature Value 11
+  door_api_door_pricing_unit_uom,         !- Feature Name 12
+  String,                                 !- Feature Data Type 12
+  N/A,                                    !- Feature Value 12
+  door_api_bottom_seal_pricing_unit_cost, !- Feature Name 13
+  String,                                 !- Feature Data Type 13
+  N/A,                                    !- Feature Value 13
+  door_api_bottom_seal_pricing_unit_uom,  !- Feature Name 14
+  String,                                 !- Feature Data Type 14
+  N/A,                                    !- Feature Value 14
+  door_api_top_side_seal_pricing_unit_cost, !- Feature Name 15
+  String,                                 !- Feature Data Type 15
+  N/A,                                    !- Feature Value 15
+  door_api_top_side_seal_pricing_unit_uom, !- Feature Name 16
+  String,                                 !- Feature Data Type 16
+  N/A;                                    !- Feature Value 16
 
 OS:AdditionalProperties,
-  {4abf1801-ef50-4f6b-a2fa-d863b27443a7}, !- Handle
+  {dec04940-2977-49a6-946f-d6f7645edc63}, !- Handle
   {66abed62-fb16-459b-8977-92e5a456d780}, !- Object Name
-  door_enhancement_embodied_carbon_kg,    !- Feature Name 1
+  door_embodied_carbon_kgCO2eq,           !- Feature Name 1
   Double,                                 !- Feature Data Type 1
-  246.81948434681809;                     !- Feature Value 1
+  246.81948434681809,                     !- Feature Value 1
+  door_material_cost_$,                   !- Feature Name 2
+  Double,                                 !- Feature Data Type 2
+  13330.79278304774,                      !- Feature Value 2
+  door_labor_cost_$,                      !- Feature Name 3
+  Double,                                 !- Feature Data Type 3
+  0,                                      !- Feature Value 3
+  door_equipment_cost_$,                  !- Feature Name 4
+  Double,                                 !- Feature Data Type 4
+  0,                                      !- Feature Value 4
+  door_overhead_profit_cost_$,            !- Feature Name 5
+  Double,                                 !- Feature Data Type 5
+  0,                                      !- Feature Value 5
+  door_total_cost_with_overhead_and_profit_$, !- Feature Name 6
+  Double,                                 !- Feature Data Type 6
+  13330.79278304774,                      !- Feature Value 6
+  door_cost_factor_basis,                 !- Feature Name 7
+  String,                                 !- Feature Data Type 7
+  not_calculated;                         !- Feature Value 7
 
 OS:AdditionalProperties,
-  {3c76fe52-edbe-4157-a1c5-76d0039c1659}, !- Handle
+  {d852532e-3dbc-425f-bdb3-da92d4c42410}, !- Handle
   {2b98a315-74ad-44f0-9095-4e4346d5f882}, !- Object Name
   door_strip_lifetime_years,              !- Feature Name 1
   Integer,                                !- Feature Data Type 1
@@ -14640,23 +14668,4 @@ OS:AdditionalProperties,
   door_top_side_seal_length_per_unit_m,   !- Feature Name 8
   Double,                                 !- Feature Data Type 8
   5.181;                                  !- Feature Value 8
-
-OS:AdditionalProperties,
-  {f70fd327-68f5-42a1-b75c-ba3e4041ad76}, !- Handle
-  {5ea6d469-5a95-4b07-b80f-9487863aff7d}, !- Object Name
-  door_enhancement_renovated_door_area_m2, !- Feature Name 1
-  Double,                                 !- Feature Data Type 1
-  3.6865551268749956,                     !- Feature Value 1
-  door_enhancement_renovated_embodied_carbon_kgCO2eq, !- Feature Name 2
-  Double,                                 !- Feature Data Type 2
-  246.81948434681809,                     !- Feature Value 2
-  door_enhancement_door_material_type,    !- Feature Name 3
-  String,                                 !- Feature Data Type 3
-  polystyrene core steel door,            !- Feature Value 3
-  door_enhancement_bottom_seal_material_type, !- Feature Name 4
-  String,                                 !- Feature Data Type 4
-  automatic door bottom,                  !- Feature Value 4
-  door_enhancement_top_side_seal_material_type, !- Feature Name 5
-  String,                                 !- Feature Data Type 5
-  jamb weatherstrip;                      !- Feature Value 5
 

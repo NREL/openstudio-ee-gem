@@ -1,8 +1,8 @@
 {
   "measure": "DoorEnhancement",
   "success": true,
-  "cost_source": "none",
-  "cost_factor_basis": "not_calculated",
+  "cost_source": "not_found",
+  "cost_factor_basis": "not_found",
   "step_values": {
     "space_type": "{a3a51906-9a84-471c-8162-778785896008}",
     "space_infiltration_reduction_percent": 30.0,
@@ -22,23 +22,45 @@
     "door_density": 0.0,
     "door_thickness": 0.0,
     "use_custom_costs": false,
-    "custom_door_cost_per_area": 3500.0,
-    "custom_bottom_seal_cost": 45.5,
-    "custom_top_side_seal_cost": 22.75,
-    "rsmeans_unit_costline_id": ""
+    "custom_door_cost_per_area": 325.16,
+    "custom_bottom_seal_cost": 13.87,
+    "custom_top_side_seal_cost": 6.93,
+    "labor_cost_multiplier": 1.0,
+    "overhead_profit_percent": 0.0,
+    "rsmeans_unit_costline_id": "",
+    "rsmeans_id_top_side_seal": "",
+    "use_custom_gwp": false,
+    "custom_door_leaf_gwp_per_m2": 0.0,
+    "custom_bottom_strip_gwp_per_m": 0.0,
+    "custom_side_top_strip_gwp_per_m": 0.0
   },
   "doors_in_model": 1,
-  "additional_properties_count": 22,
+  "additional_properties_count": 42,
   "additional_properties_sample": [
     {
       "bucket": "Building",
-      "property": "door_enhancement_gwp_statistic",
+      "property": "door_construction_names",
+      "value": "000_Exterior Door - polystyrene core steel door R-0.43"
+    },
+    {
+      "bucket": "Building",
+      "property": "door_gwp_source",
+      "value": "ec3"
+    },
+    {
+      "bucket": "Building",
+      "property": "door_gwp_statistic",
       "value": "median"
     },
     {
       "bucket": "Building",
-      "property": "door_enhancement_measure_name",
-      "value": "Door Enhancement"
+      "property": "door_measure_name",
+      "value": "Door Enhancement for Infiltration Reduction"
+    },
+    {
+      "bucket": "Site",
+      "property": "door_area_per_unit_m2",
+      "value": 1.95
     },
     {
       "bucket": "Site",
@@ -47,12 +69,7 @@
     },
     {
       "bucket": "Site",
-      "property": "door_enhancement_door_area_per_unit_m2",
-      "value": 1.95
-    },
-    {
-      "bucket": "Site",
-      "property": "door_enhancement_infiltration_reduction_percent",
+      "property": "door_infiltration_reduction_percent",
       "value": 30.0
     },
     {
@@ -62,48 +79,38 @@
     },
     {
       "bucket": "Site",
+      "property": "door_renovated_area_m2",
+      "value": 3.6865551268749956
+    },
+    {
+      "bucket": "Site",
+      "property": "door_sealing_bottom_length_m",
+      "value": 1.593849999999998
+    },
+    {
+      "bucket": "Site",
+      "property": "door_sealing_side_length_m",
+      "value": 6.219824999999998
+    },
+    {
+      "bucket": "Site",
+      "property": "door_summary_notes",
+      "value": "door enhancement successfully completed!"
+    },
+    {
+      "bucket": "Site",
       "property": "door_top_side_seal_option",
       "value": "jamb weatherstrip"
     },
     {
-      "bucket": "Site",
-      "property": "total_renovated_door_area_m2",
-      "value": 3.6865551268749956
+      "bucket": "Facility",
+      "property": "door_api_bottom_seal_cost_per_lf",
+      "value": "N/A"
     },
     {
       "bucket": "Facility",
-      "property": "door_bottom_seal_gwp_per_m_kgCO2eq",
-      "value": 5.796150481189851
-    },
-    {
-      "bucket": "Facility",
-      "property": "door_enhancement_cost_factor_basis",
-      "value": "not_calculated"
-    },
-    {
-      "bucket": "Facility",
-      "property": "door_enhancement_cost_source",
-      "value": "none"
-    },
-    {
-      "bucket": "Facility",
-      "property": "door_enhancement_overhead_profit_percent",
-      "value": 0.0
-    },
-    {
-      "bucket": "Facility",
-      "property": "door_gwp_per_m2_kgCO2eq",
-      "value": 58.46153846153846
-    },
-    {
-      "bucket": "Facility",
-      "property": "door_gwp_per_unit_kgCO2eq",
-      "value": 114.0
-    },
-    {
-      "bucket": "Facility",
-      "property": "door_side_seal_gwp_per_m_kgCO2eq",
-      "value": 1.0306890561667632
+      "property": "door_api_bottom_seal_pricing_unit_cost",
+      "value": "N/A"
     }
   ]
 }
