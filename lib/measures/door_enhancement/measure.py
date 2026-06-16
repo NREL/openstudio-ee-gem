@@ -2242,12 +2242,19 @@ class DoorEnhancement(openstudio.measure.ModelMeasure):
                 _door_unit_cost_per_m2 = None
                 _bottom_unit_cost_per_m = None
                 _top_side_unit_cost_per_m = None
+                def _normalize_uom(uom_value):
+                    return str(uom_value or "").upper().replace(" ", "").replace(".", "")
                 for mat in matched_mats:
                     _mat_name = str(mat.get("name", "")).lower()
-                    _basis = str(mat.get("bare_material_unit_basis", mat.get("unit_cost_basis", mat.get("rsmeans_unit_of_measure", mat.get("unit", ""))))).upper().replace(" ", "")
+                    _basis = _normalize_uom(
+                        mat.get(
+                            "bare_material_unit_basis",
+                            mat.get("unit_cost_basis", mat.get("rsmeans_unit_of_measure", mat.get("unit", ""))),
+                        )
+                    )
                     _bare_unit = float(mat.get("bare_material_unit_cost", 0.0) or 0.0)
                     _pricing_raw = float(mat.get("pricing_unit_cost_raw", 0.0) or 0.0)
-                    _pricing_raw_uom = str(mat.get("pricing_unit_uom_raw", "")).upper().replace(" ", "")
+                    _pricing_raw_uom = _normalize_uom(mat.get("pricing_unit_uom_raw", ""))
                     if "door" in _mat_name and "seal" not in _mat_name:
                         if _pricing_raw > 0.0 and _pricing_raw_uom:
                             door_rsmeans_door_pricing_unit_cost = _pricing_raw
