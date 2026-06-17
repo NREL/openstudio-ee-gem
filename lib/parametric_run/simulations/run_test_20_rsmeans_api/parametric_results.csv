@@ -42,8 +42,8 @@ door_conductivity_W_per_mK,,,,0.104
 door_sealing_bottom_length_m,,3.6587999999999976,3.6587999999999976,3.6587999999999976
 door_sealing_side_length_m,,16.461199999999998,16.461199999999998,16.461199999999998
 door_api_door_cost_per_sf,,,,34.12503302429596
-door_api_bottom_seal_cost_per_lf,,69.59999777280008,22.99999926400002,203.99999347200023
-door_api_top_side_seal_cost_per_lf,,2.0472958233110847,22.999999264000028,22.999999264000028
+door_api_bottom_seal_cost_per_lf,,69.59999777280008,22.999999264000028,203.99999347200023
+door_api_top_side_seal_cost_per_lf,,2.9,22.999999264000028,22.999999264000028
 wall_insulation_embodied_carbon_kgCO2eq,,0.0,0.0,0.0
 roof_insulation_embodied_carbon_kgCO2eq,,0.0,0.0,0.0
 wall_insulation_total_cost_with_overhead_and_profit_usd,,2664.4696463692353,1230.4264851683256,2818.0132418672747
@@ -71,20 +71,20 @@ door_api_door_pricing_unit_uom,,N/A,N/A,N/A
 door_api_top_side_seal_pricing_unit_cost,,N/A,N/A,N/A
 door_api_top_side_seal_pricing_unit_uom,,N/A,N/A,N/A
 door_area_per_unit_m2,,1.95,1.95,1.95
-door_bottom_seal_length_per_unit_m,,0.9144,5.1816,0.9144
+door_bottom_seal_length_per_unit_m,,0.9144,3.6576,0.9144
 door_bottom_seal_option,,brush weatherstrip,silicone adhesive smoke gasket,automatic door bottom
 door_bottom_seal_rsmeans_description,,"Weatherstripping, for thresholds, door sweep, flush mounted, vinyl","Weatherstripping, for garage door bottom, rubber","Weatherstripping, for thresholds, door sweep, flush mounted, aluminum"
 door_bottom_seal_rsmeans_id,,087125103700,087125105050,087125103650
 door_construction_names,,"U 0.88 SHGC 0.16 Sgl Ref-A-L Clr 6mm, Typical Insulated Metal Door, Typical Insulated Metal Door","U 0.88 SHGC 0.16 Sgl Ref-A-L Clr 6mm, Typical Insulated Metal Door, Typical Insulated Metal Door","U 0.88 SHGC 0.16 Sgl Ref-A-L Clr 6mm, Typical Insulated Metal Door - polystyrene core steel door R-0.43, Typical Insulated Metal Door - polystyrene core steel door R-0.43 1"
-door_cost_factor_basis,,cost_per_unit,cost_per_unit,cost_per_area
+door_cost_factor_basis,,mixed,cost_per_unit,cost_per_area
 door_cost_source,,rsmeans_api,rsmeans_api,rsmeans_api
 door_embodied_carbon_kgCO2eq,,0.0,0.0,0.0
 door_equipment_cost_$,,0.0,0.0,0.0
 door_gwp_source,,custom_user_inputs,custom_user_inputs,custom_user_inputs
 door_gwp_statistic,,median,median,median
 door_infiltration_reduction_percent,,30.0,60.0,90.0
-door_labor_cost_$,,228.0748031496061,396.0629921259841,695.1141732283462
-door_material_cost_$,,588.4552958341119,574.6796356337809,2764.8584336884333
+door_labor_cost_$,,228.0748031496061,561.0892388451442,830.1305774278212
+door_material_cost_$,,680.5585402073445,814.129483814523,2960.764588801397
 door_material_rsmeans_description,,N/A,N/A,"Doors, hollow metal, commercial, steel, flush, full panel, hollow core, 1-3/8"" thick, 20 ga., 2'-0"" x 6'-8"""
 door_material_rsmeans_id,,N/A,N/A,081313130020
 door_measure_name,,Door Enhancement for Infiltration Reduction,Door Enhancement for Infiltration Reduction,Door Enhancement for Infiltration Reduction
@@ -100,11 +100,11 @@ door_rsmeans_unit_cost_description,,N/A,N/A,"Doors, hollow metal, commercial, st
 door_rsmeans_unit_cost_line_id,,N/A,N/A,081313130020
 door_summary_notes,,door enhancement successfully completed!,door enhancement successfully completed!,door enhancement successfully completed!
 door_thickness_m,,,,0.034925
-door_top_side_seal_length_per_unit_m,,5.181,5.1816,5.1816
+door_top_side_seal_length_per_unit_m,,5.181,3.6576,3.6576
 door_top_side_seal_option,,jamb weatherstrip,silicone adhesive smoke gasket,silicone adhesive smoke gasket
 door_top_side_seal_rsmeans_description,,"Doors, rolling service, steel, manual, for weatherstripping, extruded rubber, jambs, add","Weatherstripping, for garage door bottom, rubber","Weatherstripping, for garage door bottom, rubber"
 door_top_side_seal_rsmeans_id,,083323104000,087125105050,087125105050
-door_total_cost_with_overhead_and_profit_$,,816.5300989837181,970.742627759765,3459.9726069167796
+door_total_cost_with_overhead_and_profit_$,,908.6333433569507,1375.2187226596673,3790.8951662292184
 lpd_fraction_linear_fluorescent,1.0,1.0,1.0,1.0
 measure_name,Operating Cost Carbon Reporting Measure,Operating Cost Carbon Reporting Measure,Operating Cost Carbon Reporting Measure,Operating Cost Carbon Reporting Measure
 roof_insulation_analysis_period_years,,30,30,30
