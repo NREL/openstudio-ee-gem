@@ -519,8 +519,8 @@ class DoorEnhancement(openstudio.measure.ModelMeasure):
                     f"RSMeans top/side seal line item ID override requested: {rsmeans_id_top_side_seal}"
                 )
         length_per_unit_dict = {
-            "brush weatherstrip": 0.9144,  # 36" = 0.9144 m, source: https://www.pemko.com/en/view-pdf?id=AADSS1046707&page=1
-            "silicone adhesive smoke gasket": 5.1816,  # 17' = 5.1816 m, source: https://buildingtransparency.org/ec3/epds/ec327rq0
+            "brush weatherstrip": 0.9144,  # 36" = 0.9144 m, consistent with rsmenas, source: https://www.pemko.com/en/view-pdf?id=AADSS1046707&page=1
+            "silicone adhesive smoke gasket": 3.6576,  # rsmeans
             "automatic door bottom": 0.9144,  # 36" = 0.9144 m, source: https://www.adair.com/p-1537-automatic-door-bottom.aspx
             "jamb weatherstrip": 5.181,  # 5.181 m, source: https://buildingtransparency.org/ec3/epds/ec3zsugu
             "none": 0.0
@@ -1552,7 +1552,9 @@ class DoorEnhancement(openstudio.measure.ModelMeasure):
             if door_top_side_seal_option != 'none' and total_sealing_side_length_m > 0.0:
                 # Same EA-vs-LF conversion as above for top/side weatherstrip.
                 _side_piece_len_m = float(length_per_unit_other_sides or 0.0)
-                if _side_piece_len_m > 0.0:
+                _top_side_is_jamb = str(door_top_side_seal_option).strip().lower() == "jamb weatherstrip"
+                # Jamb weatherstrip is priced per LF in RSMeans; keep quantity in LF.
+                if _side_piece_len_m > 0.0 and not _top_side_is_jamb:
                     _side_qty = float(total_sealing_side_length_m) / _side_piece_len_m
                     _side_unit = "EA"
                 else:
