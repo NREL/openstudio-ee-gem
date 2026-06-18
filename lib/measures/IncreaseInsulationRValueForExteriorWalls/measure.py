@@ -473,6 +473,7 @@ class IncreaseInsulationRValueForExteriorWalls(openstudio.measure.ModelMeasure):
                         measurement_system="imp",
                         use_sandbox=False,
                         overhead_profit_percent=overhead_profit_percent,
+                        write_api_log=False,
                     )
                     
                     if early_rsmeans_lookup and early_rsmeans_lookup.get("status") == "ok":

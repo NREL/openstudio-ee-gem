@@ -124,10 +124,19 @@ MIN_ACCEPTABLE_MATCH_SCORE = 70.0
 
 RSMEANS_RAW_LOG_ENV = "RSMEANS_SCENARIO_RAW_LOG_PATH"
 MEASURE_LOG_SLUG = "window_enhancement"
+_WRITE_API_LOGS = True
+
+
+def _append_rsmeans_summary_log(payload: Dict[str, Any]) -> None:
+    if not _WRITE_API_LOGS:
+        return
+    append_measure_summary_record(MEASURE_LOG_SLUG, payload)
 
 
 def _append_rsmeans_raw_log(material, matched_item, catalog, match_type, search_term):
     """Append raw RSMeans unit-cost fields for the matched line item."""
+    if not _WRITE_API_LOGS:
+        return
     if not isinstance(matched_item, dict):
         return
     append_measure_raw_record(MEASURE_LOG_SLUG, material, matched_item, catalog, match_type, search_term)
@@ -250,6 +259,36 @@ def _get_double_pane_fallback_rsmeans_id(area_sf: float) -> str:
     if area_sf < 30.0:
         return "088130100200"
     return "088130100400"
+
+
+def _is_double_pane_window_unit(window_unit_id: str, window_desc: str) -> bool:
+    """Return True when a whole-window RSMeans line represents double-pane glazing.
+
+    Frame derivation subtracts a glazing line from a whole-window line item.
+    When the whole-window reference explicitly includes double-insulated glazing,
+    the subtraction must use a double-pane glazing line, even if the retrofit
+    glazing material text contains a generic single-pane thickness description.
+    """
+    desc_norm = _normalize_search_text(window_desc)
+    if desc_norm:
+        if any(token in desc_norm for token in [
+            "single glazing",
+            "single glazed",
+            "single pane",
+            "1 pane",
+            "1-pane",
+        ]):
+            return False
+        return any(token in desc_norm for token in [
+            "double insulated glass",
+            "double glazing",
+            "double glazed",
+            "double pane",
+            "2 pane",
+            "2-pane",
+        ])
+
+    return str(window_unit_id or "").strip() == "085210700100"
 
 
 def _is_triple_pane_glazing(
@@ -591,13 +630,6 @@ def _derive_frame_cost_from_window_minus_glass(
         # Default to operable wood-window unit for frame-derivation baseline.
         window_unit_id = "085210700100"
 
-    # Select glazing ID.
-    if pane_count == 1:
-        glazing_id = "088155100015"
-    else:
-        # Use double-pane area bins as requested (also used when pane count is unknown).
-        glazing_id = _get_double_pane_fallback_rsmeans_id(glazing_area_sf)
-
     window_unit_cost, window_desc, window_catalog, window_bare = _fetch_unit_cost_for_costline_id(
         client=client,
         rsmeans_id=window_unit_id,
@@ -612,6 +644,17 @@ def _derive_frame_cost_from_window_minus_glass(
         _parsed_area_per_window = _parse_window_area_sf_from_description(window_desc)
         if _parsed_area_per_window and _parsed_area_per_window > 0.0:
             parsed_window_area_sf = _parsed_area_per_window
+
+    # Select glazing ID for subtraction.
+    # If the whole-window line explicitly represents a double-pane unit,
+    # always subtract a double-pane glazing line binned by one-window area.
+    _frame_glazing_area_sf = parsed_window_area_sf if parsed_window_area_sf > 0.0 else glazing_area_sf
+    if _is_double_pane_window_unit(window_unit_id, window_desc):
+        glazing_id = _get_double_pane_fallback_rsmeans_id(_frame_glazing_area_sf)
+    elif pane_count == 1:
+        glazing_id = "088155100015"
+    else:
+        glazing_id = _get_double_pane_fallback_rsmeans_id(_frame_glazing_area_sf)
 
     glazing_unit_cost, glazing_desc, glazing_catalog, glazing_bare = _fetch_unit_cost_for_costline_id(
         client=client,
@@ -687,6 +730,7 @@ def _derive_frame_cost_from_window_minus_glass(
         "glazing_catalog": glazing_catalog,
         "window_area_sf": osm_window_area_sf,
         "unit_cost_basis": material.get("unit", "SF"),
+        "unit_cost_basis_note": "Derived frame $/SF is normalized to whole-window area (window unit minus glazing).",
         "costing_mode": "derived_window_minus_glass",
     }
 
@@ -2013,6 +2057,7 @@ def search_materials_across_catalogs(
         best_total_equipment_cost = 0.0
         best_component_source = None
         _derived_window_area_sf = 0.0
+        _derived_unit_cost_basis_note = None
         chosen_source_type = "search"
         material_name_norm = _canonicalize_window_material_name(material_name, material)
         sealant_requires_volume = material_name_norm in {"sealant", "caulking"}
@@ -2085,6 +2130,7 @@ def search_materials_across_catalogs(
                 best_total_equipment_cost = float(derived.get("total_equipment_cost", 0.0))
                 best_component_source = derived.get("cost_component_source")
                 _derived_window_area_sf = float(derived.get("window_area_sf", 0.0) or 0.0)
+                _derived_unit_cost_basis_note = derived.get("unit_cost_basis_note")
                 search_log.append({
                     "material": material_name,
                     "status": "derived_frame_cost",
@@ -2094,6 +2140,7 @@ def search_materials_across_catalogs(
                     "unit_cost": best_unit_cost,
                     "total_cost": best_cost,
                     "unit_cost_basis": best_unit_basis,
+                    "unit_cost_basis_note": _derived_unit_cost_basis_note,
                     "costing_mode": best_costing_mode,
                     "window_unit_id": derived.get("window_unit_id"),
                     "window_unit_desc": derived.get("window_unit_desc"),
@@ -2597,6 +2644,8 @@ def search_materials_across_catalogs(
             }
             if _derived_window_area_sf > 0.0:
                 material_result["window_area_sf"] = _derived_window_area_sf
+            if _derived_unit_cost_basis_note:
+                material_result["unit_cost_basis_note"] = _derived_unit_cost_basis_note
             all_results.append(material_result)
             _append_rsmeans_raw_log(material, best_match, best_catalog, match_type, matched_term)
             total_cost += float(best_cost or 0.0)
@@ -2637,85 +2686,93 @@ def run_rsmeans_cost_lookup(
     measurement_system: str = "imp",
     use_sandbox: bool = False,
     overhead_profit_percent: float = 0.0,
+    write_api_log: bool = True,
 ) -> Dict[str, Any]:
     """Run RSMeans lookup for provided materials and return summary/results."""
-    load_dotenv()
-    client_id = os.getenv("client_id")
-    client_secret = os.getenv("client_secret")
+    global _WRITE_API_LOGS
+    previous_write_api_logs = _WRITE_API_LOGS
+    _WRITE_API_LOGS = bool(write_api_log)
 
-    if not client_id or not client_secret:
-        append_measure_summary_record(MEASURE_LOG_SLUG, {
-            "status": "auth_error",
-            "message": "RSMeans API credentials not found in environment",
-        })
-        return {
-            "status": "auth_error",
-            "message": "RSMeans API credentials not found in environment",
+    try:
+        load_dotenv()
+        client_id = os.getenv("client_id")
+        client_secret = os.getenv("client_secret")
+
+        if not client_id or not client_secret:
+            _append_rsmeans_summary_log({
+                "status": "auth_error",
+                "message": "RSMeans API credentials not found in environment",
+            })
+            return {
+                "status": "auth_error",
+                "message": "RSMeans API credentials not found in environment",
+            }
+
+        client = RSMeansAPIClient(client_id, client_secret, use_sandbox=use_sandbox)
+        if not client.authenticate():
+            _append_rsmeans_summary_log({
+                "status": "auth_error",
+                "message": "RSMeans authentication failed",
+            })
+            return {
+                "status": "auth_error",
+                "message": "RSMeans authentication failed",
+            }
+
+        results = search_materials_across_catalogs(
+            materials=materials,
+            client=client,
+            catalogs=catalogs,
+            release_id=release_id,
+            location_id=location_id,
+            labor_type=labor_type,
+            measurement_system=measurement_system,
+        )
+
+        total_material_cost = float(results.get("total_material_cost", 0.0))
+        total_labor_cost = float(results.get("total_labor_cost", 0.0))
+        total_equipment_cost = float(results.get("total_equipment_cost", 0.0))
+        total_bare_cost = total_material_cost + total_labor_cost + total_equipment_cost
+        if total_bare_cost <= 0.0:
+            total_bare_cost = float(results.get("total_cost", 0.0))
+            total_material_cost = total_bare_cost
+        # Per-line unit costs already include RSMeans O&P (``totalOpCost``); no
+        # additional markup is layered here. ``overhead_profit_percent`` is
+        # retained in the summary for traceability but does not alter the total.
+        overhead_profit_cost = 0.0
+        total_cost = total_bare_cost
+
+        summary = {
+            "total_material_cost": total_material_cost,
+            "total_labor_cost": total_labor_cost,
+            "total_equipment_cost": total_equipment_cost,
+            "total_bare_cost": total_bare_cost,
+            "overhead_profit_percent": overhead_profit_percent,
+            "total_overhead_profit_cost": overhead_profit_cost,
+            "total_cost_with_overhead_profit": total_cost,
+            "materials_count": len(results.get("materials", [])),
+            "materials_searched": len(materials),
+            "catalogs_searched": results.get("catalogs_searched", catalogs or []),
+            "release_id": release_id,
+            "location_id": location_id,
+            "labor_type": labor_type,
+            "measurement_system": measurement_system,
+            "use_sandbox": use_sandbox,
         }
 
-    client = RSMeansAPIClient(client_id, client_secret, use_sandbox=use_sandbox)
-    if not client.authenticate():
-        append_measure_summary_record(MEASURE_LOG_SLUG, {
-            "status": "auth_error",
-            "message": "RSMeans authentication failed",
+        _append_rsmeans_summary_log({
+            "status": "ok",
+            "summary": summary,
+            "results": results,
         })
+
         return {
-            "status": "auth_error",
-            "message": "RSMeans authentication failed",
+            "status": "ok",
+            "summary": summary,
+            "results": results,
         }
-
-    results = search_materials_across_catalogs(
-        materials=materials,
-        client=client,
-        catalogs=catalogs,
-        release_id=release_id,
-        location_id=location_id,
-        labor_type=labor_type,
-        measurement_system=measurement_system,
-    )
-
-    total_material_cost = float(results.get("total_material_cost", 0.0))
-    total_labor_cost = float(results.get("total_labor_cost", 0.0))
-    total_equipment_cost = float(results.get("total_equipment_cost", 0.0))
-    total_bare_cost = total_material_cost + total_labor_cost + total_equipment_cost
-    if total_bare_cost <= 0.0:
-        total_bare_cost = float(results.get("total_cost", 0.0))
-        total_material_cost = total_bare_cost
-    # Per-line unit costs already include RSMeans O&P (``totalOpCost``); no
-    # additional markup is layered here. ``overhead_profit_percent`` is
-    # retained in the summary for traceability but does not alter the total.
-    overhead_profit_cost = 0.0
-    total_cost = total_bare_cost
-
-    summary = {
-        "total_material_cost": total_material_cost,
-        "total_labor_cost": total_labor_cost,
-        "total_equipment_cost": total_equipment_cost,
-        "total_bare_cost": total_bare_cost,
-        "overhead_profit_percent": overhead_profit_percent,
-        "total_overhead_profit_cost": overhead_profit_cost,
-        "total_cost_with_overhead_profit": total_cost,
-        "materials_count": len(results.get("materials", [])),
-        "materials_searched": len(materials),
-        "catalogs_searched": results.get("catalogs_searched", catalogs or []),
-        "release_id": release_id,
-        "location_id": location_id,
-        "labor_type": labor_type,
-        "measurement_system": measurement_system,
-        "use_sandbox": use_sandbox,
-    }
-
-    append_measure_summary_record(MEASURE_LOG_SLUG, {
-        "status": "ok",
-        "summary": summary,
-        "results": results,
-    })
-
-    return {
-        "status": "ok",
-        "summary": summary,
-        "results": results,
-    }
+    finally:
+        _WRITE_API_LOGS = previous_write_api_logs
 
 
 if __name__ == "__main__":

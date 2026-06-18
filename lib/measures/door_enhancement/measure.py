@@ -2190,9 +2190,10 @@ class DoorEnhancement(openstudio.measure.ModelMeasure):
                     _m["total_cost"] = _mc * _mult_for_mat
                     _m["total_labor_cost"] = _ml * _mult_for_mat
                     _m["total_equipment_cost"] = _me * _mult_for_mat
-                    _adj_material += _m["total_cost"]
-                    _adj_labor += _m["total_labor_cost"]
-                    _adj_equipment += _m["total_equipment_cost"]
+                    _m["total_material_cost"] = _mm * _mult_for_mat
+                    _adj_material += _mm * _mult_for_mat
+                    _adj_labor += _ml * _mult_for_mat
+                    _adj_equipment += _me * _mult_for_mat
                 # RSMeans totalOpCost-derived components already include O&P;
                 # no additional markup is layered on top.
                 _adj_overhead = 0.0

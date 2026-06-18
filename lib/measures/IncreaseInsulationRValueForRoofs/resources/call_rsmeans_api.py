@@ -53,10 +53,19 @@ MIN_ACCEPTABLE_MATCH_SCORE = 70.0
 
 RSMEANS_RAW_LOG_ENV = "RSMEANS_SCENARIO_RAW_LOG_PATH"
 MEASURE_LOG_SLUG = "roof_insulation"
+_WRITE_API_LOGS = True
+
+
+def _append_rsmeans_summary_log(payload: Dict[str, Any]) -> None:
+    if not _WRITE_API_LOGS:
+        return
+    append_measure_summary_record(MEASURE_LOG_SLUG, payload)
 
 
 def _append_rsmeans_raw_log(material, matched_item, catalog, match_type, search_term):
     """Append raw RSMeans unit-cost fields for the matched line item."""
+    if not _WRITE_API_LOGS:
+        return
     if not isinstance(matched_item, dict):
         return
     append_measure_raw_record(MEASURE_LOG_SLUG, material, matched_item, catalog, match_type, search_term)
@@ -1879,89 +1888,97 @@ def run_rsmeans_cost_lookup(
     use_sandbox: bool = False,
     overhead_profit_percent: float = 0.0,
     fallback_costline_ids: Optional[Dict[str, str]] = None,
+    write_api_log: bool = True,
 ) -> Dict[str, Any]:
-    load_dotenv()
-    client_id = os.getenv("client_id")
-    client_secret = os.getenv("client_secret")
+    global _WRITE_API_LOGS
+    previous_write_api_logs = _WRITE_API_LOGS
+    _WRITE_API_LOGS = bool(write_api_log)
 
-    if not client_id or not client_secret:
-        append_measure_summary_record(MEASURE_LOG_SLUG, {
-            "status": "auth_error",
-            "message": "RSMeans API credentials not found in environment",
-        })
-        return {
-            "status": "auth_error",
-            "message": "RSMeans API credentials not found in environment",
+    try:
+        load_dotenv()
+        client_id = os.getenv("client_id")
+        client_secret = os.getenv("client_secret")
+
+        if not client_id or not client_secret:
+            _append_rsmeans_summary_log({
+                "status": "auth_error",
+                "message": "RSMeans API credentials not found in environment",
+            })
+            return {
+                "status": "auth_error",
+                "message": "RSMeans API credentials not found in environment",
+            }
+
+        client = RSMeansAPIClient(client_id, client_secret, use_sandbox=use_sandbox)
+        if not client.authenticate():
+            _append_rsmeans_summary_log({
+                "status": "auth_error",
+                "message": "RSMeans authentication failed",
+            })
+            return {
+                "status": "auth_error",
+                "message": "RSMeans authentication failed",
+            }
+
+        results = search_materials_across_catalogs(
+            materials=materials,
+            client=client,
+            catalogs=catalogs,
+            release_id=release_id,
+            location_id=location_id,
+            labor_type=labor_type,
+            measurement_system=measurement_system,
+            fallback_costline_ids=fallback_costline_ids,
+        )
+
+        # Totals from the per-line breakdown. The per-line unit cost is the
+        # RSMeans ``totalOpCost`` (Total Incl. O&P) so no extra markup is layered.
+        total_material_cost = float(results.get("total_material_cost", 0.0))
+        total_labor_cost = float(results.get("total_labor_cost", 0.0))
+        total_equipment_cost = float(results.get("total_equipment_cost", 0.0))
+        total_bare_cost = total_material_cost + total_labor_cost + total_equipment_cost
+        if total_bare_cost <= 0.0:
+            # Fallback for legacy/edge results where component breakdown was
+            # unavailable; the aggregated ``total_cost`` is already the line-level
+            # ``totalOpCost`` summed across materials.
+            total_bare_cost = float(results.get("total_cost", 0.0))
+            total_material_cost = total_bare_cost
+        # ``overhead_profit_percent`` is retained in the summary for traceability
+        # but does not alter the total (the per-line cost already includes O&P).
+        overhead_profit_cost = 0.0
+        total_cost = total_bare_cost
+
+        summary = {
+            "total_material_cost": total_material_cost,
+            "total_labor_cost": total_labor_cost,
+            "total_equipment_cost": total_equipment_cost,
+            "total_bare_cost": total_bare_cost,
+            "overhead_profit_percent": overhead_profit_percent,
+            "total_overhead_profit_cost": overhead_profit_cost,
+            "total_cost_with_overhead_profit": total_cost,
+            "materials_count": len(results.get("materials", [])),
+            "materials_searched": len(materials),
+            "catalogs_searched": results.get("catalogs_searched", catalogs or []),
+            "release_id": release_id,
+            "location_id": location_id,
+            "labor_type": labor_type,
+            "measurement_system": measurement_system,
+            "use_sandbox": use_sandbox,
         }
 
-    client = RSMeansAPIClient(client_id, client_secret, use_sandbox=use_sandbox)
-    if not client.authenticate():
-        append_measure_summary_record(MEASURE_LOG_SLUG, {
-            "status": "auth_error",
-            "message": "RSMeans authentication failed",
+        _append_rsmeans_summary_log({
+            "status": "ok",
+            "summary": summary,
+            "results": results,
         })
+
         return {
-            "status": "auth_error",
-            "message": "RSMeans authentication failed",
+            "status": "ok",
+            "summary": summary,
+            "results": results,
         }
-
-    results = search_materials_across_catalogs(
-        materials=materials,
-        client=client,
-        catalogs=catalogs,
-        release_id=release_id,
-        location_id=location_id,
-        labor_type=labor_type,
-        measurement_system=measurement_system,
-        fallback_costline_ids=fallback_costline_ids,
-    )
-
-    # Totals from the per-line breakdown. The per-line unit cost is the
-    # RSMeans ``totalOpCost`` (Total Incl. O&P) so no extra markup is layered.
-    total_material_cost = float(results.get("total_material_cost", 0.0))
-    total_labor_cost = float(results.get("total_labor_cost", 0.0))
-    total_equipment_cost = float(results.get("total_equipment_cost", 0.0))
-    total_bare_cost = total_material_cost + total_labor_cost + total_equipment_cost
-    if total_bare_cost <= 0.0:
-        # Fallback for legacy/edge results where component breakdown was
-        # unavailable; the aggregated ``total_cost`` is already the line-level
-        # ``totalOpCost`` summed across materials.
-        total_bare_cost = float(results.get("total_cost", 0.0))
-        total_material_cost = total_bare_cost
-    # ``overhead_profit_percent`` is retained in the summary for traceability
-    # but does not alter the total (the per-line cost already includes O&P).
-    overhead_profit_cost = 0.0
-    total_cost = total_bare_cost
-
-    summary = {
-        "total_material_cost": total_material_cost,
-        "total_labor_cost": total_labor_cost,
-        "total_equipment_cost": total_equipment_cost,
-        "total_bare_cost": total_bare_cost,
-        "overhead_profit_percent": overhead_profit_percent,
-        "total_overhead_profit_cost": overhead_profit_cost,
-        "total_cost_with_overhead_profit": total_cost,
-        "materials_count": len(results.get("materials", [])),
-        "materials_searched": len(materials),
-        "catalogs_searched": results.get("catalogs_searched", catalogs or []),
-        "release_id": release_id,
-        "location_id": location_id,
-        "labor_type": labor_type,
-        "measurement_system": measurement_system,
-        "use_sandbox": use_sandbox,
-    }
-
-    append_measure_summary_record(MEASURE_LOG_SLUG, {
-        "status": "ok",
-        "summary": summary,
-        "results": results,
-    })
-
-    return {
-        "status": "ok",
-        "summary": summary,
-        "results": results,
-    }
+    finally:
+        _WRITE_API_LOGS = previous_write_api_logs
 
 
 if __name__ == "__main__":

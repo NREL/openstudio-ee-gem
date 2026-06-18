@@ -3553,10 +3553,14 @@ def generate_html_report(df, html_report_path, run_name="run"):
         window_cost, _ = _pick_first_numeric(scenario_row, [
             "window_enhancement_total_cost_with_overhead_and_profit_usd",
             "window_enhancement_total_cost_with_overhead_and_profit_$",
+            "window_total_cost_with_overhead_and_profit_usd",
+            "window_total_cost_with_overhead_and_profit_$",
         ])
         door_cost, _ = _pick_first_numeric(scenario_row, [
             "door_enhancement_total_cost_with_overhead_and_profit_usd",
             "door_enhancement_total_cost_with_overhead_and_profit_$",
+            "door_total_cost_with_overhead_and_profit_usd",
+            "door_total_cost_with_overhead_and_profit_$",
         ])
 
         cost_slices = [

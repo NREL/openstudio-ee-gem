@@ -61,6 +61,7 @@ lib/measures/ReportRetrofitImpacts/__pycache__/
 **/__pycache__/
 *.pyc
 *.log
+*.jsonl
 config.ini
 
 # Ignore OSW workflow files with API keys

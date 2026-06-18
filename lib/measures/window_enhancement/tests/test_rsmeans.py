@@ -28,10 +28,12 @@ sys.path.insert(0, str(Path(__file__).parent.parent / "resources"))
 # Import the RSMeans module
 try:
     from call_rsmeans_api import RSMeansAPIClient, search_materials_across_catalogs
+    import call_rsmeans_api as cra
 except ImportError:
     # Fallback for direct test execution
     RSMeansAPIClient = None
     search_materials_across_catalogs = None
+    cra = None
 
 
 class TestRSMeansExactIDLookup(unittest.TestCase):
@@ -217,6 +219,113 @@ class TestRSMeansCostCalculation(unittest.TestCase):
         # Expected: material cost with 10% overhead
         expected_total = total_material * 1.10
         self.assertAlmostEqual(total_cost, expected_total, places=2)
+
+
+class TestWindowFrameDerivationGlazingSelection(unittest.TestCase):
+    """Test glazing-ID selection for whole-window frame derivation."""
+
+    def test_double_pane_window_unit_uses_small_bin_double_pane_glazing(self):
+        material = {
+            "name": "window frame",
+            "description": "wood window frame frame replacement",
+            "quantity": 70.0514612,
+            "unit": "SF",
+            "division_code": "08",
+            "num_windows": 20.0,
+            "window_area_sf": 600.39311976,
+        }
+        all_materials = [
+            {
+                "name": "window glazing",
+                "description": "1-pane glass replacement; single-pane thickness 3.0 mm; gap 13.0 mm",
+                "quantity": 530.34165856,
+                "unit": "SF",
+            }
+        ]
+
+        def fake_fetch(**kwargs):
+            rsmeans_id = kwargs["rsmeans_id"]
+            if rsmeans_id == "085210700100":
+                return (
+                    676.5,
+                    "Windows, wood, sliding, average quality, builder's model, double insulated glass, 3'-0\" x 3'-0\" high, incl. frames, screens & grill",
+                    "bc-mf",
+                    {"material": 500.0, "labor": 176.5, "equipment": 0.0, "source": "op_components"},
+                )
+            if rsmeans_id == "088130100020":
+                return (20.0, "double-pane glazing small bin", "bc-mf", {"material": 10.0, "labor": 10.0, "equipment": 0.0, "source": "op_components"})
+            if rsmeans_id == "088155100015":
+                return (8.12, "single-pane glazing", "bc-mf", {"material": 5.25, "labor": 2.87, "equipment": 0.0, "source": "op_components"})
+            raise AssertionError(f"Unexpected RSMeans ID: {rsmeans_id}")
+
+        with patch.object(cra, "_fetch_unit_cost_for_costline_id", side_effect=fake_fetch):
+            result = cra._derive_frame_cost_from_window_minus_glass(
+                material=material,
+                all_materials=all_materials,
+                client=Mock(),
+                catalogs=["bc-mf"],
+                release_id="2024-an",
+                location_id="us-us-national",
+                labor_type="std",
+                measurement_system="imp",
+            )
+
+        self.assertIsNotNone(result)
+        self.assertEqual(result["glazing_id"], "088130100020")
+        self.assertIn("whole-window area", result["unit_cost_basis_note"])
+
+    def test_double_pane_fallback_bins_follow_window_area(self):
+        self.assertEqual(cra._get_double_pane_fallback_rsmeans_id(14.99), "088130100020")
+        self.assertEqual(cra._get_double_pane_fallback_rsmeans_id(15.0), "088130100200")
+        self.assertEqual(cra._get_double_pane_fallback_rsmeans_id(29.99), "088130100200")
+        self.assertEqual(cra._get_double_pane_fallback_rsmeans_id(30.0), "088130100400")
+
+    def test_single_pane_window_unit_keeps_single_pane_glazing(self):
+        material = {
+            "name": "window frame",
+            "description": "wood window frame frame replacement",
+            "quantity": 70.0514612,
+            "unit": "SF",
+            "division_code": "08",
+            "num_windows": 20.0,
+            "window_area_sf": 600.39311976,
+        }
+        all_materials = [
+            {
+                "name": "window glazing",
+                "description": "1-pane glass replacement; single-pane thickness 3.0 mm; gap 13.0 mm",
+                "quantity": 530.34165856,
+                "unit": "SF",
+            }
+        ]
+
+        def fake_fetch(**kwargs):
+            rsmeans_id = kwargs["rsmeans_id"]
+            if rsmeans_id == "085210700100":
+                return (
+                    200.0,
+                    "Windows, wood, sliding, builder grade, single glazing, 3'-0\" x 3'-0\" high",
+                    "bc-mf",
+                    {"material": 120.0, "labor": 80.0, "equipment": 0.0, "source": "op_components"},
+                )
+            if rsmeans_id == "088155100015":
+                return (8.12, "single-pane glazing", "bc-mf", {"material": 5.25, "labor": 2.87, "equipment": 0.0, "source": "op_components"})
+            raise AssertionError(f"Unexpected RSMeans ID: {rsmeans_id}")
+
+        with patch.object(cra, "_fetch_unit_cost_for_costline_id", side_effect=fake_fetch):
+            result = cra._derive_frame_cost_from_window_minus_glass(
+                material=material,
+                all_materials=all_materials,
+                client=Mock(),
+                catalogs=["bc-mf"],
+                release_id="2024-an",
+                location_id="us-us-national",
+                labor_type="std",
+                measurement_system="imp",
+            )
+
+        self.assertIsNotNone(result)
+        self.assertEqual(result["glazing_id"], "088155100015")
 
 
 class TestAPIKeyRedaction(unittest.TestCase):

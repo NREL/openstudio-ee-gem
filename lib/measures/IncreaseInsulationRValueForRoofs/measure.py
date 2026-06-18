@@ -369,7 +369,8 @@ class IncreaseInsulationRValueForRoofs(openstudio.measure.ModelMeasure):
                 "will fail. Consider setting a non-zero 'custom_cost_per_cf' as a safety net."
             )
         
-        # Track if user provided explicit density value (non-zero means user-specified)
+        # Track whether users explicitly provided fallback material properties.
+        user_specified_conductivity = insulation_thermal_conductivity > 0.0
         user_specified_density = insulation_material_density > 0.0
 
         # Reasonableness checks
@@ -467,6 +468,7 @@ class IncreaseInsulationRValueForRoofs(openstudio.measure.ModelMeasure):
                     return None
 
             def _extract_thickness_m_from_description(desc: str):
+                # First try to extract explicit thickness values (highest priority)
                 thickness_patterns = [
                     r'(\d+(?:-\d+/\d+|/\d+|\.\d+)?)\s*"',
                     r'(\d+(?:-\d+/\d+|/\d+|\.\d+)?)\s*(?:in|inch|inches)\b',
@@ -478,6 +480,13 @@ class IncreaseInsulationRValueForRoofs(openstudio.measure.ModelMeasure):
                     thickness_in = _parse_inches_token(match.group(1))
                     if thickness_in and thickness_in > 0:
                         return self._unit_convert(thickness_in, "in", "m")
+                
+                # If no explicit thickness found, check for "R-value per inch" pattern (e.g., "R3 per inch")
+                # If found, thickness is implicitly 1 inch for this spec
+                per_inch_pattern = r'r-?\d+(?:\.\d+)?\s+per\s+inch'
+                if re.search(per_inch_pattern, desc, flags=re.IGNORECASE):
+                    return self._unit_convert(1.0, "in", "m")  # 1 inch = ~0.0254 m
+                
                 return None
 
             # Try to find density in description (e.g., "density 1.5 pcf" or "1.5 lb/ft³")
@@ -495,11 +504,18 @@ class IncreaseInsulationRValueForRoofs(openstudio.measure.ModelMeasure):
                     break
 
             # Try to find conductivity or R-value in description
+            # Priority: explicit R-value (not per-inch) > per-inch R-value > conductivity
             r_value_patterns = [
-                r'r-?([\d.]+)',
-                r'(?:thermal\s+)?(?:conductivity|resistance)\s*([\d.]+)',
+                (r'r-?([\d.]+)(?!\s+per\s+inch)', None),  # Explicit R-value, NOT per-inch
+                (r'r-?([\d.]+)\s+per\s+inch', "per_inch"),  # R-value per inch (used for thickness)
+                (r'(?:thermal\s+)?(?:conductivity|resistance)\s*([\d.]+)', None),  # Direct conductivity
             ]
-            for pattern in r_value_patterns:
+            for pattern_info in r_value_patterns:
+                if isinstance(pattern_info, tuple):
+                    pattern, match_type = pattern_info
+                else:
+                    pattern = pattern_info
+                    match_type = None
                 match = re.search(pattern, desc_lower)
                 if match:
                     r_value_ip_parsed = float(match.group(1))
@@ -572,12 +588,19 @@ class IncreaseInsulationRValueForRoofs(openstudio.measure.ModelMeasure):
                         measurement_system="imp",
                         use_sandbox=False,
                         overhead_profit_percent=overhead_profit_percent,
+                        write_api_log=False,
                     )
 
-                    if early_rsmeans_lookup and early_rsmeans_lookup.get("status") == "ok":
+                    materials_results = []
+                    if early_rsmeans_lookup:
                         materials_results = early_rsmeans_lookup.get("results", {}).get("materials", [])
+
+                    # Some RSMeans catalogs can error (for example rp-mf) while other
+                    # catalogs still return usable matches. Accept any non-empty
+                    # material result set instead of requiring status == "ok".
+                    if materials_results:
                         for mat in materials_results:
-                            mat_desc = mat.get("description", "")
+                            mat_desc = mat.get("rsmeans_description") or mat.get("description", "")
                             extracted_props = extract_properties_from_rsmeans_description(mat_desc)
                             if extracted_props:
                                 rsmeans_extracted_properties.update(extracted_props)
@@ -591,31 +614,70 @@ class IncreaseInsulationRValueForRoofs(openstudio.measure.ModelMeasure):
                                         f"{extracted_props['conductivity_W_mK']:.4f} W/m·K"
                                     )
                     else:
-                        runner.registerInfo("Early RSMeans property extraction: no match found (will use defaults)")
+                        runner.registerInfo(
+                            "Early RSMeans property extraction: no usable match found "
+                            "(will require user-provided fallback fields or fail in API cost pathway)."
+                        )
             except Exception as e:
-                runner.registerInfo(f"Early RSMeans property extraction skipped (non-critical): {str(e)[:100]}")
+                runner.registerInfo(
+                    "Early RSMeans property extraction skipped: "
+                    f"{str(e)[:100]}. API cost pathway will require user-provided fallback fields if RSMeans "
+                    "properties cannot be extracted later."
+                )
 
-        if insulation_thermal_conductivity == 0.0:
-            if "conductivity_W_mK" in rsmeans_extracted_properties:
+        if not use_custom_costs:
+            # API cost pathway priority:
+            # 1) RSMeans description properties
+            # 2) user-provided fallback (with warning)
+            # 3) hard failure when neither is available
+            has_rsmeans_k = "conductivity_W_mK" in rsmeans_extracted_properties
+            has_rsmeans_density = "density_kg_m3" in rsmeans_extracted_properties
+            fallback_fields = []
+
+            if has_rsmeans_k:
                 selected_k = rsmeans_extracted_properties["conductivity_W_mK"]
                 selected_k_source = "rsmeans_extracted"
+            elif user_specified_conductivity:
+                selected_k = insulation_thermal_conductivity
+                selected_k_source = "user_fallback_due_to_rsmeans_parse_failure"
+                fallback_fields.append("thermal_conductivity")
             else:
-                selected_k = material_k_dict[insulation_material_type]
-                selected_k_source = "hardcoded_default"
-        else:
-            selected_k = insulation_thermal_conductivity
-            selected_k_source = "user_provided"
+                runner.registerError(
+                    "RSMeans API cost pathway requires thermal conductivity from RSMeans description. "
+                    "RSMeans extraction failed and no user-provided 'insulation_thermal_conductivity' fallback is available."
+                )
+                return False
 
-        # Use user-specified density if provided, otherwise use RSMeans-extracted or default
-        if insulation_material_density == 0.0:
-            if "density_kg_m3" in rsmeans_extracted_properties:
+            if has_rsmeans_density:
                 insulation_material_density = rsmeans_extracted_properties["density_kg_m3"]
                 selected_density_source = "rsmeans_extracted"
+            elif user_specified_density:
+                selected_density_source = "user_fallback_due_to_rsmeans_parse_failure"
+                fallback_fields.append("density")
             else:
                 insulation_material_density = material_density_dict[insulation_material_type]
-                selected_density_source = "hardcoded_default"
+                selected_density_source = "hardcoded_default_due_to_rsmeans_parse_failure"
+                fallback_fields.append("density(default)")
+
+            if fallback_fields:
+                runner.registerWarning(
+                    "RSMeans description did not provide all required material properties. "
+                    f"Fell back to user-provided fields: {', '.join(fallback_fields)}."
+                )
         else:
-            selected_density_source = "user_provided"
+            # Custom-cost pathway keeps legacy behavior.
+            if insulation_thermal_conductivity == 0.0:
+                selected_k = material_k_dict[insulation_material_type]
+                selected_k_source = "hardcoded_default"
+            else:
+                selected_k = insulation_thermal_conductivity
+                selected_k_source = "user_provided"
+
+            if insulation_material_density == 0.0:
+                insulation_material_density = material_density_dict[insulation_material_type]
+                selected_density_source = "hardcoded_default"
+            else:
+                selected_density_source = "user_provided"
 
         # Initialize selected_rho with selected density (may be updated from EPD for hardcoded defaults)
         selected_rho = insulation_material_density
@@ -1358,10 +1420,76 @@ class IncreaseInsulationRValueForRoofs(openstudio.measure.ModelMeasure):
                                 if _pricing_raw > 0.0 and _pricing_raw_uom:
                                     rsmeans_pricing_unit_cost_raw_feature_value = _pricing_raw
                                     rsmeans_pricing_unit_uom_raw_feature_value = _pricing_raw_uom
-                            if materials_results:
-                                first_match = materials_results[0]
-                                matched_rsmeans_id = first_match.get("rsmeans_id") or rsmeans_materials[0].get("rsmeans_id", "")
-                                matched_rsmeans_description = first_match.get("rsmeans_description") or first_match.get("description", "")
+                            if materials_results and _selected_mat is not None:
+                                # Extract thermal properties from the ACTUAL selected material result
+                                # (not first_match, which may be different)
+                                selected_mat_desc = _selected_mat.get("rsmeans_description") or _selected_mat.get("description", "")
+                                extracted_from_selected = extract_properties_from_rsmeans_description(selected_mat_desc)
+
+                                # For API cost pathway, final selected RSMeans result should drive properties.
+                                # If extraction fails, allow explicit user fallback with warning; otherwise fail.
+                                final_rsmeans_has_k = "conductivity_W_mK" in extracted_from_selected
+                                final_rsmeans_has_density = "density_kg_m3" in extracted_from_selected
+                                final_fallback_fields = []
+
+                                if final_rsmeans_has_k:
+                                    newly_extracted_k = extracted_from_selected["conductivity_W_mK"]
+                                elif user_specified_conductivity:
+                                    newly_extracted_k = insulation_thermal_conductivity
+                                    final_fallback_fields.append("thermal_conductivity")
+                                else:
+                                    runner.registerError(
+                                        "RSMeans final cost lookup result does not contain extractable thermal conductivity, "
+                                        "and no user-provided fallback is available. "
+                                        f"Description excerpt: {selected_mat_desc[:100]}..."
+                                    )
+                                    return False
+
+                                if final_rsmeans_has_density:
+                                    insulation_material_density = extracted_from_selected["density_kg_m3"]
+                                    selected_density_source = "rsmeans_final_lookup"
+                                elif user_specified_density:
+                                    insulation_material_density = runner.getDoubleArgumentValue("insulation_material_density", user_arguments)
+                                    selected_density_source = "user_fallback_due_to_rsmeans_parse_failure"
+                                    final_fallback_fields.append("density")
+                                else:
+                                    insulation_material_density = material_density_dict[insulation_material_type]
+                                    selected_density_source = "hardcoded_default_due_to_rsmeans_final_parse_failure"
+                                    final_fallback_fields.append("density(default)")
+
+                                if final_fallback_fields:
+                                    runner.registerWarning(
+                                        "RSMeans final selected material description did not provide all required properties. "
+                                        f"Fell back to user-provided fields: {', '.join(final_fallback_fields)}."
+                                    )
+
+                                if newly_extracted_k != selected_k:
+                                    runner.registerInfo(
+                                        f"RSMeans final lookup returned different thermal conductivity: "
+                                        f"{newly_extracted_k:.4f} W/m·K (was {selected_k:.4f} W/m·K). "
+                                        f"Recalculating insulation thicknesses using new value."
+                                    )
+                                    # Recalculate thicknesses for all modified constructions using new k value
+                                    for row in gwp_summary_rows:
+                                        r_value_si = self._unit_convert(r_value_ip, "ft^2*h*R/Btu", "m^2*K/W")
+                                        add_t_m = r_value_si * newly_extracted_k
+                                        row["added_thickness_m"] = add_t_m
+                                        area_m2 = row["added_total_area_m2"]
+                                        row["added_total_volume_m3"] = area_m2 * add_t_m
+                                    # Update selected_k for AdditionalProperties write-out
+                                    selected_k = newly_extracted_k
+                                    selected_k_source = "rsmeans_final_lookup"
+
+                                if final_rsmeans_has_k and selected_k_source != "rsmeans_final_lookup":
+                                    selected_k = newly_extracted_k
+                                    selected_k_source = "rsmeans_final_lookup"
+
+                                # Keep downstream write-out in sync with final selected material properties.
+                                selected_rho = insulation_material_density
+                                
+                                # Write properties from the SELECTED material, not first_match
+                                matched_rsmeans_id = _selected_mat.get("rsmeans_id") or (rsmeans_materials[0].get("rsmeans_id", "") if rsmeans_materials else "")
+                                matched_rsmeans_description = selected_mat_desc
                                 if matched_rsmeans_id:
                                     rsmeans_material_id_for_write = str(matched_rsmeans_id)
                                 if matched_rsmeans_description:
@@ -1516,7 +1644,7 @@ class IncreaseInsulationRValueForRoofs(openstudio.measure.ModelMeasure):
                                 runner.registerInfo("RSMeans materials detail:")
                                 for mat in materials_results:
                                     mat_name = mat.get("name", "(unknown)")
-                                    mat_desc = mat.get("description", "")
+                                    mat_desc = mat.get("rsmeans_description") or mat.get("description", "")
                                     mat_qty = mat.get("quantity", 0.0)
                                     mat_unit = mat.get("unit", "")
                                     mat_div = mat.get("division_code", "")

@@ -1096,6 +1096,7 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
                     seed_materials,
                     use_custom_costs=False,
                     overhead_profit_percent=overhead_profit_percent,
+                    write_api_log=False,
                 )
                 if early_rsmeans and early_rsmeans.get("status") == "ok":
                     inferred = self._infer_defaults_from_rsmeans_descriptions(
@@ -2046,6 +2047,7 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
         materials,
         use_custom_costs=False,
         overhead_profit_percent=0.0,
+        write_api_log=True,
     ):
         """
         Pull RSMeans cost data for retrofit materials using API credentials.
@@ -2088,6 +2090,7 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
                 measurement_system='imp',
                 use_sandbox=False,
                 overhead_profit_percent=overhead_profit_percent,
+                write_api_log=write_api_log,
             )
             
             if result.get('status') == 'success' or result.get('status') == 'ok':
@@ -4338,9 +4341,10 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
                                     _lc_m = _mult
                                     break
                             _m["total_cost"] = _mc * _lc_m
+                            _m["total_material_cost"] = _mm * _lc_m
                             _m["total_labor_cost"] = _ml * _lc_m
                             _m["total_equipment_cost"] = _me * _lc_m
-                            _adj_mat_total += _m["total_cost"]
+                            _adj_mat_total += _m["total_material_cost"]
                             _adj_lab_total += _m["total_labor_cost"]
                             _adj_eq_total += _m["total_equipment_cost"]
                         total_material_cost = _adj_mat_total
@@ -4428,7 +4432,10 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
                             elif _mn == "window frame":
                                 _frame_cost_total += _mc
                                 _frame_window_area_sf = float(_m.get("window_area_sf", 0.0) or 0.0)
-                                if _pricing_eff > 0.0 and _pricing_eff_uom == "SF":
+                                # Prefer bare material cost; fallback to total cost if unavailable
+                                if _bare_unit > 0.0 and _basis == "SF":
+                                    _frame_unit_cost_sf = _bare_unit
+                                elif _pricing_eff > 0.0 and _pricing_eff_uom == "SF":
                                     _frame_unit_cost_sf = _pricing_eff
                             elif _mn in ["sealant", "caulking"]:
                                 _caulking_cost_total += _mc
