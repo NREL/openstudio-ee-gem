@@ -288,7 +288,9 @@ def _is_double_pane_window_unit(window_unit_id: str, window_desc: str) -> bool:
             "2-pane",
         ])
 
-    return str(window_unit_id or "").strip() == "085210700100"
+    # Default window unit IDs that represent double-pane windows
+    window_id_str = str(window_unit_id or "").strip()
+    return window_id_str in ("085210700100", "085113204100")
 
 
 def _is_triple_pane_glazing(
@@ -478,8 +480,11 @@ def _get_default_fallback_rsmeans_id(material_name: str, material: Optional[Dict
 
     if "secondary glazing" in name_norm or "num pane 1" in name_norm:
         return "088155100015"
+    if "aluminum" in name_norm or "aluminium" in name_norm:
+        if "operable" in name_norm and "window" in name_norm:
+            return "085113204100"
     if "wood" in name_norm and "operable" in name_norm and "window" in name_norm:
-        return "085113204100"
+        return "085210700100"
     if "wood" in name_norm and "fixed" in name_norm and "window" in name_norm:
         return "085210550100"
 
@@ -583,7 +588,25 @@ def _derive_frame_cost_from_window_minus_glass(
     labor_type: str,
     measurement_system: str,
 ) -> Optional[Dict[str, Any]]:
-    """Derive window frame cost using: window unit cost - glass pane cost."""
+    """Derive window frame cost using: (entire_window_cost - glass_cost * window_area) / window_area.
+    
+    CRITICAL: This derivation is ONLY used for RSMeans API pathway.
+    For custom cost pathway, users provide frame_cost_per_sf directly.
+    
+    The derived frame unit cost ($/SF) is calculated as:
+        frame_unit_cost = (window_unit_cost - glazing_unit_cost * parsed_window_area_sf) / parsed_window_area_sf
+    
+    Where:
+        - window_unit_cost: Cost of entire window assembly ($/EA) from RSMeans (e.g., 085210700100)
+        - glazing_unit_cost: Cost of glazing only ($/SF) from RSMeans (e.g., 088155100030)
+        - parsed_window_area_sf: Window area (SF) parsed from RSMeans window description, NOT from OSM model
+        - osm_window_area_sf: Total window area from OSM model used for final cost calculation
+    
+    Final frame cost = frame_unit_cost * osm_window_area_sf
+    
+    This approach ensures frame cost represents the window frame component cost normalized
+    to window area basis, consistent with how whole-window assemblies are priced.
+    """
     material_name_norm = _normalize_search_text(material.get("name", ""))
     if material_name_norm != "window frame":
         return None
@@ -624,10 +647,15 @@ def _derive_frame_cost_from_window_minus_glass(
             break
 
     # Select representative window unit ID (per EC3 Query Strings spreadsheet).
-    if "wood" in frame_desc_norm and "fixed" in frame_desc_norm:
+    # Choose window unit ID based on frame material type from description.
+    if "aluminum" in frame_desc_norm or "aluminium" in frame_desc_norm:
+        # Aluminum window unit
+        window_unit_id = "085113204100"
+    elif "wood" in frame_desc_norm and "fixed" in frame_desc_norm:
+        # Fixed wood window
         window_unit_id = "085210550100"
     else:
-        # Default to operable wood-window unit for frame-derivation baseline.
+        # Default to operable wood-window unit for frame-derivation baseline
         window_unit_id = "085210700100"
 
     window_unit_cost, window_desc, window_catalog, window_bare = _fetch_unit_cost_for_costline_id(

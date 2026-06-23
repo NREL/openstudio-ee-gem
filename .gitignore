@@ -106,3 +106,12 @@ lib/parametric_run/simulations/**/run/started.job
 lib/parametric_run/simulations/**/run/stdout-energyplus
 lib/parametric_run/simulations/**/run/run.log
 lib/parametric_run/simulations/**/run/000_create_DOE_prototype_building/
+
+# Parametric run configuration generators and docs (local dev tools)
+lib/parametric_run/generate_full_screening.py
+lib/parametric_run/generate_combined_screening.py
+lib/parametric_run/FULL_SCREENING_README.md
+lib/parametric_run/COMBINED_SCREENING_README.md
+
+# Ignore all parametric simulation outputs
+lib/parametric_run/simulations/

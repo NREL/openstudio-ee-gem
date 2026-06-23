@@ -1916,7 +1916,7 @@ def generate_parametric_recap(target_path, city_climate_zones=None):
 # (used by run_all_tests.py to drive multiple sequential runs without editing this file).
 # RUN_NAME is purely a folder label under simulations/ -- it has no effect on
 # the model itself. Defaults to "run_test_009" for this branch's ad-hoc standalone runs.
-RUN_NAME = "run_test_20_rsmeans_api"
+RUN_NAME = "run_test_combined_screening"
 def detect_openstudio_cli_path():
     """Find the OpenStudio CLI executable on this machine.
 
@@ -2007,103 +2007,11 @@ TEMPLATE = "DOE Ref 1980-2004"
 #   - roof_insulation_material_type, roof_insulation_material_lifetime
 #
 # When run_all_tests.py drives this script, WORKFLOW_CUSTOM_COMBOS_JSON
-# (set near the bottom of this section) replaces the literal list below.
+# (set near the bottom of this section) replaces the file-based defaults.
 
-CUSTOM_COMBOS = [
-    # Scenario 1: Custom-cost dataset test (low cost mix)
-    {
-        "wall_r_value": 20.4,
-        "wall_insulation_material_type": "Blown Mineral Wool",
-        "roof_r_value": 34.5,
-        "roof_insulation_material_type": "Blown Mineral Wool",
-        "door_option": "none",
-        "door_infiltration_reduction_percent": 30.0,
-        "door_bottom_seal_option": "brush weatherstrip",
-        "door_top_side_seal_option": "jamb weatherstrip",
-        "window_num_panes": 1,
-        "window_infiltration_reduction_percent": 30.0,
-        "weatherstrip_option": "silicone adhesive smoke gasket",
-        "wf_option": "wood window frame",
-        "film_option": "safety film",
-        "caulking_option": "acrylic",
-        "use_custom_costs": False,
-        "wall_insulation_custom_cost_per_cf": 0.9,
-        "roof_insulation_custom_cost_per_cf": 0.9,
-        "glass_cost_per_cf": 499.199388,
-        "frame_cost_per_sf": 60.44,
-        "caulking_cost_per_cy": 11108.571,
-        "film_cost_per_sf": 2.06,
-        "weatherstrip_cost_per_lf": 5.133332,
-        "custom_door_cost_per_area": 6.050001,
-        "custom_bottom_seal_cost": 5.133332,
-        "custom_top_side_seal_cost": 2.78,
-        "u_factor_modification_percentage": -3.0,
-        "shgc_modification_percentage": -3.0,
-        "visible_transmittance_modification_percentage": 0.0,
-    },
-    # Scenario 2: Custom-cost dataset test (mid cost mix)
-    {
-        "wall_r_value": 20.4,
-        "wall_insulation_material_type": "Blown Fiberglass",
-        "roof_r_value": 34.5,
-        "roof_insulation_material_type": "Blown Fiberglass",
-        "door_option": "none",
-        "door_infiltration_reduction_percent": 60.0,
-        "door_bottom_seal_option": "silicone adhesive smoke gasket",
-        "door_top_side_seal_option": "silicone adhesive smoke gasket",
-        "window_num_panes": 2,
-        "window_infiltration_reduction_percent": 60.0,
-        "weatherstrip_option": "silicone adhesive smoke gasket",
-        "wf_option": "wood window frame",
-        "film_option": "anti-graffiti film",
-        "caulking_option": "polyurethane",
-        "use_custom_costs": False,
-        "wall_insulation_custom_cost_per_cf": 0.981819,
-        "roof_insulation_custom_cost_per_cf": 0.981819,
-        "glass_cost_per_cf": 499.199388,
-        "frame_cost_per_sf": 60.44,
-        "caulking_cost_per_cy": 19995.429,
-        "film_cost_per_sf": 2.02,
-        "weatherstrip_cost_per_lf": 5.167323,
-        "custom_door_cost_per_area": 29.25,
-        "custom_bottom_seal_cost": 1.575,
-        "custom_top_side_seal_cost": 1.575,
-        "u_factor_modification_percentage": -10.0,
-        "shgc_modification_percentage": -10.0,
-        "visible_transmittance_modification_percentage": 0.0,
-    },
-    # Scenario 3: Custom-cost dataset test (high cost mix)
-    {
-        "wall_r_value": 20.4,
-        "wall_insulation_material_type": "Fiberglass Batts",
-        "roof_r_value": 34.5,
-        "roof_insulation_material_type": "Fiberglass Batts",
-        "door_option": "polystyrene core steel door",
-        "door_infiltration_reduction_percent": 90.0,
-        "door_bottom_seal_option": "automatic door bottom",
-        "door_top_side_seal_option": "silicone adhesive smoke gasket",
-        "window_num_panes": 2,
-        "window_infiltration_reduction_percent": 90.0,
-        "weatherstrip_option": "silicone adhesive smoke gasket",
-        "wf_option": "wood-aluminium window frame",
-        "film_option": "low-e film",
-        "caulking_option": "polyurethane",
-        "use_custom_costs": False,
-        "wall_insulation_custom_cost_per_cf": 2.64,
-        "roof_insulation_custom_cost_per_cf": 2.64,
-        "glass_cost_per_cf": 499.199388,
-        "frame_cost_per_sf": 73.5,
-        "caulking_cost_per_cy": 19995.429,
-        "film_cost_per_sf": 0.84,
-        "weatherstrip_cost_per_lf": 5.167323,
-        "custom_door_cost_per_area": 29.25,
-        "custom_bottom_seal_cost": 11.0,
-        "custom_top_side_seal_cost": 1.575,
-        "u_factor_modification_percentage": -30.0,
-        "shgc_modification_percentage": -30.0,
-        "visible_transmittance_modification_percentage": 0.0,
-    },
-]
+_CUSTOM_COMBOS_PATH = Path(__file__).with_name("custom_combos.json")
+with open(_CUSTOM_COMBOS_PATH, "r", encoding="utf-8") as _custom_combos_file:
+    CUSTOM_COMBOS = json.load(_custom_combos_file)
 
 # Optional override via env var (JSON-encoded list of combo dicts) so that
 # run_all_tests.py can drive multiple sequential runs.

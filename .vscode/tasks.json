@@ -1,0 +1,34 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "git-clean-simulations-index",
+			"type": "shell",
+			"command": "git",
+			"args": [
+				"-C",
+				"c:\\All repos\\openstudio-ee-gem",
+				"rm",
+				"-r",
+				"--cached",
+				"--ignore-unmatch",
+				"lib/parametric_run/simulations"
+			],
+			"isBackground": false
+		},
+		{
+			"label": "git-check-simulations-status",
+			"type": "shell",
+			"command": "git",
+			"args": [
+				"-C",
+				"c:\\All repos\\openstudio-ee-gem",
+				"status",
+				"--short",
+				"--",
+				"lib/parametric_run/simulations"
+			],
+			"isBackground": false
+		}
+	]
+}
