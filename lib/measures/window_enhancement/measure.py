@@ -218,6 +218,12 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
         analysis_period.setDefaultValue(30)
         args.append(analysis_period)
 
+        use_lifetime_multiplier = openstudio.measure.OSArgument.makeBoolArgument("use_lifetime_multiplier", True)
+        use_lifetime_multiplier.setDisplayName("Apply Lifetime Multiplier to Carbon & Cost")
+        use_lifetime_multiplier.setDescription("If true, account for replacement cycles over analysis period; if false, use single-install multiplier of 1.")
+        use_lifetime_multiplier.setDefaultValue(False)
+        args.append(use_lifetime_multiplier)
+
         # Create argument for glass pane product lifetime.
         glass_lifetime = openstudio.measure.OSArgument.makeIntegerArgument("glass_lifetime",True)
         glass_lifetime.setDisplayName("Product Lifetime of Glass pane")
@@ -647,6 +653,8 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
         glass_cost_per_cf.setDisplayName("Glass Replacement Cost ($/CF)")
         glass_cost_per_cf.setDescription(
             "User-provided unit cost for glass replacement in dollars per cubic foot. "
+            "IMPORTANT: This cost is applied to the ENTIRE WINDOW AREA (including frame), "
+            "not just the glass area. Volume is calculated as: window_area * glass_thickness * pane_count. "
             "This is used as a fallback when RSMeans API lookup fails or returns no results. "
             "Typical range: $500-1200/CF depending on glass type. Set to 0 to skip cost calculation for glass.")
         glass_cost_per_cf.setDefaultValue(0.0)
@@ -657,6 +665,8 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
         frame_cost_per_sf.setDisplayName("Window Frame Cost ($/SF)")
         frame_cost_per_sf.setDescription(
             "User-provided unit cost for window frame replacement in dollars per square foot. "
+            "IMPORTANT: This cost is applied to the ENTIRE WINDOW AREA (not just frame perimeter). "
+            "This approach provides a conservative cost estimate since frame and divider objects might not exist in the model. "
             "This is used as a fallback when RSMeans API lookup fails. "
             "Typical range: $20-40/SF depending on frame material (wood and aluminum). Set to 0 to skip.")
         frame_cost_per_sf.setDefaultValue(0.0)
@@ -676,6 +686,8 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
         film_cost_per_sf.setDisplayName("Glazing Film Cost ($/SF)")
         film_cost_per_sf.setDescription(
             "User-provided unit cost for glazing film in dollars per square foot. "
+            "IMPORTANT: This cost is applied to the ENTIRE WINDOW AREA (including frame), "
+            "not just the glass surface area, providing a conservative cost estimate. "
             "Used when custom costs are enabled or RSMeans lookup fails. "
             "Set to 0 to skip cost calculation for film."
         )
@@ -704,6 +716,20 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
             "e.g. 1.5 = installed cost is 1.5× material, meaning labor is 50% of material cost.")
         labor_cost_multiplier.setDefaultValue(1.0)
         args.append(labor_cost_multiplier)
+
+        cost_calc_basis_values = openstudio.StringVector()
+        cost_calc_basis_values.append("totalop")
+        cost_calc_basis_values.append("bare_material")
+        cost_calculation_basis = openstudio.measure.OSArgument.makeChoiceArgument(
+            "cost_calculation_basis", cost_calc_basis_values, True
+        )
+        cost_calculation_basis.setDisplayName("Construction Cost Calculation Basis")
+        cost_calculation_basis.setDescription(
+            "Choose total installed cost (totalop) or bare material cost (bare_material). "
+            "This switch applies to both RSMeans and custom cost paths."
+        )
+        cost_calculation_basis.setDefaultValue("totalop")
+        args.append(cost_calculation_basis)
 
         # Use custom costs instead of RSMeans API
         use_custom_costs = openstudio.measure.OSArgument.makeBoolArgument("use_custom_costs", True)
@@ -881,6 +907,7 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
         secondary_glazing_option = runner.getStringArgumentValue(
             "secondary_glazing_option", user_arguments)
         analysis_period = runner.getIntegerArgumentValue("analysis_period",user_arguments)
+        use_lifetime_multiplier = runner.getBoolArgumentValue("use_lifetime_multiplier", user_arguments)
         glass_lifetime = runner.getIntegerArgumentValue("glass_lifetime",user_arguments)
         wf_lifetime = runner.getIntegerArgumentValue("wf_lifetime",user_arguments)
         caulking_lifetime = runner.getIntegerArgumentValue("caulking_lifetime",user_arguments)
@@ -970,6 +997,14 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
         film_cost_per_sf = runner.getDoubleArgumentValue("film_cost_per_sf", user_arguments)
         weatherstrip_cost_per_lf = runner.getDoubleArgumentValue("weatherstrip_cost_per_lf", user_arguments)
         labor_cost_multiplier = runner.getDoubleArgumentValue("labor_cost_multiplier", user_arguments)
+        cost_calculation_basis = str(
+            runner.getStringArgumentValue("cost_calculation_basis", user_arguments)
+        ).strip().lower()
+        if cost_calculation_basis not in ("totalop", "bare_material"):
+            runner.registerWarning(
+                f"Invalid cost_calculation_basis '{cost_calculation_basis}'. Falling back to 'totalop'."
+            )
+            cost_calculation_basis = "totalop"
         has_window_cost_component = any([
             glass_option != "none" and user_num_panes > 0,
             wf_option != "none",
@@ -1445,6 +1480,7 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
                                            epd_datalist, gwp_statistic, analysis_period, 
                                            effective_glass_pane_thickness, effective_length_per_unit,
                                            carbon_data_unavailable_tracker,
+                                           use_lifetime_multiplier=use_lifetime_multiplier,
                                            use_custom_gwp=use_custom_gwp,
                                            custom_glass_gwp_per_m3=custom_glass_gwp_per_m3,
                                            custom_frame_gwp_per_m2=custom_frame_gwp_per_m2,
@@ -1756,10 +1792,25 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
             return False
 
         # Phase 3: Calculate capital cost using RSMeans or custom fallback inputs.
-        # NOTE: For custom costs, frame/glass/film are based on total_window_area_m2.
-        # For RSMeans API, frame cost is derived using:
-        #   (entire_window_cost - glazing_cost_per_area * parsed_window_area) / parsed_window_area
-        # where parsed_window_area comes from RSMeans window description, not OSM model.
+        # 
+        # CRITICAL DESIGN: All window materials (glass, frame, film) use ENTIRE WINDOW AREA
+        # as the calculation basis for both RSMeans API and Custom cost modes.
+        # 
+        # Rationale:
+        # - OpenStudio may not always have frame and divider objects
+        # - Using entire window area provides conservative cost estimates
+        # - Ensures consistency across modeling approaches
+        # 
+        # RSMeans API path:
+        #   - Glazing: RSMeans returns $/SF of glass, applied to entire window area (conservative)
+        #   - Frame: Derived as (whole_window - glazing) / window_area, applied to entire window area
+        #   - Film: RSMeans returns $/SF of glass surface, applied to entire window area (conservative)
+        # 
+        # Custom cost path:
+        #   - User-provided costs are applied to entire window area quantities
+        #   - glass_cost_per_cf: Applied to window_area * thickness * pane_count
+        #   - frame_cost_per_sf: Applied to window_area (not frame perimeter)
+        #   - film_cost_per_sf: Applied to window_area (not just glass surface)
         cost_metrics = self._calculate_cost_metrics(
             runner=runner,
             materials=materials,
@@ -1794,6 +1845,8 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
             caulking_lifetime=caulking_lifetime,
             film_lifetime=film_lifetime,
             weatherstrip_lifetime=weatherstrip_lifetime,
+            cost_calculation_basis=cost_calculation_basis,
+            use_lifetime_multiplier=use_lifetime_multiplier,
         )
         if cost_metrics.get("fatal_error", False):
             return False
@@ -1822,6 +1875,7 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
             total_equipment_cost=total_equipment_cost,
             total_overhead_profit_cost=total_overhead_profit_cost,
             total_cost_with_overhead_profit=total_cost_with_overhead_profit,
+            cost_calculation_basis=cost_calculation_basis,
             cost_factor_basis=cost_factor_basis,
             overhead_profit_percent=overhead_profit_percent,
             labor_cost_multiplier=labor_cost_multiplier,
@@ -2051,6 +2105,7 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
         materials,
         use_custom_costs=False,
         overhead_profit_percent=0.0,
+        cost_calculation_basis="totalop",
         write_api_log=True,
     ):
         """
@@ -2094,6 +2149,7 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
                 measurement_system='imp',
                 use_sandbox=False,
                 overhead_profit_percent=overhead_profit_percent,
+                cost_calculation_basis=cost_calculation_basis,
                 write_api_log=write_api_log,
             )
             
@@ -2342,6 +2398,7 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
     def process_epd_for_subsurface(self, runner, subsurface_name, subsurface_data, epd_datalist, 
                                     gwp_statistic, analysis_period, glass_pane_thickness, length_per_unit,
                                     carbon_data_unavailable_tracker=None,
+                                    use_lifetime_multiplier=False,
                                     use_custom_gwp=False,
                                     custom_glass_gwp_per_m3=0.0,
                                     custom_frame_gwp_per_m2=0.0,
@@ -2364,7 +2421,7 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
 
         for material_name, epd_data in epd_datalist.items():
             if use_custom_gwp:
-                multiplier = lifetime_multiplier(subsurface_data[material_name]["lifetime"], analysis_period)
+                multiplier = lifetime_multiplier(subsurface_data[material_name]["lifetime"], analysis_period) if use_lifetime_multiplier else 1
                 subsurface_data[material_name]["gwp_per_m2"] = None
                 subsurface_data[material_name]["gwp_per_kg"] = None
                 subsurface_data[material_name]["gwp_per_m3"] = None
@@ -2467,7 +2524,7 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
                 subsurface_data[material_name][functional_unit] = gwp
             
             # Multipliers for calculating embodied carbon over analysis period (using updated lifetime)
-            multiplier = lifetime_multiplier(subsurface_data[material_name]["lifetime"], analysis_period)
+            multiplier = lifetime_multiplier(subsurface_data[material_name]["lifetime"], analysis_period) if use_lifetime_multiplier else 1
 
             embodied_carbon = 0.0
             if material_name == "glass":
@@ -4173,6 +4230,8 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
         caulking_lifetime=10,
         film_lifetime=10,
         weatherstrip_lifetime=10,
+        cost_calculation_basis="totalop",
+        use_lifetime_multiplier=False,
     ):
         total_material_cost = 0.0
         total_overhead_profit_cost = 0.0
@@ -4199,11 +4258,11 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
                 runner.registerInfo("USING CUSTOM USER-PROVIDED COSTS (RSMeans API SKIPPED)")
                 runner.registerInfo("=" * 80)
 
-                _glass_mult = int(lifetime_multiplier(glass_lifetime, analysis_period))
-                _frame_mult = int(lifetime_multiplier(wf_lifetime, analysis_period))
-                _caulk_mult = int(lifetime_multiplier(caulking_lifetime, analysis_period))
-                _film_mult = int(lifetime_multiplier(film_lifetime, analysis_period))
-                _ws_mult = int(lifetime_multiplier(weatherstrip_lifetime, analysis_period))
+                _glass_mult = int(lifetime_multiplier(glass_lifetime, analysis_period)) if use_lifetime_multiplier else 1
+                _frame_mult = int(lifetime_multiplier(wf_lifetime, analysis_period)) if use_lifetime_multiplier else 1
+                _caulk_mult = int(lifetime_multiplier(caulking_lifetime, analysis_period)) if use_lifetime_multiplier else 1
+                _film_mult = int(lifetime_multiplier(film_lifetime, analysis_period)) if use_lifetime_multiplier else 1
+                _ws_mult = int(lifetime_multiplier(weatherstrip_lifetime, analysis_period)) if use_lifetime_multiplier else 1
                 total_material_cost = self.calculate_custom_costs_from_user_rates(
                     runner, total_glazing_area_m2, total_secondary_glazing_area_m2, total_film_area_m2,
                     total_frame_area_m2, total_caulking_volume_m3,
@@ -4235,6 +4294,7 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
                     materials,
                     use_custom_costs=False,
                     overhead_profit_percent=overhead_profit_percent,
+                    cost_calculation_basis=cost_calculation_basis,
                 )
 
                 if rsmeans_lookup and rsmeans_lookup.get("status") == "ok":
@@ -4321,14 +4381,14 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
                     # Apply per-material lifetime multipliers to RSMeans costs.
                     if materials_results:
                         _lc_mult_map = [
-                            ("glazing film",     int(lifetime_multiplier(film_lifetime, analysis_period))),
-                            ("secondary glazing", int(lifetime_multiplier(glass_lifetime, analysis_period))),
-                            ("window glazing",   int(lifetime_multiplier(glass_lifetime, analysis_period))),
-                            ("glazing",          int(lifetime_multiplier(glass_lifetime, analysis_period))),
-                            ("window frame",     int(lifetime_multiplier(wf_lifetime, analysis_period))),
-                            ("weatherstrip",     int(lifetime_multiplier(weatherstrip_lifetime, analysis_period))),
-                            ("sealant",          int(lifetime_multiplier(caulking_lifetime, analysis_period))),
-                            ("caulking",         int(lifetime_multiplier(caulking_lifetime, analysis_period))),
+                            ("glazing film",     int(lifetime_multiplier(film_lifetime, analysis_period)) if use_lifetime_multiplier else 1),
+                            ("secondary glazing", int(lifetime_multiplier(glass_lifetime, analysis_period)) if use_lifetime_multiplier else 1),
+                            ("window glazing",   int(lifetime_multiplier(glass_lifetime, analysis_period)) if use_lifetime_multiplier else 1),
+                            ("glazing",          int(lifetime_multiplier(glass_lifetime, analysis_period)) if use_lifetime_multiplier else 1),
+                            ("window frame",     int(lifetime_multiplier(wf_lifetime, analysis_period)) if use_lifetime_multiplier else 1),
+                            ("weatherstrip",     int(lifetime_multiplier(weatherstrip_lifetime, analysis_period)) if use_lifetime_multiplier else 1),
+                            ("sealant",          int(lifetime_multiplier(caulking_lifetime, analysis_period)) if use_lifetime_multiplier else 1),
+                            ("caulking",         int(lifetime_multiplier(caulking_lifetime, analysis_period)) if use_lifetime_multiplier else 1),
                         ]
                         _adj_mat_total = 0.0
                         _adj_lab_total = 0.0
@@ -4471,11 +4531,11 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
                     runner.registerInfo("✗ RSMeans API lookup failed or returned no costs.")
                     runner.registerInfo("\nFalling back to user-provided cost data...")
 
-                    _glass_mult_fb = int(lifetime_multiplier(glass_lifetime, analysis_period))
-                    _frame_mult_fb = int(lifetime_multiplier(wf_lifetime, analysis_period))
-                    _caulk_mult_fb = int(lifetime_multiplier(caulking_lifetime, analysis_period))
-                    _film_mult_fb = int(lifetime_multiplier(film_lifetime, analysis_period))
-                    _ws_mult_fb = int(lifetime_multiplier(weatherstrip_lifetime, analysis_period))
+                    _glass_mult_fb = int(lifetime_multiplier(glass_lifetime, analysis_period)) if use_lifetime_multiplier else 1
+                    _frame_mult_fb = int(lifetime_multiplier(wf_lifetime, analysis_period)) if use_lifetime_multiplier else 1
+                    _caulk_mult_fb = int(lifetime_multiplier(caulking_lifetime, analysis_period)) if use_lifetime_multiplier else 1
+                    _film_mult_fb = int(lifetime_multiplier(film_lifetime, analysis_period)) if use_lifetime_multiplier else 1
+                    _ws_mult_fb = int(lifetime_multiplier(weatherstrip_lifetime, analysis_period)) if use_lifetime_multiplier else 1
                     total_material_cost = self.calculate_custom_costs_from_user_rates(
                         runner, total_glazing_area_m2, total_secondary_glazing_area_m2, total_film_area_m2,
                         total_frame_area_m2, total_caulking_volume_m3,
@@ -4520,12 +4580,16 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
         else:
             total_cost_with_overhead_profit = total_material_cost + total_labor_cost + total_overhead_profit_cost
 
+        reported_total_construction_cost = (
+            total_material_cost if cost_calculation_basis == "bare_material" else total_cost_with_overhead_profit
+        )
+
         return {
             "total_material_cost": total_material_cost,
             "total_labor_cost": total_labor_cost,
             "total_equipment_cost": total_equipment_cost,
             "total_overhead_profit_cost": total_overhead_profit_cost,
-            "total_cost_with_overhead_profit": total_cost_with_overhead_profit,
+            "total_cost_with_overhead_profit": reported_total_construction_cost,
             "cost_factor_basis": cost_factor_basis,
             "rsmeans_material_features": rsmeans_material_features,
             "rsmeans_glass_cost_per_cf": rsmeans_glass_cost_per_cf,
@@ -4549,6 +4613,7 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
         total_equipment_cost,
         total_overhead_profit_cost,
         total_cost_with_overhead_profit,
+        cost_calculation_basis,
         cost_factor_basis,
         overhead_profit_percent,
         labor_cost_multiplier,
@@ -4567,12 +4632,14 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
         rsmeans_weatherstrip_cost_per_lf,
         cost_source,
     ):
+        basis_label = "bare material" if cost_calculation_basis == "bare_material" else "total Op"
         results_features.update({
             "window_material_cost_$": total_material_cost,
             "window_labor_cost_$": total_labor_cost,
             "window_equipment_cost_$": total_equipment_cost,
             "window_overhead_profit_cost_$": total_overhead_profit_cost,
             "window_total_cost_with_overhead_and_profit_$": total_cost_with_overhead_profit,
+            "window_cost_calculation_basis": basis_label,
             "window_cost_factor_basis": cost_factor_basis,
         })
 
@@ -4581,6 +4648,7 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
             "window_overhead_profit_percent": (
                 0.0 if cost_source == "rsmeans_api" else overhead_profit_percent
             ),
+            "window_cost_calculation_basis": basis_label,
             "window_cost_factor_basis": cost_factor_basis,
         })
         if cost_source == "rsmeans_api":

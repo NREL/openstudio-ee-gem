@@ -101,6 +101,12 @@ class IncreaseInsulationRValueForExteriorWalls(openstudio.measure.ModelMeasure):
         analysis_period.setDefaultValue(30)
         args.append(analysis_period)
 
+        use_lifetime_multiplier = openstudio.measure.OSArgument.makeBoolArgument("use_lifetime_multiplier", True)
+        use_lifetime_multiplier.setDisplayName("Apply Lifetime Multiplier to Carbon & Cost")
+        use_lifetime_multiplier.setDescription("If true, account for replacement cycles over analysis period; if false, use single-install multiplier of 1.")
+        use_lifetime_multiplier.setDefaultValue(False)
+        args.append(use_lifetime_multiplier)
+
         gwp_statistics_chs = openstudio.StringVector()
         for gwp_statistic in self.gwp_statistics():
             gwp_statistics_chs.append(gwp_statistic)
@@ -173,6 +179,20 @@ class IncreaseInsulationRValueForExteriorWalls(openstudio.measure.ModelMeasure):
         overhead_profit_percent.setDefaultValue(10.0)
         args.append(overhead_profit_percent)
 
+        cost_calc_basis_values = openstudio.StringVector()
+        cost_calc_basis_values.append("totalop")
+        cost_calc_basis_values.append("bare_material")
+        cost_calculation_basis = openstudio.measure.OSArgument.makeChoiceArgument(
+            "cost_calculation_basis", cost_calc_basis_values, True
+        )
+        cost_calculation_basis.setDisplayName("Construction Cost Calculation Basis")
+        cost_calculation_basis.setDescription(
+            "Choose total installed cost (totalop) or bare material cost (bare_material). "
+            "This switch applies to both RSMeans and custom cost paths."
+        )
+        cost_calculation_basis.setDefaultValue("totalop")
+        args.append(cost_calculation_basis)
+
         use_exact_costline_id = openstudio.measure.OSArgument.makeBoolArgument("use_exact_costline_id", True)
         use_exact_costline_id.setDisplayName("Use Exact RSMeans Costline ID")
         use_exact_costline_id.setDescription("If true, use exact_costline_id for deterministic RSMeans selection.")
@@ -244,6 +264,7 @@ class IncreaseInsulationRValueForExteriorWalls(openstudio.measure.ModelMeasure):
         r_value_ip = runner.getDoubleArgumentValue("r_value", user_arguments)
         # WBLCA parameters:
         analysis_period = runner.getIntegerArgumentValue("analysis_period",user_arguments)
+        use_lifetime_multiplier = runner.getBoolArgumentValue("use_lifetime_multiplier", user_arguments)
         gwp_statistic = runner.getStringArgumentValue("gwp_statistic", user_arguments)
         api_key = runner.getStringArgumentValue("api_key", user_arguments)
         insulation_material_type = runner.getStringArgumentValue("insulation_material_type", user_arguments)
@@ -259,8 +280,17 @@ class IncreaseInsulationRValueForExteriorWalls(openstudio.measure.ModelMeasure):
         custom_cost_per_cf = runner.getDoubleArgumentValue("custom_cost_per_cf", user_arguments)
         labor_cost_multiplier = runner.getDoubleArgumentValue("labor_cost_multiplier", user_arguments)
         overhead_profit_percent = runner.getDoubleArgumentValue("overhead_profit_percent", user_arguments)
+        cost_calculation_basis = str(
+            runner.getStringArgumentValue("cost_calculation_basis", user_arguments)
+        ).strip().lower()
         use_exact_costline_id = runner.getBoolArgumentValue("use_exact_costline_id", user_arguments)
         exact_costline_id = runner.getStringArgumentValue("exact_costline_id", user_arguments).strip()
+
+        if cost_calculation_basis not in ("totalop", "bare_material"):
+            runner.registerWarning(
+                f"Invalid cost_calculation_basis '{cost_calculation_basis}'. Falling back to 'totalop'."
+            )
+            cost_calculation_basis = "totalop"
 
         if use_exact_costline_id and not exact_costline_id:
             runner.registerError("use_exact_costline_id is enabled, but exact_costline_id is empty.")
@@ -719,7 +749,7 @@ class IncreaseInsulationRValueForExteriorWalls(openstudio.measure.ModelMeasure):
         # runner.registerInfo(f"  gwp_per_m3: {material_gwp.get('gwp_per_m3', 0.0):.4f} kg CO2 eq/m3")
 
         # multipliers for calculating embodied carbon over analysis period
-        multiplier = lifetime_multiplier(selected_lifetime, analysis_period)
+        multiplier = lifetime_multiplier(selected_lifetime, analysis_period) if use_lifetime_multiplier else 1
 
         # Iterate through all modified constructions to compute embodied carbon
         gwp_summary = []
@@ -833,7 +863,7 @@ class IncreaseInsulationRValueForExteriorWalls(openstudio.measure.ModelMeasure):
                 else:
                     total_added_volume_cf = float(rsmeans_materials[0].get("quantity_volume", 0.0))
                     if total_added_volume_cf > 0.0:
-                        _lc_mult = int(lifetime_multiplier(insulation_material_lifetime, analysis_period))
+                        _lc_mult = int(lifetime_multiplier(insulation_material_lifetime, analysis_period)) if use_lifetime_multiplier else 1
                         total_material_cost = custom_cost_per_cf * total_added_volume_cf * _lc_mult
                         if labor_cost_multiplier and labor_cost_multiplier > 1.0:
                             total_labor_cost = total_material_cost * (labor_cost_multiplier - 1.0)
@@ -867,12 +897,13 @@ class IncreaseInsulationRValueForExteriorWalls(openstudio.measure.ModelMeasure):
                             measurement_system="imp",
                             use_sandbox=False,
                             overhead_profit_percent=overhead_profit_percent,
+                            cost_calculation_basis=cost_calculation_basis,
                         )
                         if rsmeans_lookup and rsmeans_lookup.get("status") == "ok":
                             summary = rsmeans_lookup.get("summary", {})
                             # RSMeans summary now provides bare component split:
                             # material/labor/equipment are without OHP; OHP is applied once.
-                            _lc_mult = int(lifetime_multiplier(insulation_material_lifetime, analysis_period))
+                            _lc_mult = int(lifetime_multiplier(insulation_material_lifetime, analysis_period)) if use_lifetime_multiplier else 1
                             total_material_cost = float(summary.get("total_material_cost", 0.0)) * _lc_mult
                             total_labor_cost = float(summary.get("total_labor_cost", 0.0)) * _lc_mult
                             total_equipment_cost = float(summary.get("total_equipment_cost", 0.0)) * _lc_mult
@@ -1062,7 +1093,7 @@ class IncreaseInsulationRValueForExteriorWalls(openstudio.measure.ModelMeasure):
             if (not use_custom_costs) and cost_source != "rsmeans_api":
                 total_added_volume_cf = float(rsmeans_materials[0].get("quantity_volume", 0.0)) if rsmeans_materials else 0.0
                 if float(custom_cost_per_cf) > 0.0 and total_added_volume_cf > 0.0:
-                    _lc_mult = int(lifetime_multiplier(insulation_material_lifetime, analysis_period))
+                    _lc_mult = int(lifetime_multiplier(insulation_material_lifetime, analysis_period)) if use_lifetime_multiplier else 1
                     total_material_cost = custom_cost_per_cf * total_added_volume_cf * _lc_mult
                     total_labor_cost = (
                         total_material_cost * (labor_cost_multiplier - 1.0)
@@ -1167,11 +1198,20 @@ class IncreaseInsulationRValueForExteriorWalls(openstudio.measure.ModelMeasure):
 
         # SimulationControl bucket: results and RSMeans detail JSON
         results.setFeature("wall_insulation_embodied_carbon_kgCO2eq", total_embodied_carbon)
+        total_cost_with_overhead_profit = (
+            total_material_cost + total_labor_cost + total_equipment_cost + total_overhead_profit_cost
+        )
+        basis_label = "bare material" if cost_calculation_basis == "bare_material" else "total Op"
+        reported_total_construction_cost = (
+            total_material_cost if cost_calculation_basis == "bare_material" else total_cost_with_overhead_profit
+        )
+
         results.setFeature("wall_insulation_labor_cost_$", total_labor_cost)
         results.setFeature("wall_insulation_material_cost_$", total_material_cost)
         results.setFeature("wall_insulation_equipment_cost_$", total_equipment_cost)
         results.setFeature("wall_insulation_overhead_profit_cost_$", total_overhead_profit_cost)
-        results.setFeature("wall_insulation_total_cost_with_overhead_and_profit_$", total_material_cost + total_labor_cost + total_equipment_cost + total_overhead_profit_cost)
+        results.setFeature("wall_insulation_total_cost_with_overhead_and_profit_$", reported_total_construction_cost)
+        results.setFeature("wall_insulation_cost_calculation_basis", basis_label)
         results.setFeature("wall_insulation_cost_factor_basis", cost_factor_basis)
         
         # Facility bucket: emission/cost factors
@@ -1180,6 +1220,7 @@ class IncreaseInsulationRValueForExteriorWalls(openstudio.measure.ModelMeasure):
             "wall_insulation_overhead_profit_percent",
             0.0 if cost_source == "rsmeans_api" else overhead_profit_percent,
         )
+        factors.setFeature("wall_insulation_cost_calculation_basis", basis_label)
         factors.setFeature("wall_insulation_cost_factor_basis", cost_factor_basis)
         if cost_source in ("custom_input", "custom_input_fallback"):
             factors.setFeature("wall_insulation_custom_labor_cost_multiplier", labor_cost_multiplier)

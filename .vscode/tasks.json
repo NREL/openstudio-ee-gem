@@ -29,6 +29,21 @@
 				"lib/parametric_run/simulations"
 			],
 			"isBackground": false
+		},
+		{
+			"label": "quick-compare-basis-run",
+			"type": "shell",
+			"command": "powershell",
+			"args": [
+				"-NoProfile",
+				"-Command",
+				"$env:WORKFLOW_RUN_NAME='run_quick_compare_basis_20260623'; $env:WORKFLOW_OVERWRITE_EXISTING='1'; $env:WORKFLOW_CUSTOM_COMBOS_JSON='[{\"wall_r_value\":20.4,\"wall_insulation_material_type\":\"Blown Fiberglass\",\"roof_r_value\":34.5,\"roof_insulation_material_type\":\"Blown Fiberglass\",\"door_option\":\"wooden door\",\"door_bottom_seal_option\":\"none\",\"door_top_side_seal_option\":\"none\",\"door_infiltration_reduction_percent\":30.0,\"wf_option\":\"wood window frame\",\"caulking_option\":\"none\",\"film_option\":\"none\",\"weatherstrip_option\":\"none\",\"window_num_panes\":1,\"window_infiltration_reduction_percent\":30.0,\"use_custom_costs\":false,\"cost_calculation_basis\":\"totalop\"},{\"wall_r_value\":20.4,\"wall_insulation_material_type\":\"Blown Fiberglass\",\"roof_r_value\":34.5,\"roof_insulation_material_type\":\"Blown Fiberglass\",\"door_option\":\"wooden door\",\"door_bottom_seal_option\":\"none\",\"door_top_side_seal_option\":\"none\",\"door_infiltration_reduction_percent\":30.0,\"wf_option\":\"wood window frame\",\"caulking_option\":\"none\",\"film_option\":\"none\",\"weatherstrip_option\":\"none\",\"window_num_panes\":1,\"window_infiltration_reduction_percent\":30.0,\"use_custom_costs\":false,\"cost_calculation_basis\":\"bare_material\"}]'; python lib/parametric_run/workflow.py"
+			]
+		},
+		{
+			"label": "quick-compare-basis-run-2",
+			"type": "shell",
+			"command": "$env:WORKFLOW_RUN_NAME='run_quick_compare_basis_20260623'; $env:WORKFLOW_OVERWRITE_EXISTING='1'; $combos=@(@{wall_r_value=20.4; wall_insulation_material_type='Blown Fiberglass'; roof_r_value=34.5; roof_insulation_material_type='Blown Fiberglass'; door_option='wooden door'; door_bottom_seal_option='none'; door_top_side_seal_option='none'; door_infiltration_reduction_percent=30.0; wf_option='wood window frame'; caulking_option='none'; film_option='none'; weatherstrip_option='none'; window_num_panes=1; window_infiltration_reduction_percent=30.0; use_custom_costs=$false; cost_calculation_basis='totalop'}, @{wall_r_value=20.4; wall_insulation_material_type='Blown Fiberglass'; roof_r_value=34.5; roof_insulation_material_type='Blown Fiberglass'; door_option='wooden door'; door_bottom_seal_option='none'; door_top_side_seal_option='none'; door_infiltration_reduction_percent=30.0; wf_option='wood window frame'; caulking_option='none'; film_option='none'; weatherstrip_option='none'; window_num_panes=1; window_infiltration_reduction_percent=30.0; use_custom_costs=$false; cost_calculation_basis='bare_material'}); $env:WORKFLOW_CUSTOM_COMBOS_JSON=($combos | ConvertTo-Json -Depth 8 -Compress); python lib/parametric_run/workflow.py"
 		}
 	]
 }

@@ -1077,6 +1077,7 @@ def create_simulation(
             wall_args = {
                 "r_value": float(scenario_dict["wall_r_value"]),
                 "analysis_period": 30,
+                "use_lifetime_multiplier": bool(scenario_dict.get("use_lifetime_multiplier", False)),
                 "gwp_statistic": "median",
                 # Explicitly skip EC3 lookups for stable cost-only runs.
                 "use_custom_gwp": True,
@@ -1088,6 +1089,7 @@ def create_simulation(
                 "insulation_material_density": 0.0,
                 "calculate_costs": bool(scenario_dict.get("calculate_costs", True)),
                 "use_custom_costs": bool(scenario_dict.get("use_custom_costs", False)),
+                "cost_calculation_basis": str(scenario_dict.get("cost_calculation_basis") or "totalop"),
                 "custom_cost_per_cf": float(scenario_dict.get("wall_insulation_custom_cost_per_cf") or scenario_dict.get("custom_cost_per_cf") or 0.0),
                 "labor_cost_multiplier": float(scenario_dict.get("labor_cost_multiplier") or 1.0),
                 "overhead_profit_percent": float(scenario_dict.get("overhead_profit_percent") or 10.0),
@@ -1104,6 +1106,7 @@ def create_simulation(
             roof_args = {
                 "r_value": float(scenario_dict["roof_r_value"]),
                 "analysis_period": 30,
+                "use_lifetime_multiplier": bool(scenario_dict.get("use_lifetime_multiplier", False)),
                 "gwp_statistic": "median",
                 # Explicitly skip EC3 lookups for stable cost-only runs.
                 "use_custom_gwp": True,
@@ -1115,6 +1118,7 @@ def create_simulation(
                 "insulation_material_density": 0.0,
                 "calculate_costs": bool(scenario_dict.get("calculate_costs", True)),
                 "use_custom_costs": bool(scenario_dict.get("use_custom_costs", False)),
+                "cost_calculation_basis": str(scenario_dict.get("cost_calculation_basis") or "totalop"),
                 "custom_cost_per_cf": float(scenario_dict.get("roof_insulation_custom_cost_per_cf") or scenario_dict.get("custom_cost_per_cf") or 0.0),
                 "labor_cost_multiplier": float(scenario_dict.get("labor_cost_multiplier") or 1.0),
                 "overhead_profit_percent": float(scenario_dict.get("overhead_profit_percent") or 10.0),
@@ -1149,6 +1153,7 @@ def create_simulation(
                 "glass_front_visible_reflectance": float(scenario_dict.get("glass_front_visible_reflectance") or 0.0),
                 "glass_back_visible_reflectance": float(scenario_dict.get("glass_back_visible_reflectance") or 0.0),
                 "analysis_period": float(scenario_dict.get("analysis_period") or 30),
+                "use_lifetime_multiplier": bool(scenario_dict.get("use_lifetime_multiplier", False)),
                 "glass_lifetime": float(scenario_dict.get("glass_lifetime") or 15),
                 "wf_lifetime": float(scenario_dict.get("wf_lifetime") or 15),
                 "caulking_lifetime": float(scenario_dict.get("caulking_lifetime") or 10),
@@ -1176,6 +1181,7 @@ def create_simulation(
                 "gwp_statistic": str(scenario_dict.get("gwp_statistic") or "median"),
                 "calculate_costs": bool(scenario_dict.get("calculate_costs", True)),
                 "use_custom_costs": bool(scenario_dict.get("use_custom_costs", False)),
+                "cost_calculation_basis": str(scenario_dict.get("cost_calculation_basis") or "totalop"),
                 "glass_cost_per_cf": float(scenario_dict.get("glass_cost_per_cf") or 0.0),
                 "frame_cost_per_sf": float(scenario_dict.get("frame_cost_per_sf") or 0.0),
                 "caulking_cost_per_cy": float(scenario_dict.get("caulking_cost_per_cy") or 0.0),
@@ -1202,6 +1208,7 @@ def create_simulation(
                 "alter_coef": bool(scenario_dict.get("alter_coef", False)),
                 "door_area_per_unit": float(scenario_dict.get("door_area_per_unit") or 0.0),
                 "analysis_period": float(scenario_dict.get("analysis_period") or 30),
+                "use_lifetime_multiplier": bool(scenario_dict.get("use_lifetime_multiplier", False)),
                 "door_bottom_seal_option": str(scenario_dict.get("door_bottom_seal_option") or "none"),
                 "door_top_side_seal_option": str(scenario_dict.get("door_top_side_seal_option") or "none"),
                 "door_option": str(scenario_dict.get("door_option") or "none"),
@@ -1223,6 +1230,7 @@ def create_simulation(
                 "custom_door_cost_per_area": float(scenario_dict.get("custom_door_cost_per_area") or 0.0),
                 "custom_bottom_seal_cost": float(scenario_dict.get("custom_bottom_seal_cost") or 0.0),
                 "custom_top_side_seal_cost": float(scenario_dict.get("custom_top_side_seal_cost") or 0.0),
+                "cost_calculation_basis": str(scenario_dict.get("cost_calculation_basis") or "totalop"),
                 "labor_cost_multiplier": float(scenario_dict.get("labor_cost_multiplier") or 1.0),
                 "overhead_profit_percent": float(scenario_dict.get("overhead_profit_percent") or 0.0),
             }
@@ -1534,19 +1542,23 @@ def extract_scenario_data(osm_path, scenario_name):
         "wall_insulation_labor_cost_$": "wall_insulation_labor_cost_usd",
         "wall_insulation_overhead_profit_cost_$": "wall_insulation_overhead_profit_cost_usd",
         "wall_insulation_total_cost_with_overhead_and_profit_$": "wall_insulation_total_cost_with_overhead_and_profit_usd",
+        "wall_insulation_cost_calculation_basis": "wall_insulation_cost_calculation_basis",
         "roof_insulation_material_cost_$": "roof_insulation_material_cost_usd",
         "roof_insulation_labor_cost_$": "roof_insulation_labor_cost_usd",
         "roof_insulation_equipment_cost_$": "roof_insulation_equipment_cost_usd",
         "roof_insulation_overhead_profit_cost_$": "roof_insulation_overhead_profit_cost_usd",
         "roof_insulation_total_cost_with_overhead_and_profit_$": "roof_insulation_total_cost_with_overhead_and_profit_usd",
+        "roof_insulation_cost_calculation_basis": "roof_insulation_cost_calculation_basis",
         "window_enhancement_material_cost_$": "window_enhancement_material_cost_usd",
         "window_enhancement_labor_cost_$": "window_enhancement_labor_cost_usd",
         "window_enhancement_overhead_profit_cost_$": "window_enhancement_overhead_profit_cost_usd",
         "window_enhancement_total_cost_with_overhead_and_profit_$": "window_enhancement_total_cost_with_overhead_and_profit_usd",
+        "window_cost_calculation_basis": "window_cost_calculation_basis",
         "door_enhancement_material_cost_$": "door_enhancement_material_cost_usd",
         "door_enhancement_labor_cost_$": "door_enhancement_labor_cost_usd",
         "door_enhancement_overhead_profit_cost_$": "door_enhancement_overhead_profit_cost_usd",
         "door_enhancement_total_cost_with_overhead_and_profit_$": "door_enhancement_total_cost_with_overhead_and_profit_usd",
+        "door_cost_calculation_basis": "door_cost_calculation_basis",
     }
     for src_props in [sim_props, facility_props]:
         for raw_key, norm_key in construction_cost_key_map.items():
@@ -1680,6 +1692,8 @@ def extract_scenario_data(osm_path, scenario_name):
             + float(results.get("window_overhead_profit_cost_$", 0.0) or 0.0)
         )
     door_total = float(results.get("door_enhancement_total_cost_with_overhead_and_profit_usd", 0.0) or 0.0)
+    if door_total <= 0.0:
+        door_total = float(results.get("door_total_cost_with_overhead_and_profit_$", 0.0) or 0.0)
     results["total_additional_construction_cost_usd"] = wall_total + roof_total + window_total + door_total
     results["total_construction_cost_usd"] = results["total_additional_construction_cost_usd"]
     # Total site energy (GJ): prefer Site AdditionalProperties; fallback to SQL tabular data
@@ -1916,7 +1930,7 @@ def generate_parametric_recap(target_path, city_climate_zones=None):
 # (used by run_all_tests.py to drive multiple sequential runs without editing this file).
 # RUN_NAME is purely a folder label under simulations/ -- it has no effect on
 # the model itself. Defaults to "run_test_009" for this branch's ad-hoc standalone runs.
-RUN_NAME = "run_test_combined_screening"
+RUN_NAME = os.environ.get("WORKFLOW_RUN_NAME", "run_test_bare_mtrl_w_no_lifetime_multiplier")
 def detect_openstudio_cli_path():
     """Find the OpenStudio CLI executable on this machine.
 

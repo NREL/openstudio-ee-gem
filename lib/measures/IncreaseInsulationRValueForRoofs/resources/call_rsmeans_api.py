@@ -1887,6 +1887,7 @@ def run_rsmeans_cost_lookup(
     measurement_system: str = "imp",
     use_sandbox: bool = False,
     overhead_profit_percent: float = 0.0,
+    cost_calculation_basis: str = "totalop",
     fallback_costline_ids: Optional[Dict[str, str]] = None,
     write_api_log: bool = True,
 ) -> Dict[str, Any]:
@@ -1947,6 +1948,10 @@ def run_rsmeans_cost_lookup(
         # but does not alter the total (the per-line cost already includes O&P).
         overhead_profit_cost = 0.0
         total_cost = total_bare_cost
+        normalized_basis = str(cost_calculation_basis or "totalop").strip().lower()
+        if normalized_basis not in ("totalop", "bare_material"):
+            normalized_basis = "totalop"
+        selected_total_cost = total_material_cost if normalized_basis == "bare_material" else total_cost
 
         summary = {
             "total_material_cost": total_material_cost,
@@ -1956,6 +1961,8 @@ def run_rsmeans_cost_lookup(
             "overhead_profit_percent": overhead_profit_percent,
             "total_overhead_profit_cost": overhead_profit_cost,
             "total_cost_with_overhead_profit": total_cost,
+            "cost_calculation_basis": normalized_basis,
+            "selected_total_cost": selected_total_cost,
             "materials_count": len(results.get("materials", [])),
             "materials_searched": len(materials),
             "catalogs_searched": results.get("catalogs_searched", catalogs or []),
