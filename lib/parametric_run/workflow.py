@@ -2863,26 +2863,14 @@ def generate_html_report(df, html_report_path, run_name="run"):
         args_df_shared["value"] = args_df_shared["value"].astype(str)
 
     def _window_glass_replacement_executed(row, scenario_name, scenario_summary=None):
+        # Priority 1: Check upgrade_status field
         upgrade_status = str(row.get("window_upgrade_status") or "").strip().lower()
-        if upgrade_status in {"", "nan", "null", "none"}:
-            upgrade_status = None
-        if upgrade_status == "upgraded":
-            return True
-
-        material_cost = _as_float(
-            row.get("window_material_cost_$")
-            if row.get("window_material_cost_$") is not None
-            else row.get("window_enhancement_material_cost_usd")
-        )
-        if material_cost is None or material_cost <= 0:
-            return False
-
-        u_mod = _as_float(_arg_value(scenario_name, "window", "u_factor_modification_percentage")) or 0.0
-        shgc_mod = _as_float(_arg_value(scenario_name, "window", "shgc_modification_percentage")) or 0.0
-        vt_mod = _as_float(_arg_value(scenario_name, "window", "visible_transmittance_modification_percentage")) or 0.0
-        if abs(u_mod) == 0 and abs(shgc_mod) == 0 and abs(vt_mod) == 0:
-            return False
-
+        if upgrade_status and upgrade_status not in {"", "nan", "null", "none"}:
+            if upgrade_status == "upgraded":
+                return True
+            # Other statuses (e.g., "failed_simple_glazing") continue to lower checks
+        
+        # Priority 2: Check SimpleGlazing blocking condition
         note = None
         if scenario_summary:
             note = _clean_summary_note(scenario_summary.get("window"))
@@ -2892,8 +2880,27 @@ def generate_html_report(df, html_report_path, run_name="run"):
             note = _clean_summary_note(row.get("window_enhancement_summary_notes"))
         if note and "glass replacement selected but all window constructions are simpleglazing" in note.lower():
             return False
+        
+        # Priority 3: Check executed glazing area (primary execution indicator)
+        glazing_area = _as_float(
+            row.get("window_renovated_glazing_area_m2")
+            if row.get("window_renovated_glazing_area_m2") is not None
+            else row.get("window_enhancement_renovated_glazing_area_m2")
+        )
+        if glazing_area is not None and glazing_area > 0:
+            return True
+        
+        # Priority 4: Fallback to material cost check
+        material_cost = _as_float(
+            row.get("window_material_cost_$")
+            if row.get("window_material_cost_$") is not None
+            else row.get("window_enhancement_material_cost_usd")
+        )
+        if material_cost is not None and material_cost > 0:
+            return True
 
-        return True
+        # If none of the above conditions are met, glass replacement was not executed
+        return False
 
     def _window_action_bullets(row, scenario_name, scenario_summary):
         bullets = []

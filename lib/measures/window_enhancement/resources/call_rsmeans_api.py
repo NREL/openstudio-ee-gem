@@ -511,33 +511,58 @@ def _get_forced_fallback_rsmeans_id(material_name: str, material: Optional[Dict[
     return None
 
 
-def _extract_bare_components(item: Dict[str, Any]) -> Dict[str, Any]:
-    """Pull material/labor/equipment unit costs (Including O&P) from a RSMeans line item.
+def _extract_bare_components(item: Dict[str, Any], include_op: bool = True) -> Dict[str, Any]:
+    """Pull material/labor/equipment unit costs from a RSMeans line item.
 
     The RSMeans API returns both bare (no overhead/profit) and "Op" (already
     including the published O&P markups) variants of the material, labor and
-    equipment components. To match the book's published "Total Incl. O&P"
-    exactly, this helper extracts the ``*OpCost`` fields so the per-line sum
-    equals ``totalOpCost`` (no additional markup is needed).
+    equipment components.
 
-    Falls back to attributing the entire ``totalOpCost`` to ``material`` when
-    the per-component breakdown is missing. The function name is retained for
-    backward compatibility.
+    Args:
+        item: RSMeans line item dictionary from API response
+        include_op: If True, extract *OpCost fields (including O&P).
+                    If False, extract bare *Cost fields (no O&P).
+
+    Returns:
+        Dict with 'material', 'labor', 'equipment' costs and 'source' indicator.
+        When include_op=True, returns O&P-inclusive costs.
+        When include_op=False, returns bare costs without overhead/profit.
+
+    Falls back to attributing the entire total cost to ``material`` when
+    the per-component breakdown is missing.
     """
     lc = item.get("localizedCosts", {}) or {}
-    if any(k in lc for k in ("materialOpCost", "laborOpCost", "equipmentOpCost")):
+    
+    if include_op:
+        # Extract O&P-inclusive costs (current behavior)
+        if any(k in lc for k in ("materialOpCost", "laborOpCost", "equipmentOpCost")):
+            return {
+                "material": float(lc.get("materialOpCost", 0.0) or 0.0),
+                "labor": float(lc.get("laborOpCost", 0.0) or 0.0),
+                "equipment": float(lc.get("equipmentOpCost", 0.0) or 0.0),
+                "source": "op_components",
+            }
         return {
-            "material": float(lc.get("materialOpCost", 0.0) or 0.0),
-            "labor": float(lc.get("laborOpCost", 0.0) or 0.0),
-            "equipment": float(lc.get("equipmentOpCost", 0.0) or 0.0),
-            "source": "op_components",
+            "material": float(lc.get("totalOpCost", 0.0) or 0.0),
+            "labor": 0.0,
+            "equipment": 0.0,
+            "source": "total_op_cost_fallback",
         }
-    return {
-        "material": float(lc.get("totalOpCost", 0.0) or 0.0),
-        "labor": 0.0,
-        "equipment": 0.0,
-        "source": "total_op_cost_fallback",
-    }
+    else:
+        # Extract bare costs (no O&P)
+        if any(k in lc for k in ("materialCost", "laborCost", "equipmentCost")):
+            return {
+                "material": float(lc.get("materialCost", 0.0) or 0.0),
+                "labor": float(lc.get("laborCost", 0.0) or 0.0),
+                "equipment": float(lc.get("equipmentCost", 0.0) or 0.0),
+                "source": "bare_components",
+            }
+        return {
+            "material": float(lc.get("totalCost", 0.0) or 0.0),
+            "labor": 0.0,
+            "equipment": 0.0,
+            "source": "total_cost_fallback",
+        }
 
 
 def _fetch_unit_cost_for_costline_id(
@@ -548,12 +573,27 @@ def _fetch_unit_cost_for_costline_id(
     location_id: str,
     labor_type: str,
     measurement_system: str,
+    include_op: bool = True,
 ) -> tuple:
     """Fetch unit cost and description for a given RSMeans costline ID.
 
-    Returns (unit_cost, description, catalog, bare_components) or
-    (None, None, None, None). ``unit_cost`` is ``localizedCosts.totalOpCost``
-    (Total Incl. O&P).
+    Args:
+        client: RSMeans API client instance
+        rsmeans_id: RSMeans line item ID to fetch
+        catalogs: List of catalog names to search
+        release_id: RSMeans release ID (e.g., '2024-an')
+        location_id: Location ID for cost localization
+        labor_type: Labor type (e.g., 'std')
+        measurement_system: Measurement system (e.g., 'imp')
+        include_op: If True, extract O&P-inclusive costs. If False, bare costs.
+
+    Returns:
+        Tuple of (unit_cost, description, catalog, components_dict) or
+        (None, None, None, None) if not found.
+        - unit_cost: Total unit cost (with or without O&P based on include_op)
+        - description: Item description string
+        - catalog: Catalog name where item was found
+        - components_dict: Dict with material/labor/equipment breakdown
     """
     for catalog in catalogs:
         try:
@@ -569,10 +609,14 @@ def _fetch_unit_cost_for_costline_id(
                 continue
             for item in cost_line["items"]:
                 if item.get("id") == rsmeans_id:
-                    bare = _extract_bare_components(item)
-                    unit_cost = float(item.get("localizedCosts", {}).get("totalOpCost", 0.0) or 0.0)
+                    components = _extract_bare_components(item, include_op=include_op)
+                    lc = item.get("localizedCosts", {}) or {}
+                    if include_op:
+                        unit_cost = float(lc.get("totalOpCost", 0.0) or 0.0)
+                    else:
+                        unit_cost = float(lc.get("totalCost", 0.0) or 0.0)
                     if unit_cost > 0.0:
-                        return unit_cost, str(item.get("description", "")), catalog, bare
+                        return unit_cost, str(item.get("description", "")), catalog, components
         except Exception:
             continue
     return None, None, None, None
@@ -587,6 +631,7 @@ def _derive_frame_cost_from_window_minus_glass(
     location_id: str,
     labor_type: str,
     measurement_system: str,
+    cost_calculation_basis: str = "totalop",
 ) -> Optional[Dict[str, Any]]:
     """Derive window frame cost using: (entire_window_cost - glass_cost * window_area) / window_area.
     
@@ -601,6 +646,9 @@ def _derive_frame_cost_from_window_minus_glass(
         - glazing_unit_cost: Cost of glazing only ($/SF) from RSMeans (e.g., 088155100030)
         - parsed_window_area_sf: Window area (SF) parsed from RSMeans window description, NOT from OSM model
         - osm_window_area_sf: Total window area from OSM model used for final cost calculation
+    
+    Args:
+        cost_calculation_basis: "totalop" for costs including O&P, "bare_material" for bare costs without O&P.
     
     Final frame cost = frame_unit_cost * osm_window_area_sf
     
@@ -658,6 +706,9 @@ def _derive_frame_cost_from_window_minus_glass(
         # Default to operable wood-window unit for frame-derivation baseline
         window_unit_id = "085210700100"
 
+    # Determine whether to use O&P-inclusive or bare costs based on cost_calculation_basis
+    include_op = (cost_calculation_basis == "totalop")
+
     window_unit_cost, window_desc, window_catalog, window_bare = _fetch_unit_cost_for_costline_id(
         client=client,
         rsmeans_id=window_unit_id,
@@ -666,6 +717,7 @@ def _derive_frame_cost_from_window_minus_glass(
         location_id=location_id,
         labor_type=labor_type,
         measurement_system=measurement_system,
+        include_op=include_op,
     )
     # Prefer the RSMeans window description for the per-window area used by unit-cost derivation.
     if window_desc:
@@ -692,6 +744,7 @@ def _derive_frame_cost_from_window_minus_glass(
         location_id=location_id,
         labor_type=labor_type,
         measurement_system=measurement_system,
+        include_op=include_op,
     )
 
     if window_unit_cost is None or glazing_unit_cost is None:
@@ -760,6 +813,10 @@ def _derive_frame_cost_from_window_minus_glass(
         "unit_cost_basis": material.get("unit", "SF"),
         "unit_cost_basis_note": "Derived frame $/SF is normalized to whole-window area (window unit minus glazing).",
         "costing_mode": "derived_window_minus_glass",
+        # Debug fields for testing
+        "_window_unit_cost_per_sf": window_unit_cost,
+        "_glazing_unit_cost_per_sf": glazing_unit_cost,
+        "_parsed_window_area_sf": parsed_window_area_sf,
     }
 
 
@@ -1977,6 +2034,7 @@ def main() -> int:
         location_id=args.location,
         labor_type=args.labor_type,
         measurement_system=args.measurement_system,
+        cost_calculation_basis="totalop",  # CLI default: use O&P-inclusive costs
     )
 
     # Calculate costs
@@ -2033,6 +2091,7 @@ def search_materials_across_catalogs(
     location_id: str = "us-us-national",
     labor_type: str = "std",
     measurement_system: str = "imp",
+    cost_calculation_basis: str = "totalop",
 ) -> Dict[str, Any]:
     """
     Search for materials across multiple RSMeans catalogs and return best matches.
@@ -2045,6 +2104,7 @@ def search_materials_across_catalogs(
         location_id: Location for pricing
         labor_type: Labor type code
         measurement_system: "imp" or "met"
+        cost_calculation_basis: "totalop" for O&P-inclusive costs, "bare_material" for bare costs
     
     Returns:
         Dict with 'total_cost', 'materials' (with catalog info), 'errors', 'search_log'
@@ -2141,6 +2201,7 @@ def search_materials_across_catalogs(
                 location_id=location_id,
                 labor_type=labor_type,
                 measurement_system=measurement_system,
+                cost_calculation_basis=cost_calculation_basis,
             )
             if derived:
                 best_match = {
@@ -2756,6 +2817,7 @@ def run_rsmeans_cost_lookup(
             location_id=location_id,
             labor_type=labor_type,
             measurement_system=measurement_system,
+            cost_calculation_basis=cost_calculation_basis,
         )
 
         total_material_cost = float(results.get("total_material_cost", 0.0))
