@@ -1044,7 +1044,7 @@ def create_simulation(
             scenario_dict.get("window_infiltration_reduction_percent"),
         )
         has_window_renovation = any([
-            scenario_dict.get("window_num_panes"),
+            scenario_dict.get("window_num_panes") not in [None, "", 0, 0.0],
             window_infiltration_reduction not in [None, "", 0, 0.0],
             str(scenario_dict.get("weatherstrip_option", "none")).strip().lower() != "none",
             str(scenario_dict.get("wf_option", "none")).strip().lower() != "none",
@@ -1053,7 +1053,7 @@ def create_simulation(
             str(scenario_dict.get("secondary_glazing_option", "none")).strip().lower() != "none",
         ])
         has_door_renovation = any([
-            scenario_dict.get("door_option"),
+            str(scenario_dict.get("door_option", "none")).strip().lower() != "none",
             scenario_dict.get("door_infiltration_reduction_percent") not in [None, "", 0, 0.0],
             str(scenario_dict.get("door_bottom_seal_option", "none")).strip().lower() != "none",
             str(scenario_dict.get("door_top_side_seal_option", "none")).strip().lower() != "none",
@@ -1279,7 +1279,26 @@ def generate_scenarios(
     Generate scenarios:
     - Always includes baseline
     - Custom explicit combinations via custom_combos
+    - For climate-zone-specific R-value testing: filters combos to match each city's climate zone
     """
+    # Climate zone to minimum wall R-value mapping (from ASHRAE 90.1)
+    CLIMATE_ZONE_TO_R_VALUE = {
+        "ASHRAE 169-2013-1A": 8.1,
+        "ASHRAE 169-2013-2A": 11.9,
+        "ASHRAE 169-2013-2B": 11.9,
+        "ASHRAE 169-2013-3A": 13.0,
+        "ASHRAE 169-2013-3B": 13.0,
+        "ASHRAE 169-2013-3C": 13.0,
+        "ASHRAE 169-2013-4A": 15.6,
+        "ASHRAE 169-2013-4C": 15.6,
+        "ASHRAE 169-2013-5A": 18.2,
+        "ASHRAE 169-2013-5B": 18.2,
+        "ASHRAE 169-2013-6A": 20.4,
+        "ASHRAE 169-2013-6B": 20.4,
+        "ASHRAE 169-2013-7A": 20.4,
+        "ASHRAE 169-2013-8A": 27.0,
+    }
+    
     scenarios = []
     # 1) BASELINE
     for city, building_type in product(cities, building_types):
@@ -1308,9 +1327,23 @@ def generate_scenarios(
         })
 
     # 2) CUSTOM EXPLICIT COMBINATIONS
+    # Filter: only add combos that match each city's climate zone R-value
     if custom_combos:
         for combo_index, combo in enumerate(custom_combos, start=1):
             for city, building_type in product(cities, building_types):
+                # Get the target R-value for this city's climate zone
+                city_climate_zone = city_climate_zones.get(city)
+                city_target_r_value = CLIMATE_ZONE_TO_R_VALUE.get(city_climate_zone) if city_climate_zone else None
+                
+                # Get the combo's wall R-value
+                combo_wall_r_value = combo.get("wall_r_value")
+                
+                # Skip this combo if it doesn't match the city's climate zone R-value
+                # (allows non-wall combos to pass through by checking if wall_r_value is set)
+                if combo_wall_r_value is not None and city_target_r_value is not None:
+                    if abs(combo_wall_r_value - city_target_r_value) > 0.01:  # tolerance for float comparison
+                        continue
+                
                 scenario = {
                     "is_baseline": False,
                     "city": city,
@@ -1930,7 +1963,7 @@ def generate_parametric_recap(target_path, city_climate_zones=None):
 # (used by run_all_tests.py to drive multiple sequential runs without editing this file).
 # RUN_NAME is purely a folder label under simulations/ -- it has no effect on
 # the model itself. Defaults to "run_test_009" for this branch's ad-hoc standalone runs.
-RUN_NAME = os.environ.get("WORKFLOW_RUN_NAME", "run_test_bare_mtrl_w_no_lifetime_multiplier")
+RUN_NAME = os.environ.get("WORKFLOW_RUN_NAME", "run_test_wall_insulation")
 def detect_openstudio_cli_path():
     """Find the OpenStudio CLI executable on this machine.
 
@@ -1967,9 +2000,9 @@ city_climate_zones = {
     # "Amarillo":     "ASHRAE 169-2013-3B",
     # "Atlanta":      "ASHRAE 169-2013-3A",
     # "Baltimore":    "ASHRAE 169-2013-4A",
+     "Buffalo":      "ASHRAE 169-2013-5A",
     # "Chicago":      "ASHRAE 169-2013-5A",
     # "Denver":       "ASHRAE 169-2013-5B",
-    "Buffalo":      "ASHRAE 169-2013-5A",
     # "Duluth":       "ASHRAE 169-2013-7A",
     # "ElPaso":       "ASHRAE 169-2013-3B",
     # "Fairbanks":    "ASHRAE 169-2013-8A",
@@ -1988,7 +2021,7 @@ CITIES = list(city_climate_zones.keys())
 BUILDING_TYPES = [
     # "LargeOffice",
     # "MediumOffice",
-     "SmallOffice",
+    "SmallOffice",
     # "SmallHotel",
     # "LargeHotel",
     # "Warehouse",
@@ -1999,7 +2032,8 @@ BUILDING_TYPES = [
 ]
 
 #TEMPLATE = "90.1-2004"
-TEMPLATE = "DOE Ref 1980-2004"
+#TEMPLATE = "DOE Ref 1980-2004"
+TEMPLATE = "DOE Ref Pre-1980"
 
 # --- CUSTOM COMBINATION SCENARIOS ---
 # Each entry in CUSTOM_COMBOS is a retrofit "recipe" applied on top of the
@@ -2023,7 +2057,7 @@ TEMPLATE = "DOE Ref 1980-2004"
 # When run_all_tests.py drives this script, WORKFLOW_CUSTOM_COMBOS_JSON
 # (set near the bottom of this section) replaces the file-based defaults.
 
-_CUSTOM_COMBOS_PATH = Path(__file__).with_name("custom_combos.json")
+_CUSTOM_COMBOS_PATH = Path(__file__).with_name("custom_combos_wall_insulation.json")
 with open(_CUSTOM_COMBOS_PATH, "r", encoding="utf-8") as _custom_combos_file:
     CUSTOM_COMBOS = json.load(_custom_combos_file)
 
@@ -2499,6 +2533,7 @@ def generate_html_report(df, html_report_path, run_name="run"):
     report = pd.DataFrame({
 
         "scenario": df[scenario_col].astype(str),
+        "city": df["city"].astype(str) if "city" in df.columns else pd.Series(["Unknown"] * len(df)),
         "annual_cost_usd": elec_cost + gas_cost,
         "annual_emissions_kg": elec_emis + gas_emis,
         "total_site_energy_gj": site_energy,
@@ -2509,6 +2544,16 @@ def generate_html_report(df, html_report_path, run_name="run"):
         "door_ec": door_ec,
 
     })
+    
+    # Extract city from scenario name if city column doesn't exist or is empty
+    if "city" not in df.columns or report["city"].str.strip().eq("").all() or report["city"].str.strip().eq("Unknown").all():
+        def extract_city(scenario_name):
+            """Extract city name from scenario string like 'baseline_SmallOffice_Miami' or 'scenario_1_SmallOffice_Miami'"""
+            match = re.search(r'_(Amarillo|Atlanta|Baltimore|Buffalo|Chicago|Denver|Duluth|ElPaso|Fairbanks|Helena|Houston|Miami|Minneapolis|Phoenix|PortAngeles|Portland|SanFrancisco)(?:_|$)', str(scenario_name))
+            if match:
+                return match.group(1)
+            return "Unknown"
+        report["city"] = report["scenario"].apply(extract_city)
     report["embodied_carbon_kg"] = pd.Series([0.0] * len(report), index=report.index)  # DISABLED: Carbon calculation disabled
     # report["embodied_carbon_kg"] = report[["wall_ec", "roof_ec", "window_ec", "door_ec"]].sum(axis=1)
     floor_area_col_candidates = [
@@ -2529,11 +2574,20 @@ def generate_html_report(df, html_report_path, run_name="run"):
                 break
 
     baseline_mask = report["scenario"].str.contains("baseline", case=False, na=False)
-    baseline = report[baseline_mask].head(1)
-    if baseline.empty:
-        baseline = report.head(1)
-
-    b = baseline.iloc[0]
+    baselines = report[baseline_mask].copy()
+    
+    # Create city to baseline mapping for multi-city comparisons
+    baseline_by_city = {}
+    for _, baseline_row in baselines.iterrows():
+        city = baseline_row.get("city", "Unknown")
+        baseline_by_city[city] = baseline_row
+    
+    # Fallback: use first baseline if no city-specific baseline found
+    default_baseline = baselines.iloc[0] if not baselines.empty else report.iloc[0]
+    
+    # Initialize b with default baseline for use in report generation
+    b = default_baseline
+    
     embodied_analysis_period_years = max(float(default_embodied_analysis_period_years), 1.0)
     comparison_df = report[~baseline_mask].copy()
     lowest_cost_payback_text = "N/A"
@@ -2543,22 +2597,43 @@ def generate_html_report(df, html_report_path, run_name="run"):
     if comparison_df.empty:
         comparison_df = report.head(0).copy()
 
-    comparison_df["cost_delta"] = comparison_df["annual_cost_usd"] - b["annual_cost_usd"]
-    comparison_df["cost_delta_pct"] = comparison_df["cost_delta"] / b["annual_cost_usd"] * 100.0 if b["annual_cost_usd"] > 0 else 0.0
-    comparison_df["emissions_delta"] = comparison_df["annual_emissions_kg"] - b["annual_emissions_kg"]
-    comparison_df["emissions_delta_pct"] = comparison_df["emissions_delta"] / b["annual_emissions_kg"] * 100.0 if b["annual_emissions_kg"] > 0 else 0.0
-    comparison_df["energy_delta"] = b["total_site_energy_gj"] - comparison_df["total_site_energy_gj"]
-    comparison_df["energy_delta_pct"] = comparison_df["energy_delta"] / b["total_site_energy_gj"] * 100.0 if b["total_site_energy_gj"] > 0 else 0.0
+    # Calculate deltas using city-specific baselines
+    comparison_df["cost_delta"] = 0.0
+    comparison_df["cost_delta_pct"] = 0.0
+    comparison_df["emissions_delta"] = 0.0
+    comparison_df["emissions_delta_pct"] = 0.0
+    comparison_df["energy_delta"] = 0.0
+    comparison_df["energy_delta_pct"] = 0.0
+    
+    for idx, row in comparison_df.iterrows():
+        city = row.get("city", "Unknown")
+        b = baseline_by_city.get(city, default_baseline)
+        
+        comparison_df.at[idx, "cost_delta"] = row["annual_cost_usd"] - b["annual_cost_usd"]
+        comparison_df.at[idx, "cost_delta_pct"] = (
+            comparison_df.at[idx, "cost_delta"] / b["annual_cost_usd"] * 100.0 
+            if b["annual_cost_usd"] > 0 else 0.0
+        )
+        comparison_df.at[idx, "emissions_delta"] = row["annual_emissions_kg"] - b["annual_emissions_kg"]
+        comparison_df.at[idx, "emissions_delta_pct"] = (
+            comparison_df.at[idx, "emissions_delta"] / b["annual_emissions_kg"] * 100.0 
+            if b["annual_emissions_kg"] > 0 else 0.0
+        )
+        comparison_df.at[idx, "energy_delta"] = b["total_site_energy_gj"] - row["total_site_energy_gj"]
+        comparison_df.at[idx, "energy_delta_pct"] = (
+            comparison_df.at[idx, "energy_delta"] / b["total_site_energy_gj"] * 100.0 
+            if b["total_site_energy_gj"] > 0 else 0.0
+        )
     if comparison_df.empty:
-        max_savings = b
-        max_emissions_reduction = b
+        max_savings = default_baseline
+        max_emissions_reduction = default_baseline
         max_savings_scenario = "No renovation scenarios"
         max_emissions_scenario = "No renovation scenarios"
         max_cost_delta = 0.0
         max_cost_delta_pct = 0.0
         max_emis_delta = 0.0
         max_emis_delta_pct = 0.0
-        max_energy_savings_row = b
+        max_energy_savings_row = default_baseline
         max_energy_scenario = "No renovation scenarios"
         max_energy_delta_gj = 0.0
         max_energy_delta_pct = 0.0
@@ -2635,14 +2710,25 @@ def generate_html_report(df, html_report_path, run_name="run"):
 
     max_cost_class = "positive" if max_cost_delta <= 0 else ""
     max_emis_class = "positive" if max_emis_delta <= 0 else ""
-    max_chart_cost = max(b["annual_cost_usd"], max_savings["annual_cost_usd"], 1.0)
-    baseline_cost_w = b["annual_cost_usd"] / max_chart_cost * 100.0
+    
+    # Get city-specific baselines for chart calculations
+    best_cost_city = max_savings.get("city", "Unknown") if not comparison_df.empty else "Unknown"
+    best_cost_baseline = baseline_by_city.get(best_cost_city, default_baseline)
+    
+    best_emis_city = max_emissions_reduction.get("city", "Unknown") if not comparison_df.empty else "Unknown"
+    best_emis_baseline = baseline_by_city.get(best_emis_city, default_baseline)
+    
+    best_energy_city = max_energy_savings_row.get("city", "Unknown") if not comparison_df.empty else "Unknown"
+    best_energy_baseline = baseline_by_city.get(best_energy_city, default_baseline)
+    
+    max_chart_cost = max(best_cost_baseline["annual_cost_usd"], max_savings["annual_cost_usd"], 1.0)
+    baseline_cost_w = best_cost_baseline["annual_cost_usd"] / max_chart_cost * 100.0
     best_cost_w = max_savings["annual_cost_usd"] / max_chart_cost * 100.0
-    max_chart_emis = max(b["annual_emissions_kg"], max_emissions_reduction["annual_emissions_kg"], 1.0)
-    baseline_emis_w = b["annual_emissions_kg"] / max_chart_emis * 100.0
+    max_chart_emis = max(best_emis_baseline["annual_emissions_kg"], max_emissions_reduction["annual_emissions_kg"], 1.0)
+    baseline_emis_w = best_emis_baseline["annual_emissions_kg"] / max_chart_emis * 100.0
     best_emis_w = max_emissions_reduction["annual_emissions_kg"] / max_chart_emis * 100.0
-    max_chart_energy = max(b["total_site_energy_gj"], max_energy_savings_row["total_site_energy_gj"], 1.0)
-    baseline_energy_w = b["total_site_energy_gj"] / max_chart_energy * 100.0
+    max_chart_energy = max(best_energy_baseline["total_site_energy_gj"], max_energy_savings_row["total_site_energy_gj"], 1.0)
+    baseline_energy_w = best_energy_baseline["total_site_energy_gj"] / max_chart_energy * 100.0
     best_energy_w = max_energy_savings_row["total_site_energy_gj"] / max_chart_energy * 100.0
     def _format_chart_number(v):
         try:
@@ -2790,7 +2876,7 @@ def generate_html_report(df, html_report_path, run_name="run"):
             return None
 
         window_requested = any([
-            scenario_cfg.get("window_num_panes"),
+            scenario_cfg.get("window_num_panes") not in [None, "", 0, 0.0],
             scenario_cfg.get("window_enhancement_infiltration_reduction_percent") not in [None, "", 0, 0.0],
             scenario_cfg.get("window_infiltration_reduction_percent") not in [None, "", 0, 0.0],
             str(scenario_cfg.get("weatherstrip_option", "none")).strip().lower() != "none",
@@ -2800,7 +2886,7 @@ def generate_html_report(df, html_report_path, run_name="run"):
             str(scenario_cfg.get("secondary_glazing_option", "none")).strip().lower() != "none",
         ])
         door_requested = any([
-            scenario_cfg.get("door_option"),
+            str(scenario_cfg.get("door_option", "none")).strip().lower() != "none",
             scenario_cfg.get("door_infiltration_reduction_percent") not in [None, "", 0, 0.0],
             str(scenario_cfg.get("door_bottom_seal_option", "none")).strip().lower() != "none",
             str(scenario_cfg.get("door_top_side_seal_option", "none")).strip().lower() != "none",
@@ -3547,6 +3633,10 @@ def generate_html_report(df, html_report_path, run_name="run"):
 
     energy_analysis_rows = []
     for _, row in comparison_df.iterrows():
+        # Get city-specific baseline
+        city = row.get("city", "Unknown")
+        b = baseline_by_city.get(city, default_baseline)
+        
         row_delta = b["total_site_energy_gj"] - row["total_site_energy_gj"]
         row_delta_pct = (row_delta / b["total_site_energy_gj"] * 100.0) if b["total_site_energy_gj"] > 0 else 0.0
         positive_class = "positive" if row_delta >= 0 else ""
@@ -3588,7 +3678,7 @@ def generate_html_report(df, html_report_path, run_name="run"):
         lowest_carbon_payback_scenario = "No renovation scenarios"
 
     else:
-        payback_df = comparison_df[["scenario", "cost_delta", "emissions_delta", "embodied_carbon_kg", "annual_emissions_kg", "annual_cost_usd"]].copy()
+        payback_df = comparison_df[["scenario", "city", "cost_delta", "emissions_delta", "embodied_carbon_kg", "annual_emissions_kg", "annual_cost_usd"]].copy()
         if available_construction_cost_col:
             construction_series = pd.to_numeric(df[available_construction_cost_col], errors="coerce")
             construction_lookup = pd.DataFrame({
@@ -3675,6 +3765,11 @@ def generate_html_report(df, html_report_path, run_name="run"):
 
             for _, payback_row in payback_df.iterrows():
                 scenario_name = str(payback_row["scenario"])
+                
+                # Get city-specific baseline for this scenario
+                city = payback_row.get("city", "Unknown")
+                b = baseline_by_city.get(city, default_baseline)
+                
                 wall_status = _cmp_arg_value(scenario_name, "wall", "__status__")
                 roof_status = _cmp_arg_value(scenario_name, "roof", "__status__")
                 # Prefer wall material comparison groups first, then roof.

@@ -79,7 +79,7 @@ class IncreaseInsulationRValueForExteriorWalls(openstudio.measure.ModelMeasure):
             "Mineral Wool Heavy Density Blanket",
             "Mineral Wool Light Density Blanket",
             "Fiberglass Batts",
-            "Pure Wool Batts"
+#            "Pure Wool Batts"
         ]  
 
     @staticmethod

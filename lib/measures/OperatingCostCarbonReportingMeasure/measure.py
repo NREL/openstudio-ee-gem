@@ -28,7 +28,8 @@ class OperatingCostCarbonReport(openstudio.measure.ReportingMeasure):
             "hourly electricity and gas consumption from EnergyPlus simulations. "
             "Configuration is read from CSV files in the resources folder: "
             "input.csv (main config), emissions.csv (emission factors by Balancing Authority), "
-            "and gas_cost.csv (gas costs by state)."
+            "gas_cost.csv (gas costs by state), and eia_elec_avg_price_table_4.csv "
+            "(electricity rates by city and building type from EIA 2024 data)."
         )
 
     def modeler_description(self):
@@ -38,6 +39,9 @@ class OperatingCostCarbonReport(openstudio.measure.ReportingMeasure):
             "from the SQL file. Reads configuration from resources/input.csv. "
             "If emission factor is not specified, looks up value from resources/emissions.csv "
             "using Balancing Authority Code. Gas costs are looked up from resources/gas_cost.csv. "
+            "Electricity rates are looked up from resources/eia_elec_avg_price_table_4.csv based on "
+            "the city extracted from the weather file path and building type category (Residential, "
+            "Commercial, or Industrial). If no match is found, uses default rates from input.csv. "
             "Gas emissions calculated as 50.3 kg CO2/GJ. Demand charge is 20 $/kW times max monthly kW."
         )
 
@@ -152,6 +156,129 @@ class OperatingCostCarbonReport(openstudio.measure.ReportingMeasure):
         except Exception as e:
             runner.registerError(f"Error reading gas_cost.csv: {str(e)}")
             return {}
+
+    def load_electricity_rates(self, runner) -> Optional[Dict]:
+        """
+        Load electricity rates from resources/eia_elec_avg_price_table_4.csv.
+        
+        Returns:
+            Dictionary mapping (city, building_category) to rate in $/kWh
+        """
+        measure_dir = Path(__file__).parent.absolute()
+        elec_file = measure_dir / "resources" / "eia_elec_avg_price_table_4.csv"
+        
+        if not elec_file.exists():
+            runner.registerWarning(f"Electricity rates file not found: {elec_file}")
+            return {}
+        
+        electricity_rates = {}
+        try:
+            with open(elec_file, 'r', encoding='utf-8-sig') as f:
+                reader = csv.DictReader(f)
+                for row in reader:
+                    state = row.get('State', '').strip()
+                    weather_file = row.get('weather_file', '').strip()
+                    
+                    # Skip if no weather_file mapping or header rows
+                    if not weather_file or not state:
+                        continue
+                    
+                    # Extract rates for each building category (in cents/kWh)
+                    for category in ['Residential', 'Commercial', 'Industrial']:
+                        rate_str = row.get(category, '').strip()
+                        if rate_str and rate_str != '.':
+                            try:
+                                # Convert from cents/kWh to $/kWh
+                                rate_cents = float(rate_str)
+                                rate_dollars = rate_cents / 100.0
+                                electricity_rates[(weather_file, category)] = rate_dollars
+                            except ValueError:
+                                continue
+            
+            runner.registerInfo(f"Loaded {len(electricity_rates)} electricity rate entries from {elec_file}")
+            return electricity_rates
+        except Exception as e:
+            runner.registerError(f"Error reading eia_elec_avg_price_table_4.csv: {str(e)}")
+            return {}
+
+    def get_weather_file_city(self, model, runner) -> Optional[str]:
+        """
+        Extract city name from the weather file path in the model.
+        
+        Returns:
+            City name (e.g., 'Atlanta', 'Chicago') or None if not found
+        """
+        try:
+            weather_file = model.getWeatherFile()
+            if weather_file.url().is_initialized():
+                url = weather_file.url().get()
+                # Extract city from path like '.../weather/Atlanta/USA_GA_Atlanta...'
+                path_parts = url.replace('\\', '/').split('/')
+                for i, part in enumerate(path_parts):
+                    if part == 'weather' and i + 1 < len(path_parts):
+                        city = path_parts[i + 1]
+                        runner.registerInfo(f"Detected city from weather file: {city}")
+                        return city
+        except Exception as e:
+            runner.registerWarning(f"Could not extract city from weather file: {e}")
+        
+        return None
+
+    def get_building_type_category(self, model, runner) -> str:
+        """
+        Map building type to electricity rate category (Residential/Commercial/Industrial).
+        
+        Returns:
+            'Residential', 'Commercial', or 'Industrial'
+        """
+        try:
+            # Try to get building type from model's Building object
+            building = model.getBuilding()
+            building_type = ""
+            
+            # Method 1: Check additional properties
+            building_props = building.additionalProperties()
+            if building_props.hasFeature("building_type"):
+                building_type = str(building_props.getFeatureAsString("building_type").get())
+                runner.registerInfo(f"Detected building type from AdditionalProperties: {building_type}")
+            
+            # Method 2: Extract from Building name (DOE prototypes use names like "-Warehouse-ASHRAE...")
+            if not building_type:
+                building_name = building.name().get() if building.name().is_initialized() else ""
+                if building_name:
+                    # Extract building type from name pattern: "-BuildingType-Climate..."
+                    import re
+                    match = re.search(r'-(\w+)-', building_name)
+                    if match:
+                        building_type = match.group(1)
+                        runner.registerInfo(f"Detected building type from Building name: {building_type}")
+            
+            # Method 3: Try standardsInformation (may not work in all API versions)
+            if not building_type:
+                try:
+                    standards_info = building.standardsInformation()
+                    building_type_opt = standards_info.standardsBuildingType()
+                    if building_type_opt.is_initialized():
+                        building_type = building_type_opt.get()
+                        runner.registerInfo(f"Detected building type from standardsInformation: {building_type}")
+                except AttributeError:
+                    pass  # standardsInformation() not available in this API version
+            
+            building_type_lower = building_type.lower()
+            
+            # Map building types to rate categories
+            if 'warehouse' in building_type_lower or 'industrial' in building_type_lower:
+                return 'Industrial'
+            elif 'residential' in building_type_lower or 'apartment' in building_type_lower or 'singlefamily' in building_type_lower or 'multifamily' in building_type_lower:
+                return 'Residential'
+            else:
+                # Default to Commercial for offices, hotels, retail, schools, etc.
+                return 'Commercial'
+                
+        except Exception as e:
+            runner.registerWarning(f"Could not determine building type: {e}")
+            # Default to Commercial
+            return 'Commercial'
 
     def is_on_peak(self, day_of_week: int, hour: int, 
                    on_peak_start: int, on_peak_end: int) -> bool:
@@ -348,13 +475,55 @@ class OperatingCostCarbonReport(openstudio.measure.ReportingMeasure):
         
         runner.registerInfo(f"Gas costs loaded: {len(gas_costs)} entries")
         
-        # Extract configuration values
+        # Load electricity rates from EIA data
+        electricity_rates = self.load_electricity_rates(runner)
+        if not electricity_rates:
+            runner.registerWarning("Could not load electricity rates, will use default rates from input.csv")
+            electricity_rates = {}
+        
+        runner.registerInfo(f"Electricity rates loaded: {len(electricity_rates)} entries")
+        
+        # Get model to extract weather file and building type
+        model_opt = runner.lastOpenStudioModel()
+        if not model_opt.is_initialized():
+            runner.registerError("Cannot retrieve OpenStudio model")
+            return False
+        
+        model = model_opt.get()
+        
+        # Extract city from weather file and building category
+        city = self.get_weather_file_city(model, runner)
+        building_category = self.get_building_type_category(model, runner)
+        
+        # Extract configuration values (defaults from input.csv)
         ba_code = config.get('Balancing Authority', 'CISO').strip()
-        on_peak_rate = float(config.get('Electricity - cost on peak', '0.12'))
-        off_peak_rate = float(config.get('Electricity - cost off peak', '0.10'))
+        default_on_peak_rate = float(config.get('Electricity - cost on peak', '0.12'))
+        default_off_peak_rate = float(config.get('Electricity - cost off peak', '0.10'))
         on_peak_start = int(config.get('Electricity - peak hour start', '16'))
         on_peak_end = int(config.get('Electricity - peak hour end', '20'))
         state = config.get('State', 'National Average').strip()
+        
+        # Try to get electricity rate from EIA data based on city and building category
+        on_peak_rate = default_on_peak_rate
+        off_peak_rate = default_off_peak_rate
+        
+        if city and building_category and (city, building_category) in electricity_rates:
+            avg_rate = electricity_rates[(city, building_category)]
+            on_peak_rate = avg_rate
+            off_peak_rate = avg_rate
+            runner.registerInfo(
+                f"Using EIA electricity rate for {city}, {building_category}: ${avg_rate:.4f}/kWh"
+            )
+        else:
+            if city:
+                runner.registerWarning(
+                    f"No electricity rate found for city='{city}', category='{building_category}'. "
+                    f"Using default rates from input.csv"
+                )
+            else:
+                runner.registerWarning(
+                    f"Could not determine city from weather file. Using default rates from input.csv"
+                )
         
         # Fixed values per requirements
         demand_charge = 20.0  # $/kW

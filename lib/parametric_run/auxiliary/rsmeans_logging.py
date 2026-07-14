@@ -35,7 +35,7 @@ def append_jsonl_record(log_path: Optional[Path], record: Dict[str, Any]) -> Non
     try:
         log_path.parent.mkdir(parents=True, exist_ok=True)
         with log_path.open("a", encoding="utf-8") as handle:
-            handle.write(json.dumps(record, ensure_ascii=False) + "\n")
+            handle.write(json.dumps(record, ensure_ascii=False, indent=2) + "\n\n")
     except Exception:
         return
 
