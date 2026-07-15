@@ -1997,23 +1997,23 @@ base_weather_path = str(notebook_dir / "weather")          # EPW/DDY per city
 measure_dir_path = str(notebook_dir.parent / "measures")   # lib/measures/
 base_run_dir = str(notebook_dir / "simulations" / RUN_NAME)  # this run's outputs
 city_climate_zones = {
-    # "Amarillo":     "ASHRAE 169-2013-3B",
-    # "Atlanta":      "ASHRAE 169-2013-3A",
-    # "Baltimore":    "ASHRAE 169-2013-4A",
-     "Buffalo":      "ASHRAE 169-2013-5A",
-    # "Chicago":      "ASHRAE 169-2013-5A",
-    # "Denver":       "ASHRAE 169-2013-5B",
-    # "Duluth":       "ASHRAE 169-2013-7A",
-    # "ElPaso":       "ASHRAE 169-2013-3B",
-    # "Fairbanks":    "ASHRAE 169-2013-8A",
-    # "Helena":       "ASHRAE 169-2013-6B",
-    # "Houston":      "ASHRAE 169-2013-2A",
-    # "Miami":        "ASHRAE 169-2013-1A",
-    # "Minneapolis":  "ASHRAE 169-2013-6A",
-    # "Phoenix":      "ASHRAE 169-2013-2B",
-    # "PortAngeles":  "ASHRAE 169-2013-4C",
-    # "Portland":     "ASHRAE 169-2013-4C",
-    # "SanFrancisco": "ASHRAE 169-2013-3C",
+    "Amarillo":     "ASHRAE 169-2013-3B",
+    "Atlanta":      "ASHRAE 169-2013-3A",
+    "Baltimore":    "ASHRAE 169-2013-4A",
+    "Buffalo":      "ASHRAE 169-2013-5A",
+    "Chicago":      "ASHRAE 169-2013-5A",
+    "Denver":       "ASHRAE 169-2013-5B",
+    "Duluth":       "ASHRAE 169-2013-7A",
+    "ElPaso":       "ASHRAE 169-2013-3B",
+    "Fairbanks":    "ASHRAE 169-2013-8A",
+    "Helena":       "ASHRAE 169-2013-6B",
+    "Houston":      "ASHRAE 169-2013-2A",
+    "Miami":        "ASHRAE 169-2013-1A",
+    "Minneapolis":  "ASHRAE 169-2013-6A",
+    "Phoenix":      "ASHRAE 169-2013-2B",
+    "PortAngeles":  "ASHRAE 169-2013-4C",
+    "Portland":     "ASHRAE 169-2013-4C",
+    "SanFrancisco": "ASHRAE 169-2013-3C",
 }
 
 # --- PARAMETRIC STUDY CONFIGURATION ---
@@ -2057,7 +2057,7 @@ TEMPLATE = "DOE Ref Pre-1980"
 # When run_all_tests.py drives this script, WORKFLOW_CUSTOM_COMBOS_JSON
 # (set near the bottom of this section) replaces the file-based defaults.
 
-_CUSTOM_COMBOS_PATH = Path(__file__).with_name("custom_combos_wall_insulation.json")
+_CUSTOM_COMBOS_PATH = Path(__file__).with_name("custom_combos_wall_climate_zones.json")
 with open(_CUSTOM_COMBOS_PATH, "r", encoding="utf-8") as _custom_combos_file:
     CUSTOM_COMBOS = json.load(_custom_combos_file)
 

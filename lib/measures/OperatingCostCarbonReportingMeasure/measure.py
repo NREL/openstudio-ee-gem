@@ -28,8 +28,8 @@ class OperatingCostCarbonReport(openstudio.measure.ReportingMeasure):
             "hourly electricity and gas consumption from EnergyPlus simulations. "
             "Configuration is read from CSV files in the resources folder: "
             "input.csv (main config), emissions.csv (emission factors by Balancing Authority), "
-            "gas_cost.csv (gas costs by state), and eia_elec_avg_price_table_4.csv "
-            "(electricity rates by city and building type from EIA 2024 data)."
+            "eia_gas_price_2024.csv (gas costs by state and building type from EIA 2024 data), "
+            "and eia_elec_avg_price_table_4.csv (electricity rates by city and building type from EIA 2024 data)."
         )
 
     def modeler_description(self):
@@ -38,10 +38,12 @@ class OperatingCostCarbonReport(openstudio.measure.ReportingMeasure):
             "Reads 'Electricity:Facility' and 'NaturalGas:Facility' hourly output variables "
             "from the SQL file. Reads configuration from resources/input.csv. "
             "If emission factor is not specified, looks up value from resources/emissions.csv "
-            "using Balancing Authority Code. Gas costs are looked up from resources/gas_cost.csv. "
+            "using Balancing Authority Code. Gas costs are looked up from resources/eia_gas_price_2024.csv "
+            "based on the state (mapped from weather file city) and building type category (Residential, "
+            "Commercial, or Industrial). If Industrial rate is unavailable, falls back to Commercial. "
             "Electricity rates are looked up from resources/eia_elec_avg_price_table_4.csv based on "
-            "the city extracted from the weather file path and building type category (Residential, "
-            "Commercial, or Industrial). If no match is found, uses default rates from input.csv. "
+            "the city extracted from the weather file path and building type category. "
+            "If no match is found, uses 'United States' national average. "
             "Gas emissions calculated as 50.3 kg CO2/GJ. Demand charge is 20 $/kW times max monthly kW."
         )
 
@@ -156,6 +158,84 @@ class OperatingCostCarbonReport(openstudio.measure.ReportingMeasure):
         except Exception as e:
             runner.registerError(f"Error reading gas_cost.csv: {str(e)}")
             return {}
+
+    def load_eia_gas_prices_2024(self, runner) -> Optional[Dict]:
+        """
+        Load gas prices from resources/eia_gas_price_2024.csv.
+        
+        Returns:
+            Dictionary mapping (State, building_category) to gas price ($/MMBtu)
+        """
+        measure_dir = Path(__file__).parent.absolute()
+        gas_file = measure_dir / "resources" / "eia_gas_price_2024.csv"
+        
+        if not gas_file.exists():
+            runner.registerWarning(f"Gas price file not found: {gas_file}")
+            return {}
+        
+        gas_prices = {}
+        try:
+            with open(gas_file, 'r', encoding='latin-1') as f:
+                reader = csv.DictReader(f)
+                for row in reader:
+                    state = row.get('State', '').strip()
+                    if not state:
+                        continue
+                    
+                    # Load prices for each building category
+                    for category in ['Residential', 'Commercial', 'Industrial']:
+                        price_str = row.get(category, '').strip()
+                        if price_str and price_str not in ['', '.', '�']:
+                            try:
+                                price = float(price_str)
+                                gas_prices[(state, category)] = price
+                            except ValueError:
+                                # Skip invalid values
+                                continue
+                        # If Industrial is empty, leave it out (will fallback to Commercial)
+            
+            runner.registerInfo(f"Loaded {len(gas_prices)} gas price entries from {gas_file}")
+            return gas_prices
+        except Exception as e:
+            runner.registerError(f"Error reading eia_gas_price_2024.csv: {str(e)}")
+            return {}
+
+    def get_state_from_city(self, city: Optional[str]) -> Optional[str]:
+        """
+        Map city folder name to state name.
+        Based on weather files in lib/parametric_run/weather.
+        
+        Args:
+            city: City name from weather file (e.g., 'Atlanta', 'Chicago')
+            
+        Returns:
+            State name or None if city not in mapping
+        """
+        if not city:
+            return None
+        
+        # Hardcoded mapping based on lib/parametric_run/weather folders
+        city_to_state = {
+            'Amarillo': 'Texas',
+            'Atlanta': 'Georgia',
+            'Baltimore': 'Maryland',
+            'Buffalo': 'New York',
+            'Chicago': 'Illinois',
+            'Denver': 'Colorado',
+            'Duluth': 'Minnesota',
+            'ElPaso': 'Texas',
+            'Fairbanks': 'Alaska',
+            'Helena': 'Montana',
+            'Houston': 'Texas',
+            'Miami': 'Florida',
+            'Minneapolis': 'Minnesota',
+            'Phoenix': 'Arizona',
+            'PortAngeles': 'Washington',
+            'Portland': 'Oregon',
+            'SanFrancisco': 'California',
+        }
+        
+        return city_to_state.get(city)
 
     def load_electricity_rates(self, runner) -> Optional[Dict]:
         """
@@ -468,12 +548,13 @@ class OperatingCostCarbonReport(openstudio.measure.ReportingMeasure):
         
         runner.registerInfo(f"Emissions data loaded: {len(emissions_data)} entries")
         
-        gas_costs = self.load_gas_costs(runner)
-        if not gas_costs:
-            runner.registerWarning("Could not load gas costs, will use default gas rate")
-            gas_costs = {}
+        # Load gas prices from EIA 2024 data
+        gas_prices = self.load_eia_gas_prices_2024(runner)
+        if not gas_prices:
+            runner.registerWarning("Could not load gas prices from EIA 2024 data")
+            gas_prices = {}
         
-        runner.registerInfo(f"Gas costs loaded: {len(gas_costs)} entries")
+        runner.registerInfo(f"Gas prices loaded: {len(gas_prices)} entries")
         
         # Load electricity rates from EIA data
         electricity_rates = self.load_electricity_rates(runner)
@@ -540,16 +621,35 @@ class OperatingCostCarbonReport(openstudio.measure.ReportingMeasure):
             runner.registerWarning(f"No emission factor found for BA: {ba_code}, using default 0.5 kg/kWh")
             elec_emission = 0.5
         
-        # Look up gas cost by state
-        gas_rate_per_1000ft3 = gas_costs.get(state, 0.0)
+        # Look up gas price by state and building category
+        # First, determine state from city
+        gas_state = self.get_state_from_city(city)
+        if not gas_state:
+            gas_state = 'United States'
+            runner.registerInfo(f"City '{city}' not mapped to state, using United States national average")
         
-        if gas_rate_per_1000ft3 == 0.0:
-            runner.registerWarning(f"No gas cost found for state: {state}, using default $10/1000ft³")
-            gas_rate_per_1000ft3 = 10.0
+        # Look up gas price with fallback logic
+        gas_rate_per_mmbtu = None
         
-        # Convert gas rate from $/1000ft³ to $/GJ
-        # 1000 ft³ ≈ 1.055 GJ
-        gas_rate_per_gj = gas_rate_per_1000ft3 / 1.055
+        # Try (state, building_category)
+        if (gas_state, building_category) in gas_prices:
+            gas_rate_per_mmbtu = gas_prices[(gas_state, building_category)]
+        # If Industrial not found or empty, fallback to Commercial for same state
+        elif building_category == 'Industrial' and (gas_state, 'Commercial') in gas_prices:
+            gas_rate_per_mmbtu = gas_prices[(gas_state, 'Commercial')]
+            runner.registerInfo(f"Industrial gas rate not available for {gas_state}, using Commercial rate")
+        # Final fallback to United States
+        elif ('United States', building_category) in gas_prices:
+            gas_rate_per_mmbtu = gas_prices[('United States', building_category)]
+            runner.registerWarning(f"No gas price found for {gas_state}/{building_category}, using US average")
+        
+        if gas_rate_per_mmbtu is None or gas_rate_per_mmbtu == 0.0:
+            runner.registerWarning(f"No gas price found, using default $10/MMBtu")
+            gas_rate_per_mmbtu = 10.0
+        
+        # Convert gas rate from $/MMBtu to $/GJ
+        # 1 MMBtu = 1.055056 GJ
+        gas_rate_per_gj = gas_rate_per_mmbtu / 1.055056
         
         runner.registerInfo(f"Configuration loaded:")
         runner.registerInfo(f"  Balancing Authority: {ba_code}")
@@ -558,7 +658,8 @@ class OperatingCostCarbonReport(openstudio.measure.ReportingMeasure):
         runner.registerInfo(f"  On-peak rate: ${on_peak_rate:.3f}/kWh ({on_peak_start}:00-{on_peak_end}:00)")
         runner.registerInfo(f"  Off-peak rate: ${off_peak_rate:.3f}/kWh")
         runner.registerInfo(f"  Demand charge: ${demand_charge:.2f}/kW")
-        runner.registerInfo(f"  Gas rate: ${gas_rate_per_gj:.3f}/GJ (${gas_rate_per_1000ft3:.2f}/1000ft³)")
+        runner.registerInfo(f"  Gas state: {gas_state}, Building category: {building_category}")
+        runner.registerInfo(f"  Gas rate: ${gas_rate_per_gj:.3f}/GJ (${gas_rate_per_mmbtu:.2f}/MMBtu)")
 
         # Get the SQL file
         sql_file = runner.lastEnergyPlusSqlFile()
