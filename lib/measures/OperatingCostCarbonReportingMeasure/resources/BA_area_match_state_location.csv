@@ -1,0 +1,34 @@
+﻿Location Name,State,BA Area,BA Area (Short),BA annual CO2 equivalent total output emission rate (lb/MWh),Climate Zone,Weather File Location
+Phoenix,AZ,ARIZONA PUBLIC SERVICE COMPANY,AZPS,"1,457.39",2B,weather/AZ_Phoenix/USA_AZ_Phoenix-Sky.Harbor.Intl.AP.722780_TMYx.epw
+Tulsa,OK,"ASSOCIATED ELECTRIC COOPERATIVE, INC.",AECI,"1,292.21",3A,weather/OK_Tulsa/USA_OK_Tulsa.Intl.AP.723560_TMYx.epw
+Lewiston,ID,AVISTA CORPORATION,AVA,363.542,5B,weather/ID_Lewiston/USA_ID_Lewiston-Nez.Perce.County.Rgnl.AP.727830_TMYx.epw
+Renton,WA,BONNEVILLE POWER ADMINISTRATION,BPAT,213.65,4C,weather/WA_Renton/USA_WA_Renton.Muni.AP.727934_TMYx.epw
+Lancaster,CA,CALIFORNIA INDEPENDENT SYSTEM OPERATOR,CISO,370.651,3B,weather/CA_Lancaster/USA_CA_Lancaster-Fox.Field.723816_TMYx.epw
+Charlotte,NC,DUKE ENERGY CAROLINAS,DUK,486.302,3A,weather/NC_Charlotte/USA_NC_Charlotte.Douglas.Intl.AP.723140_TMYx.epw
+Tampa,FL,DUKE ENERGY FLORIDA INC,FPC,972.803,2A,weather/FL_Tampa/USA_FL_Tampa.Intl.AP.722110_TMYx.epw
+Greensboro,NC,DUKE ENERGY PROGRESS EAST,CPLE,483.557,4A,weather/NC_Greensboro/USA_NC_Greensboro-Piedmont.Triad.Intl.AP.723170_TMYx.epw
+El Paso,TX,EL PASO ELECTRIC COMPANY,EPE,"1,011.76",3B,weather/TX_El_Paso/USA_TX_El.Paso.Intl.AP.722700_TMYx.epw
+Houston,TX,"ELECTRIC RELIABILITY COUNCIL OF TEXAS, INC.",ERCO,736.779,2A,weather/TX_Houston/USA_TX_Houston-Bush.Intercontinental.AP.722430_TMYx.epw
+Opa-locka,FL,FLORIDA POWER & LIGHT COMPANY,FPL,598.609,1A,weather/FL_Miami/USA_FL_Miami-Opa.Locka.Exec.AP.722024_TMYx.epw
+Boise,ID,IDAHO POWER COMPANY,IPCO,225.324,5B,weather/ID_Boise/USA_ID_Boise.AP-Gowen.Field.ANGB.726810_TMYx.epw
+Imperial,CA,IMPERIAL IRRIGATION DISTRICT,IID,251.225,2B,weather/CA_Imperial/USA_CA_Imperial.County.AP.747185_TMYx.epw
+Bedford,MA,ISO NEW ENGLAND INC.,ISNE,545.267,5A,weather/MA_Bedford/USA_MA_Bedford-Hanscom.Field.AP.744900_TMYx.epw
+Los Angeles,CA,LOS ANGELES DEPARTMENT OF WATER AND POWER,LDWP,"1,017.53",3B,weather/CA_Los_Angeles/USA_CA_Los.Angeles.Intl.AP.722950_TMYx.epw
+Louisville,KY,LOUISVILLE GAS AND ELECTRIC COMPANY AND KENTUCKY UTILITIES,LGEE,"1,908.06",4A,weather/KY_Louisville/USA_KY_Louisville.Intl.AP.724230_TMYx.epw
+Detroit,MI,"MIDCONTINENT INDEPENDENT TRANSMISSION SYSTEM OPERATOR, INC..",MISO,987.438,5A,weather/MI_Detroit/USA_MI_Detroit-Young.Intl.AP.725375_TMYx.epw
+Nellis AFB,NV,NEVADA POWER COMPANY,NEVP,706.558,3B,weather/NV_Las_Vegas/USA_NV_Las.Vegas-Nellis.AFB.746140_TMYx.epw
+New York City,NY,NEW YORK INDEPENDENT SYSTEM OPERATOR,NYIS,480.66,4A,weather/NY_New_York/USA_NY_New.York-Kennedy.Intl.AP.744860_TMYx.epw
+Malmstrom AFB,MT,NORTHWESTERN ENERGY (NWMT),NWMT,"1,594.72",6B,weather/MT_Malmstrom/USA_MT_Malmstrom.AFB.727755_TMYx.epw
+Salt Lake City,UT,PACIFICORP - EAST,PACE,"1,418.90",5B,weather/UT_Salt_Lake_City/USA_UT_Salt.Lake.City.Intl.AP.725720_TMYx.epw
+Medford,OR,PACIFICORP - WEST,PACW,309.116,4C,weather/OR_Medford/USA_OR_Medford-Rogue.Valley.Intl-Medford.AP.725970_TMYx.epw
+Chicago,IL,"PJM INTERCONNECTION, LLC",PJM,719.405,5A,weather/IL_Chicago_Midway/USA_IL_Chicago.Midway.Intl.AP.725340_TMYx.epw
+Maxwell AFB,AL,POWERSOUTH ENERGY COOPERATIVE,AEC,,3A,weather/AL_Montgomery/USA_AL_Montgomery-Maxwell-Gunter.AFB.722265_TMYx.epw
+Colorado Springs,CO,PUBLIC SERVICE COMPANY OF COLORADO,PSCO,806.261,5B,weather/CO_Colorado_Springs/USA_CO_Colorado.Springs.AP-Peterson.Field.724660_TMYx.epw
+Albuquerque,NM,PUBLIC SERVICE COMPANY OF NEW MEXICO,PNM,394.657,4B,weather/NM_Albuquerque/USA_NM_Albuquerque-Double.Eagle.II.AP.723647_TMYx.epw
+Columbia,SC,SOUTH CAROLINA ELECTRIC & GAS COMPANY,SCEG,748.563,3A,weather/SC_Columbia/USA_SC_Columbia.Metro.AP.723100_TMYx.epw
+Atlanta,GA,"SOUTHERN COMPANY SERVICES, INC. - TRANS",SOCO,846.471,3A,weather/GA_Atlanta/USA_GA_Atlanta-Hartsfield-Jackson.Intl.AP.722190_TMYx.epw
+Oklahoma City,OK,SOUTHWEST POWER POOL,SWPP,876.354,3A,weather/OK_Oklahoma_City/USA_OK_Oklahoma.City-Post.AP.723544_TMYx.epw
+Memphis,TN,TENNESSEE VALLEY AUTHORITY,TVA,643.921,3A,weather/TN_Memphis/USA_TN_Memphis.Intl.AP.723340_TMYx.epw
+Nogales,AZ,WESTERN AREA POWER ADMINISTRATION - DESERT SOUTHWEST REGION,WALC,481.873,3B,weather/AZ_Nogales/USA_AZ_Nogales.Intl.AP.722728_TMYx.epw
+Rapid City,SD,WESTERN AREA POWER ADMINISTRATION - ROCKY MOUNTAIN REGION,WACM,"1,882.28",5B,weather/SD_Rapid_City/USA_SD_Rapid.City.Rgnl.AP.726620_TMYx.epw
+Billings,MT,WESTERN AREA POWER ADMINISTRATION UGP WEST,WAUW,0,6B,weather/MT_Billings_Logan/USA_MT_Billings.Logan.Intl.AP.726770_TMYx.epw

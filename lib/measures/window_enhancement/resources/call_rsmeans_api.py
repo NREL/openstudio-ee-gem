@@ -93,6 +93,10 @@ WINDOW_DEFAULT_FALLBACK_COSTLINES = {
     "wood operatble window": "085210700100",
     "wood operable window": "085210700100",
     "wood fixed window": "085210550100",
+    # Entire window replacement (frame + glazing assembly)
+    "wood double glazing window": "085210550100",
+    "aluminum double glazing window": "085113204100",
+    "aluminium double glazing window": "085113204100",
     # 0792 joint-sealant lines per EC3 Query Strings spreadsheet (RSMeans sheet).
     "acrylic": "079213200050",       # joint sealant, bulk acrylic latex
     "polyurethane": "079213203200",  # joint sealant, polyurethane bulk, 1 or 2 component
@@ -384,18 +388,18 @@ def _canonicalize_window_material_name(material_name: str, material: Optional[Di
     if name_norm in {"secondary glazing", "secondary glass", "secondary window glazing"}:
         return "secondary glazing"
 
-    if name_norm in {"window frame", "frame"} or ("window" in name_norm and "frame" in name_norm):
-        return "window frame"
-
     if name_norm in {"window glazing", "glazing", "window glass", "glass glazing"}:
         return "window glazing"
+
+    if name_norm in {"entire window", "whole window", "complete window"}:
+        return "entire window"
 
     # If the incoming material name is generic but description clearly points
     # to one supported canonical type, route to that canonical key.
     if name_norm == "film" and "glaz" in description_norm:
         return "glazing film"
-    if name_norm == "frame" and "window" in description_norm:
-        return "window frame"
+    if name_norm == "window" and ("double glazing" in description_norm or "entire" in description_norm):
+        return "entire window"
 
     return name_norm
 
@@ -480,13 +484,26 @@ def _get_default_fallback_rsmeans_id(material_name: str, material: Optional[Dict
 
     if "secondary glazing" in name_norm or "num pane 1" in name_norm:
         return "088155100015"
+    
+    # Entire window replacement (frame + glazing assembly)
+    if name_norm == "entire window" or "double glazing window" in name_norm:
+        if "wood" in description_norm:
+            return "085210550100"
+        if "aluminum" in description_norm or "aluminium" in description_norm:
+            return "085113204100"
+    
     if "aluminum" in name_norm or "aluminium" in name_norm:
+        if "double glazing window" in name_norm:
+            return "085113204100"
         if "operable" in name_norm and "window" in name_norm:
             return "085113204100"
-    if "wood" in name_norm and "operable" in name_norm and "window" in name_norm:
-        return "085210700100"
-    if "wood" in name_norm and "fixed" in name_norm and "window" in name_norm:
-        return "085210550100"
+    if "wood" in name_norm:
+        if "double glazing window" in name_norm:
+            return "085210550100"
+        if "operable" in name_norm and "window" in name_norm:
+            return "085210700100"
+        if "fixed" in name_norm and "window" in name_norm:
+            return "085210550100"
 
     # Handle generic glazing names where pane-count detail is in description.
     if "glazing" in name_norm and (
@@ -620,204 +637,6 @@ def _fetch_unit_cost_for_costline_id(
         except Exception:
             continue
     return None, None, None, None
-
-
-def _derive_frame_cost_from_window_minus_glass(
-    material: Dict[str, Any],
-    all_materials: List[Dict[str, Any]],
-    client: "RSMeansAPIClient",
-    catalogs: List[str],
-    release_id: str,
-    location_id: str,
-    labor_type: str,
-    measurement_system: str,
-    cost_calculation_basis: str = "totalop",
-) -> Optional[Dict[str, Any]]:
-    """Derive window frame cost using: (entire_window_cost - glass_cost * window_area) / window_area.
-    
-    CRITICAL: This derivation is ONLY used for RSMeans API pathway.
-    For custom cost pathway, users provide frame_cost_per_sf directly.
-    
-    The derived frame unit cost ($/SF) is calculated as:
-        frame_unit_cost = (window_unit_cost - glazing_unit_cost * parsed_window_area_sf) / parsed_window_area_sf
-    
-    Where:
-        - window_unit_cost: Cost of entire window assembly ($/EA) from RSMeans (e.g., 085210700100)
-        - glazing_unit_cost: Cost of glazing only ($/SF) from RSMeans (e.g., 088155100030)
-        - parsed_window_area_sf: Window area (SF) parsed from RSMeans window description, NOT from OSM model
-        - osm_window_area_sf: Total window area from OSM model used for final cost calculation
-    
-    Args:
-        cost_calculation_basis: "totalop" for costs including O&P, "bare_material" for bare costs without O&P.
-    
-    Final frame cost = frame_unit_cost * osm_window_area_sf
-    
-    This approach ensures frame cost represents the window frame component cost normalized
-    to window area basis, consistent with how whole-window assemblies are priced.
-    """
-    material_name_norm = _normalize_search_text(material.get("name", ""))
-    if material_name_norm != "window frame":
-        return None
-
-    frame_desc_norm = _normalize_search_text(material.get("description", ""))
-    # num_windows is the per-EA quantity for frame cost; quantity_sf is the glazing area used
-    # for fallback ID bin selection.  Both may be carried explicitly on the material dict.
-    num_windows = float(material.get("num_windows") or 0.0)
-    quantity_sf = float(material.get("glazing_area_sf", material.get("quantity", 0.0)) or 0.0)
-    if quantity_sf <= 0.0 and num_windows <= 0.0:
-        return None
-    if num_windows <= 0.0:
-        num_windows = quantity_sf  # backward-compat fallback
-    # osm_window_area_sf is the model window-area basis used for total frame cost.
-    # parsed_window_area_sf is the per-window area used to derive the frame unit cost.
-    osm_window_area_sf = float(material.get("window_area_sf") or 0.0)
-    if osm_window_area_sf <= 0.0:
-        osm_window_area_sf = quantity_sf
-    parsed_window_area_sf = (osm_window_area_sf / num_windows) if num_windows > 0.0 else quantity_sf
-    if parsed_window_area_sf <= 0.0:
-        parsed_window_area_sf = quantity_sf
-
-    # Determine pane-count from glazing material description if available.
-    pane_count = None
-    glazing_area_sf = quantity_sf
-    for m in all_materials:
-        if _normalize_search_text(m.get("name", "")) == "window glazing":
-            # Prefer the preserved glazing_area_sf over the quantity field, which may now
-            # hold the EA count when num_windows-based pricing is in use.
-            glazing_area_sf = float(m.get("glazing_area_sf", m.get("quantity", quantity_sf)) or quantity_sf)
-            glazing_desc_norm = _normalize_search_text(m.get("description", ""))
-            if "1 pane" in glazing_desc_norm or "1-pane" in glazing_desc_norm or "single" in glazing_desc_norm:
-                pane_count = 1
-            elif "2 pane" in glazing_desc_norm or "2-pane" in glazing_desc_norm or "double" in glazing_desc_norm:
-                pane_count = 2
-            elif "3 pane" in glazing_desc_norm or "3-pane" in glazing_desc_norm or "triple" in glazing_desc_norm:
-                pane_count = 3
-            break
-
-    # Select representative window unit ID (per EC3 Query Strings spreadsheet).
-    # Choose window unit ID based on frame material type from description.
-    if "aluminum" in frame_desc_norm or "aluminium" in frame_desc_norm:
-        # Aluminum window unit
-        window_unit_id = "085113204100"
-    elif "wood" in frame_desc_norm and "fixed" in frame_desc_norm:
-        # Fixed wood window
-        window_unit_id = "085210550100"
-    else:
-        # Default to operable wood-window unit for frame-derivation baseline
-        window_unit_id = "085210700100"
-
-    # Determine whether to use O&P-inclusive or bare costs based on cost_calculation_basis
-    include_op = (cost_calculation_basis == "totalop")
-
-    window_unit_cost, window_desc, window_catalog, window_bare = _fetch_unit_cost_for_costline_id(
-        client=client,
-        rsmeans_id=window_unit_id,
-        catalogs=catalogs,
-        release_id=release_id,
-        location_id=location_id,
-        labor_type=labor_type,
-        measurement_system=measurement_system,
-        include_op=include_op,
-    )
-    # Prefer the RSMeans window description for the per-window area used by unit-cost derivation.
-    if window_desc:
-        _parsed_area_per_window = _parse_window_area_sf_from_description(window_desc)
-        if _parsed_area_per_window and _parsed_area_per_window > 0.0:
-            parsed_window_area_sf = _parsed_area_per_window
-
-    # Select glazing ID for subtraction.
-    # If the whole-window line explicitly represents a double-pane unit,
-    # always subtract a double-pane glazing line binned by one-window area.
-    _frame_glazing_area_sf = parsed_window_area_sf if parsed_window_area_sf > 0.0 else glazing_area_sf
-    if _is_double_pane_window_unit(window_unit_id, window_desc):
-        glazing_id = _get_double_pane_fallback_rsmeans_id(_frame_glazing_area_sf)
-    elif pane_count == 1:
-        glazing_id = "088155100015"
-    else:
-        glazing_id = _get_double_pane_fallback_rsmeans_id(_frame_glazing_area_sf)
-
-    glazing_unit_cost, glazing_desc, glazing_catalog, glazing_bare = _fetch_unit_cost_for_costline_id(
-        client=client,
-        rsmeans_id=glazing_id,
-        catalogs=catalogs,
-        release_id=release_id,
-        location_id=location_id,
-        labor_type=labor_type,
-        measurement_system=measurement_system,
-        include_op=include_op,
-    )
-
-    if window_unit_cost is None or glazing_unit_cost is None:
-        return None
-
-    # glazing_unit_cost is $/SF (RSMeans flat glass is priced per S.F.).
-    # Derive one-window frame $/SF from the window unit price minus one window's glazing cost.
-    _frame_unit_total = max(0.0, window_unit_cost - glazing_unit_cost * parsed_window_area_sf)
-    frame_unit_cost = (
-        _frame_unit_total / parsed_window_area_sf if parsed_window_area_sf > 0.0 else 0.0
-    )
-    # Apply the derived unit cost to the model's total window-area basis.
-    frame_total_cost = frame_unit_cost * osm_window_area_sf
-
-    # Per-component bare split follows the same two-step derivation: per-window unit first,
-    # then apply the derived $/SF to the model window-area basis.
-    if window_bare and glazing_bare:
-        _w_mat = float(window_bare.get("material", 0.0))
-        _w_lab = float(window_bare.get("labor", 0.0))
-        _w_eq  = float(window_bare.get("equipment", 0.0))
-        _g_mat = float(glazing_bare.get("material", 0.0))
-        _g_lab = float(glazing_bare.get("labor", 0.0))
-        _g_eq  = float(glazing_bare.get("equipment", 0.0))
-        _frame_unit_mat = (
-            max(0.0, _w_mat - _g_mat * parsed_window_area_sf) / parsed_window_area_sf
-            if parsed_window_area_sf > 0.0 else 0.0
-        )
-        _frame_unit_lab = (
-            max(0.0, _w_lab - _g_lab * parsed_window_area_sf) / parsed_window_area_sf
-            if parsed_window_area_sf > 0.0 else 0.0
-        )
-        _frame_unit_eq = (
-            max(0.0, _w_eq - _g_eq * parsed_window_area_sf) / parsed_window_area_sf
-            if parsed_window_area_sf > 0.0 else 0.0
-        )
-        _frame_bare_mat = _frame_unit_mat * osm_window_area_sf
-        _frame_bare_lab = _frame_unit_lab * osm_window_area_sf
-        _frame_bare_eq  = _frame_unit_eq  * osm_window_area_sf
-        _frame_bare_total = _frame_bare_mat + _frame_bare_lab + _frame_bare_eq
-        if _frame_bare_total > 0.0 and frame_total_cost > 0.0:
-            _scale = frame_total_cost / _frame_bare_total
-            _frame_total_mat = _frame_bare_mat * _scale
-            _frame_total_lab = _frame_bare_lab * _scale
-            _frame_total_eq  = _frame_bare_eq  * _scale
-        else:
-            _frame_total_mat, _frame_total_lab, _frame_total_eq = frame_total_cost, 0.0, 0.0
-        _comp_source = window_bare.get("source", "bare_components")
-    else:
-        _frame_total_mat, _frame_total_lab, _frame_total_eq = frame_total_cost, 0.0, 0.0
-        _comp_source = "total_op_cost_fallback"
-
-    return {
-        "unit_cost": frame_unit_cost,
-        "total_cost": frame_total_cost,
-        "total_material_cost": _frame_total_mat,
-        "total_labor_cost": _frame_total_lab,
-        "total_equipment_cost": _frame_total_eq,
-        "cost_component_source": _comp_source,
-        "window_unit_id": window_unit_id,
-        "window_unit_desc": window_desc or "",
-        "window_unit_catalog": window_catalog,
-        "glazing_id": glazing_id,
-        "glazing_desc": glazing_desc or "",
-        "glazing_catalog": glazing_catalog,
-        "window_area_sf": osm_window_area_sf,
-        "unit_cost_basis": material.get("unit", "SF"),
-        "unit_cost_basis_note": "Derived frame $/SF is normalized to whole-window area (window unit minus glazing).",
-        "costing_mode": "derived_window_minus_glass",
-        # Debug fields for testing
-        "_window_unit_cost_per_sf": window_unit_cost,
-        "_glazing_unit_cost_per_sf": glazing_unit_cost,
-        "_parsed_window_area_sf": parsed_window_area_sf,
-    }
 
 
 def _get_feature_as_string(props, feature_name: str) -> Optional[str]:
@@ -1270,17 +1089,6 @@ def generate_search_term_alternatives(material_name: str) -> List[tuple]:
                 ("window glass", "08"),
                 ("glazing", "08"),
                 ("IGU", "08"),
-            ])
-        elif "frame" in name_lower:
-            # Window frame alternatives based on common materials
-            alternatives.extend([
-                ("window replacement", "08"),
-                ("window unit", "08"),
-                ("wood window frame", "08"),
-                ("vinyl window frame", "08"),
-                ("aluminum window frame", "08"),
-                ("window sash", "08"),
-                ("window", "08"),
             ])
         else:
             # Generic window alternatives
@@ -2189,54 +1997,6 @@ def search_materials_across_catalogs(
                 })
                 continue
 
-        # For window frame, derive cost when direct frame RSMeans lines are not available:
-        # frame_cost = window_unit_cost - glazing_cost.
-        if not specified_id and _normalize_search_text(material_name) == "window frame":
-            derived = _derive_frame_cost_from_window_minus_glass(
-                material=material,
-                all_materials=materials,
-                client=client,
-                catalogs=catalogs,
-                release_id=release_id,
-                location_id=location_id,
-                labor_type=labor_type,
-                measurement_system=measurement_system,
-                cost_calculation_basis=cost_calculation_basis,
-            )
-            if derived:
-                best_match = {
-                    "id": "derived_window_frame",
-                    "description": "window frame (derived from window unit - glazing)",
-                }
-                best_cost = derived["total_cost"]
-                best_catalog = derived.get("window_unit_catalog")
-                matched_term = "derived:window_unit_minus_glazing"
-                best_unit_cost = derived["unit_cost"]
-                best_unit_basis = derived.get("unit_cost_basis", unit)
-                best_costing_mode = derived.get("costing_mode", "derived_window_minus_glass")
-                best_total_material_cost = float(derived.get("total_material_cost", 0.0))
-                best_total_labor_cost = float(derived.get("total_labor_cost", 0.0))
-                best_total_equipment_cost = float(derived.get("total_equipment_cost", 0.0))
-                best_component_source = derived.get("cost_component_source")
-                _derived_window_area_sf = float(derived.get("window_area_sf", 0.0) or 0.0)
-                _derived_unit_cost_basis_note = derived.get("unit_cost_basis_note")
-                search_log.append({
-                    "material": material_name,
-                    "status": "derived_frame_cost",
-                    "search_term": matched_term,
-                    "catalog": best_catalog,
-                    "quantity": quantity,
-                    "unit_cost": best_unit_cost,
-                    "total_cost": best_cost,
-                    "unit_cost_basis": best_unit_basis,
-                    "unit_cost_basis_note": _derived_unit_cost_basis_note,
-                    "costing_mode": best_costing_mode,
-                    "window_unit_id": derived.get("window_unit_id"),
-                    "window_unit_desc": derived.get("window_unit_desc"),
-                    "glazing_id": derived.get("glazing_id"),
-                    "glazing_desc": derived.get("glazing_desc"),
-                })
-        
         # If a specific RSMeans line item ID is provided, attempt exact match first
         if specified_id and division_code and not _id_matches_division(specified_id, division_code):
             search_log.append({

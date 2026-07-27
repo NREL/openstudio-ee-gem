@@ -42,6 +42,12 @@ def argument_map(model, measure):
 class TestWindowEnhancement:
     """Py.test module for WindowEnhancement."""
 
+    @staticmethod
+    def _set_arg(arg_map, name, value):
+        arg = arg_map[name]
+        arg.setValue(value)
+        arg_map[name] = arg
+
     def test_number_of_arguments_and_argument_names(self, measure, model):
         """Test that the arguments are what we expect."""
         print("Running test_number_of_arguments_and_argument_names()...")
@@ -153,6 +159,70 @@ class TestWindowEnhancement:
 
         del model
         gc.collect()    
+
+    def test_frame_only_replacement_fails(self):
+        model_path = Path(CURRENT_DIR_PATH / "DOE_small_office.osm").absolute()
+        translator = openstudio.osversion.VersionTranslator()
+        model = translator.loadModel(openstudio.toPath(str(model_path))).get()
+
+        osw = openstudio.WorkflowJSON()
+        runner = openstudio.measure.OSRunner(osw)
+
+        measure = WindowEnhancement()
+        args = measure.arguments(model)
+        arg_map = openstudio.measure.convertOSArgumentVectorToMap(args)
+
+        self._set_arg(arg_map, "analysis_period", 30)
+        self._set_arg(arg_map, "glass_option", "none")
+        self._set_arg(arg_map, "user_num_panes", 0)
+        self._set_arg(arg_map, "wf_option", "wood window frame")
+        self._set_arg(arg_map, "caulking_option", "none")
+        self._set_arg(arg_map, "film_option", "none")
+        self._set_arg(arg_map, "weatherstrip_option", "none")
+        self._set_arg(arg_map, "secondary_glazing_option", "none")
+        self._set_arg(arg_map, "use_custom_gwp", True)
+        self._set_arg(arg_map, "use_custom_costs", True)
+
+        measure.run(model, runner, arg_map)
+        result = runner.result()
+        error_messages = [msg.logMessage() for msg in result.errors()]
+
+        assert result.value().valueName() == "Fail"
+        assert any("Window frame replacement requires glass replacement" in msg for msg in error_messages)
+
+        del model
+        gc.collect()
+
+    def test_glass_only_replacement_allowed(self):
+        model_path = Path(CURRENT_DIR_PATH / "DOE_small_office.osm").absolute()
+        translator = openstudio.osversion.VersionTranslator()
+        model = translator.loadModel(openstudio.toPath(str(model_path))).get()
+
+        osw = openstudio.WorkflowJSON()
+        runner = openstudio.measure.OSRunner(osw)
+
+        measure = WindowEnhancement()
+        args = measure.arguments(model)
+        arg_map = openstudio.measure.convertOSArgumentVectorToMap(args)
+
+        self._set_arg(arg_map, "analysis_period", 30)
+        self._set_arg(arg_map, "glass_option", "provide user_num_panes")
+        self._set_arg(arg_map, "user_num_panes", 1)
+        self._set_arg(arg_map, "wf_option", "none")
+        self._set_arg(arg_map, "caulking_option", "none")
+        self._set_arg(arg_map, "film_option", "none")
+        self._set_arg(arg_map, "weatherstrip_option", "none")
+        self._set_arg(arg_map, "secondary_glazing_option", "none")
+        self._set_arg(arg_map, "use_custom_gwp", True)
+        self._set_arg(arg_map, "use_custom_costs", True)
+
+        measure.run(model, runner, arg_map)
+        result = runner.result()
+
+        assert result.value().valueName() == "Success"
+
+        del model
+        gc.collect()
 
 if __name__ == "__main__":
     pytest.main()

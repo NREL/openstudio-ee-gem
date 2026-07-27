@@ -1138,6 +1138,12 @@ def create_simulation(
                 raw_num_panes = int(float(requested_num_panes))
                 num_panes = max(1, min(3, raw_num_panes))
                 glass_option = str(scenario_dict.get("glass_option") or "provide user_num_panes")
+            wf_option = str(scenario_dict.get("wf_option") or "none")
+            if wf_option.strip().lower() != "none" and not (glass_option != "none" and num_panes > 0):
+                print("  Window frame replacement requires glass replacement; scenario skipped.")
+                log_failure("window frame replacement requires glass replacement")
+                del model
+                return None
             window_args = {
                 "glass_option": glass_option,
                 "user_num_panes": num_panes,
@@ -1159,7 +1165,7 @@ def create_simulation(
                 "caulking_lifetime": float(scenario_dict.get("caulking_lifetime") or 10),
                 "film_lifetime": float(scenario_dict.get("film_lifetime") or 10),
                 "weatherstrip_lifetime": float(scenario_dict.get("weatherstrip_lifetime") or 10),
-                "wf_option": str(scenario_dict.get("wf_option") or "none"),
+                "wf_option": wf_option,
                 "caulking_option": str(scenario_dict.get("caulking_option") or "none"),
                 "caulking_thickness": float(scenario_dict.get("caulking_thickness") or 0.0),
                 "film_option": str(scenario_dict.get("film_option") or "none"),
@@ -1299,6 +1305,24 @@ def generate_scenarios(
         "ASHRAE 169-2013-8A": 27.0,
     }
     
+    # Climate zone to minimum roof R-value mapping (from ASHRAE 90.1)
+    CLIMATE_ZONE_TO_ROOF_R_VALUE = {
+        "ASHRAE 169-2013-1A": 24.4,
+        "ASHRAE 169-2013-2A": 24.4,
+        "ASHRAE 169-2013-2B": 24.4,
+        "ASHRAE 169-2013-3A": 24.4,
+        "ASHRAE 169-2013-3B": 24.4,
+        "ASHRAE 169-2013-3C": 24.4,
+        "ASHRAE 169-2013-4A": 27.0,
+        "ASHRAE 169-2013-4C": 27.0,
+        "ASHRAE 169-2013-5A": 27.0,
+        "ASHRAE 169-2013-5B": 27.0,
+        "ASHRAE 169-2013-6A": 32.3,
+        "ASHRAE 169-2013-6B": 32.3,
+        "ASHRAE 169-2013-7A": 34.5,
+        "ASHRAE 169-2013-8A": 38.5,
+    }
+    
     scenarios = []
     # 1) BASELINE
     for city, building_type in product(cities, building_types):
@@ -1331,17 +1355,24 @@ def generate_scenarios(
     if custom_combos:
         for combo_index, combo in enumerate(custom_combos, start=1):
             for city, building_type in product(cities, building_types):
-                # Get the target R-value for this city's climate zone
+                # Get the target R-values for this city's climate zone
                 city_climate_zone = city_climate_zones.get(city)
-                city_target_r_value = CLIMATE_ZONE_TO_R_VALUE.get(city_climate_zone) if city_climate_zone else None
+                city_target_wall_r_value = CLIMATE_ZONE_TO_R_VALUE.get(city_climate_zone) if city_climate_zone else None
+                city_target_roof_r_value = CLIMATE_ZONE_TO_ROOF_R_VALUE.get(city_climate_zone) if city_climate_zone else None
                 
-                # Get the combo's wall R-value
+                # Get the combo's wall and roof R-values
                 combo_wall_r_value = combo.get("wall_r_value")
+                combo_roof_r_value = combo.get("roof_r_value")
                 
                 # Skip this combo if it doesn't match the city's climate zone R-value
-                # (allows non-wall combos to pass through by checking if wall_r_value is set)
-                if combo_wall_r_value is not None and city_target_r_value is not None:
-                    if abs(combo_wall_r_value - city_target_r_value) > 0.01:  # tolerance for float comparison
+                # (allows non-wall/roof combos to pass through by checking if values are set)
+                if combo_wall_r_value is not None and city_target_wall_r_value is not None:
+                    if abs(combo_wall_r_value - city_target_wall_r_value) > 0.01:  # tolerance for float comparison
+                        continue
+                
+                # Also check roof R-value if both are specified
+                if combo_roof_r_value is not None and city_target_roof_r_value is not None:
+                    if abs(combo_roof_r_value - city_target_roof_r_value) > 0.01:
                         continue
                 
                 scenario = {
@@ -1963,7 +1994,7 @@ def generate_parametric_recap(target_path, city_climate_zones=None):
 # (used by run_all_tests.py to drive multiple sequential runs without editing this file).
 # RUN_NAME is purely a folder label under simulations/ -- it has no effect on
 # the model itself. Defaults to "run_test_009" for this branch's ad-hoc standalone runs.
-RUN_NAME = os.environ.get("WORKFLOW_RUN_NAME", "run_test_wall_insulation")
+RUN_NAME = os.environ.get("WORKFLOW_RUN_NAME", "envelope_different_climate_zone")
 def detect_openstudio_cli_path():
     """Find the OpenStudio CLI executable on this machine.
 
@@ -2057,7 +2088,7 @@ TEMPLATE = "DOE Ref Pre-1980"
 # When run_all_tests.py drives this script, WORKFLOW_CUSTOM_COMBOS_JSON
 # (set near the bottom of this section) replaces the file-based defaults.
 
-_CUSTOM_COMBOS_PATH = Path(__file__).with_name("custom_combos_wall_climate_zones.json")
+_CUSTOM_COMBOS_PATH = Path(__file__).with_name("custom_combos_envelope_climate_zones.json")
 with open(_CUSTOM_COMBOS_PATH, "r", encoding="utf-8") as _custom_combos_file:
     CUSTOM_COMBOS = json.load(_custom_combos_file)
 

@@ -98,6 +98,17 @@ lib/parametric_run/simulations/**/run/eplusssz.csv
 lib/parametric_run/simulations/**/run/eplustbl.htm
 lib/parametric_run/simulations/**/run/epluszsz.csv
 lib/parametric_run/simulations/**/run/in.idf
+
+# --- VS Code Copilot skill installation artifacts ---
+skills-lock.json
+.agents/
+
+# --- Temporary and backup files ---
+**/test_output/
+**/*copy.py
+**/tmp_*.py
+*.pdf
+lib/parametric_run/retrofit\ case\ design/
 lib/parametric_run/simulations/**/run/pre-preprocess.idf
 lib/parametric_run/simulations/**/run/measure_attributes.json
 lib/parametric_run/simulations/**/run/sqlite.err
@@ -115,3 +126,4 @@ lib/parametric_run/COMBINED_SCREENING_README.md
 
 # Ignore all parametric simulation outputs
 lib/parametric_run/simulations/
+lib/parametric_run/scenarios_viewer_en.html

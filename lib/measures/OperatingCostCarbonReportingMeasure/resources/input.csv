@@ -8,3 +8,9 @@ Electricity - peak hour start,16,h,
 Electricity - peak hour end,20,h,
 State,National Average,,This value is used to find the gas cost in gas_cost.csv.
 Gas cost,,$/1000ft3,"If this value is empty, the emission factor value is being read from gas_cost.csv given the state"
+gas co2 emission factor,53.06,kg co2 per mmBtu,"EPA 2014 Stationary Combustion Emission Factors,https://www.epa.gov/sites/default/files/2015-07/documents/emission-factors_2014.pdf"
+gas ch4 emission factor,1.00E-03,kg ch4 per mmBtu,"EPA 2014 Stationary Combustion Emission Factors,https://www.epa.gov/sites/default/files/2015-07/documents/emission-factors_2014.pdf"
+gas n2o emission factor,1.00E-04,kg n2o per mmBtu,"EPA 2014 Stationary Combustion Emission Factors,https://www.epa.gov/sites/default/files/2015-07/documents/emission-factors_2014.pdf"
+co2 conversion factor,1,1/co2e,IPCC AR5
+ch4 conversion factor,28,1/co2e,IPCC AR5
+n2o conversion factor,265,1/co2e,IPCC AR5

@@ -159,10 +159,12 @@ def build_report_html(
     lowest_carbon_payback_scenario,
     spider_table_rows,
     baseline_cost_w,
+    baseline_cost_value,
     b,
     best_cost_w,
     max_savings,
     baseline_emis_w,
+    baseline_emis_value,
     best_emis_w,
     max_emissions_reduction,
     cost_payback_chart_rows,
@@ -287,7 +289,7 @@ def build_report_html(
                         <div class="bar-row">
                             <div class="bar-label">Baseline</div>
                             <div class="bar-track"><div class="bar baseline" style="width: {baseline_cost_w:.1f}%;"></div></div>
-                            <div class="bar-value">{money(b['annual_cost_usd'])}</div>
+                            <div class="bar-value">{money(baseline_cost_value)}</div>
                         </div>
                         <div class="bar-row">
                             <div class="bar-label">{max_savings_scenario}</div>
@@ -307,7 +309,7 @@ def build_report_html(
                         <div class="bar-row">
                             <div class="bar-label">Baseline</div>
                             <div class="bar-track"><div class="bar baseline" style="width: {baseline_emis_w:.1f}%;"></div></div>
-                            <div class="bar-value">{num(b['annual_emissions_kg'])}</div>
+                            <div class="bar-value">{num(baseline_emis_value)}</div>
                         </div>
                         <div class="bar-row">
                             <div class="bar-label">{max_emissions_scenario}</div>

@@ -434,30 +434,30 @@ class IncreaseInsulationRValueForRoofs(openstudio.measure.ModelMeasure):
 
         # Typical material k and density (same style as your wall measure)
         material_k_dict = {
-            "Blown Cellulose": 0.040, # source: https://www.energy.gov/energysaver/weatherize/insulation/types-insulation
-            "Blown Fiberglass": 0.033, # source: https://www.energy.gov/energysaver/weatherize/insulation/types-insulation
-            "Blown Mineral Wool": 0.032, # source: https://www.energy.gov/energysaver/weatherize/insulation/types-insulation
-            "Polyiso Insulation Foam Board": 0.025, # source: https://www.polyiso.org/
-            "Graphite Polystyrene (GPS) Foam Board": 0.030, # source: https://www.epsmolders.org/graphite-enhanced-eps/
-            "Expanded Polystyrene (EPS) Foam Board": 0.034, # source: https://www.epsmolders.org/what-is-eps/
-            "Extruded Polystyrene (XPS) Foam Board": 0.033, # source: https://www.owenscorning.com/en-us/insulation/foamular
-            "Mineral Wool Heavy Density Blanket": 0.032, # source: https://www.energy.gov/energysaver/weatherize/insulation/types-insulation
-            "Mineral Wool Light Density Blanket": 0.032, # source: https://www.energy.gov/energysaver/weatherize/insulation/types-insulation
-            "Fiberglass Batts": 0.033, # source: https://www.energy.gov/energysaver/weatherize/insulation/types-insulation
-            "Pure Wool Batts": 0.040 # source: https://www.energy.gov/energysaver/weatherize/insulation/types-insulation
+            "Blown Cellulose": 0.040, # source: EPD: SOPRA-CELLULOSETM cellulose thermal insulation
+            "Blown Fiberglass": 0.034, # source: EPD for blowing wool fiberglass insulation-insulsafe SP, trueComfort, ultracomfort, optima, insulSafe XC
+            "Blown Mineral Wool": 0.0487, # source: EPD: thermafiber mineral wool unbonded loosefill granulated wool and blown-in wool insulation
+            "Polyiso Insulation Foam Board": 0.025, # source: EPD - VersiCore® and SecurShield® Polyiso 
+            "Graphite Polystyrene (GPS) Foam Board": 0.0307, # source: EPD - Neopor® Plus Graphite Polystyrene (GPS) Type I insulation board
+            "Expanded Polystyrene (EPS) Foam Board": 0.041, # source: EPD - MOLDoldED, closED- FoaM plastic insulation long-term stable R-value
+            "Extruded Polystyrene (XPS) Foam Board": 0.034, # source: EPD - XPS insulation board, 40 psi, Atlanta Georgia
+            "Mineral Wool Heavy Density Blanket": 0.0338, # source: EPD - OWENS CORNING Thermafiber Light and Heavy Density Mineral Wool Insulation EPD
+            "Mineral Wool Light Density Blanket": 0.0347, # source: EPD - OWENS CORNING Thermafiber Light and Heavy Density Mineral Wool Insulation EPD
+            "Fiberglass Batts": 0.0424, # source: EPD - 2022 Johns Manville Fiberglass batts
+            #"Pure Wool Batts": 0.040 # source: https://www.energy.gov/energysaver/weatherize/insulation/types-insulation
         }
         material_density_dict = {
-            "Blown Cellulose": 50, #source: https://www.energy.gov/energysaver/weatherize/insulation/types-insulation
-            "Blown Fiberglass": 30, # source: https://www.energy.gov/energysaver/weatherize/insulation/types-insulation
-            "Blown Mineral Wool": 90, # source: https://www.energy.gov/energysaver/weatherize/insulation/types-insulation
-            "Polyiso Insulation Foam Board": 35, # source: https://www.polyiso.org/
-            "Graphite Polystyrene (GPS) Foam Board": 20, # source: https://www.epsmolders.org/graphite-enhanced-eps/
-            "Expanded Polystyrene (EPS) Foam Board": 20, # source: https://www.epsmolders.org/what-is-eps/
-            "Extruded Polystyrene (XPS) Foam Board": 35, # source: https://www.owenscorning.com/en-us/insulation/foamular
-            "Mineral Wool Heavy Density Blanket": 103, # source: OWENS CORNING Thermafiber Light and Heavy Density Mineral Wool Insulation EPD
-            "Mineral Wool Light Density Blanket": 48.6, # source: OWENS CORNING Thermafiber Light and Heavy Density Mineral Wool Insulation EPD
-            "Fiberglass Batts": 30, # source: https://www.energy.gov/energysaver/weatherize/insulation/types-insulation
-            "Pure Wool Batts": 24.98 # source: Havelock Wool Batt and Loose-fill Insulation EPD
+            "Blown Cellulose": 25, # source: EPD: SOPRA-CELLULOSETM cellulose thermal insulation
+            "Blown Fiberglass": 35.2, # source: https://www.cameronashleybp.com/ASSETS/DOCUMENTS/ITEMS/EN/Knauf_Insulation_524947_Specification_Sheet.pdf
+            "Blown Mineral Wool": 30.5, # source: EPD: thermafiber mineral wool unbonded loosefill granulated wool and blown-in wool insulation
+            "Polyiso Insulation Foam Board": 29.3, # source: EPD - VersiCore® and SecurShield® Polyiso
+            "Graphite Polystyrene (GPS) Foam Board": 14.4, # source: EPD - Neopor® Plus Graphite Polystyrene (GPS) Type I insulation board
+            "Expanded Polystyrene (EPS) Foam Board": 16, # source: EPD - MOLDoldED, closED- FoaM plastic insulation long-term stable R-value
+            "Extruded Polystyrene (XPS) Foam Board": 32, # source: https://www.owenscorning.com/en-us/insulation/foamular
+            "Mineral Wool Heavy Density Blanket": 103.3, # source: OWENS CORNING Thermafiber Light and Heavy Density Mineral Wool Insulation EPD
+            "Mineral Wool Light Density Blanket": 48.4, # source: OWENS CORNING Thermafiber Light and Heavy Density Mineral Wool Insulation EPD
+            "Fiberglass Batts": 32.6, # source: EPD - 2022 Johns Manville Fiberglass batts
+            #"Pure Wool Batts": 24.98 # source: Havelock Wool Batt and Loose-fill Insulation EPD
         }
 
         # Function to parse RSMeans description for material properties

@@ -27,7 +27,7 @@ class OperatingCostCarbonReport(openstudio.measure.ReportingMeasure):
             "This measure calculates annual emissions and utility costs based on "
             "hourly electricity and gas consumption from EnergyPlus simulations. "
             "Configuration is read from CSV files in the resources folder: "
-            "input.csv (main config), emissions.csv (emission factors by Balancing Authority), "
+            "input.csv (main config), BA_area_match_state_location.csv (emission factors by location and weather file), "
             "eia_gas_price_2024.csv (gas costs by state and building type from EIA 2024 data), "
             "and eia_elec_avg_price_table_4.csv (electricity rates by city and building type from EIA 2024 data)."
         )
@@ -37,14 +37,16 @@ class OperatingCostCarbonReport(openstudio.measure.ReportingMeasure):
         return (
             "Reads 'Electricity:Facility' and 'NaturalGas:Facility' hourly output variables "
             "from the SQL file. Reads configuration from resources/input.csv. "
-            "If emission factor is not specified, looks up value from resources/emissions.csv "
-            "using Balancing Authority Code. Gas costs are looked up from resources/eia_gas_price_2024.csv "
+            "Emission factors are looked up from resources/BA_area_match_state_location.csv "
+            "by matching the weather file location path. If no match is found, falls back to "
+            "National Average (770.884 lb CO2e/MWh). Gas costs are looked up from resources/eia_gas_price_2024.csv "
             "based on the state (mapped from weather file city) and building type category (Residential, "
             "Commercial, or Industrial). If Industrial rate is unavailable, falls back to Commercial. "
             "Electricity rates are looked up from resources/eia_elec_avg_price_table_4.csv based on "
             "the city extracted from the weather file path and building type category. "
             "If no match is found, uses 'United States' national average. "
-            "Gas emissions calculated as 50.3 kg CO2/GJ. Demand charge is 20 $/kW times max monthly kW."
+            "Gas emissions calculated from CO2, CH4, and N2O emission factors with GWP conversion "
+            "(CO2=1, CH4=28, N2O=265 per IPCC AR5) from input.csv. Demand charge is 20 $/kW times max monthly kW."
         )
 
     def arguments(self, model=None):
@@ -85,13 +87,14 @@ class OperatingCostCarbonReport(openstudio.measure.ReportingMeasure):
 
     def load_emissions_data(self, runner) -> Optional[Dict]:
         """
-        Load emission factors from resources/emissions.csv.
+        Load emission factors from resources/BA_area_match_state_location.csv.
         
         Returns:
-            Dictionary mapping Balancing Authority Code to emission rate (lb/MWh)
+            Dictionary mapping weather file location to emission info:
+            {weather_file_path: {'emission_rate': float, 'ba_code': str, 'location_name': str, 'climate_zone': str}}
         """
         measure_dir = Path(__file__).parent.absolute()
-        emissions_file = measure_dir / "resources" / "emissions.csv"
+        emissions_file = measure_dir / "resources" / "BA_area_match_state_location.csv"
         
         if not emissions_file.exists():
             runner.registerWarning(f"Emissions file not found: {emissions_file}")
@@ -102,11 +105,14 @@ class OperatingCostCarbonReport(openstudio.measure.ReportingMeasure):
             with open(emissions_file, 'r', encoding='utf-8-sig') as f:
                 reader = csv.DictReader(f)
                 for row in reader:
-                    ba_code = row.get('Balancing Authority Code', '').strip()
+                    weather_file = row.get('Weather File Location', '').strip()
+                    ba_code = row.get('BA Area (Short)', '').strip()
+                    location_name = row.get('Location Name', '').strip()
+                    climate_zone = row.get('Climate Zone', '').strip()
                     emission_rate_str = row.get('BA annual CO2 equivalent total output emission rate (lb/MWh)', '0').strip()
 
-                    # Skip shorthand header row and empty rows
-                    if not ba_code or ba_code.upper() == 'BACODE':
+                    # Skip empty rows
+                    if not weather_file or not ba_code:
                         continue
 
                     # Remove commas from numbers like "1,457.392"
@@ -114,14 +120,19 @@ class OperatingCostCarbonReport(openstudio.measure.ReportingMeasure):
 
                     try:
                         emission_rate = float(emission_rate_str)
-                        emissions_data[ba_code] = emission_rate
+                        emissions_data[weather_file] = {
+                            'emission_rate': emission_rate,
+                            'ba_code': ba_code,
+                            'location_name': location_name,
+                            'climate_zone': climate_zone
+                        }
                     except ValueError:
                         continue
             
             runner.registerInfo(f"Loaded {len(emissions_data)} emission factors from {emissions_file}")
             return emissions_data
         except Exception as e:
-            runner.registerError(f"Error reading emissions.csv: {str(e)}")
+            runner.registerError(f"Error reading BA_area_match_state_location.csv: {str(e)}")
             return {}
 
     def load_gas_costs(self, runner) -> Optional[Dict]:
@@ -301,6 +312,39 @@ class OperatingCostCarbonReport(openstudio.measure.ReportingMeasure):
                         return city
         except Exception as e:
             runner.registerWarning(f"Could not extract city from weather file: {e}")
+        
+        return None
+
+    def get_weather_file_path(self, model, runner) -> Optional[str]:
+        """
+        Extract the weather file relative path from the model.
+        
+        Returns:
+            Weather file path like 'weather/AZ_Phoenix/USA_AZ_Phoenix-Sky.Harbor.Intl.AP.722780_TMYx.epw'
+            or None if not found
+        """
+        try:
+            weather_file = model.getWeatherFile()
+            if weather_file.url().is_initialized():
+                url = weather_file.url().get()
+                # Normalize path separators
+                normalized_path = url.replace('\\', '/')
+                
+                # Extract from 'weather/' onwards
+                path_parts = normalized_path.split('/')
+                weather_idx = -1
+                for i, part in enumerate(path_parts):
+                    if part == 'weather':
+                        weather_idx = i
+                        break
+                
+                if weather_idx >= 0 and weather_idx + 2 < len(path_parts):
+                    # Reconstruct path: weather/folder/file.epw
+                    relative_path = '/'.join(path_parts[weather_idx:weather_idx + 3])
+                    runner.registerInfo(f"Detected weather file path: {relative_path}")
+                    return relative_path
+        except Exception as e:
+            runner.registerWarning(f"Could not extract weather file path: {e}")
         
         return None
 
@@ -576,6 +620,9 @@ class OperatingCostCarbonReport(openstudio.measure.ReportingMeasure):
         city = self.get_weather_file_city(model, runner)
         building_category = self.get_building_type_category(model, runner)
         
+        # Extract weather file path for emission factor lookup
+        weather_file_path = self.get_weather_file_path(model, runner)
+        
         # Extract configuration values (defaults from input.csv)
         ba_code = config.get('Balancing Authority', 'CISO').strip()
         default_on_peak_rate = float(config.get('Electricity - cost on peak', '0.12'))
@@ -608,18 +655,58 @@ class OperatingCostCarbonReport(openstudio.measure.ReportingMeasure):
         
         # Fixed values per requirements
         demand_charge = 20.0  # $/kW
-        gas_emission_kg_per_gj = 50.3  # kg CO2/GJ (fixed for natural gas)
         
-        # Look up electricity emission factor by Balancing Authority
-        elec_emission_lb_per_mwh = emissions_data.get(ba_code, 0.0)
+        # Calculate gas emission factor from input.csv
+        # Read emission factors (in kg per MMBtu) and GWP conversion factors
+        gas_co2_ef_per_mmbtu = float(config.get('Gas co2 emission factor', '53.06'))
+        gas_ch4_ef_per_mmbtu = float(config.get('Gas ch4 emission factor', '1.00E-03'))
+        gas_n2o_ef_per_mmbtu = float(config.get('Gas n2o emission factor', '1.00E-04'))
+        
+        co2_gwp = float(config.get('co2 conversion factor', '1'))
+        ch4_gwp = float(config.get('ch4 conversion factor', '28'))
+        n2o_gwp = float(config.get('n2o conversion factor', '265'))
+        
+        # Convert from kg/MMBtu to kg/GJ (1 MMBtu = 1.055056 GJ)
+        MMBTU_TO_GJ = 1.055056
+        gas_co2_ef_per_gj = gas_co2_ef_per_mmbtu / MMBTU_TO_GJ
+        gas_ch4_ef_per_gj = gas_ch4_ef_per_mmbtu / MMBTU_TO_GJ
+        gas_n2o_ef_per_gj = gas_n2o_ef_per_mmbtu / MMBTU_TO_GJ
+        
+        # Apply GWP factors and sum to get total CO2e emission factor
+        gas_emission_kg_per_gj = (
+            gas_co2_ef_per_gj * co2_gwp +
+            gas_ch4_ef_per_gj * ch4_gwp +
+            gas_n2o_ef_per_gj * n2o_gwp
+        )
+        
+        # Look up electricity emission factor by weather file location
+        elec_emission_lb_per_mwh = 0.0
+        location_name = 'Unknown'
+        climate_zone = 'Unknown'
+        
+        if weather_file_path and weather_file_path in emissions_data:
+            emission_info = emissions_data[weather_file_path]
+            elec_emission_lb_per_mwh = emission_info['emission_rate']
+            ba_code = emission_info['ba_code']
+            location_name = emission_info['location_name']
+            climate_zone = emission_info['climate_zone']
+            runner.registerInfo(
+                f"Using emission factor for {location_name} ({ba_code}), Climate Zone {climate_zone}: "
+                f"{elec_emission_lb_per_mwh} lb CO2e/MWh"
+            )
+        else:
+            # Fallback to National Average
+            runner.registerWarning(
+                f"No emission factor found for weather file: {weather_file_path}. "
+                f"Using National Average emission factor."
+            )
+            elec_emission_lb_per_mwh = 770.884  # National Average from BA_area_match_state_location.csv
+            ba_code = 'National Average'
+            location_name = 'National Average'
         
         # Convert lb/MWh to kg/kWh
         # 1 lb = 0.453592 kg, 1 MWh = 1000 kWh
         elec_emission = (elec_emission_lb_per_mwh * 0.453592) / 1000.0
-        
-        if elec_emission == 0.0:
-            runner.registerWarning(f"No emission factor found for BA: {ba_code}, using default 0.5 kg/kWh")
-            elec_emission = 0.5
         
         # Look up gas price by state and building category
         # First, determine state from city
@@ -652,8 +739,10 @@ class OperatingCostCarbonReport(openstudio.measure.ReportingMeasure):
         gas_rate_per_gj = gas_rate_per_mmbtu / 1.055056
         
         runner.registerInfo(f"Configuration loaded:")
+        runner.registerInfo(f"  Weather file: {weather_file_path}")
+        runner.registerInfo(f"  Location: {location_name}, Climate Zone: {climate_zone}")
         runner.registerInfo(f"  Balancing Authority: {ba_code}")
-        runner.registerInfo(f"  Electricity emission factor: {elec_emission:.6f} kg CO2e/kWh")
+        runner.registerInfo(f"  Electricity emission factor: {elec_emission:.6f} kg CO2e/kWh ({elec_emission_lb_per_mwh:.2f} lb/MWh)")
         runner.registerInfo(f"  Gas emission factor: {gas_emission_kg_per_gj} kg CO2e/GJ")
         runner.registerInfo(f"  On-peak rate: ${on_peak_rate:.3f}/kWh ({on_peak_start}:00-{on_peak_end}:00)")
         runner.registerInfo(f"  Off-peak rate: ${off_peak_rate:.3f}/kWh")
