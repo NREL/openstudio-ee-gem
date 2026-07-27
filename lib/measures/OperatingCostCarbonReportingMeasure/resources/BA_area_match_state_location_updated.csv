@@ -1,4 +1,4 @@
-﻿Location Name,State,BA Area,BA Area (Short),BA annual CO2 equivalent total output emission rate (lb/MWh),Climate Zone,Weather File Location
+Location Name,State,BA Area,BA Area (Short),BA annual CO2 equivalent total output emission rate (lb/MWh),Climate Zone,Weather File Location
 Fairbanks,AK,ALASKA SYSTEMS COORDINATING COUNCIL,ASCC,"1,245.00",8,weather/AK_Fairbanks/USA_AK_Fairbanks.Intl.AP.702610_TMYx.epw
 Maxwell AFB,AL,POWERSOUTH ENERGY COOPERATIVE,AEC,,3A,weather/AL_Montgomery/USA_AL_Montgomery-Maxwell-Gunter.AFB.722265_TMYx.epw
 Nogales,AZ,WESTERN AREA POWER ADMINISTRATION - DESERT SOUTHWEST REGION,WALC,481.873,3B,weather/AZ_Nogales/USA_AZ_Nogales.Intl.AP.722728_TMYx.epw
