@@ -87,7 +87,7 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
     
     @staticmethod
     def window_options():
-        return ["none", "aluminum double glazing window", "wood-aluminum glazing window"]
+        return ["none", "aluminum double glazing window", "wood double glazing window"]
     
     @staticmethod
     def caulking_options():
@@ -2367,9 +2367,9 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
                 urls["window"] = generate_url_byname(
                     name_like='aluminum window systems'
                 )
-            elif normalized_window_option in {"wood-aluminum glazing window", "wood-aluminum double glazing window"}:
+            elif normalized_window_option in {"wood double glazing window", "wood-aluminum glazing window", "wood-aluminum double glazing window"}:
                 urls["window"] = generate_url_byname(
-                    name_like='wood-aluminium window frame',
+                    name_like='wood window frame - serie 100 energy',
                     plant_geography='150'
                 )
             else:

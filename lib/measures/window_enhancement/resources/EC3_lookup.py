@@ -600,7 +600,7 @@ def main():
     print("Fetching EC3 EPD data...")
 
     print("Search EPD based on names:")
-    search_url=generate_url_byname(name_like= "aluminum window systems") 
+    search_url=generate_url_byname(name_like= "wood window frame - serie 100 energy", plant_geography="150") 
     epd_data = fetch_epd_data(search_url, API_TOKEN)
     
     for idx, epd in enumerate(epd_data, start=1):
