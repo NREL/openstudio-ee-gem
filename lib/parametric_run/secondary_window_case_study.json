@@ -1,0 +1,14 @@
+[
+  {
+    "glass_option": "none",
+    "window_num_panes": 0,
+    "window_infiltration_reduction_percent": 30.0,
+    "window_option": "wood-aluminum glazing window"
+  },
+  {
+    "glass_option": "none",
+    "window_num_panes": 0,
+    "window_infiltration_reduction_percent": 30.0,
+    "window_option": "aluminum double glazing window"
+  }
+]

@@ -825,6 +825,18 @@ def apply_ddy_design_days_to_model(osm_path, ddy_path, replace_existing=True):
             print(f"    No DesignDay objects found in DDY: {ddy_path}")
             return False
 
+        # Remove ExternalFile and ScheduleFile objects from ddy_model before cloning
+        # to prevent importing rainfall data file references that don't exist in run directory
+        removed_count = 0
+        for external_file in list(ddy_model.getExternalFiles()):
+            external_file.remove()
+            removed_count += 1
+        for schedule_file in list(ddy_model.getScheduleFiles()):
+            schedule_file.remove()
+            removed_count += 1
+        if removed_count > 0:
+            print(f"    Cleaned {removed_count} file reference(s) from DDY before import")
+
         if replace_existing:
             for design_day in list(model.getDesignDays()):
                 design_day.remove()

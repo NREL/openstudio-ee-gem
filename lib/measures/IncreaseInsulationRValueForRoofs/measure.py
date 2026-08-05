@@ -56,8 +56,8 @@ class IncreaseInsulationRValueForRoofs(openstudio.measure.ModelMeasure):
                 "or selecting the material with the highest R-value to thickness ratio. It clones the "
                 "original construction and adjusts the insulation layer properties to meet the target. "
                 "Supports various insulation types including blown materials (cellulose, fiberglass, "
-                "mineral wool), foam boards (polyiso, EPS, XPS, GPS), and batts (fiberglass, mineral wool, "
-                "pure wool). The measure fetches Environmental Product Declaration (EPD) data from the EC3 "
+                "mineral wool), foam boards (polyiso, EPS, XPS, GPS), and batts (fiberglass, mineral wool"
+                "). The measure fetches Environmental Product Declaration (EPD) data from the EC3 "
                 "database to calculate embodied carbon (GWP) for the added insulation over a specified "
                 "analysis period. Outlier removal using the IQR method is applied to GWP values to improve "
                 "data accuracy. Results including embodied carbon, material quantities, density, thermal "
@@ -82,7 +82,6 @@ class IncreaseInsulationRValueForRoofs(openstudio.measure.ModelMeasure):
             "Mineral Wool Heavy Density Blanket",
             "Mineral Wool Light Density Blanket",
             "Fiberglass Batts",
-            "Pure Wool Batts"
         ]
 
     @staticmethod
@@ -207,10 +206,7 @@ class IncreaseInsulationRValueForRoofs(openstudio.measure.ModelMeasure):
         elif material_type == "Mineral Wool Light Density Blanket":
             return generate_url_byname(category="53a5d5bee64545f1bdd60e102a4a6ddf", name_like="mineral wool light density")
         elif material_type == "Fiberglass Batts":
-            return generate_url_byname(category="53a5d5bee64545f1bdd60e102a4a6ddf", name_like="fiber glass batts")
-        elif material_type == "Pure Wool Batts":
-            return generate_url_byname(category="53a5d5bee64545f1bdd60e102a4a6ddf", name_like="batts insulation wool")
-        
+            return generate_url_byname(category="53a5d5bee64545f1bdd60e102a4a6ddf", name_like="fiber glass batts")      
         else:
             return None
 
@@ -444,7 +440,6 @@ class IncreaseInsulationRValueForRoofs(openstudio.measure.ModelMeasure):
             "Mineral Wool Heavy Density Blanket": 0.0338, # source: EPD - OWENS CORNING Thermafiber Light and Heavy Density Mineral Wool Insulation EPD
             "Mineral Wool Light Density Blanket": 0.0347, # source: EPD - OWENS CORNING Thermafiber Light and Heavy Density Mineral Wool Insulation EPD
             "Fiberglass Batts": 0.0424, # source: EPD - 2022 Johns Manville Fiberglass batts
-            #"Pure Wool Batts": 0.040 # source: https://www.energy.gov/energysaver/weatherize/insulation/types-insulation
         }
         material_density_dict = {
             "Blown Cellulose": 25, # source: EPD: SOPRA-CELLULOSETM cellulose thermal insulation
@@ -457,7 +452,6 @@ class IncreaseInsulationRValueForRoofs(openstudio.measure.ModelMeasure):
             "Mineral Wool Heavy Density Blanket": 103.3, # source: OWENS CORNING Thermafiber Light and Heavy Density Mineral Wool Insulation EPD
             "Mineral Wool Light Density Blanket": 48.4, # source: OWENS CORNING Thermafiber Light and Heavy Density Mineral Wool Insulation EPD
             "Fiberglass Batts": 32.6, # source: EPD - 2022 Johns Manville Fiberglass batts
-            #"Pure Wool Batts": 24.98 # source: Havelock Wool Batt and Loose-fill Insulation EPD
         }
 
         # Function to parse RSMeans description for material properties
@@ -672,11 +666,10 @@ class IncreaseInsulationRValueForRoofs(openstudio.measure.ModelMeasure):
                 selected_k_source = "user_fallback_due_to_rsmeans_parse_failure"
                 fallback_fields.append("thermal_conductivity")
             else:
-                runner.registerError(
-                    "RSMeans API cost pathway requires thermal conductivity from RSMeans description. "
-                    "RSMeans extraction failed and no user-provided 'insulation_thermal_conductivity' fallback is available."
-                )
-                return False
+                # Use hardcoded default as final fallback
+                selected_k = material_k_dict[insulation_material_type]
+                selected_k_source = "hardcoded_default_due_to_rsmeans_parse_failure"
+                fallback_fields.append("thermal_conductivity(default)")
 
             if has_rsmeans_density:
                 insulation_material_density = rsmeans_extracted_properties["density_kg_m3"]

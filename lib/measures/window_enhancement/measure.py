@@ -36,7 +36,7 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
 
     def description(self):
         """Brief description of the measure."""
-        return ("Improves window performance through six retrofit enhancement options: (1) frame replacement, "
+        return ("Improves window performance through six retrofit enhancement options: (1) entire window replacement, "
                 "(2) glass pane upgrades (single/double/triple pane), (3) caulking/sealant application, "
                 "(4) glazing film installation (safety, solar control, low-e, etc.), (5) weatherstripping, "
                 "and (6) secondary glazing for single-pane windows. The measure calculates embodied carbon impact "
@@ -55,7 +55,7 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
                 "window enhancement options over the analysis period:\n"
                 "   - **Glass pane replacement**: Single, double, or triple pane configurations with customizable "
                 "optical and thermal properties\n"
-                "   - **Frame replacement**: Aluminum, wood, or fiberglass frame materials\n"
+                "   - **Entire window replacement**: Complete window assembly including frame and glazing\n"
                 "   - **Glazing film application**: Safety, solar control, anti-graffiti, decorative, or low-e films\n"
                 "   - **Caulking**: Acrylic or polyurethane sealants for perimeter air sealing\n"
                 "   - **Weatherstripping**: Felt, foam, V-strip, vinyl, or silicone gaskets (operable windows only)\n"
@@ -87,7 +87,7 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
     
     @staticmethod
     def window_options():
-        return ["none", "aluminum double glazing window", "wood double glazing window"]
+        return ["none", "aluminum double glazing window", "wood-aluminum glazing window"]
     
     @staticmethod
     def caulking_options():
@@ -908,6 +908,7 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
         use_lifetime_multiplier = runner.getBoolArgumentValue("use_lifetime_multiplier", user_arguments)
         glass_lifetime = runner.getIntegerArgumentValue("glass_lifetime",user_arguments)
         window_lifetime = runner.getIntegerArgumentValue("window_lifetime",user_arguments)
+        wf_lifetime = window_lifetime  # Alias for validate_user_arguments_values()
         caulking_lifetime = runner.getIntegerArgumentValue("caulking_lifetime",user_arguments)
         film_lifetime = runner.getIntegerArgumentValue("film_lifetime",user_arguments)
         weatherstrip_lifetime = runner.getIntegerArgumentValue("weatherstrip_lifetime",user_arguments)
@@ -1287,6 +1288,15 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
             window_option_for_this_window = window_option
             caulking_option_for_this_window = caulking_option
             weatherstrip_option_for_this_window = weatherstrip_option
+            
+            # If entire window replacement is selected, ignore glass replacement option
+            # (entire window includes new glazing, so glass replacement would be redundant)
+            if window_option_for_this_window != "none" and glass_option_for_this_window != "none":
+                glass_option_for_this_window = "none"
+                runner.registerInfo(
+                    f"  ⚠ {subsurface_name}: Glass replacement option ignored because entire window "
+                    "replacement is selected (new window includes new glazing)."
+                )
 
             # For SimpleGlazing windows, handle based on whether modification parameters are set.
             if is_simple_glazing:
@@ -1456,20 +1466,22 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
                     runner.registerInfo("Custom GWP mode enabled: skipping EC3 API calls for window carbon calculation.")
                 epd_datalist = {
                     "glass": [],
-                    "frame": [],
+                    "window": [],
                     "caulking": [],
                     "film": [],
                     "weatherstrip": [],
                     "second_glazing": [],
                 }
             else:
+                # Build EPD datalist based on renovation options
+                # Glass EPD is only fetched when not replacing entire window
                 epd_datalist = {
-                    "glass": _fetch_epd_with_cache(epd_urls["glass"]),
-                    "frame": _fetch_epd_with_cache(epd_urls["frame"]),
-                    "caulking": _fetch_epd_with_cache(epd_urls["caulking"]),
-                    "film": _fetch_epd_with_cache(epd_urls["film"]),
-                    "weatherstrip": _fetch_epd_with_cache(epd_urls["weatherstrip"]),
-                    "second_glazing": _fetch_epd_with_cache(epd_urls["second_glazing"])
+                    "glass": _fetch_epd_with_cache(epd_urls.get("glass")),
+                    "window": _fetch_epd_with_cache(epd_urls.get("window")),
+                    "caulking": _fetch_epd_with_cache(epd_urls.get("caulking")),
+                    "film": _fetch_epd_with_cache(epd_urls.get("film")),
+                    "weatherstrip": _fetch_epd_with_cache(epd_urls.get("weatherstrip")),
+                    "second_glazing": _fetch_epd_with_cache(epd_urls.get("second_glazing"))
                 }
 
             # Process EPD data and calculate embodied carbon
@@ -1501,10 +1513,6 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
         windows_with_glass_upgrade = sum(
             1 for name in subsurface_dict.keys() 
             if subsurface_dict[name]["glass"]["renovation_option"] > 0
-        )
-        windows_with_frame_replacement = sum(
-            1 for name in subsurface_dict.keys() 
-            if subsurface_dict[name]["frame"]["renovation_option"] != "none"
         )
         windows_with_film = sum(
             1 for name in subsurface_dict.keys() 
@@ -1638,7 +1646,7 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
             total_glazing_area_m2=total_glazing_area_m2,
             total_window_area_m2_for_window_option=executed_window_area_m2,
             total_perimeter_m=total_perimeter_m,
-            total_caulking_volume_m3=total_caulking_volume_m3,
+            total_caulking_volume_m3=executed_caulking_volume_m3,
             glass_pane_thickness=glass_pane_thickness,
             gap_thickness=gap_thickness,
             caulking_option=caulking_option,
@@ -1908,8 +1916,6 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
         renovation_summary = []
         if windows_with_glass_upgrade > 0:
             renovation_summary.append(f"{windows_with_glass_upgrade} glass upgrade(s)")
-        if windows_with_frame_replacement > 0:
-            renovation_summary.append(f"{windows_with_frame_replacement} frame replacement(s)")
         if windows_with_film > 0:
             renovation_summary.append(f"{windows_with_film} film application(s)")
         if windows_with_caulking > 0:
@@ -2225,8 +2231,6 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
         # Create renovation scenarios for each window type subsurface
         data["glass"] = {}
         data["window"] = {}
-        data["window_frame"] = {}
-        data["window_glazing"] = {}
         data["caulking"] = {}
         data["film"] = {}
         data["weatherstrip"] = {}
@@ -2239,8 +2243,6 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
         # Assign lifetime values
         data["glass"]["lifetime"] = glass_lifetime
         data["window"]["lifetime"] = window_lifetime
-        data["window_frame"]["lifetime"] = window_lifetime
-        data["window_glazing"]["lifetime"] = window_lifetime
         data["caulking"]["lifetime"] = caulking_lifetime
         data["film"]["lifetime"] = film_lifetime
         data["weatherstrip"]["lifetime"] = weatherstrip_lifetime
@@ -2249,8 +2251,6 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
         # Assign renovation options
         data["glass"]["renovation_option"] = num_panes
         data["window"]["renovation_option"] = window_option
-        data["window_frame"]["renovation_option"] = window_option
-        data["window_glazing"]["renovation_option"] = window_option
         data["caulking"]["renovation_option"] = caulking_option
         data["film"]["renovation_option"] = film_option
         # Default to not executed; set to True only after successful film application.
@@ -2305,9 +2305,11 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
         subsurface_data["film"]["length_m"] = float(window_length - 2 * frame_width - num_hori_divider * divider_width)
         subsurface_data["film"]["area_m2"] = subsurface_data["film"]["width_m"] * subsurface_data["film"]["length_m"]
         
-        # Calculate caulking material consumption in volume
-        caulking_volume = window_perimeter * 0.5 * np.pi * (caulking_thickness/2)**2
-        subsurface_data["caulking"]["length_m"] = window_perimeter
+        # Calculate caulking material only when caulking option is selected.
+        caulking_option_value = str(subsurface_data.get("caulking", {}).get("renovation_option", "none") or "none").strip().lower()
+        caulking_enabled = caulking_option_value not in {"", "none", "null", "nan", "not_applied", "not applied"}
+        caulking_volume = window_perimeter * 0.5 * np.pi * (caulking_thickness/2)**2 if caulking_enabled else 0.0
+        subsurface_data["caulking"]["length_m"] = window_perimeter if caulking_enabled else 0.0
         subsurface_data["caulking"]["thickness_m"] = float(caulking_thickness)
         subsurface_data["caulking"]["volume_m3"] = float(caulking_volume)
         
@@ -2320,8 +2322,6 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
         # Assign window area to glass and window
         subsurface_data["glass"]["area_m2"] = subsurface_data["film"]["area_m2"]
         subsurface_data["window"]["area_m2"] = float(window_area)
-        subsurface_data["window_frame"]["area_m2"] = float(window_area)
-        subsurface_data["window_glazing"]["area_m2"] = float(window_area)
         subsurface_data["second_glazing"]["area_m2"] = subsurface_data["film"]["area_m2"]
 
     def fetch_epd_urls(self, runner, subsurface_name, glass_option, num_panes,
@@ -2331,35 +2331,52 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
         
         Generates search URLs based on material types selected (glass, window, caulking, etc).
         Returns dictionary mapping material names to their EC3 EPD lookup URLs.
+        
+        Logic:
+        - Glass EPD is only fetched when not replacing entire window (glass_option != "none" and window_option == "none")
+        - Window EPD is fetched for entire window replacement (window_option != "none")
         """
         urls = {}
         
+        normalized_window_option = str(window_option or "none").strip().lower()
+
         # Glass pane EPD
         urls["glass"] = None
-        if glass_option != "none":
+        if normalized_window_option != "none":
+            # For entire window replacement, always use double-pane glazing EPD.
+            urls["glass"] = generate_url_byname(
+                category='ade3ad3405124279955e7d3085f59383',
+                name_like='double pane'
+            )
+        elif glass_option != "none" and window_option == "none":
             urls["glass"] = generate_url_byname(
                 category='6daae3d967104f5c8c85199b259f58c8',
                 name_like='monolithic glass'
             )
-        
-        # Entire Window EPD - for cost calculation only
-        # For carbon calculation, we use separate frame and glazing EPDs
-        urls["window"] = None
-        urls["window_frame"] = None
-        urls["window_glazing"] = None
-        if window_option != "none":
-            # Query window frame EPD based on material type
-            if "wood" in window_option.lower():
-                urls["window_frame"] = generate_url_byname(name_like='wood window frame', plant_geography='150')
-            elif "aluminum" in window_option.lower() or "aluminium" in window_option.lower():
-                urls["window_frame"] = generate_url_byname(name_like='wood-aluminum window frame', plant_geography='150')
-            
-            # Query window glazing EPD - use double-pane insulating glass unit
-            urls["window_glazing"] = generate_url_byname(
-                category='ade3ad3405124279955e7d3085f59383',
-                name_like='double pane',
-                plant_geography='021'
+        elif glass_option != "none" and window_option != "none":
+            # Warn that glass option is ignored when entire window is being replaced
+            runner.registerWarning(
+                f"{subsurface_name}: Glass replacement option ignored because entire window replacement is selected. "
+                "Entire window replacement includes new glazing."
             )
+        
+        # Entire window frame EPD - for entire window replacement only
+        urls["window"] = None
+        if normalized_window_option != "none":
+            if normalized_window_option == "aluminum double glazing window":
+                urls["window"] = generate_url_byname(
+                    name_like='aluminum window systems'
+                )
+            elif normalized_window_option in {"wood-aluminum glazing window", "wood-aluminum double glazing window"}:
+                urls["window"] = generate_url_byname(
+                    name_like='wood-aluminium window frame',
+                    plant_geography='150'
+                )
+            else:
+                # Keep a conservative fallback to avoid empty URL when new option labels are introduced.
+                urls["window"] = generate_url_byname(
+                    name_like='fixed window'
+                )
         
         # Caulking sealant EPD
         urls["caulking"] = None
@@ -2429,12 +2446,21 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
                 carbon_data_unavailable_tracker["reasons"].append(reason)
 
         for material_name, epd_data in epd_datalist.items():
+            if material_name == "window":
+                epd_count = len(epd_data) if isinstance(epd_data, list) else (0 if epd_data is None else 1)
+                print(
+                    "Window EPD debug "
+                    f"[{subsurface_name}] pre-check: epd_type={type(epd_data).__name__}, "
+                    f"epd_count={epd_count}"
+                )
+
             if use_custom_gwp:
                 multiplier = lifetime_multiplier(subsurface_data[material_name]["lifetime"], analysis_period) if use_lifetime_multiplier else 1
                 subsurface_data[material_name]["gwp_per_m2"] = None
                 subsurface_data[material_name]["gwp_per_kg"] = None
                 subsurface_data[material_name]["gwp_per_m3"] = None
                 subsurface_data[material_name]["gwp_per_m"] = None
+                subsurface_data[material_name]["gwp_per_unit"] = None
 
                 if material_name in ["glass", "second_glazing"]:
                     subsurface_data[material_name]["gwp_per_m3"] = float(custom_glass_gwp_per_m3)
@@ -2442,7 +2468,7 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
                     subsurface_data[material_name]["gwp_per_m3"] = float(custom_caulking_gwp_per_m3)
                 elif material_name == "film":
                     subsurface_data[material_name]["gwp_per_m2"] = float(custom_film_gwp_per_m2)
-                elif material_name in ["window", "window_frame", "window_glazing"]:
+                elif material_name == "window":
                     subsurface_data[material_name]["gwp_per_m2"] = float(custom_window_gwp_per_m2)
                 elif material_name == "weatherstrip":
                     subsurface_data[material_name]["gwp_per_m"] = float(custom_weatherstrip_gwp_per_m)
@@ -2461,11 +2487,11 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
                     embodied_carbon = float(subsurface_data[material_name]["gwp_per_m3"] *
                                             window_area_m2 *
                                             glass_pane_thickness * multiplier)
-                elif material_name in ["window", "window_frame", "window_glazing", "film"]:
+                elif material_name in ["window", "film"]:
                     if material_name == "film" and not subsurface_data[material_name].get("cost_executed", False):
                         embodied_carbon = 0.0
                     else:
-                        # Use full window area for window/frame/glazing/film embodied carbon
+                        # Use full window area for window/film embodied carbon
                         area_for_gwp = subsurface_data["dimension"]["area_m2"]
                         embodied_carbon = float(subsurface_data[material_name]["gwp_per_m2"] * area_for_gwp * multiplier)
                 elif material_name == "caulking":
@@ -2475,17 +2501,20 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
 
                 subsurface_data[material_name]["embodied_carbon_kg_co2_eq"] = embodied_carbon
                 subsurface_data[material_name]["lifetime_source"] = "user_input"
-                # For window_frame and window_glazing, don't accumulate directly
-                # They will be summed into window's total carbon later
-                if material_name not in ["window_frame", "window_glazing"]:
-                    subsurface_data["window_renovation_embodied_carbon_kg_co2_eq"] += embodied_carbon
+                subsurface_data["window_renovation_embodied_carbon_kg_co2_eq"] += embodied_carbon
                 continue
 
             if epd_data is None or (isinstance(epd_data, list) and len(epd_data) == 0):
+                if material_name == "window":
+                    print(
+                        "Window EPD debug "
+                        f"[{subsurface_name}] empty EPD payload -> embodied carbon path will fallback to 0 unless custom GWP is provided"
+                    )
                 subsurface_data[material_name]["gwp_per_m2"] = None
                 subsurface_data[material_name]["gwp_per_kg"] = None
                 subsurface_data[material_name]["gwp_per_m3"] = None
                 subsurface_data[material_name]["gwp_per_m"] = None
+                subsurface_data[material_name]["gwp_per_unit"] = None
                 _mark_carbon_data_unavailable(f"missing_epd_{material_name}")
                 runner.registerWarning(
                     f"No EPD data found for {material_name} in {subsurface_name}; "
@@ -2494,7 +2523,13 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
                 continue
 
             # Extract GWP, thickness, and lifetime from EPD data
-            gwp_values, thickness_summary, lifetime_values = self.extract_gwp_and_thickness_from_epd(length_per_unit, epd_data)
+            gwp_values, thickness_summary, lifetime_values = self.extract_gwp_and_thickness_from_epd(
+                length_per_unit,
+                epd_data,
+                runner=runner,
+                subsurface_name=subsurface_name,
+                material_name=material_name,
+            )
             subsurface_data[material_name]["thickness_list"] = thickness_summary
             
             # Process lifetime from EPD (with fallback to user input)
@@ -2540,7 +2575,21 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
 
             embodied_carbon = 0.0
             if material_name == "glass":
-                if subsurface_data[material_name]["gwp_per_m3"] is None:
+                whole_window_mode = str(subsurface_data.get("window", {}).get("renovation_option", "none")).strip().lower() != "none"
+                if whole_window_mode:
+                    if subsurface_data[material_name]["gwp_per_m2"] is None:
+                        embodied_carbon = 0.0
+                        _mark_carbon_data_unavailable(f"missing_gwp_{material_name}")
+                        runner.registerWarning(
+                            f"No gwp_per_m2 data found for {material_name} in {subsurface_name} (whole-window mode), assigning 0 embodied carbon."
+                        )
+                    else:
+                        window_area_m2 = subsurface_data["dimension"]["area_m2"]
+                        embodied_carbon = float(subsurface_data[material_name]["gwp_per_m2"] * window_area_m2 * multiplier)
+                        runner.registerInfo(
+                            f"    • Double glazing (whole-window mode): gwp_per_m2 * area = {embodied_carbon:.2f} kg CO2 eq"
+                        )
+                elif subsurface_data[material_name]["gwp_per_m3"] is None:
                     embodied_carbon = 0.0
                     _mark_carbon_data_unavailable(f"missing_gwp_{material_name}")
                     runner.registerWarning(f"No gwp_per_m3 data found for {material_name} in {subsurface_name}, assigning 0 embodied carbon.")
@@ -2564,7 +2613,17 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
                                            window_area_m2 * 
                                            glass_pane_thickness * multiplier)
                     runner.registerInfo(f"    • Secondary glazing: {glass_pane_thickness*1000:.1f}mm thickness")
-            elif material_name in ["window", "window_frame", "window_glazing", "film"]:
+            elif material_name in ["window", "film"]:
+                area_for_gwp = subsurface_data["dimension"]["area_m2"]
+                if material_name == "window" and subsurface_data[material_name]["gwp_per_m2"] is None:
+                    gwp_per_unit = subsurface_data[material_name].get("gwp_per_unit")
+                    if gwp_per_unit is not None and area_for_gwp and area_for_gwp > 0:
+                        # Convert assembly-level EPD result to area-normalized value for this window.
+                        subsurface_data[material_name]["gwp_per_m2"] = float(gwp_per_unit) / float(area_for_gwp)
+                        runner.registerInfo(
+                            f"    • Converted window gwp_per_unit to gwp_per_m2 for {subsurface_name}: "
+                            f"{subsurface_data[material_name]['gwp_per_m2']:.4f} kg CO2 eq/m2"
+                        )
                 if material_name == "film" and not subsurface_data[material_name].get("cost_executed", False):
                     embodied_carbon = 0.0
                     runner.registerInfo(
@@ -2575,8 +2634,7 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
                     _mark_carbon_data_unavailable(f"missing_gwp_{material_name}")
                     runner.registerWarning(f"No GWP data found for {material_name} in {subsurface_name}, assigning 0 embodied carbon.")
                 else:
-                    # Use full window area for window/frame/glazing/film embodied carbon
-                    area_for_gwp = subsurface_data["dimension"]["area_m2"]
+                    # Use full window area for window/film embodied carbon
                     embodied_carbon = float(subsurface_data[material_name]["gwp_per_m2"] * area_for_gwp * multiplier)
             elif material_name == "caulking":
                 if subsurface_data[material_name]["gwp_per_m3"] is None:
@@ -2598,19 +2656,8 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
             runner.registerValue(f"{material_name}_embodied_carbon_kg_co2_eq", embodied_carbon, "kg CO2 eq")
             runner.registerInfo(f"    ✓ {material_name.replace('_', ' ').title()}: {embodied_carbon:.2f} kg CO2 eq")
             
-            # For window_frame and window_glazing, accumulate separately for entire window calculation
-            # For other materials, accumulate directly to total
-            if material_name not in ["window_frame", "window_glazing"]:
-                subsurface_data["window_renovation_embodied_carbon_kg_co2_eq"] += subsurface_data[material_name]["embodied_carbon_kg_co2_eq"]
-        
-        # Calculate entire window replacement carbon as sum of frame and glazing
-        if subsurface_data["window"]["renovation_option"] != "none":
-            window_frame_carbon = subsurface_data.get("window_frame", {}).get("embodied_carbon_kg_co2_eq", 0.0)
-            window_glazing_carbon = subsurface_data.get("window_glazing", {}).get("embodied_carbon_kg_co2_eq", 0.0)
-            window_total_carbon = window_frame_carbon + window_glazing_carbon
-            subsurface_data["window"]["embodied_carbon_kg_co2_eq"] = window_total_carbon
-            subsurface_data["window_renovation_embodied_carbon_kg_co2_eq"] += window_total_carbon
-            runner.registerInfo(f"    ✓ Entire Window (Frame + Glazing): {window_total_carbon:.2f} kg CO2 eq")
+            # Accumulate to total embodied carbon
+            subsurface_data["window_renovation_embodied_carbon_kg_co2_eq"] += subsurface_data[material_name]["embodied_carbon_kg_co2_eq"]
 
     def validate_user_arguments_values(self, runner, analysis_period, glass_lifetime, wf_lifetime, 
                                         caulking_lifetime, film_lifetime, weatherstrip_lifetime, 
@@ -2642,10 +2689,10 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
             runner.registerError("Glass pane lifetime must be 100 years or less.")
             return False
         if wf_lifetime <= 0:
-            runner.registerError("Window frame lifetime must be greater than 0 years.")
+            runner.registerError("Entire window lifetime must be greater than 0 years.")
             return False
         if wf_lifetime > 100:
-            runner.registerError("Window frame lifetime must be 100 years or less.")
+            runner.registerError("Entire window lifetime must be 100 years or less.")
             return False
         if caulking_lifetime <= 0:
             runner.registerError("Caulking sealant lifetime must be greater than 0 years.")
@@ -3001,7 +3048,7 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
             runner.registerInfo(f"Inferred defaults from RSMeans descriptions: {inferred}")
         return inferred
 
-    def extract_gwp_and_thickness_from_epd(self, length_per_unit, epd_data):
+    def extract_gwp_and_thickness_from_epd(self, length_per_unit, epd_data, runner=None, subsurface_name=None, material_name=None):
         """Extract global warming potential (GWP) values and lifetime from EPD product data.
         
         Parses EPD records to get carbon emissions per unit (m2, kg, m3, m), thickness,
@@ -3013,11 +3060,26 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
         gwp_values["gwp_per_kg"] = []
         gwp_values["gwp_per_m3"] = []
         gwp_values["gwp_per_m"] = []
+        gwp_values["gwp_per_unit"] = []
         thickness_summary = []
         lifetime_values = []
 
         for idx, epd in enumerate(epd_data,start = 1):
             parsed_data = parse_product_epd(epd)
+
+            if material_name == "window":
+                declared_unit = parsed_data.get("declared_unit")
+                gwp_unit = parsed_data.get("gwp_per_unit (kg CO2 eq/unit)")
+                gwp_m2 = parsed_data.get("gwp_per_m2 (kg CO2 eq/m2)")
+                gwp_m3 = parsed_data.get("gwp_per_m3 (kg CO2 eq/m3)")
+                print(
+                    "Window EPD debug "
+                    f"[{subsurface_name or 'unknown'}] item#{idx}: "
+                    f"declared_unit={declared_unit}, "
+                    f"gwp_per_unit={gwp_unit}, "
+                    f"gwp_per_m2={gwp_m2}, "
+                    f"gwp_per_m3={gwp_m3}"
+                )
 
             gwp_per_m2 = parsed_data["gwp_per_m2 (kg CO2 eq/m2)"]
             if gwp_per_m2 != None:
@@ -3030,6 +3092,10 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
             gwp_per_m3 = parsed_data["gwp_per_m3 (kg CO2 eq/m3)"]
             if gwp_per_m3 != None:
                 gwp_values["gwp_per_m3"].append(float(gwp_per_m3))
+
+            gwp_per_unit = parsed_data["gwp_per_unit (kg CO2 eq/unit)"]
+            if gwp_per_unit != None:
+                gwp_values["gwp_per_unit"].append(float(gwp_per_unit))
 
             gwp_per_m = gwp_per_kg * extract_numeric_value(parsed_data["mass_per_declared_unit"])/length_per_unit
             if gwp_per_m != None:
@@ -3057,7 +3123,7 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
                         lifetime_values.append(float(numeric_value))
         
         # Remove outliers from GWP values
-        for key in ["gwp_per_m2", "gwp_per_kg", "gwp_per_m3", "gwp_per_m"]:
+        for key in ["gwp_per_m2", "gwp_per_kg", "gwp_per_m3", "gwp_per_m", "gwp_per_unit"]:
             if len(gwp_values[key]) > 0:
                 original_count = len(gwp_values[key])
                 gwp_values[key] = self.remove_outliers_iqr(gwp_values[key])
@@ -4330,8 +4396,6 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
                     rsmeans_material_features.update({
                         "window_glass_rsmeans_id": "N/A",
                         "window_glass_rsmeans_description": "N/A",
-                        "window_frame_rsmeans_id": "N/A",
-                        "window_frame_rsmeans_description": "N/A",
                         "window_caulking_rsmeans_id": "N/A",
                         "window_caulking_rsmeans_description": "N/A",
                         "window_film_rsmeans_id": "N/A",
@@ -4367,8 +4431,6 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
                                 feature_prefix = "window_film"
                             elif "window glazing" in mat_name or mat_name == "glazing":
                                 feature_prefix = "window_glass"
-                            elif "window frame" in mat_name:
-                                feature_prefix = "window_frame"
                             elif "weatherstrip" in mat_name:
                                 feature_prefix = "window_weatherstrip"
                             elif "secondary glazing" in mat_name:
@@ -4403,7 +4465,7 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
                             ("secondary glazing", int(lifetime_multiplier(glass_lifetime, analysis_period)) if use_lifetime_multiplier else 1),
                             ("window glazing",   int(lifetime_multiplier(glass_lifetime, analysis_period)) if use_lifetime_multiplier else 1),
                             ("glazing",          int(lifetime_multiplier(glass_lifetime, analysis_period)) if use_lifetime_multiplier else 1),
-                            ("window frame",     int(lifetime_multiplier(wf_lifetime, analysis_period)) if use_lifetime_multiplier else 1),
+                            ("window frame",     int(lifetime_multiplier(window_lifetime, analysis_period)) if use_lifetime_multiplier else 1),
                             ("weatherstrip",     int(lifetime_multiplier(weatherstrip_lifetime, analysis_period)) if use_lifetime_multiplier else 1),
                             ("sealant",          int(lifetime_multiplier(caulking_lifetime, analysis_period)) if use_lifetime_multiplier else 1),
                             ("caulking",         int(lifetime_multiplier(caulking_lifetime, analysis_period)) if use_lifetime_multiplier else 1),
@@ -4513,6 +4575,9 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
                                 if _pricing_eff > 0.0 and _pricing_eff_uom == "LF":
                                     _weatherstrip_unit_cost_lf = _pricing_eff
 
+                        # Calculate total frame area from window area for window option
+                        total_frame_area_m2 = total_window_area_m2_for_window_option if window_option != "none" else 0.0
+                        
                         _glass_volume_cf = (
                             (float(total_glazing_area_m2) + float(total_secondary_glazing_area_m2))
                             * float(effective_glass_pane_thickness)
@@ -4692,8 +4757,6 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
         gwp_glass_per_m2_list = []
         gwp_glass_per_m3_list = []
         gwp_window_per_m2_list = []
-        gwp_window_frame_per_m2_list = []
-        gwp_window_glazing_per_m2_list = []
         gwp_caulking_per_m3_list = []
         gwp_film_per_m2_list = []
         gwp_weatherstrip_per_m_list = []
@@ -4714,16 +4777,6 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
                 gwp_m2 = subsurface_dict[name]['window']['gwp_per_m2']
                 if gwp_m2 is not None and gwp_m2 > 0:
                     gwp_window_per_m2_list.append(gwp_m2)
-
-            if 'window_frame' in subsurface_dict[name] and 'gwp_per_m2' in subsurface_dict[name]['window_frame']:
-                gwp_m2 = subsurface_dict[name]['window_frame']['gwp_per_m2']
-                if gwp_m2 is not None and gwp_m2 > 0:
-                    gwp_window_frame_per_m2_list.append(gwp_m2)
-
-            if 'window_glazing' in subsurface_dict[name] and 'gwp_per_m2' in subsurface_dict[name]['window_glazing']:
-                gwp_m2 = subsurface_dict[name]['window_glazing']['gwp_per_m2']
-                if gwp_m2 is not None and gwp_m2 > 0:
-                    gwp_window_glazing_per_m2_list.append(gwp_m2)
 
             if 'caulking' in subsurface_dict[name] and 'gwp_per_m3' in subsurface_dict[name]['caulking']:
                 gwp_m3 = subsurface_dict[name]['caulking']['gwp_per_m3']
@@ -4751,10 +4804,6 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
             factors_features["window_glass_gwp_per_m3_kgCO2eq"] = float(np.mean(gwp_glass_per_m3_list))
         if gwp_window_per_m2_list:
             factors_features["window_window_gwp_per_m2_kgCO2eq"] = float(np.mean(gwp_window_per_m2_list))
-        if gwp_window_frame_per_m2_list:
-            factors_features["window_frame_gwp_per_m2_kgCO2eq"] = float(np.mean(gwp_window_frame_per_m2_list))
-        if gwp_window_glazing_per_m2_list:
-            factors_features["window_glazing_gwp_per_m2_kgCO2eq"] = float(np.mean(gwp_window_glazing_per_m2_list))
         if gwp_caulking_per_m3_list:
             factors_features["window_caulking_gwp_per_m3_kgCO2eq"] = float(np.mean(gwp_caulking_per_m3_list))
         if gwp_film_per_m2_list:

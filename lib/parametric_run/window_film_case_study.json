@@ -1,0 +1,16 @@
+[
+  {
+    "glass_option": "none",
+    "window_num_panes": 0,
+    "window_infiltration_reduction_percent": 0.0,
+    "window_option": "none",
+    "film_option": "low-e film"
+  },
+  {
+    "glass_option": "none",
+    "window_num_panes": 0,
+    "window_infiltration_reduction_percent": 0.0,
+    "window_option": "none",
+    "film_option": "solar control film"
+  }
+]

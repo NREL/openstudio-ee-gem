@@ -175,12 +175,7 @@ def run_measure(model, args_overrides=None):
     set_arg("weatherstrip_lifetime", 10)    # years
     set_arg("overhead_profit_percent", 0.1) # percent
 
-    # --- Enhancement options (glass + frame) ---
-    
-    # Window frame options:
-    set_arg("wf_option", "wood window frame")           
-    # set_arg("wf_option", "none")
-    # set_arg("wf_option", "wood-aluminium window frame")
+    # --- Enhancement options ---
     
     # Weatherstrip options:
     # set_arg("weatherstrip_option", "none")              # no weatherstrip

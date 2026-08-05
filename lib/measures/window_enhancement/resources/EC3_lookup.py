@@ -89,7 +89,7 @@ def generate_url_byname(
     description_like: Optional[str] = None,
     category: Optional[str] = None,
     page_number: int = 1,
-    page_size: int = 250,
+    page_size: int = 25,
     declaration_type: str = "Product EPD",
     plant_geography: str = "021"
 ) -> str:
@@ -102,6 +102,10 @@ def generate_url_byname(
     params = [
         ("page_number", page_number),
         ("page_size", page_size),
+        (
+            "fields",
+            "id,open_xpd_uuid,is_failed,failures,errors,warnings,date_validity_ends,cqd_sync_unlocked,my_capabilities,original_data_format,category,display_name,manufacturer,plant_or_group,name,description,program_operator,program_operator_fkey,verifier,developer,matched_plants_count,plant_geography,pcr,short_name,version,date_of_issue,language,gwp,uncertainty_adjusted_gwp,declared_unit,updated_on,corrections_count,declaration_type,box_id,is_downloadable"
+        ),
         ("sort_by", "-updated_on"),
     ]
         # Place category immediately after sort_by if provided.
@@ -125,7 +129,7 @@ def generate_url_byname(
     return f"{base_url}?{urllib.parse.urlencode(params)}"
 
 # this function is sending API call, the response is json format
-def fetch_epd_data(url, api_token, max_retries=1, timeout=10):
+def fetch_epd_data(url, api_token, max_retries=3, timeout=30):
     """
     input url address generted by generate_url()
     Fetch EPD data from the EC3 API with retry logic and timeout.
@@ -147,8 +151,18 @@ def fetch_epd_data(url, api_token, max_retries=1, timeout=10):
         print("EC3_API_TOKEN not set; skipping EC3 API request.")
         return []
     
+    def _swap_ec3_host(input_url: str) -> str:
+        if not input_url:
+            return input_url
+        if "https://api.buildingtransparency.org" in input_url:
+            return input_url.replace("https://api.buildingtransparency.org", "https://buildingtransparency.org", 1)
+        if "https://buildingtransparency.org" in input_url:
+            return input_url.replace("https://buildingtransparency.org", "https://api.buildingtransparency.org", 1)
+        return input_url
+
     # Retry logic with exponential backoff
     import time
+    current_url = url
     for attempt in range(max_retries):
         try: 
             # print(f"Fetching data from URL: {url}")  # Log the URL being fetched
@@ -158,13 +172,23 @@ def fetch_epd_data(url, api_token, max_retries=1, timeout=10):
                 "Authorization": f"Bearer {api_token}",
                 "X-API-Key": api_token  # Some APIs use this instead
             }
-            response = requests.get(url, headers=HEADERS, verify=False, timeout=timeout)
+            response = requests.get(current_url, headers=HEADERS, verify=False, timeout=timeout)
             response.raise_for_status() # HTTPError if failure 
             print(f"Successfully fetched EPD data (attempt {attempt + 1}/{max_retries})")
-            return response.json()
+            payload = response.json()
+            if isinstance(payload, dict) and "results" in payload:
+                return payload.get("results") or []
+            if isinstance(payload, list):
+                return payload
+            return []
         except requests.exceptions.Timeout:
             wait_time = 2 ** attempt  # Exponential backoff: 1s, 2s, 4s
             print(f"Timeout fetching EPD data (attempt {attempt + 1}/{max_retries}). Retrying in {wait_time}s...")
+            if attempt < max_retries - 1:
+                swapped_url = _swap_ec3_host(current_url)
+                if swapped_url != current_url:
+                    current_url = swapped_url
+                    print(f"Switching EC3 host and retrying: {current_url.split('/api/')[0]}")
             if attempt < max_retries - 1:
                 time.sleep(wait_time)
             else:
@@ -173,6 +197,11 @@ def fetch_epd_data(url, api_token, max_retries=1, timeout=10):
         except requests.exceptions.ConnectionError as e:
             wait_time = 2 ** attempt
             print(f"Connection error fetching EPD data (attempt {attempt + 1}/{max_retries}): {e}. Retrying in {wait_time}s...")
+            if attempt < max_retries - 1:
+                swapped_url = _swap_ec3_host(current_url)
+                if swapped_url != current_url:
+                    current_url = swapped_url
+                    print(f"Switching EC3 host and retrying: {current_url.split('/api/')[0]}")
             if attempt < max_retries - 1:
                 time.sleep(wait_time)
             else:
@@ -571,7 +600,7 @@ def main():
     print("Fetching EC3 EPD data...")
 
     print("Search EPD based on names:")
-    search_url=generate_url_byname(category='56f3c898f94b459eb18feadeb792ab88', name_like= "xps insulation") 
+    search_url=generate_url_byname(name_like= "aluminum window systems") 
     epd_data = fetch_epd_data(search_url, API_TOKEN)
     
     for idx, epd in enumerate(epd_data, start=1):

@@ -94,7 +94,7 @@ WINDOW_DEFAULT_FALLBACK_COSTLINES = {
     "wood operable window": "085210700100",
     "wood fixed window": "085210550100",
     # Entire window replacement (frame + glazing assembly)
-    "wood double glazing window": "085210550100",
+    "wood-aluminum glazing window": "085210550100",
     "aluminum double glazing window": "085113204100",
     "aluminium double glazing window": "085113204100",
     # 0792 joint-sealant lines per EC3 Query Strings spreadsheet (RSMeans sheet).
