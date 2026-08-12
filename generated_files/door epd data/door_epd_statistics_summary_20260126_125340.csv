@@ -1,0 +1,44 @@
+﻿Metric,Material Category,Renovation Type,Count,Min,Max,Mean,Median,Std Dev,Q1 (25th percentile),Q3 (75th percentile)
+density,Honeycomb Core Steel Door,whole door,1,481.6,481.6,481.6,481.6,0.0,481.6,481.6
+density,Polystyrene Core Steel Door,whole door,1,472.3,472.3,472.3,472.3,0.0,472.3,472.3
+density,Polyurethane Core Steel Door,whole door,1,490.0,490.0,490.0,490.0,0.0,490.0,490.0
+density,Stiffened Core,whole door,1,570.9,570.9,570.9,570.9,0.0,570.9,570.9
+density,Wood Door Leaf,whole door,2,562.5,562.5,562.5,562.5,0.0,562.5,562.5
+gwp_per_declared_unit,Automatic Door Bottom,door sealing,5,4.1,14.2,7.7,5.3,3.7507332616436484,5.3,9.6
+gwp_per_declared_unit,Brush Weatherstrip,door sealing,1,1.8,1.8,1.8,1.8,0.0,1.8,1.8
+gwp_per_declared_unit,Garage Door,whole door,5,2.4611,162.58,78.42022,83.1,56.78731881145297,32.19,111.77
+gwp_per_declared_unit,Honeycomb Core Steel Door,whole door,1,111.0,111.0,111.0,111.0,0.0,111.0,111.0
+gwp_per_declared_unit,Jamb Weatherstripping,door sealing,1,5.34,5.34,5.34,5.34,0.0,5.34,5.34
+gwp_per_declared_unit,Polystyrene Core Steel Door,whole door,1,114.0,114.0,114.0,114.0,0.0,114.0,114.0
+gwp_per_declared_unit,Polyurethane Core Steel Door,whole door,1,111.0,111.0,111.0,111.0,0.0,111.0,111.0
+gwp_per_declared_unit,Silicone Adhesive Smoke Gasket,door sealing,2,3.6,3.6,3.6,3.6,0.0,3.6,3.6
+gwp_per_declared_unit,Stiffened Core,whole door,1,136.0,136.0,136.0,136.0,0.0,136.0,136.0
+gwp_per_declared_unit,Window Door System,whole door,2,8.11,11.986,10.048,10.048,1.9380000000000006,9.079,11.017
+gwp_per_declared_unit,Wood Door Leaf,whole door,6,82.0,82.3,82.2,82.3,0.14142135623730817,82.075,82.3
+gwp_per_kg (kg CO2 eq/kg),Automatic Door Bottom,door sealing,5,6.002928258,12.24489796,8.405004102800001,6.162790698,2.823176234925478,6.162790698,11.4516129
+gwp_per_kg (kg CO2 eq/kg),Brush Weatherstrip,door sealing,1,12.0,12.0,12.0,12.0,0.0,12.0,12.0
+gwp_per_kg (kg CO2 eq/kg),Garage Door,whole door,4,0.4731005291,7.506775068,2.7764811181,1.56302443765,2.8389820645911334,0.61698678875,3.722518767
+gwp_per_kg (kg CO2 eq/kg),Honeycomb Core Steel Door,whole door,1,2.655502392,2.655502392,2.655502392,2.655502392,0.0,2.655502392,2.655502392
+gwp_per_kg (kg CO2 eq/kg),Jamb Weatherstripping,door sealing,1,0.00534,0.00534,0.00534,0.00534,0.0,0.00534,0.00534
+gwp_per_kg (kg CO2 eq/kg),Polystyrene Core Steel Door,whole door,1,2.780487805,2.780487805,2.780487805,2.780487805,0.0,2.780487805,2.780487805
+gwp_per_kg (kg CO2 eq/kg),Polyurethane Core Steel Door,whole door,1,2.611764706,2.611764706,2.611764706,2.611764706,0.0,2.611764706,2.611764706
+gwp_per_kg (kg CO2 eq/kg),Silicone Adhesive Smoke Gasket,door sealing,2,9.350649351,9.350649351,9.350649351,9.350649351,0.0,9.350649351,9.350649351
+gwp_per_kg (kg CO2 eq/kg),Stiffened Core,whole door,1,2.747474747,2.747474747,2.747474747,2.747474747,0.0,2.747474747,2.747474747
+gwp_per_kg (kg CO2 eq/kg),Window Door System,whole door,2,8.11,11.986,10.048,10.048,1.9380000000000006,9.079,11.017
+gwp_per_kg (kg CO2 eq/kg),Wood Door Leaf,whole door,6,1.464285714,1.488245931,1.4802591920000001,1.488245931,0.011294954612934107,1.47027576825,1.488245931
+gwp_per_m3 (kg CO2 eq/m3),Honeycomb Core Steel Door,whole door,1,1278.8899519872,1278.8899519872,1278.8899519872,1278.8899519872,0.0,1278.8899519872,1278.8899519872
+gwp_per_m3 (kg CO2 eq/m3),Polystyrene Core Steel Door,whole door,1,1313.2243903015,1313.2243903015,1313.2243903015,1313.2243903015,0.0,1313.2243903015,1313.2243903015
+gwp_per_m3 (kg CO2 eq/m3),Polyurethane Core Steel Door,whole door,1,1279.76470594,1279.76470594,1279.76470594,1279.76470594,0.0,1279.76470594,1279.76470594
+gwp_per_m3 (kg CO2 eq/m3),Stiffened Core,whole door,1,1568.5333330623,1568.5333330623,1568.5333330623,1568.5333330623,0.0,1568.5333330623,1568.5333330623
+gwp_per_m3 (kg CO2 eq/m3),Wood Door Leaf,whole door,2,823.660714125,837.1383361875,830.3995251562501,830.3995251562501,6.738811031250009,827.030119640625,833.7689306718751
+gwp_per_m2 (kg CO2 eq/m2),Garage Door,whole door,1,32.19,32.19,32.19,32.19,0.0,32.19,32.19
+gwp_per_unit (kg CO2 eq/unit),Automatic Door Bottom,door sealing,5,4.1,14.2,7.7,5.3,3.7507332616436484,5.3,9.6
+gwp_per_unit (kg CO2 eq/unit),Brush Weatherstrip,door sealing,1,1.8,1.8,1.8,1.8,0.0,1.8,1.8
+gwp_per_unit (kg CO2 eq/unit),Garage Door,whole door,3,83.1,162.58,119.15000000000002,111.77,32.86452900418119,97.435,137.175
+gwp_per_unit (kg CO2 eq/unit),Honeycomb Core Steel Door,whole door,1,111.0,111.0,111.0,111.0,0.0,111.0,111.0
+gwp_per_unit (kg CO2 eq/unit),Jamb Weatherstripping,door sealing,1,5.34,5.34,5.34,5.34,0.0,5.34,5.34
+gwp_per_unit (kg CO2 eq/unit),Polystyrene Core Steel Door,whole door,1,114.0,114.0,114.0,114.0,0.0,114.0,114.0
+gwp_per_unit (kg CO2 eq/unit),Polyurethane Core Steel Door,whole door,1,111.0,111.0,111.0,111.0,0.0,111.0,111.0
+gwp_per_unit (kg CO2 eq/unit),Silicone Adhesive Smoke Gasket,door sealing,2,3.6,3.6,3.6,3.6,0.0,3.6,3.6
+gwp_per_unit (kg CO2 eq/unit),Stiffened Core,whole door,1,136.0,136.0,136.0,136.0,0.0,136.0,136.0
+gwp_per_unit (kg CO2 eq/unit),Wood Door Leaf,whole door,6,82.0,82.3,82.2,82.3,0.14142135623730817,82.075,82.3

@@ -1,0 +1,667 @@
+﻿diff --git a/lib/parametric_run/workflow.py b/lib/parametric_run/workflow_cost.py
+index f2f49e29..fb8c91e1 100644
+--- a/lib/parametric_run/workflow.py
++++ b/lib/parametric_run/workflow_cost.py
+@@ -185,14 +185,16 @@ def get_ec3_api_token():
+-    script_dir = Path(__file__).parent
+-    repo_root = script_dir.parent.parent
+-    config_path = repo_root / "config.ini"
+-    if not config_path.exists():
+-        print(f"Warning: config.ini not found at {config_path}")
+-        return None
+-
+-    config = configparser.ConfigParser()
+-    config.read(config_path)
+-    try:
+-        return config["EC3_API_TOKEN"]["API_TOKEN"]
+-    except KeyError:
+-        print("Warning: EC3_API_TOKEN not found in config.ini")
+-        return None
++    # DISABLED: Carbon calculation is disabled in this workflow
++    # script_dir = Path(__file__).parent
++    # repo_root = script_dir.parent.parent
++    # config_path = repo_root / "config.ini"
++    # if not config_path.exists():
++    #     print(f"Warning: config.ini not found at {config_path}")
++    #     return None
++    #
++    # config = configparser.ConfigParser()
++    # config.read(config_path)
++    # try:
++    #     return config["EC3_API_TOKEN"]["API_TOKEN"]
++    # except KeyError:
++    #     print("Warning: EC3_API_TOKEN not found in config.ini")
++    #     return None
++    return None
+@@ -200 +202 @@ def get_ec3_api_token():
+-EC3_API_TOKEN = get_ec3_api_token()
++EC3_API_TOKEN = None  # DISABLED: Carbon calculation disabled
+@@ -289 +291 @@ def detect_window_upgrade_status(model, requested_panes):
+-    """Infer whether requested pane upgrade was applied based on model constructions."""
++    """Detect whether requested pane upgrade was actually applied to model windows."""
+@@ -295 +297 @@ def detect_window_upgrade_status(model, requested_panes):
+-        return "none"
++        return None
+@@ -790,0 +793 @@ def create_simulation(
++
+@@ -855,11 +858,12 @@ def create_simulation(
+-        requires_ec3_data = any([
+-            scenario_dict.get("wall_r_value"),
+-            scenario_dict.get("roof_r_value"),
+-            has_window_renovation,
+-            has_door_renovation,
+-        ])
+-        if requires_ec3_data and not EC3_API_TOKEN:
+-            print("  EC3 API token is required for online cost/carbon calculations; scenario skipped.")
+-            log_failure("missing EC3 API token for required online cost/carbon calculations")
+-            del model
+-            return None
++        # DISABLED: Carbon calculation disabled - no EC3 API token check needed
++        # requires_ec3_data = any([
++        #     scenario_dict.get("wall_r_value"),
++        #     scenario_dict.get("roof_r_value"),
++        #     has_window_renovation,
++        #     has_door_renovation,
++        # ])
++        # if requires_ec3_data and not EC3_API_TOKEN:
++        #     print("  EC3 API token is required for online cost/carbon calculations; scenario skipped.")
++        #     log_failure("missing EC3 API token for required online cost/carbon calculations")
++        #     del model
++        #     return None
+@@ -874 +878,4 @@ def create_simulation(
+-                "api_key": EC3_API_TOKEN,
++                # Explicitly skip EC3 lookups for stable cost-only runs.
++                "use_custom_gwp": True,
++                "custom_gwp_per_m3": 0.0,
++                "api_key": "",
+@@ -898 +905,4 @@ def create_simulation(
+-                "api_key": EC3_API_TOKEN,
++                # Explicitly skip EC3 lookups for stable cost-only runs.
++                "use_custom_gwp": True,
++                "custom_gwp_per_m3": 0.0,
++                "api_key": "",
+@@ -905 +915 @@ def create_simulation(
+-                "custom_cost_per_cf": float(scenario_dict.get("custom_cost_per_cf") or 0.0),
++                "custom_cost_per_cf": float(scenario_dict.get("roof_insulation_custom_cost_per_cf") or scenario_dict.get("custom_cost_per_cf") or 0.0),
+@@ -955 +965,8 @@ def create_simulation(
+-                "api_key": EC3_API_TOKEN,
++                # Explicitly skip EC3 lookups for stable cost-only runs.
++                "use_custom_gwp": True,
++                "custom_glass_gwp_per_m3": 0.0,
++                "custom_frame_gwp_per_m2": 0.0,
++                "custom_caulking_gwp_per_m3": 0.0,
++                "custom_weatherstrip_gwp_per_m": 0.0,
++                "custom_film_gwp_per_m2": 0.0,
++                "api_key": "",
+@@ -963,0 +981,3 @@ def create_simulation(
++                "u_factor_modification_percentage": float(scenario_dict.get("u_factor_modification_percentage") or 0.0),
++                "shgc_modification_percentage": float(scenario_dict.get("shgc_modification_percentage") or 0.0),
++                "visible_transmittance_modification_percentage": float(scenario_dict.get("visible_transmittance_modification_percentage") or 0.0),
+@@ -988 +1008,6 @@ def create_simulation(
+-                "api_key": EC3_API_TOKEN,
++                # Explicitly skip EC3 lookups for stable cost-only runs.
++                "use_custom_gwp": True,
++                "custom_door_leaf_gwp_per_m2": 0.0,
++                "custom_bottom_strip_gwp_per_m": 0.0,
++                "custom_side_top_strip_gwp_per_m": 0.0,
++                "api_key": "",
+@@ -1130,0 +1156,26 @@ def extract_total_site_energy_gj(sql_path):
++
++def extract_fuel_energy_gj(sql_path):
++    """Extract site energy by fuel type from EnergyPlus SQL End Uses table (GJ)."""
++    result = {}
++    try:
++        with sqlite3.connect(str(sql_path)) as conn:
++            cur = conn.cursor()
++            cur.execute(
++                """
++                SELECT ColumnName, SUM(CAST(Value AS REAL)) as total_gj
++                FROM TabularDataWithStrings
++                WHERE lower(ReportName) = 'annualbuildingutilityperformancesummary'
++                  AND lower(TableName) = 'end uses'
++                  AND lower(RowName) != 'total end uses'
++                  AND lower(Units) = 'gj'
++                GROUP BY ColumnName
++                """
++            )
++            for col_name, total_gj in cur.fetchall():
++                if total_gj is not None and float(total_gj) > 0:
++                    slug = str(col_name).strip().lower().replace(" ", "_").replace("-", "_")
++                    result[f"{slug}_site_energy_gj"] = round(float(total_gj), 4)
++    except Exception as e:
++        print(f"     Failed to read fuel energy from SQL {sql_path}: {e}")
++    return result
++
+@@ -1191,0 +1243 @@ def extract_scenario_data(osm_path, scenario_name):
++    # DISABLED: Carbon calculation disabled
+@@ -1192,0 +1245,42 @@ def extract_scenario_data(osm_path, scenario_name):
++    # sim_props = model.getSimulationControl().additionalProperties()
++    # ec_keys = [
++    #     "wall_insulation_embodied_carbon_kgCO2eq",
++    #     "roof_insulation_embodied_carbon_kgCO2eq",
++    #     "window_enhancement_embodied_carbon_kgCO2eq",
++    #     "door_enhancement_embodied_carbon_kgCO2eq",
++    # ]
++    # for key in ec_keys:
++    #     if key in sim_props.featureNames():
++    #         val = get_prop_value(sim_props, key)
++    #         if val is not None:
++    #             results[key] = val
++    #             found_any = True
++    #
++    # # Also capture embodied-carbon keys from all AdditionalProperties objects
++    # # (newer measures store keys such as *_embodied_carbon_kgCO2eq).
++    # idd_type = openstudio.IddObjectType("OS:AdditionalProperties")
++    # for obj in model.getObjectsByType(idd_type):
++    #     opt_props = openstudio.model.toAdditionalProperties(obj)
++    #     if not opt_props.is_initialized():
++    #         continue
++    #     props = opt_props.get()
++    #     for fname in props.featureNames():
++    #         lname = str(fname).lower()
++    #         if "embodied_carbon" not in lname:
++    #             continue
++    #         val = get_prop_value(props, fname)
++    #         if val is not None:
++    #             results[fname] = val
++    #             found_any = True
++    #
++    # # Convenience aggregate for analysis widgets.
++    # if "total_additional_embodied_carbon_kg" not in results:
++    #     total_embodied = (
++    #         float(results.get("wall_insulation_embodied_carbon_kgCO2eq", 0.0) or 0.0)
++    #         + float(results.get("roof_insulation_embodied_carbon_kgCO2eq", 0.0) or 0.0)
++    #         + float(results.get("window_enhancement_embodied_carbon_kgCO2eq", 0.0) or 0.0)
++    #         + float(results.get("door_enhancement_embodied_carbon_kgCO2eq", 0.0) or 0.0)
++    #     )
++    #     results["total_additional_embodied_carbon_kg"] = total_embodied
++
++    # Keep SimulationControl props for non-carbon fields (cost keys still sourced here).
+@@ -1194,39 +1287,0 @@ def extract_scenario_data(osm_path, scenario_name):
+-    ec_keys = [
+-        "wall_insulation_embodied_carbon_kgCO2eq",
+-        "roof_insulation_embodied_carbon_kgCO2eq",
+-        "window_enhancement_embodied_carbon_kgCO2eq",
+-        "door_enhancement_embodied_carbon_kgCO2eq",
+-    ]
+-    for key in ec_keys:
+-        if key in sim_props.featureNames():
+-            val = get_prop_value(sim_props, key)
+-            if val is not None:
+-                results[key] = val
+-                found_any = True
+-
+-    # Also capture embodied-carbon keys from all AdditionalProperties objects
+-    # (newer measures store keys such as *_embodied_carbon_kgCO2eq).
+-    idd_type = openstudio.IddObjectType("OS:AdditionalProperties")
+-    for obj in model.getObjectsByType(idd_type):
+-        opt_props = openstudio.model.toAdditionalProperties(obj)
+-        if not opt_props.is_initialized():
+-            continue
+-        props = opt_props.get()
+-        for fname in props.featureNames():
+-            lname = str(fname).lower()
+-            if "embodied_carbon" not in lname:
+-                continue
+-            val = get_prop_value(props, fname)
+-            if val is not None:
+-                results[fname] = val
+-                found_any = True
+-
+-    # Convenience aggregate for analysis widgets.
+-    if "total_additional_embodied_carbon_kg" not in results:
+-        total_embodied = (
+-            float(results.get("wall_insulation_embodied_carbon_kgCO2eq", 0.0) or 0.0)
+-            + float(results.get("roof_insulation_embodied_carbon_kgCO2eq", 0.0) or 0.0)
+-            + float(results.get("window_enhancement_embodied_carbon_kgCO2eq", 0.0) or 0.0)
+-            + float(results.get("door_enhancement_embodied_carbon_kgCO2eq", 0.0) or 0.0)
+-        )
+-        results["total_additional_embodied_carbon_kg"] = total_embodied
+@@ -1402,0 +1458,9 @@ def extract_scenario_data(osm_path, scenario_name):
++    # Extract per-fuel site energy from SQL (Water is excluded because End Uses Water uses m3, not GJ).
++    sql_path_fuel = osm_path.parent / "eplusout.sql"
++    if sql_path_fuel.exists():
++        fuel_data = extract_fuel_energy_gj(sql_path_fuel)
++        for fkey, fval in fuel_data.items():
++            if fkey not in results and fval is not None:
++                results[fkey] = fval
++                found_any = True
++
+@@ -1498,0 +1563,2 @@ def generate_parametric_recap(target_path, city_climate_zones=None):
++        "electricity_site_energy_gj",
++        "natural_gas_site_energy_gj",
+@@ -1605,2 +1671 @@ def generate_parametric_recap(target_path, city_climate_zones=None):
+-# RUN_NAME = os.environ.get("WORKFLOW_RUN_NAME") or "run_test_015_custom_rsmeans"
+-RUN_NAME = "run_test_016_a"
++RUN_NAME = "run_test_017_cost"
+@@ -1700 +1765 @@ CUSTOM_COMBOS = [
+-    # Scenario 7: All 4 measures  Wall + Door + Roof + Window
++    # # Scenario 1: Custom-cost dataset test (low cost mix)
+@@ -1702,3 +1767,3 @@ CUSTOM_COMBOS = [
+-    #     "wall_r_value":    10,
+-    #     "wall_insulation_material_type": "Extruded Polystyrene (XPS) Foam Board",
+-    #     "roof_r_value":    15,
++    #     "wall_r_value": 20.4,
++    #     "wall_insulation_material_type": "Fiberglass Batts",
++    #     "roof_r_value": 34.5,
+@@ -1706,4 +1771,4 @@ CUSTOM_COMBOS = [
+-    #     "door_option":     "glass door",
+-    #     "door_infiltration_reduction_percent": 20.0,
+-    #     "door_bottom_seal_option": "none",
+-    #     "door_top_side_seal_option": "none",
++    #     "door_option": "wooden door",
++    #     "door_infiltration_reduction_percent": 90.0,
++    #     "door_bottom_seal_option": "automatic door bottom",
++    #     "door_top_side_seal_option": "jamb weatherstrip",
+@@ -1711 +1776 @@ CUSTOM_COMBOS = [
+-    #     "window_infiltration_reduction_percent": 20.0,
++    #     "window_infiltration_reduction_percent": 90.0,
+@@ -1713 +1778 @@ CUSTOM_COMBOS = [
+-    #     "wf_option": "none",
++    #     "wf_option": "wood window frame",
+@@ -1715 +1780,15 @@ CUSTOM_COMBOS = [
+-    #     "caulking_option": "none",
++    #     "caulking_option": "acrylic",
++    #     "use_custom_costs": True,
++    #     "wall_insulation_custom_cost_per_cf": 2.640001,
++    #     "roof_insulation_custom_cost_per_cf": 0.9,
++    #     "glass_cost_per_cf": 499.199388,
++    #     "frame_cost_per_sf": 60.44,
++    #     "caulking_cost_per_cy": 11108.571,
++    #     "film_cost_per_sf": 2.06,
++    #     "weatherstrip_cost_per_lf": 1.575,
++    #     "custom_door_cost_per_area": 65.12166,
++    #     "custom_bottom_seal_cost": 11.0,
++    #     "custom_top_side_seal_cost": 2.78,
++    #     "u_factor_modification_percentage": -30.0,
++    #     "shgc_modification_percentage": -30.0,
++    #     "visible_transmittance_modification_percentage": 0.0,
+@@ -1717 +1796 @@ CUSTOM_COMBOS = [
+-    # # Scenario 8: All 4 measures  Wall + Door + Roof + Window
++    # # Scenario 2: Custom-cost dataset test (mid cost mix)
+@@ -1719,6 +1798,6 @@ CUSTOM_COMBOS = [
+-    #     "wall_r_value":    30,
+-    #     "wall_insulation_material_type": "Expanded Polystyrene (EPS) Foam Board",
+-    #     "roof_r_value":    25,
+-    #     "roof_insulation_material_type": "Polyiso Insulation Foam Board",
+-    #     "door_option":     "polystyrene core steel door",
+-    #     "door_infiltration_reduction_percent": 25.0,
++    #     "wall_r_value": 20.4,
++    #     "wall_insulation_material_type": "Extruded Polystyrene (XPS) Foam Board",
++    #     "roof_r_value": 34.5,
++    #     "roof_insulation_material_type": "Expanded Polystyrene (EPS) Foam Board",
++    #     "door_option": "polystyrene core steel door",
++    #     "door_infiltration_reduction_percent": 90.0,
+@@ -1728,3 +1807,3 @@ CUSTOM_COMBOS = [
+-    #     "window_infiltration_reduction_percent": 25.0,
+-    #     "weatherstrip_option": "silicone adhesive smoke gasket",
+-    #     "wf_option": "none",
++    #     "window_infiltration_reduction_percent": 90.0,
++    #     "weatherstrip_option": "brush weatherstrip",
++    #     "wf_option": "wood-aluminium window frame",
+@@ -1732,0 +1812,14 @@ CUSTOM_COMBOS = [
++    #     "use_custom_costs": True,
++    #     "wall_insulation_custom_cost_per_cf": 12.000006,
++    #     "roof_insulation_custom_cost_per_cf": 4.320001,
++    #     "glass_cost_per_cf": 499.199388,
++    #     "frame_cost_per_sf": 73.5,
++    #     "caulking_cost_per_cy": 19995.429,
++    #     "film_cost_per_sf": 2.02,
++    #     "weatherstrip_cost_per_lf": 5.133332,
++    #     "custom_door_cost_per_area": 314.8444,
++    #     "custom_bottom_seal_cost": 5.133332,
++    #     "custom_top_side_seal_cost": 1.575,
++    #     "u_factor_modification_percentage": -30.0,
++    #     "shgc_modification_percentage": -30.0,
++    #     "visible_transmittance_modification_percentage": 0.0,
+@@ -1734 +1827 @@ CUSTOM_COMBOS = [
+-    #Scenario 9: All 4 measures  Wall + Door + Roof + Window
++    # # Scenario 3: Custom-cost dataset test (high cost mix)
+@@ -1736,6 +1829,6 @@ CUSTOM_COMBOS = [
+-    #     "wall_r_value":    20.4,
+-    #     "wall_insulation_material_type": "Fiberglass Batts",
+-    #     "roof_r_value":    34.5,
+-    #     "roof_insulation_material_type": "Blown Fiberglass",
+-    #     "door_option":     "wooden door",
+-    #     "door_infiltration_reduction_percent": 30.0,
++    #     "wall_r_value": 20.4,
++    #     "wall_insulation_material_type": "Polyiso Insulation Foam Board",
++    #     "roof_r_value": 34.5,
++    #     "roof_insulation_material_type": "Polyiso Insulation Foam Board",
++    #     "door_option": "garage door",
++    #     "door_infiltration_reduction_percent": 90.0,
+@@ -1743 +1836 @@ CUSTOM_COMBOS = [
+-    #     "door_top_side_seal_option": "jamb weatherstrip",
++    #     "door_top_side_seal_option": "silicone adhesive smoke gasket",
+@@ -1745 +1838 @@ CUSTOM_COMBOS = [
+-    #     "window_enhancement_infiltration_reduction_percent": 30.0,
++    #     "window_infiltration_reduction_percent": 90.0,
+@@ -1747 +1840 @@ CUSTOM_COMBOS = [
+-    #     "wf_option": "none",
++    #     "wf_option": "wood-aluminium window frame",
+@@ -1749 +1842,15 @@ CUSTOM_COMBOS = [
+-    #     "caulking_option": "acrylic",
++    #     "caulking_option": "polyurethane",
++    #     "use_custom_costs": True,
++    #     "wall_insulation_custom_cost_per_cf": 13.920007,
++    #     "roof_insulation_custom_cost_per_cf": 13.920007,
++    #     "glass_cost_per_cf": 499.199388,
++    #     "frame_cost_per_sf": 73.5,
++    #     "caulking_cost_per_cy": 19995.429,
++    #     "film_cost_per_sf": 0.84,
++    #     "weatherstrip_cost_per_lf": 1.575,
++    #     "custom_door_cost_per_area": 341.7114,
++    #     "custom_bottom_seal_cost": 11.0,
++    #     "custom_top_side_seal_cost": 1.575,
++    #     "u_factor_modification_percentage": -30.0,
++    #     "shgc_modification_percentage": -30.0,
++    #     "visible_transmittance_modification_percentage": 0.0,
+@@ -1751 +1858 @@ CUSTOM_COMBOS = [
+-    # Scenario 10: Custom-cost dataset test (low cost mix)
++        # Scenario 1: Custom-cost dataset test (low cost mix)
+@@ -1754 +1861 @@ CUSTOM_COMBOS = [
+-        "wall_insulation_material_type": "Fiberglass Batts",
++        "wall_insulation_material_type": "Blown Mineral Wool",
+@@ -1757,3 +1864,3 @@ CUSTOM_COMBOS = [
+-        "door_option": "wooden door",
+-        "door_infiltration_reduction_percent": 90.0,
+-        "door_bottom_seal_option": "automatic door bottom",
++        "door_option": "none",
++        "door_infiltration_reduction_percent": 30.0,
++        "door_bottom_seal_option": "brush weatherstrip",
+@@ -1762,2 +1869,2 @@ CUSTOM_COMBOS = [
+-        "window_infiltration_reduction_percent": 90.0,
+-        "weatherstrip_option": "silicone adhesive smoke gasket",
++        "window_infiltration_reduction_percent": 30.0,
++        "weatherstrip_option": "brush weatherstrip",
+@@ -1767,2 +1874,3 @@ CUSTOM_COMBOS = [
+-        "use_custom_costs": False,
+-        "custom_cost_per_cf": 2.640001,
++        "use_custom_costs": True,
++        "wall_insulation_custom_cost_per_cf": 0.9,
++        "roof_insulation_custom_cost_per_cf": 0.9,
+@@ -1773 +1881 @@ CUSTOM_COMBOS = [
+-        "weatherstrip_cost_per_lf": 1.575,
++        "weatherstrip_cost_per_lf": 5.133332,
+@@ -1775,2 +1883,5 @@ CUSTOM_COMBOS = [
+-        "custom_bottom_seal_cost": 33.0,
+-        "custom_top_side_seal_cost": 2.78,
++        "custom_bottom_seal_cost": 16.84164,
++        "custom_top_side_seal_cost": 9.120735,
++        "u_factor_modification_percentage": -3.0,
++        "shgc_modification_percentage": -3.0,
++        "visible_transmittance_modification_percentage": 0.0,
+@@ -1778 +1889 @@ CUSTOM_COMBOS = [
+-    # Scenario 11: Custom-cost dataset test (mid cost mix)
++    # Scenario 2: Custom-cost dataset test (mid cost mix)
+@@ -1781 +1892 @@ CUSTOM_COMBOS = [
+-        "wall_insulation_material_type": "Extruded Polystyrene (XPS) Foam Board",
++        "wall_insulation_material_type": "Blown Fiberglass",
+@@ -1783,4 +1894,4 @@ CUSTOM_COMBOS = [
+-        "roof_insulation_material_type": "Expanded Polystyrene (EPS) Foam Board",
+-        "door_option": "polystyrene core steel door",
+-        "door_infiltration_reduction_percent": 90.0,
+-        "door_bottom_seal_option": "brush weatherstrip",
++        "roof_insulation_material_type": "Blown Fiberglass",
++        "door_option": "none",
++        "door_infiltration_reduction_percent": 60.0,
++        "door_bottom_seal_option": "silicone adhesive smoke gasket",
+@@ -1789,3 +1900,3 @@ CUSTOM_COMBOS = [
+-        "window_infiltration_reduction_percent": 90.0,
+-        "weatherstrip_option": "brush weatherstrip",
+-        "wf_option": "wood-aluminium window frame",
++        "window_infiltration_reduction_percent": 60.0,
++        "weatherstrip_option": "silicone adhesive smoke gasket",
++        "wf_option": "wood window frame",
+@@ -1794,2 +1905,3 @@ CUSTOM_COMBOS = [
+-        "use_custom_costs": False,
+-        "custom_cost_per_cf": 12.000006,
++        "use_custom_costs": True,
++        "wall_insulation_custom_cost_per_cf": 0.981819,
++        "roof_insulation_custom_cost_per_cf": 0.981819,
+@@ -1797 +1909 @@ CUSTOM_COMBOS = [
+-        "frame_cost_per_sf": 73.5,
++        "frame_cost_per_sf": 60.44,
+@@ -1800 +1912 @@ CUSTOM_COMBOS = [
+-        "weatherstrip_cost_per_lf": 5.133332,
++        "weatherstrip_cost_per_lf": 5.167323,
+@@ -1802,2 +1914,5 @@ CUSTOM_COMBOS = [
+-        "custom_bottom_seal_cost": 15.4,
+-        "custom_top_side_seal_cost": 18.9,
++        "custom_bottom_seal_cost": 5.167323,
++        "custom_top_side_seal_cost": 5.167323,
++        "u_factor_modification_percentage": -10.0,
++        "shgc_modification_percentage": -10.0,
++        "visible_transmittance_modification_percentage": 0.0,
+@@ -1805 +1920 @@ CUSTOM_COMBOS = [
+-    # Scenario 12: Custom-cost dataset test (high cost mix)
++    # Scenario 3: Custom-cost dataset test (high cost mix)
+@@ -1808 +1923 @@ CUSTOM_COMBOS = [
+-        "wall_insulation_material_type": "Polyiso Insulation Foam Board",
++        "wall_insulation_material_type": "Fiberglass Batts",
+@@ -1810,2 +1925,2 @@ CUSTOM_COMBOS = [
+-        "roof_insulation_material_type": "Polyiso Insulation Foam Board",
+-        "door_option": "garage door",
++        "roof_insulation_material_type": "Fiberglass Batts",
++        "door_option": "polystyrene core steel door",
+@@ -1821,2 +1936,3 @@ CUSTOM_COMBOS = [
+-        "use_custom_costs": False,
+-        "custom_cost_per_cf": 13.920007,
++        "use_custom_costs": True,
++        "wall_insulation_custom_cost_per_cf": 2.64,
++        "roof_insulation_custom_cost_per_cf": 2.64,
+@@ -1827,4 +1943,7 @@ CUSTOM_COMBOS = [
+-        "weatherstrip_cost_per_lf": 1.575,
+-        "custom_door_cost_per_area": 341.7114,
+-        "custom_bottom_seal_cost": 33.0,
+-        "custom_top_side_seal_cost": 18.9,
++        "weatherstrip_cost_per_lf": 5.167323,
++        "custom_door_cost_per_area": 314.8444,
++        "custom_bottom_seal_cost": 36.08924,
++        "custom_top_side_seal_cost": 5.167323,
++        "u_factor_modification_percentage": -30.0,
++        "shgc_modification_percentage": -30.0,
++        "visible_transmittance_modification_percentage": 20.0,
+@@ -2020,0 +2140 @@ required_base_cols = [
++    "total_site_energy_gj",
+@@ -2045,6 +2165,8 @@ df[numeric_cols] = df[numeric_cols].apply(pd.to_numeric, errors="coerce").fillna
+-df["total_additional_embodied_carbon_kg"] = (
+-    df["window_enhancement_embodied_carbon_kgCO2eq"]
+-    + df["door_enhancement_embodied_carbon_kgCO2eq"]
+-    + df["wall_insulation_embodied_carbon_kgCO2eq"]
+-    + df["roof_insulation_embodied_carbon_kgCO2eq"]
+-)
++# DISABLED: Carbon calculation disabled - set all carbon columns to 0
++df["total_additional_embodied_carbon_kg"] = 0.0
++# df["total_additional_embodied_carbon_kg"] = (
++#     df["window_enhancement_embodied_carbon_kgCO2eq"]
++#     + df["door_enhancement_embodied_carbon_kgCO2eq"]
++#     + df["wall_insulation_embodied_carbon_kgCO2eq"]
++#     + df["roof_insulation_embodied_carbon_kgCO2eq"]
++# )
+@@ -2058,0 +2181 @@ df["annual_operational_cost_usd"] = (
++df["annual_operational_energy_gj"] = pd.to_numeric(df["total_site_energy_gj"], errors="coerce").fillna(0.0)
+@@ -2089 +2212,3 @@ if baseline_mask.any():
+-    df["carbon_payback_period_years"] = df.apply(lambda r: safe_payback(r["total_additional_embodied_carbon_kg"], r["emissions_delta"]), axis=1)
++    # DISABLED: Carbon calculation disabled - set carbon payback to None
++    # df["carbon_payback_period_years"] = df.apply(lambda r: safe_payback(r["total_additional_embodied_carbon_kg"], r["emissions_delta"]), axis=1)
++    df["carbon_payback_period_years"] = None
+@@ -2095,2 +2220 @@ metrics = [
+-    "total_additional_embodied_carbon_kg",
+-    "annual_operational_carbon_kg_co2e",
++    "annual_operational_energy_gj",
+@@ -2100 +2223,0 @@ metrics = [
+-    "carbon_payback_period_years",
+@@ -2104,2 +2227 @@ metric_labels = {
+-    "total_additional_embodied_carbon_kg": "Retrofit Embodied Carbon (kgCO2e)",
+-    "annual_operational_carbon_kg_co2e": "Annual Operational Carbon (kgCO2e)",
++    "annual_operational_energy_gj": "Annual Operational Energy (GJ)",
+@@ -2109 +2230,0 @@ metric_labels = {
+-    "carbon_payback_period_years": "Carbon Payback Period (years)",
+@@ -2118 +2239,6 @@ theta = [wrap_label(label, width=22) for label in theta_raw]
+-max_vals = df[metrics].max().replace(0, 1.0)
++chart_df = df[~baseline_mask].copy()
++if chart_df.empty:
++    chart_df = df.iloc[0:0].copy()
++    max_vals = pd.Series([1.0] * len(metrics), index=metrics)
++else:
++    max_vals = chart_df[metrics].max().replace(0, 1.0)
+@@ -2128 +2254 @@ def _format_hover_value(v):
+-for _, row in df.iterrows():
++for _, row in chart_df.iterrows():
+@@ -2163 +2289 @@ table_df = table_df.round(2)
+-from report_template import (
++from cost_report_template import (
+@@ -2232,4 +2358,9 @@ def generate_html_report(df, html_report_path, run_name="run"):
+-    wall_ec = _to_num(df, "wall_insulation_embodied_carbon_kgCO2eq")
+-    roof_ec = _to_num(df, "roof_insulation_embodied_carbon_kgCO2eq")
+-    window_ec = _to_num(df, "window_enhancement_embodied_carbon_kgCO2eq")
+-    door_ec = _to_num(df, "door_enhancement_embodied_carbon_kgCO2eq")
++    # DISABLED: Carbon calculation disabled - use zero values for all carbon data
++    wall_ec = pd.Series([0.0] * len(df), index=df.index)
++    roof_ec = pd.Series([0.0] * len(df), index=df.index)
++    window_ec = pd.Series([0.0] * len(df), index=df.index)
++    door_ec = pd.Series([0.0] * len(df), index=df.index)
++    # wall_ec = _to_num(df, "wall_insulation_embodied_carbon_kgCO2eq")
++    # roof_ec = _to_num(df, "roof_insulation_embodied_carbon_kgCO2eq")
++    # window_ec = _to_num(df, "window_enhancement_embodied_carbon_kgCO2eq")
++    # door_ec = _to_num(df, "door_enhancement_embodied_carbon_kgCO2eq")
+@@ -2249 +2380,2 @@ def generate_html_report(df, html_report_path, run_name="run"):
+-    report["embodied_carbon_kg"] = report[["wall_ec", "roof_ec", "window_ec", "door_ec"]].sum(axis=1)
++    report["embodied_carbon_kg"] = pd.Series([0.0] * len(report), index=report.index)  # DISABLED: Carbon calculation disabled
++    # report["embodied_carbon_kg"] = report[["wall_ec", "roof_ec", "window_ec", "door_ec"]].sum(axis=1)
+@@ -2285,0 +2418,2 @@ def generate_html_report(df, html_report_path, run_name="run"):
++    comparison_df["energy_delta"] = b["total_site_energy_gj"] - comparison_df["total_site_energy_gj"]
++    comparison_df["energy_delta_pct"] = comparison_df["energy_delta"] / b["total_site_energy_gj"] * 100.0 if b["total_site_energy_gj"] > 0 else 0.0
+@@ -2294,0 +2429,7 @@ def generate_html_report(df, html_report_path, run_name="run"):
++        max_energy_savings_row = b
++        max_energy_scenario = "No renovation scenarios"
++        max_energy_delta_gj = 0.0
++        max_energy_delta_pct = 0.0
++        max_energy_class = ""
++        max_energy_savings_text = "N/A"
++        max_energy_savings_scenario = "No renovation scenarios"
+@@ -2298,0 +2440 @@ def generate_html_report(df, html_report_path, run_name="run"):
++        max_energy_savings_row = comparison_df.loc[comparison_df["energy_delta"].idxmax()]
+@@ -2300,0 +2443 @@ def generate_html_report(df, html_report_path, run_name="run"):
++        max_energy_scenario = scenario_display_map.get(str(max_energy_savings_row["scenario"]), str(max_energy_savings_row["scenario"]))
+@@ -2304,0 +2448,5 @@ def generate_html_report(df, html_report_path, run_name="run"):
++        max_energy_delta_gj = float(max_energy_savings_row["energy_delta"])
++        max_energy_delta_pct = float(max_energy_savings_row["energy_delta_pct"])
++        max_energy_class = "positive" if max_energy_delta_gj >= 0 else ""
++        max_energy_savings_text = f"{max_energy_delta_gj:,.2f} GJ/yr" if max_energy_delta_gj > 0 else "N/A"
++        max_energy_savings_scenario = max_energy_scenario
+@@ -2363,0 +2512,3 @@ def generate_html_report(df, html_report_path, run_name="run"):
++    max_chart_energy = max(b["total_site_energy_gj"], max_energy_savings_row["total_site_energy_gj"], 1.0)
++    baseline_energy_w = b["total_site_energy_gj"] / max_chart_energy * 100.0
++    best_energy_w = max_energy_savings_row["total_site_energy_gj"] / max_chart_energy * 100.0
+@@ -2392,2 +2543,4 @@ def generate_html_report(df, html_report_path, run_name="run"):
+-
+-        f"<tr><td>{scenario_display_map.get(str(report.iloc[i]['scenario']), str(report.iloc[i]['scenario']))}</td><td>{num(float(report.iloc[i]['embodied_carbon_kg']))}</td><td>{money(float(construction_cost_values.iloc[i])) if pd.notna(construction_cost_values.iloc[i]) else 'N/A'}</td><td>{num(float(annual_operational_carbon.iloc[i]))}</td><td>{money(float(annual_operational_cost.iloc[i]))}</td></tr>"
++        f"<tr><td>{scenario_display_map.get(str(report.iloc[i]['scenario']), str(report.iloc[i]['scenario']))}</td>"
++        f"<td>{money(float(construction_cost_values.iloc[i])) if pd.notna(construction_cost_values.iloc[i]) else 'N/A'}</td>"
++        f"<td>{money(float(annual_operational_cost.iloc[i]))}</td>"
++        f"<td>{num_energy(float(report.iloc[i]['total_site_energy_gj'])) if pd.notna(report.iloc[i]['total_site_energy_gj']) else 'N/A'}</td></tr>"
+@@ -2395 +2547,0 @@ def generate_html_report(df, html_report_path, run_name="run"):
+-
+@@ -2398 +2550 @@ def generate_html_report(df, html_report_path, run_name="run"):
+-        spider_table_rows = "<tr><td colspan='5'>No spider chart data found in CSV.</td></tr>"
++        spider_table_rows = "<tr><td colspan='4'>No spider chart data found in CSV.</td></tr>"
+@@ -3139,0 +3292,5 @@ def generate_html_report(df, html_report_path, run_name="run"):
++    fuel_color_map = {
++        "electricity": "#1f77b4",
++        "natural_gas": "#ff7f0e",
++        "other": "#9467bd",
++    }
+@@ -3169,5 +3325,0 @@ def generate_html_report(df, html_report_path, run_name="run"):
+-        wall_carbon, _ = _pick_first_numeric(scenario_row, ["wall_insulation_embodied_carbon_kgCO2eq"])
+-        roof_carbon, _ = _pick_first_numeric(scenario_row, ["roof_insulation_embodied_carbon_kgCO2eq"])
+-        window_carbon, _ = _pick_first_numeric(scenario_row, ["window_enhancement_embodied_carbon_kgCO2eq"])
+-        door_carbon, _ = _pick_first_numeric(scenario_row, ["door_enhancement_embodied_carbon_kgCO2eq"])
+-
+@@ -3180,5 +3332,16 @@ def generate_html_report(df, html_report_path, run_name="run"):
+-        carbon_slices = [
+-            ("Wall", wall_carbon, measure_color_map["Wall"]),
+-            ("Roof", roof_carbon, measure_color_map["Roof"]),
+-            ("Window", window_carbon, measure_color_map["Window"]),
+-            ("Door", door_carbon, measure_color_map["Door"]),
++
++        elec_gj = _safe_float(scenario_row.get("electricity_site_energy_gj"))
++        gas_gj = _safe_float(scenario_row.get("natural_gas_site_energy_gj"))
++        total_gj = _safe_float(scenario_row.get("total_site_energy_gj"))
++        other_gj = None
++        if total_gj is not None:
++            elec_for_calc = elec_gj if elec_gj is not None else 0.0
++            gas_for_calc = gas_gj if gas_gj is not None else 0.0
++            other_candidate = total_gj - elec_for_calc - gas_for_calc
++            # Suppress tiny residuals from floating-point/rounding mismatch.
++            if other_candidate > 0.05:
++                other_gj = other_candidate
++
++        energy_slices = [
++            ("Electricity", elec_gj, fuel_color_map["electricity"]),
++            ("Natural Gas", gas_gj, fuel_color_map["natural_gas"]),
+@@ -3185,0 +3349,2 @@ def generate_html_report(df, html_report_path, run_name="run"):
++        if other_gj is not None:
++            energy_slices.append(("Other", other_gj, fuel_color_map["other"]))
+@@ -3193 +3358,6 @@ def generate_html_report(df, html_report_path, run_name="run"):
+-            + _build_measure_pie_panel("Carbon breakdown by retrofit measure", carbon_slices, num, " kg CO2e")
++            + _build_measure_pie_panel(
++                "Total Site Energy Breakdown (GJ)",
++                energy_slices,
++                lambda v: f"{float(v):,.2f} GJ",
++                "",
++            )
+@@ -3199,2 +3369 @@ def generate_html_report(df, html_report_path, run_name="run"):
+-            "<div class='summary-box'><p>Per-scenario retrofit contribution breakdown."
+-            + " Each scenario includes two pie charts: cost and embodied carbon by retrofit measure.</p></div>"
++            "<div class='summary-box'><p>Per-scenario breakdown: left chart shows retrofit construction cost contribution by measure, right chart shows total site energy by fuel type (electricity, natural gas, and other). Water is excluded from energy breakdown.</p></div>"
+@@ -3207 +3376 @@ def generate_html_report(df, html_report_path, run_name="run"):
+-            "<div class='summary-box'><p>No non-baseline scenarios available for retrofit measure breakdown pie charts.</p></div>"
++            "<div class='summary-box'><p>No non-baseline scenarios available for energy breakdown pie charts.</p></div>"
+@@ -3268 +3437,3 @@ def generate_html_report(df, html_report_path, run_name="run"):
+-        payback_df["carbon_payback_years"] = payback_df.apply(lambda r: _safe_payback_report(r["embodied_carbon_kg"], -r["emissions_delta"]), axis=1)
++        # DISABLED: Carbon calculation disabled - set carbon payback to None
++        # payback_df["carbon_payback_years"] = payback_df.apply(lambda r: _safe_payback_report(r["embodied_carbon_kg"], -r["emissions_delta"]), axis=1)
++        payback_df["carbon_payback_years"] = None
+@@ -3272 +3443 @@ def generate_html_report(df, html_report_path, run_name="run"):
+-        max_carbon_payback = float(valid_carbon_paybacks.max()) if not valid_carbon_paybacks.empty else 1.0
++        max_carbon_payback = 1.0  # DISABLED: Carbon calculation disabled
+@@ -3460,2 +3630,0 @@ def generate_html_report(df, html_report_path, run_name="run"):
+-
+-        embodied_analysis_period_years=embodied_analysis_period_years,
+@@ -3469 +3638 @@ def generate_html_report(df, html_report_path, run_name="run"):
+-        max_emis_class=max_emis_class,
++        max_energy_class=max_energy_class,
+@@ -3471,3 +3640,5 @@ def generate_html_report(df, html_report_path, run_name="run"):
+-        max_emis_delta=max_emis_delta,
+-        max_emis_delta_pct=max_emis_delta_pct,
+-        max_emissions_scenario=max_emissions_scenario,
++        max_energy_delta_gj=max_energy_delta_gj,
++        max_energy_delta_pct=max_energy_delta_pct,
++        max_energy_scenario=max_energy_scenario,
++        max_energy_savings_text=max_energy_savings_text,
++        max_energy_savings_scenario=max_energy_savings_scenario,
+@@ -3476,3 +3646,0 @@ def generate_html_report(df, html_report_path, run_name="run"):
+-        min_embodied_text=min_embodied_text,
+-        min_embodied_intensity_text=min_embodied_intensity_text,
+-        min_embodied_scenario=min_embodied_scenario,
+@@ -3481,2 +3648,0 @@ def generate_html_report(df, html_report_path, run_name="run"):
+-        lowest_carbon_payback_text=lowest_carbon_payback_text,
+-        lowest_carbon_payback_scenario=lowest_carbon_payback_scenario,
+@@ -3488,3 +3654,3 @@ def generate_html_report(df, html_report_path, run_name="run"):
+-        baseline_emis_w=baseline_emis_w,
+-        best_emis_w=best_emis_w,
+-        max_emissions_reduction=max_emissions_reduction,
++        baseline_energy_w=baseline_energy_w,
++        best_energy_w=best_energy_w,
++        max_energy_savings_row=max_energy_savings_row,
+@@ -3492 +3657,0 @@ def generate_html_report(df, html_report_path, run_name="run"):
+-        carbon_payback_chart_rows=carbon_payback_chart_rows,
+@@ -3494 +3659 @@ def generate_html_report(df, html_report_path, run_name="run"):
+-        material_comparison_section_html=material_comparison_section_html,
++        material_comparison_section_html="",
+@@ -3871 +4036,2 @@ building_info = _derive_building_information(df_report)
+-_patch_min_embodied_metric(out)
++# DISABLED: Carbon calculation disabled - skip carbon metric patching
++# _patch_min_embodied_metric(out)

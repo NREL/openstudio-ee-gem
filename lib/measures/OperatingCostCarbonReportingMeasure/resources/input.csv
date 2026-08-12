@@ -1,0 +1,10 @@
+﻿Variable,Value,Unit,Note
+Electricity Emission Factor,,,"If this value is empty, the emission factor value is being read from emissions.csv given the Balancing Authority Area"
+Balancing Authority,National Average,,This value is used to find the emission factor in emissions.csv
+Electricity - cost on peak,0.12,$/kwh,
+Electricity - cost off peak,0.1,$/kwh,
+Electircity - demand charge,20,$/kwh,
+Electricity - peak hour start,16,h,
+Electricity - peak hour end,20,h,
+State,National Average,,This value is used to find the gas cost in gas_cost.csv.
+Gas cost,,$/1000ft3,"If this value is empty, the emission factor value is being read from gas_cost.csv given the state"

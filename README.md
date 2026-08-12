@@ -1,7 +1,6 @@
-# OpenStudio(R) EE Measures 
+# OpenStudio(R) EE Measures
 
 EE measures used by OpenStudio(R). This contains general use energy efficiency measures. Some measures here may also be suitable for calibration or model articulation. Similarly, some measures in other measure gem repos may also be suitable for energy efficiency usage.
-
 
 ## Installation
 
@@ -23,7 +22,12 @@ Or install it yourself as:
 
 |OpenStudio EE Gem|OpenStudio|Ruby|
 |:--------------:|:----------:|:--------:|
-| 0.12.0 | 3.10      | 3.2.2    |
+| 0.12.5 | 3.10      | 3.2.2    |
+| 0.12.4 | 3.10      | 3.2.2    |
+| 0.12.3 | 3.10     | 3.2.2    |
+| 0.12.2 | 3.10     | 3.2.2    |
+| 0.12.1 | 3.10     | 3.2.2    |
+| 0.12.0 | 3.10     | 3.2.2    |
 | 0.11.1 | 3.9      | 3.2.2    |
 | 0.10.0 | 3.8      | 3.2.2    |
 | 0.9.0 | 3.7      | 2.7    |
@@ -39,6 +43,30 @@ Or install it yourself as:
 # Contributing 
 
 Please review the [OpenStudio Contribution Policy](https://openstudio.net/openstudio-contribution-policy) if you would like to contribute code to this gem.
+
+## Pre-Commit Secret Check
+
+This repository includes a tracked git pre-commit hook at `.githooks/pre-commit`.
+It blocks commits that contain likely API keys, tokens, or common secret files
+such as `.env` and `config.env`.
+
+Enable it once per local clone:
+
+```powershell
+./scripts/install-git-hooks.ps1
+```
+
+or
+
+```bash
+./scripts/install-git-hooks.sh
+```
+
+You can verify it is active with:
+
+```bash
+git config --get core.hooksPath
+```
 
 
 # Releasing

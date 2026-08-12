@@ -19,17 +19,17 @@ class ReduceSpaceInfiltrationByPercentage < OpenStudio::Measure::ModelMeasure
   # define the name that a user will see, this method may be deprecated as
   # the display name in PAT comes from the name field in measure.xml
   def name
-    return 'ReduceSpaceInfiltrationByPercentage'
+    'ReduceSpaceInfiltrationByPercentage'
   end
 
   # human readable description
   def description
-    return 'This measure will reduce space infiltration rates by the requested percentage. A cost per square foot of building area can be added to the model.'
+    'This measure will reduce space infiltration rates by the requested percentage. A cost per square foot of building area can be added to the model.'
   end
 
   # human readable description of modeling approach
   def modeler_description
-    return 'This can be run across a space type or the entire building. Costs will be associated with the building. If infiltration objects are removed at a later date, the costs will remain.'
+    'This can be run across a space type or the entire building. Costs will be associated with the building. If infiltration objects are removed at a later date, the costs will remain.'
   end
 
   # define the arguments that the user will input
@@ -50,7 +50,7 @@ class ReduceSpaceInfiltrationByPercentage < OpenStudio::Measure::ModelMeasure
     # looping through sorted hash of model objects
     space_type_args_hash.sort.map do |key, value|
       # only include if space type is used in the model
-      if !value.spaces.empty?
+      unless value.spaces.empty?
         space_type_handles << value.handle.to_s
         space_type_display_names << key
       end
@@ -62,13 +62,16 @@ class ReduceSpaceInfiltrationByPercentage < OpenStudio::Measure::ModelMeasure
     space_type_display_names << '*Entire Building*'
 
     # make a choice argument for space type
-    space_type = OpenStudio::Measure::OSArgument.makeChoiceArgument('space_type', space_type_handles, space_type_display_names)
+    space_type = OpenStudio::Measure::OSArgument.makeChoiceArgument('space_type', space_type_handles,
+                                                                    space_type_display_names)
     space_type.setDisplayName('Apply the Measure to a Specific Space Type or to the Entire Model.')
     space_type.setDefaultValue('*Entire Building*') # if no space type is chosen this will run on the entire building
     args << space_type
 
     # make an argument for reduction percentage
-    space_infiltration_reduction_percent = OpenStudio::Measure::OSArgument.makeDoubleArgument('space_infiltration_reduction_percent', true)
+    space_infiltration_reduction_percent = OpenStudio::Measure::OSArgument.makeDoubleArgument(
+      'space_infiltration_reduction_percent', true
+    )
     space_infiltration_reduction_percent.setDisplayName('Space Infiltration Power Reduction')
     space_infiltration_reduction_percent.setDefaultValue(30.0)
     space_infiltration_reduction_percent.setUnits('%')
@@ -93,7 +96,9 @@ class ReduceSpaceInfiltrationByPercentage < OpenStudio::Measure::ModelMeasure
     args << wind_speed_coefficient
 
     # make an argument for wind_speed_squared_coefficient
-    wind_speed_squared_coefficient = OpenStudio::Measure::OSArgument.makeDoubleArgument('wind_speed_squared_coefficient', true)
+    wind_speed_squared_coefficient = OpenStudio::Measure::OSArgument.makeDoubleArgument(
+      'wind_speed_squared_coefficient', true
+    )
     wind_speed_squared_coefficient.setDisplayName('Wind Speed Squared Coefficient')
     wind_speed_squared_coefficient.setDefaultValue(0.0)
     args << wind_speed_squared_coefficient
@@ -106,7 +111,9 @@ class ReduceSpaceInfiltrationByPercentage < OpenStudio::Measure::ModelMeasure
     args << alter_coef
 
     # make an argument for material and installation cost
-    material_and_installation_cost = OpenStudio::Measure::OSArgument.makeDoubleArgument('material_and_installation_cost', true)
+    material_and_installation_cost = OpenStudio::Measure::OSArgument.makeDoubleArgument(
+      'material_and_installation_cost', true
+    )
     material_and_installation_cost.setDisplayName('Increase in Material and Installation Costs for Building per Affected Floor Area')
     material_and_installation_cost.setDefaultValue(0.0)
     material_and_installation_cost.setUnits('$/ft^2')
@@ -126,7 +133,7 @@ class ReduceSpaceInfiltrationByPercentage < OpenStudio::Measure::ModelMeasure
     om_frequency.setUnits('whole years')
     args << om_frequency
 
-    return args
+    args
   end
 
   # define what happens when the measure is run
@@ -134,13 +141,12 @@ class ReduceSpaceInfiltrationByPercentage < OpenStudio::Measure::ModelMeasure
     super(model, runner, user_arguments)
 
     # use the built-in error checking
-    if !runner.validateUserArguments(arguments(model), user_arguments)
-      return false
-    end
+    return false unless runner.validateUserArguments(arguments(model), user_arguments)
 
     # assign the user inputs to variables
     object = runner.getOptionalWorkspaceObjectChoiceValue('space_type', user_arguments, model)
-    space_infiltration_reduction_percent = runner.getDoubleArgumentValue('space_infiltration_reduction_percent', user_arguments)
+    space_infiltration_reduction_percent = runner.getDoubleArgumentValue('space_infiltration_reduction_percent',
+                                                                         user_arguments)
     constant_coefficient = runner.getDoubleArgumentValue('constant_coefficient', user_arguments)
     temperature_coefficient = runner.getDoubleArgumentValue('temperature_coefficient', user_arguments)
     wind_speed_coefficient = runner.getDoubleArgumentValue('wind_speed_coefficient', user_arguments)
@@ -161,15 +167,13 @@ class ReduceSpaceInfiltrationByPercentage < OpenStudio::Measure::ModelMeasure
         runner.registerError("The selected space type with handle '#{handle}' was not found in the model. It may have been removed by another measure.")
       end
       return false
+    elsif !object.get.to_SpaceType.empty?
+      space_type = object.get.to_SpaceType.get
+    elsif !object.get.to_Building.empty?
+      apply_to_building = true
     else
-      if !object.get.to_SpaceType.empty?
-        space_type = object.get.to_SpaceType.get
-      elsif !object.get.to_Building.empty?
-        apply_to_building = true
-      else
-        runner.registerError('Script Error - argument not showing up as space type or building.')
-        return false
-      end
+      runner.registerError('Script Error - argument not showing up as space type or building.')
+      return false
     end
 
     # check the space_infiltration_reduction_percent and for reasonableness
@@ -188,17 +192,15 @@ class ReduceSpaceInfiltrationByPercentage < OpenStudio::Measure::ModelMeasure
 
     # TODO: - currently not checking for negative $/ft^2 for material_and_installation_cost and om_cost, confirm if E+ will allow negative cost
 
-    if om_frequency < 1
-      runner.registerError('Choose an integer greater than 0 for O & M Frequency.')
-    end
+    runner.registerError('Choose an integer greater than 0 for O & M Frequency.') if om_frequency < 1
 
     # helper to make numbers pretty (converts 4125001.25641 to 4,125,001.26 or 4,125,001). The definition be called through this measure.
     def neat_numbers(number, roundto = 2) # round to 0 or 2)
-      if roundto == 2
-        number = format '%.2f', number
-      else
-        number = number.round
-      end
+      number = if roundto == 2
+                 format '%.2f', number
+               else
+                 number.round
+               end
       # regex to add commas
       number.to_s.reverse.gsub(/([0-9]{3}(?=([0-9])))/, '\\1,').reverse
     end
@@ -212,10 +214,10 @@ class ReduceSpaceInfiltrationByPercentage < OpenStudio::Measure::ModelMeasure
     affected_area_si = 0
 
     # reporting initial condition of model
-    if !space_infiltration_objects.empty?
-      runner.registerInitialCondition("The initial model contained #{space_infiltration_objects.size} space infiltration objects.")
-    else
+    if space_infiltration_objects.empty?
       runner.registerInitialCondition('The initial model did not contain any space infiltration objects.')
+    else
+      runner.registerInitialCondition("The initial model contained #{space_infiltration_objects.size} space infiltration objects.")
     end
 
     # get space types in model
@@ -230,39 +232,42 @@ class ReduceSpaceInfiltrationByPercentage < OpenStudio::Measure::ModelMeasure
     end
 
     # def to alter performance and life cycle costs of objects
-    def alter_performance(object, space_infiltration_reduction_percent, constant_coefficient, temperature_coefficient, wind_speed_coefficient, wind_speed_squared_coefficient, alter_coef, runner)
+    def alter_performance(object, space_infiltration_reduction_percent, constant_coefficient, temperature_coefficient,
+                          wind_speed_coefficient, wind_speed_squared_coefficient, alter_coef, runner)
       # edit instance based on percentage reduction
       instance = object
       if !instance.designFlowRate.empty?
-        new_infiltration_design_flow_rate = instance.setDesignFlowRate(instance.designFlowRate.get - instance.designFlowRate.get * space_infiltration_reduction_percent * 0.01)
+        new_infiltration_design_flow_rate = instance.setDesignFlowRate(instance.designFlowRate.get - (instance.designFlowRate.get * space_infiltration_reduction_percent * 0.01))
       elsif !instance.flowperSpaceFloorArea.empty?
-        new_infiltration_flow_floor_area = instance.setFlowperSpaceFloorArea(instance.flowperSpaceFloorArea.get - instance.flowperSpaceFloorArea.get * space_infiltration_reduction_percent * 0.01)
+        new_infiltration_flow_floor_area = instance.setFlowperSpaceFloorArea(instance.flowperSpaceFloorArea.get - (instance.flowperSpaceFloorArea.get * space_infiltration_reduction_percent * 0.01))
       elsif !instance.flowperExteriorSurfaceArea.empty?
-        new_infiltration_flow_ext_area = instance.setFlowperExteriorSurfaceArea(instance.flowperExteriorSurfaceArea.get - instance.flowperExteriorSurfaceArea.get * space_infiltration_reduction_percent * 0.01)
+        new_infiltration_flow_ext_area = instance.setFlowperExteriorSurfaceArea(instance.flowperExteriorSurfaceArea.get - (instance.flowperExteriorSurfaceArea.get * space_infiltration_reduction_percent * 0.01))
       elsif !instance.flowperExteriorWallArea.empty?
-        new_infiltration_flow_ext_area = instance.setFlowperExteriorWallArea(instance.flowperExteriorWallArea.get - instance.flowperExteriorWallArea.get * space_infiltration_reduction_percent * 0.01)
+        new_infiltration_flow_ext_area = instance.setFlowperExteriorWallArea(instance.flowperExteriorWallArea.get - (instance.flowperExteriorWallArea.get * space_infiltration_reduction_percent * 0.01))
       elsif !instance.airChangesperHour.empty?
-        new_infiltration_ach = instance.setAirChangesperHour(instance.airChangesperHour.get - instance.airChangesperHour.get * space_infiltration_reduction_percent * 0.01)
+        new_infiltration_ach = instance.setAirChangesperHour(instance.airChangesperHour.get - (instance.airChangesperHour.get * space_infiltration_reduction_percent * 0.01))
       else
         runner.registerWarning("'#{instance.name}' is used by one or more instances and has no load values.")
       end
 
       # only alter coefficients if requested
-      if alter_coef
-        instance.setConstantTermCoefficient(constant_coefficient)
-        instance.setTemperatureTermCoefficient(temperature_coefficient)
-        instance.setVelocityTermCoefficient(wind_speed_coefficient)
-        instance.setVelocitySquaredTermCoefficient(wind_speed_squared_coefficient)
-      end
+      return unless alter_coef
+
+      instance.setConstantTermCoefficient(constant_coefficient)
+      instance.setTemperatureTermCoefficient(temperature_coefficient)
+      instance.setVelocityTermCoefficient(wind_speed_coefficient)
+      instance.setVelocitySquaredTermCoefficient(wind_speed_squared_coefficient)
     end
 
     # loop through space types
     space_types.each do |space_type|
       next if space_type.spaces.size <= 0
+
       space_type_infiltration_objects = space_type.spaceInfiltrationDesignFlowRates
       space_type_infiltration_objects.each do |space_type_infiltration_object|
         # call def to alter performance and life cycle costs
-        alter_performance(space_type_infiltration_object, space_infiltration_reduction_percent, constant_coefficient, temperature_coefficient, wind_speed_coefficient, wind_speed_squared_coefficient, alter_coef, runner)
+        alter_performance(space_type_infiltration_object, space_infiltration_reduction_percent, constant_coefficient,
+                          temperature_coefficient, wind_speed_coefficient, wind_speed_squared_coefficient, alter_coef, runner)
 
         # rename
         updated_instance_name = space_type_infiltration_object.setName("#{space_type_infiltration_object.name} #{space_infiltration_reduction_percent} percent reduction")
@@ -276,17 +281,16 @@ class ReduceSpaceInfiltrationByPercentage < OpenStudio::Measure::ModelMeasure
     # get space types in model
     if apply_to_building
       spaces = model.getSpaces
-    else
-      if !space_type.spaces.empty?
-        spaces = space_type.spaces # only run on a single space type
-      end
+    elsif !space_type.spaces.empty?
+      spaces = space_type.spaces
     end
 
     spaces.each do |space|
       space_infiltration_objects = space.spaceInfiltrationDesignFlowRates
       space_infiltration_objects.each do |space_infiltration_object|
         # call def to alter performance and life cycle costs
-        alter_performance(space_infiltration_object, space_infiltration_reduction_percent, constant_coefficient, temperature_coefficient, wind_speed_coefficient, wind_speed_squared_coefficient, alter_coef, runner)
+        alter_performance(space_infiltration_object, space_infiltration_reduction_percent, constant_coefficient,
+                          temperature_coefficient, wind_speed_coefficient, wind_speed_squared_coefficient, alter_coef, runner)
 
         # rename
         updated_instance_name = space_infiltration_object.setName("#{space_infiltration_object.name} #{space_infiltration_reduction_percent} percent reduction")
@@ -311,9 +315,11 @@ class ReduceSpaceInfiltrationByPercentage < OpenStudio::Measure::ModelMeasure
     end
 
     # report final condition
-    runner.registerFinalCondition("#{altered_instances} space infiltration objects in the model were altered affecting #{neat_numbers(affected_area_ip, 0)}(ft^2) at a total cost of $#{neat_numbers(final_cost, 0)}.")
+    runner.registerFinalCondition("#{altered_instances} space infiltration objects in the model were altered affecting #{neat_numbers(
+      affected_area_ip, 0
+    )}(ft^2) at a total cost of $#{neat_numbers(final_cost, 0)}.")
 
-    return true
+    true
   end
 end
 

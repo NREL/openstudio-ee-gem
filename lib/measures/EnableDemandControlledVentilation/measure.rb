@@ -19,11 +19,11 @@ class EnableDemandControlledVentilation < OpenStudio::Measure::ModelMeasure
   # define the name that a user will see, this method may be deprecated as
   # the display name in PAT comes from the name field in measure.xml
   def name
-    return 'Enable Demand Controlled Ventilation'
+    'Enable Demand Controlled Ventilation'
   end
 
   # define the arguments that the user will input
-  def arguments(model)
+  def arguments(_model)
     args = OpenStudio::Measure::OSArgumentVector.new
 
     # make choice argument economizer control type
@@ -35,7 +35,7 @@ class EnableDemandControlledVentilation < OpenStudio::Measure::ModelMeasure
     dcv_type.setDisplayName('DCV Type')
     args << dcv_type
 
-    return args
+    args
   end
 
   # define what happens when the measure is cop
@@ -43,9 +43,7 @@ class EnableDemandControlledVentilation < OpenStudio::Measure::ModelMeasure
     super(model, runner, user_arguments)
 
     # use the built-in error checking
-    if !runner.validateUserArguments(arguments(model), user_arguments)
-      return false
-    end
+    return false unless runner.validateUserArguments(arguments(model), user_arguments)
 
     # assign the user inputs to variables
     dcv_type = runner.getStringArgumentValue('dcv_type', user_arguments)
@@ -59,11 +57,11 @@ class EnableDemandControlledVentilation < OpenStudio::Measure::ModelMeasure
 
     # short def to make numbers pretty (converts 4125001.25641 to 4,125,001.26 or 4,125,001). The definition be called through this measure
     def neat_numbers(number, roundto = 2) # round to 0 or 2)
-      if roundto == 2
-        number = format '%.2f', number
-      else
-        number = number.round
-      end
+      number = if roundto == 2
+                 format '%.2f', number
+               else
+                 number.round
+               end
       # regex to add commas
       number.to_s.reverse.gsub(/([0-9]{3}(?=([0-9])))/, '\\1,').reverse
     end
@@ -76,35 +74,34 @@ class EnableDemandControlledVentilation < OpenStudio::Measure::ModelMeasure
       # find AirLoopHVACOutdoorAirSystem on loop
       air_loop.supplyComponents.each do |supply_component|
         hVACComponent = supply_component.to_AirLoopHVACOutdoorAirSystem
-        if !hVACComponent.empty?
-          hVACComponent = hVACComponent.get
+        next if hVACComponent.empty?
 
-          # get ControllerOutdoorAir
-          controller_oa = hVACComponent.getControllerOutdoorAir
+        hVACComponent = hVACComponent.get
 
-          # get ControllerMechanicalVentilation
-          controller_mv = controller_oa.controllerMechanicalVentilation
+        # get ControllerOutdoorAir
+        controller_oa = hVACComponent.getControllerOutdoorAir
 
-          if dcv_type == 'EnableDCV'
-            # check if demand control is enabled, if not, then enable it
-            if controller_mv.demandControlledVentilation == true
-              runner.registerInfo("#{air_loop.name} already has DCV enabled.")
-            else
-              controller_mv.setDemandControlledVentilation(true)
-              runner.registerInfo("Enabling DCV for #{air_loop.name}.")
-              air_loops_changed << air_loop
-            end
-          elsif dcv_type == 'DisableDCV'
-            # check if demand control is disabled, if not, then disabled it
-            if controller_mv.demandControlledVentilation == false
-              runner.registerInfo("#{air_loop.name} already has DCV disabled.")
-            else
-              controller_mv.setDemandControlledVentilation(false)
-              runner.registerInfo("Disabling DCV for #{air_loop.name}.")
-              air_loops_changed << air_loop
-            end
+        # get ControllerMechanicalVentilation
+        controller_mv = controller_oa.controllerMechanicalVentilation
+
+        if dcv_type == 'EnableDCV'
+          # check if demand control is enabled, if not, then enable it
+          if controller_mv.demandControlledVentilation == true
+            runner.registerInfo("#{air_loop.name} already has DCV enabled.")
+          else
+            controller_mv.setDemandControlledVentilation(true)
+            runner.registerInfo("Enabling DCV for #{air_loop.name}.")
+            air_loops_changed << air_loop
           end
-
+        elsif dcv_type == 'DisableDCV'
+          # check if demand control is disabled, if not, then disabled it
+          if controller_mv.demandControlledVentilation == false
+            runner.registerInfo("#{air_loop.name} already has DCV disabled.")
+          else
+            controller_mv.setDemandControlledVentilation(false)
+            runner.registerInfo("Disabling DCV for #{air_loop.name}.")
+            air_loops_changed << air_loop
+          end
         end
       end
     end
@@ -118,7 +115,7 @@ class EnableDemandControlledVentilation < OpenStudio::Measure::ModelMeasure
     # Report final condition of model
     runner.registerFinalCondition("#{air_loops_changed.size} air loops now have demand controlled ventilation enabled.")
 
-    return true
+    true
   end
 end
 

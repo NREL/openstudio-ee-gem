@@ -3,8 +3,8 @@
   <schema_version>3.1</schema_version>
   <name>improve_fan_belt_efficiency</name>
   <uid>ebeca0aa-a432-4283-a714-17116f7c8f8c</uid>
-  <version_id>56c62406-02e3-4e7c-980e-dcc2d62466fa</version_id>
-  <version_modified>2024-11-16T23:47:46Z</version_modified>
+  <version_id>b8f329e9-87df-4d83-96b2-9358e169a121</version_id>
+  <version_modified>2025-09-25T15:33:44Z</version_modified>
   <xml_checksum>F78494F2</xml_checksum>
   <class_name>ImproveFanBeltEfficiency</class_name>
   <display_name>Improve Fan Belt Efficiency</display_name>
@@ -47,10 +47,10 @@ Well-adjusted belts run cooler, last longer, and operate at higher efficiency th
       <type>Choice</type>
       <required>true</required>
       <model_dependent>false</model_dependent>
-      <default_value>{28f2e284-58a1-4e3f-8cb7-7996c448d473}</default_value>
+      <default_value>{eb63161e-e882-4957-a540-b6e7bb7abfd4}</default_value>
       <choices>
         <choice>
-          <value>{28f2e284-58a1-4e3f-8cb7-7996c448d473}</value>
+          <value>{eb63161e-e882-4957-a540-b6e7bb7abfd4}</value>
           <display_name>*All Air Loops*</display_name>
         </choice>
       </choices>
@@ -170,7 +170,7 @@ Well-adjusted belts run cooler, last longer, and operate at higher efficiency th
       <filename>LICENSE.md</filename>
       <filetype>md</filetype>
       <usage_type>license</usage_type>
-      <checksum>8C5A8023</checksum>
+      <checksum>FFCBFF29</checksum>
     </file>
     <file>
       <filename>README.md</filename>
@@ -193,7 +193,7 @@ Well-adjusted belts run cooler, last longer, and operate at higher efficiency th
       <filename>measure.rb</filename>
       <filetype>rb</filetype>
       <usage_type>script</usage_type>
-      <checksum>DC853729</checksum>
+      <checksum>1691AE3F</checksum>
     </file>
     <file>
       <filename>0320_ModelWithHVAC_01.osm</filename>
@@ -205,7 +205,7 @@ Well-adjusted belts run cooler, last longer, and operate at higher efficiency th
       <filename>ImproveFanBeltEfficiency_Test.rb</filename>
       <filetype>rb</filetype>
       <usage_type>test</usage_type>
-      <checksum>8E07B9DC</checksum>
+      <checksum>19994729</checksum>
     </file>
   </files>
 </measure>

@@ -1,0 +1,11 @@
+{
+  "total_cost": 0.0,
+  "materials": [],
+  "errors": [
+    "No RSMeans match found for: rigid insulation",
+    "No RSMeans match found for: spray foam insulation",
+    "No RSMeans match found for: fiberglass batt insulation",
+    "No RSMeans match found for: mineral wool insulation"
+  ],
+  "search_log": []
+}

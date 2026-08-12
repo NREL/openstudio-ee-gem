@@ -1,0 +1,370 @@
+{
+  "test_date": "C:\\All_repos\\openstudio-ee-gem\\lib\\measures\\IncreaseInsulationRValueForRoofs\\tests",
+  "total_materials": 11,
+  "successful": 3,
+  "failed": 8,
+  "materials_tested": [
+    {
+      "material": "Fiberglass Batts",
+      "success": false,
+      "messages": [
+        "median",
+        "Obtain the key from EC3 website",
+        "Fiberglass Batts",
+        ""
+      ],
+      "rsmeans_data": null
+    },
+    {
+      "material": "Blown Fiberglass",
+      "success": true,
+      "messages": [
+        "median",
+        "Obtain the key from EC3 website",
+        "Blown Fiberglass",
+        ""
+      ],
+      "rsmeans_data": {
+        "materials": [
+          {
+            "name": "Blown Fiberglass roof insulation (Typical IEAD Roof R-15.87)",
+            "description": "Added insulation to reach R-30.0; actual added thickness 3.49 in",
+            "quantity": 4999.999999999986,
+            "unit": "SF",
+            "quantity_volume": 1453.3124107562005,
+            "unit_volume": "CF",
+            "rsmeans_thickness_ft": 0.2906624821512409,
+            "costing_mode": "volume_from_area",
+            "quantity_si": 464.51519999999874,
+            "unit_si": "m2",
+            "division_code": "07",
+            "rsmeans_id": "072126101300",
+            "catalog": "bc-mf",
+            "search_term_used": "blown fiberglass",
+            "unit_cost": 2.483478260869565,
+            "total_cost": 3609.2697783649637,
+            "rsmeans_description": "Fiberglass insulation, ceilings, with open access, 11.5\" thick, R26, blown-in",
+            "match_type": "closest_match",
+            "unit_cost_basis": "CF"
+          }
+        ],
+        "search_log": [
+          {
+            "material": "Blown Fiberglass roof insulation (Typical IEAD Roof R-15.87)",
+            "search_term": "blown fiberglass",
+            "catalog": "bc-mf",
+            "division": "07",
+            "status": "match_found (using 'blown fiberglass')",
+            "candidates_considered": 8,
+            "candidate_scores": [
+              {
+                "index": 4,
+                "rsmeans_id": "unknown",
+                "description": "Fiberglass insulation, ceilings, with open access, 11.5\" thick, R26, blown-in",
+                "score": 35.59
+              },
+              {
+                "index": 0,
+                "rsmeans_id": "unknown",
+                "description": "Blown-in insulation, ceilings, with open access, fiberglass, 5.5\" thick, R11",
+                "score": 35.58
+              },
+              {
+                "index": 2,
+                "rsmeans_id": "unknown",
+                "description": "Fiberglass insulation, ceilings, with open access, 8.8\" thick, R19, blown-in",
+                "score": 35.58
+              },
+              {
+                "index": 3,
+                "rsmeans_id": "unknown",
+                "description": "Fiberglass insulation, ceilings, with open access, 10\" thick, R22, blown-in",
+                "score": 35.58
+              },
+              {
+                "index": 5,
+                "rsmeans_id": "unknown",
+                "description": "Fiberglass insulation, ceilings, with open access, 13\" thick, R30, blown-in",
+                "score": 35.58
+              },
+              {
+                "index": 6,
+                "rsmeans_id": "unknown",
+                "description": "Fiberglass insulation, ceilings, with open access, 16\" thick, R38, blown-in",
+                "score": 35.58
+              },
+              {
+                "index": 7,
+                "rsmeans_id": "unknown",
+                "description": "Fiberglass insulation, ceilings, with open access, 20\" thick, R49, blown-in",
+                "score": 35.58
+              },
+              {
+                "index": 1,
+                "rsmeans_id": "unknown",
+                "description": "Fiberglass insulation, ceilings, with open access, 6\" thick, R12, blown-in",
+                "score": 35.57
+              }
+            ],
+            "rsmeans_id": "072126101300",
+            "rsmeans_description": "Fiberglass insulation, ceilings, with open access, 11.5\" thick, R26, blown-in",
+            "unit_cost": 2.483478260869565,
+            "unit_cost_basis": "CF",
+            "costing_mode": "volume_from_area",
+            "quantity": 4999.999999999986,
+            "total_cost": 3609.2697783649637
+          }
+        ],
+        "summary": {
+          "release_id": "2024-an",
+          "location_id": "us-us-national",
+          "labor_type": "std",
+          "measurement_system": "imp",
+          "catalogs_searched": [
+            "bc-mf",
+            "gb-mf",
+            "rp-mf"
+          ]
+        }
+      },
+      "material_cost": 3609.2697783649637,
+      "total_cost": 3970.19675620146
+    },
+    {
+      "material": "Blown Cellulose",
+      "success": true,
+      "messages": [
+        "median",
+        "Obtain the key from EC3 website",
+        "Blown Cellulose",
+        ""
+      ],
+      "rsmeans_data": {
+        "materials": [
+          {
+            "name": "Blown Cellulose roof insulation (Typical IEAD Roof R-15.87)",
+            "description": "Added insulation to reach R-30.0; actual added thickness 4.23 in",
+            "quantity": 4999.999999999986,
+            "unit": "SF",
+            "quantity_volume": 1761.5908009166067,
+            "unit_volume": "CF",
+            "rsmeans_thickness_ft": 0.3523181601833223,
+            "costing_mode": "volume_from_area",
+            "quantity_si": 464.51519999999874,
+            "unit_si": "m2",
+            "division_code": "07",
+            "rsmeans_id": "072126100100",
+            "catalog": "bc-mf",
+            "search_term_used": "blown cellulose",
+            "unit_cost": 2.141007194244604,
+            "total_cost": 3771.578578077569,
+            "rsmeans_description": "Blown-in insulation, ceilings, with open access, cellulose, 8-11/16\" thick, R30",
+            "match_type": "closest_match",
+            "unit_cost_basis": "CF"
+          }
+        ],
+        "search_log": [
+          {
+            "material": "Blown Cellulose roof insulation (Typical IEAD Roof R-15.87)",
+            "search_term": "blown cellulose",
+            "catalog": "bc-mf",
+            "division": "07",
+            "status": "match_found (using 'blown cellulose')",
+            "candidates_considered": 5,
+            "candidate_scores": [
+              {
+                "index": 3,
+                "rsmeans_id": "unknown",
+                "description": "Blown-in insulation, ceilings, with open access, cellulose, 8-11/16\" thick, R30",
+                "score": 35.61
+              },
+              {
+                "index": 1,
+                "rsmeans_id": "unknown",
+                "description": "Blown-in insulation, ceilings, with open access, cellulose, 5-3/16\" thick, R19",
+                "score": 35.6
+              },
+              {
+                "index": 4,
+                "rsmeans_id": "unknown",
+                "description": "Blown-in insulation, ceilings, with open access, cellulose, 10-7/8\" thick, R38",
+                "score": 35.6
+              },
+              {
+                "index": 0,
+                "rsmeans_id": "unknown",
+                "description": "Blown-in insulation, ceilings, with open access, cellulose, 3-1/2\" thick, R13",
+                "score": 35.59
+              },
+              {
+                "index": 2,
+                "rsmeans_id": "unknown",
+                "description": "Blown-in insulation, ceilings, with open access, cellulose, 6-1/2\" thick, R22",
+                "score": 35.59
+              }
+            ],
+            "rsmeans_id": "072126100100",
+            "rsmeans_description": "Blown-in insulation, ceilings, with open access, cellulose, 8-11/16\" thick, R30",
+            "unit_cost": 2.141007194244604,
+            "unit_cost_basis": "CF",
+            "costing_mode": "volume_from_area",
+            "quantity": 4999.999999999986,
+            "total_cost": 3771.578578077569
+          }
+        ],
+        "summary": {
+          "release_id": "2024-an",
+          "location_id": "us-us-national",
+          "labor_type": "std",
+          "measurement_system": "imp",
+          "catalogs_searched": [
+            "bc-mf",
+            "gb-mf",
+            "rp-mf"
+          ]
+        }
+      },
+      "material_cost": 3771.578578077569,
+      "total_cost": 4148.7364358853265
+    },
+    {
+      "material": "Mineral Wool Heavy Density Blanket",
+      "success": false,
+      "messages": [
+        "median",
+        "Obtain the key from EC3 website",
+        "Mineral Wool Heavy Density Blanket",
+        ""
+      ],
+      "rsmeans_data": null
+    },
+    {
+      "material": "Mineral Wool Light Density Blanket",
+      "success": false,
+      "messages": [
+        "median",
+        "Obtain the key from EC3 website",
+        "Mineral Wool Light Density Blanket",
+        ""
+      ],
+      "rsmeans_data": null
+    },
+    {
+      "material": "Polyiso Insulation Foam Board",
+      "success": true,
+      "messages": [
+        "median",
+        "Obtain the key from EC3 website",
+        "Polyiso Insulation Foam Board",
+        ""
+      ],
+      "rsmeans_data": {
+        "materials": [
+          {
+            "name": "Polyiso Insulation Foam Board roof insulation (Typical IEAD Roof R-15.87)",
+            "description": "Added insulation to reach R-30.0; actual added thickness 2.64 in",
+            "quantity": 4999.999999999986,
+            "unit": "SF",
+            "quantity_volume": 1100.9942505728795,
+            "unit_volume": "CF",
+            "rsmeans_thickness_ft": 0.2201988501145765,
+            "costing_mode": "volume_from_area",
+            "quantity_si": 464.51519999999874,
+            "unit_si": "m2",
+            "division_code": "07",
+            "rsmeans_id": "072216101700",
+            "catalog": "bc-mf",
+            "search_term_used": "rsmeans_id:072216101700",
+            "unit_cost": 23.2,
+            "total_cost": 25543.066613290805,
+            "rsmeans_description": "Polyisocyanurate insulation, for roof decks, 3/4\" thick, 2#/CF density, fastening excluded",
+            "match_type": "exact_id_match",
+            "unit_cost_basis": "CF"
+          }
+        ],
+        "search_log": [
+          {
+            "material": "Polyiso Insulation Foam Board roof insulation (Typical IEAD Roof R-15.87)",
+            "search_term": "072216101700",
+            "catalog": "bc-mf",
+            "division": "07",
+            "status": "exact_id_match",
+            "unit_cost": 23.2,
+            "unit_cost_basis": "CF",
+            "costing_mode": "volume_from_area",
+            "quantity": 4999.999999999986,
+            "total_cost": 25543.066613290805
+          }
+        ],
+        "summary": {
+          "release_id": "2024-an",
+          "location_id": "us-us-national",
+          "labor_type": "std",
+          "measurement_system": "imp",
+          "catalogs_searched": [
+            "bc-mf",
+            "gb-mf",
+            "rp-mf"
+          ]
+        }
+      },
+      "material_cost": 25543.066613290805,
+      "total_cost": 28097.373274619884
+    },
+    {
+      "material": "Expanded Polystyrene (EPS) Foam Board",
+      "success": false,
+      "messages": [
+        "median",
+        "Obtain the key from EC3 website",
+        "Expanded Polystyrene (EPS) Foam Board",
+        ""
+      ],
+      "rsmeans_data": null
+    },
+    {
+      "material": "Extruded Polystyrene (XPS) Foam Board",
+      "success": false,
+      "messages": [
+        "median",
+        "Obtain the key from EC3 website",
+        "Extruded Polystyrene (XPS) Foam Board",
+        ""
+      ],
+      "rsmeans_data": null
+    },
+    {
+      "material": "Graphite Polystyrene (GPS) Foam Board",
+      "success": false,
+      "messages": [
+        "median",
+        "Obtain the key from EC3 website",
+        "Graphite Polystyrene (GPS) Foam Board",
+        ""
+      ],
+      "rsmeans_data": null
+    },
+    {
+      "material": "Pure Wool Batts",
+      "success": false,
+      "messages": [
+        "median",
+        "Obtain the key from EC3 website",
+        "Pure Wool Batts",
+        ""
+      ],
+      "rsmeans_data": null
+    },
+    {
+      "material": "Blown Mineral Wool",
+      "success": false,
+      "messages": [
+        "median",
+        "Obtain the key from EC3 website",
+        "Blown Mineral Wool",
+        ""
+      ],
+      "rsmeans_data": null
+    }
+  ]
+}

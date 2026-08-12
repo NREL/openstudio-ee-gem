@@ -1,0 +1,198 @@
+scenario,baseline_SmallOffice_Buffalo,scenario_1_SmallOffice_Buffalo
+city,Buffalo,Buffalo
+building_type,SmallOffice,SmallOffice
+climate_zone,ASHRAE 169-2013-5A,ASHRAE 169-2013-5A
+building_area_m2,511.15740000000005,511.15740000000005
+renovation_details,Baseline (no envelope renovation),Envelope renovation applied (details generated at report time)
+annual_electricity_cost_usd,17766.60850528496,17560.07055820837
+annual_gas_cost_usd,519.3035162647304,393.52599521573734
+annual_electricity_operating_emissions_kg_co2e,37482.77665738494,37169.4867336982
+annual_gas_operating_emissions_kg_co2e,2736.6057642365754,2073.7882050760595
+total_site_energy_gj,440.31,423.91
+wall_insulation_renovated_area_m2,,281.515
+wall_insulation_added_volume_m3,,4.881601176866557
+roof_insulation_renovated_area_m2,,598.7616811798497
+roof_insulation_added_volume_m3,,124.621598205636
+wall_insulation_material_thermal_conductivity_W_per_mK,,0.033
+wall_insulation_material_density_kg_per_m3,,30
+wall_insulation_material_lifetime_years,,30
+roof_insulation_material_thermal_conductivity_W_per_mK,,0.04
+roof_insulation_material_density_kg_per_m3,,50
+roof_insulation_material_lifetime_years,,30
+window_total_count,20,20
+window_fixed_count,20,20
+window_operable_count,0,0
+window_skylight_count,0,0
+window_simple_glazing_count,20,20
+window_upgrade_status,,
+window_enhancement_infiltration_reduction_percent,,20.0
+window_glass_pane_thickness_m,,0.003
+window_glass_gap_thickness_m,,0.013
+window_enhancement_renovated_area_m2,,55.778400000000005
+window_enhancement_renovated_glazing_area_m2,,49.2704
+window_enhancement_renovated_frame_area_m2,,6.508000000000003
+window_enhancement_renovated_perimeter_m,,134.16
+window_enhancement_renovated_caulking_volume_m3,,0.003371808563244853
+window_enhancement_renovated_weatherstrip_length_m,,0.0
+window_weatherstrip_length_per_unit,,5.1816
+window_glass_lifetime_years,,15
+window_frame_lifetime_years,,15
+window_caulking_lifetime_years,,10
+window_film_lifetime_years,,10
+window_weatherstrip_lifetime_years,,10
+window_enhancement_custom_labor_cost_multiplier,,1.15
+window_custom_glass_cost_per_cf,,12.0
+window_custom_frame_cost_per_sf,,8.0
+window_custom_caulking_cost_per_cy,,110.0
+window_custom_film_cost_per_sf,,2.8
+window_custom_weatherstrip_cost_per_lf,,1.2
+door_strip_lifetime_years,,15
+door_lifetime_years,,30
+door_density_kg_per_m3,,638
+door_conductivity_W_per_mK,,0.15
+door_sealing_bottom_length_m,,3.6587999999999976
+door_sealing_side_length_m,,16.461199999999998
+door_enhancement_renovated_area_m2,,3.9019276799999947
+door_enhancement_custom_labor_cost_multiplier,,1.15
+door_enhancement_custom_door_cost_per_area,,160.0
+door_enhancement_custom_bottom_seal_cost_per_m,,4.5
+door_enhancement_custom_top_side_seal_cost_per_m,,3.8
+wall_insulation_embodied_carbon_kgCO2eq,,12.204002942166392
+roof_insulation_embodied_carbon_kgCO2eq,,311.55399551409
+window_enhancement_embodied_carbon_kgCO2eq,,1679.8860390770694
+door_enhancement_embodied_carbon_kgCO2eq,,142.66535039999985
+wall_insulation_custom_labor_cost_multiplier,,1.15
+wall_insulation_custom_cost_per_cf,,1.8
+roof_insulation_custom_labor_cost_multiplier,,1.15
+roof_insulation_custom_cost_per_cf,,1.8
+wall_insulation_total_cost_with_overhead_and_profit_usd,,399.67388782777863
+roof_insulation_total_cost_with_overhead_and_profit_usd,,10203.209327749515
+window_enhancement_total_cost_with_overhead_and_profit_usd,,1.8744931356562564
+door_enhancement_total_cost_with_overhead_and_profit_usd,,1007.6574604543987
+wall_insulation_material_cost_usd,,310.30581353088405
+wall_insulation_labor_cost_usd,,46.545872029632584
+wall_insulation_overhead_profit_cost_usd,,42.82220226726199
+roof_insulation_material_cost_usd,,7921.746372476332
+roof_insulation_labor_cost_usd,,1188.2619558714491
+roof_insulation_equipment_cost_usd,,0.0
+roof_insulation_overhead_profit_cost_usd,,1093.2009994017337
+window_enhancement_material_cost_usd,,1.4553518133977148
+window_enhancement_labor_cost_usd,,0.2183027720096571
+window_enhancement_overhead_profit_cost_usd,,0.2008385502488846
+door_enhancement_material_cost_usd,,782.3427487999991
+door_enhancement_labor_cost_usd,,117.3514123199998
+door_enhancement_overhead_profit_cost_usd,,107.96329933439986
+total_additional_construction_cost_usd,0.0,11612.415169167349
+total_construction_cost_usd,0.0,11612.415169167349
+door_bottom_seal_gwp_per_m_kgCO2eq,,0.8000000000000002
+door_bottom_seal_length_per_unit_m,,0.9144
+door_bottom_seal_option,,automatic door bottom
+door_enhancement_analysis_period_years,,30
+door_enhancement_construction_names,,"U 0.88 SHGC 0.16 Sgl Ref-A-L Clr 6mm, Typical Insulated Metal Door - wooden door R-0.30, Typical Insulated Metal Door - wooden door R-0.30 1"
+door_enhancement_cost_factor_basis,,custom_cost_per_area
+door_enhancement_cost_source,,custom_input
+door_enhancement_door_area_per_unit_m2,,1.95
+door_enhancement_equipment_cost_$,,0.0
+door_enhancement_gwp_source,,custom_user_inputs
+door_enhancement_gwp_statistic,,median
+door_enhancement_infiltration_reduction_percent,,20.0
+door_enhancement_labor_cost_$,,117.3514123199998
+door_enhancement_material_cost_$,,782.3427487999991
+door_enhancement_measure_name,,Door Enhancement
+door_enhancement_overhead_profit_cost_$,,107.96329933439986
+door_enhancement_overhead_profit_percent,,12.0
+door_enhancement_processed_door_count,,3
+door_enhancement_rsmeans_bottom_seal_cost_per_m,,N/A
+door_enhancement_rsmeans_door_cost_per_area,,N/A
+door_enhancement_rsmeans_top_side_seal_cost_per_m,,N/A
+door_enhancement_summary_notes,,door enhancement successfully completed!
+door_enhancement_total_cost_with_overhead_and_profit_$,,1007.6574604543987
+door_enhancement_total_processed_area_m2,,7.807147679999995
+door_gwp_per_m2_kgCO2eq,,30.0
+door_option,,wooden door
+door_r_value_m2KperW,,0.2963333333333334
+door_side_seal_gwp_per_m_kgCO2eq,,0.6
+door_thickness_m,,0.04445
+door_top_side_seal_length_per_unit_m,,5.181
+door_top_side_seal_option,,jamb weatherstrip
+lpd_fraction_linear_fluorescent,1.0,1.0
+measure_name,Operating Cost Carbon Reporting Measure,Operating Cost Carbon Reporting Measure
+roof_insulation_analysis_period_years,,30
+roof_insulation_cost_factor_basis,,custom_cost_per_volume
+roof_insulation_cost_source,,custom_input
+roof_insulation_equipment_cost_$,,0.0
+roof_insulation_gwp_source,,custom_user_inputs
+roof_insulation_gwp_statistic,,median
+roof_insulation_labor_cost_$,,1188.2619558714491
+roof_insulation_material_cost_$,,7921.746372476332
+roof_insulation_material_gwp_per_m3,,2.5
+roof_insulation_material_rsmeans_cost_per_cf,,N/A
+roof_insulation_material_type,,Blown Cellulose
+roof_insulation_measure_name,,Increase Insulation R-Value for Roofs
+roof_insulation_modified_constructions_count,,1
+roof_insulation_overhead_profit_cost_$,,1093.2009994017337
+roof_insulation_overhead_profit_percent,,12.0
+roof_insulation_renovated_construction_names,,Typical Uninsulated Wood Joist Attic Roof adj roof insulation
+roof_insulation_renovated_embodied_carbon_kgCO2eq,,311.55399551409
+roof_insulation_renovated_exterior_roof_area_m2,,598.7616811798497
+roof_insulation_retrofit_materials_json,,"[{""name"": ""Blown Cellulose roof insulation (Typical Uninsulated Wood Joist Attic Roof)"", ""description"": ""Added insulation to reach R-30.0; actual added thickness 8.19 in"", ""quantity"": 6445.017097178409, ""unit"": ""SF"", ""quantity_volume"": 4400.970206931295, ""unit_volume"": ""CF"", ""rsmeans_thickness_ft"": 0.6828484921875559, ""costing_mode"": ""volume_from_area"", ""quantity_si"": 598.7616811798497, ""unit_si"": ""m2"", ""division_code"": ""07"", ""rsmeans_id"": null}]"
+roof_insulation_summary_notes,,"Roof insulation renovation completed. Modified constructions=1, target-already-met skips=0."
+roof_insulation_target_r_value_ip,,30.0
+roof_insulation_total_cost_with_overhead_and_profit_$,,10203.209327749515
+total_additional_embodied_carbon_kg,0.0,2146.3093879333255
+total_doors_processed_count,,3
+total_doors_with_r_value_change_count,,2
+wall_insulation_analysis_period_years,,30
+wall_insulation_cost_factor_basis,,custom_cost_per_volume
+wall_insulation_cost_source,,custom_input
+wall_insulation_equipment_cost_$,,0.0
+wall_insulation_gwp_source,,custom_user_inputs
+wall_insulation_gwp_statistic,,median
+wall_insulation_labor_cost_$,,46.545872029632584
+wall_insulation_material_cost_$,,310.30581353088405
+wall_insulation_material_gwp_per_m3,,2.5
+wall_insulation_material_rsmeans_cost_per_cf,,N/A
+wall_insulation_material_type,,Fiberglass Batts
+wall_insulation_measure_name,,Increase Insulation R-Value for Exterior Walls
+wall_insulation_modified_constructions_count,,1
+wall_insulation_overhead_profit_cost_$,,42.82220226726199
+wall_insulation_overhead_profit_percent,,12.0
+wall_insulation_renovated_construction_names,,Typical Insulated Wood Framed Exterior Wall R-12.2 1
+wall_insulation_renovated_embodied_carbon_kgCO2eq,,12.204002942166392
+wall_insulation_renovated_exterior_wall_area_m2,,281.515
+wall_insulation_retrofit_materials_json,,"[{""name"": ""Fiberglass Batts insulation"", ""description"": ""Added insulation to reach R-13.0; avg added thickness 0.68 in"", ""quantity"": 3030.202240960037, ""unit"": ""SF"", ""quantity_volume"": 172.39211862826892, ""unit_volume"": ""CF"", ""rsmeans_thickness_ft"": 0.05689129319969051, ""costing_mode"": ""volume_from_area"", ""quantity_si"": 281.515, ""unit_si"": ""m2"", ""division_code"": ""07""}]"
+wall_insulation_summary_notes,,"Requested: wall insulation upgrade to target R-13.00 using 'Fiberglass Batts'. Outcome: Implemented. Details: Exterior wall insulation layers were updated to meet the target R-value where needed. Context: modified constructions=1, target-already-met skips=0, renovated area=281.515 m2, added volume=4.882 m3."
+wall_insulation_target_r_value_ip,,13.0
+wall_insulation_total_cost_with_overhead_and_profit_$,,399.67388782777863
+window_caulking_gwp_per_m3_kgCO2eq,,3.0
+window_caulking_option,,acrylic
+window_enhancement_analysis_period_years,,30
+window_enhancement_caulking_cost_per_cy,,N/A
+window_enhancement_caulking_cost_per_lf,,N/A
+window_enhancement_cost_factor_basis,,custom_user_inputs
+window_enhancement_equipment_cost_$,,0.0
+window_enhancement_film_cost_per_sf,,N/A
+window_enhancement_frame_cost_per_sf,,N/A
+window_enhancement_glass_cost_per_cf,,N/A
+window_enhancement_glass_cost_per_sf,,N/A
+window_enhancement_gwp_source,,custom_user_inputs
+window_enhancement_gwp_statistic,,median
+window_enhancement_labor_cost_$,,0.2183027720096571
+window_enhancement_material_cost_$,,1.4553518133977148
+window_enhancement_measure_name,,Window Enhancement
+window_enhancement_overhead_profit_cost_$,,0.2008385502488846
+window_enhancement_overhead_profit_percent,,12.0
+window_enhancement_simple_glazing_objects_count,,20
+window_enhancement_summary_notes,,"Requested: glass upgrade (provide user_num_panes), caulking (acrylic), film (safety film), weatherstrip (silicone adhesive smoke gasket). Outcome: Completed with option conflicts; one or more requested actions were skipped or partially applied. Reason(s): Weatherstrip selected but no OperableWindow subsurfaces found | Film selected but all window constructions are SimpleGlazing | Glass replacement selected but all window constructions are SimpleGlazing. Context: window constructions=20, simple glazing objects=20; available subsurface counts -> FixedWindow=20, OperableWindow=0, Skylight=0."
+window_enhancement_total_cost_with_overhead_and_profit_$,,1.8744931356562564
+window_enhancement_weatherstrip_cost_per_lf,,N/A
+window_enhancement_windows_processed_count,,20
+window_film_gwp_per_m2_kgCO2eq,,1.0
+window_film_option,,safety film
+window_frame_gwp_per_m2_kgCO2eq,,15.0
+window_frame_option,,none
+window_glass_gwp_per_m3_kgCO2eq,,22.0
+window_glass_option,,provide user_num_panes
+window_secondary_glazing_option,,none
+window_weatherstrip_gwp_per_m_kgCO2eq,,0.5
+window_weatherstrip_option,,silicone adhesive smoke gasket

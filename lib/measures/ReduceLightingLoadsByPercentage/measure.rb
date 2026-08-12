@@ -9,17 +9,17 @@
 class ReduceLightingLoadsByPercentage < OpenStudio::Measure::ModelMeasure
   # define the name that a user will see
   def name
-    return 'Reduce Lighting Loads by Percentage'
+    'Reduce Lighting Loads by Percentage'
   end
 
   # human readable description
   def description
-    return 'The lighting system in this building uses more power per area than is required with the latest lighting technologies.  Replace the lighting system with a newer, more efficient lighting technology.  Newer technologies provide the same amount of light but use less energy in the process.'
+    'The lighting system in this building uses more power per area than is required with the latest lighting technologies.  Replace the lighting system with a newer, more efficient lighting technology.  Newer technologies provide the same amount of light but use less energy in the process.'
   end
 
   # human readable description of modeling approach
   def modeler_description
-    return 'This measure supports models which have a mixture of lighting assigned to spaces and space types.  The lighting may be specified as individual luminaires, lighting equipment level, lighting power per area, or lighting power per person. Loop through all lights and luminaires in the specified space type or the entire building. Clone the definition if it is shared by other lights, rename and adjust the power based on the specified percentage. Link the new definition to the existing lights or luminaire instance.  Adjust the power for lighting equipment assigned to a particular space but only if that space is part of the selected space type by  looping through the objects first in space types and then in spaces, but again only for spaces that are in the specified space type (unless the entire building has been chosen).  Material and installation cost increases will be applied to all costs related to both the definition and instance of the lighting object.  If this measure includes baseline costs, then the material and installation costs of the lighting objects in the baseline model will be summed together and added as a capital cost on the building object.'
+    'This measure supports models which have a mixture of lighting assigned to spaces and space types.  The lighting may be specified as individual luminaires, lighting equipment level, lighting power per area, or lighting power per person. Loop through all lights and luminaires in the specified space type or the entire building. Clone the definition if it is shared by other lights, rename and adjust the power based on the specified percentage. Link the new definition to the existing lights or luminaire instance.  Adjust the power for lighting equipment assigned to a particular space but only if that space is part of the selected space type by  looping through the objects first in space types and then in spaces, but again only for spaces that are in the specified space type (unless the entire building has been chosen).  Material and installation cost increases will be applied to all costs related to both the definition and instance of the lighting object.  If this measure includes baseline costs, then the material and installation costs of the lighting objects in the baseline model will be summed together and added as a capital cost on the building object.'
   end
 
   # define the arguments that the user will input
@@ -40,7 +40,7 @@ class ReduceLightingLoadsByPercentage < OpenStudio::Measure::ModelMeasure
     # looping through sorted hash of model objects
     space_type_args_hash.sort.map do |key, value|
       # only include if space type is used in the model
-      if !value.spaces.empty?
+      unless value.spaces.empty?
         space_type_handles << value.handle.to_s
         space_type_display_names << key
       end
@@ -52,20 +52,25 @@ class ReduceLightingLoadsByPercentage < OpenStudio::Measure::ModelMeasure
     space_type_display_names << '*Entire Building*'
 
     # make a choice argument for space type
-    space_type = OpenStudio::Measure::OSArgument.makeChoiceArgument('space_type', space_type_handles, space_type_display_names)
+    space_type = OpenStudio::Measure::OSArgument.makeChoiceArgument('space_type', space_type_handles,
+                                                                    space_type_display_names)
     space_type.setDisplayName('Apply the Measure to a Specific Space Type or to the Entire Model')
     space_type.setDefaultValue('*Entire Building*') # if no space type is chosen this will run on the entire building
     args << space_type
 
     # make an argument for reduction percentage
-    lighting_power_reduction_percent = OpenStudio::Measure::OSArgument.makeDoubleArgument('lighting_power_reduction_percent', true)
+    lighting_power_reduction_percent = OpenStudio::Measure::OSArgument.makeDoubleArgument(
+      'lighting_power_reduction_percent', true
+    )
     lighting_power_reduction_percent.setDisplayName('Lighting Power Reduction')
     lighting_power_reduction_percent.setDefaultValue(30.0)
     lighting_power_reduction_percent.setUnits('%')
     args << lighting_power_reduction_percent
 
     # make an argument for material and installation cost
-    material_and_installation_cost = OpenStudio::Measure::OSArgument.makeDoubleArgument('material_and_installation_cost', true)
+    material_and_installation_cost = OpenStudio::Measure::OSArgument.makeDoubleArgument(
+      'material_and_installation_cost', true
+    )
     material_and_installation_cost.setDisplayName('Increase in Material and Installation Cost for Lighting per Floor Area')
     material_and_installation_cost.setDefaultValue(0.0)
     material_and_installation_cost.setUnits('%')
@@ -112,7 +117,7 @@ class ReduceLightingLoadsByPercentage < OpenStudio::Measure::ModelMeasure
     om_frequency.setUnits('whole years')
     args << om_frequency
 
-    return args
+    args
   end
 
   # define what happens when the measure is run
@@ -120,9 +125,7 @@ class ReduceLightingLoadsByPercentage < OpenStudio::Measure::ModelMeasure
     super(model, runner, user_arguments)
 
     # use the built-in error checking
-    if !runner.validateUserArguments(arguments(model), user_arguments)
-      return false
-    end
+    return false unless runner.validateUserArguments(arguments(model), user_arguments)
 
     # assign the user inputs to variables
     object = runner.getOptionalWorkspaceObjectChoiceValue('space_type', user_arguments, model)
@@ -146,15 +149,13 @@ class ReduceLightingLoadsByPercentage < OpenStudio::Measure::ModelMeasure
         runner.registerError("The selected space type with handle '#{handle}' was not found in the model. It may have been removed by another measure.")
       end
       return false
+    elsif !object.get.to_SpaceType.empty?
+      space_type = object.get.to_SpaceType.get
+    elsif !object.get.to_Building.empty?
+      apply_to_building = true
     else
-      if !object.get.to_SpaceType.empty?
-        space_type = object.get.to_SpaceType.get
-      elsif !object.get.to_Building.empty?
-        apply_to_building = true
-      else
-        runner.registerError('Script Error - argument not showing up as space type or building.')
-        return false
-      end
+      runner.registerError('Script Error - argument not showing up as space type or building.')
+      return false
     end
 
     # check the lighting_power_reduction_percent and for reasonableness
@@ -197,24 +198,25 @@ class ReduceLightingLoadsByPercentage < OpenStudio::Measure::ModelMeasure
       return false
     end
 
-    if om_frequency < 1
-      runner.registerError('Choose an integer greater than 0 for O & M Frequency.')
-    end
+    runner.registerError('Choose an integer greater than 0 for O & M Frequency.') if om_frequency < 1
 
     # helper to make numbers pretty (converts 4125001.25641 to 4,125,001.26 or 4,125,001). The definition be called through this measure.
     def neat_numbers(number, roundto = 2) # round to 0 or 2)
-      if roundto == 2
-        number = format '%.2f', number
-      else
-        number = number.round
-      end
+      number = if roundto == 2
+                 format '%.2f', number
+               else
+                 number.round
+               end
       # regex to add commas
       number.to_s.reverse.gsub(/([0-9]{3}(?=([0-9])))/, '\\1,').reverse
     end
 
     # helper to make it easier to do unit conversions on the fly.  The definition be called through this measure.
     def unit_helper(number, from_unit_string, to_unit_string)
-      converted_number = OpenStudio.convert(OpenStudio::Quantity.new(number, OpenStudio.createUnit(from_unit_string).get), OpenStudio.createUnit(to_unit_string).get).get.value
+      converted_number = OpenStudio.convert(
+        OpenStudio::Quantity.new(number,
+                                 OpenStudio.createUnit(from_unit_string).get), OpenStudio.createUnit(to_unit_string).get
+      ).get.value
     end
 
     # helper that loops through lifecycle costs getting total costs under "Construction" or "Salvage" category and add to counter if occurs during year 0
@@ -223,14 +225,12 @@ class ReduceLightingLoadsByPercentage < OpenStudio::Measure::ModelMeasure
       objects.each do |object|
         object_LCCs = object.lifeCycleCosts
         object_LCCs.each do |object_LCC|
-          if (object_LCC.category == 'Construction') || (object_LCC.category == 'Salvage')
-            if object_LCC.yearsFromStart == 0
-              counter += object_LCC.totalCost
-            end
-          end
+          next unless (object_LCC.category == 'Construction') || (object_LCC.category == 'Salvage')
+
+          counter += object_LCC.totalCost if object_LCC.yearsFromStart == 0
         end
       end
-      return counter
+      counter
     end
 
     # counter for demo cost of baseline objects
@@ -250,9 +250,13 @@ class ReduceLightingLoadsByPercentage < OpenStudio::Measure::ModelMeasure
     # method should always return double but this is work around for when it is nan because of 0 floor area
     if building.floorArea > 0.0
       building_LPD = unit_helper(building.lightingPowerPerFloorArea, 'W/m^2', 'W/ft^2')
-      runner.registerInitialCondition("The model's initial building lighting power was  #{neat_numbers(building_lighting_power, 0)} watts, a lighting power density of #{neat_numbers(building_LPD)} w/ft^2.")
+      runner.registerInitialCondition("The model's initial building lighting power was  #{neat_numbers(
+        building_lighting_power, 0
+      )} watts, a lighting power density of #{neat_numbers(building_LPD)} w/ft^2.")
     else
-      runner.registerInitialCondition("The model's initial building lighting power was  #{neat_numbers(building_lighting_power, 0)} watts. Building Area is not greater than 0 so an LPD can't be calculated.")
+      runner.registerInitialCondition("The model's initial building lighting power was  #{neat_numbers(
+        building_lighting_power, 0
+      )} watts. Building Area is not greater than 0 so an LPD can't be calculated.")
     end
 
     # get space types in model
@@ -269,24 +273,23 @@ class ReduceLightingLoadsByPercentage < OpenStudio::Measure::ModelMeasure
       if demo_cost_initial_const == true
         baseline_object_LCCs = baseline_object.lifeCycleCosts
         baseline_object_LCCs.each do |baseline_object_LCC|
-          if baseline_object_LCC.category == 'Salvage'
-            counter += baseline_object_LCC.totalCost
-          end
+          counter += baseline_object_LCC.totalCost if baseline_object_LCC.category == 'Salvage'
         end
       end
-      return counter
+      counter
     end
 
     # def to alter performance and life cycle costs of objects
-    def alter_performance_and_lcc(object, lighting_power_reduction_percent, material_and_installation_cost, demolition_cost, om_cost, years_until_costs_start, expected_life, om_frequency, runner)
+    def alter_performance_and_lcc(object, lighting_power_reduction_percent, material_and_installation_cost,
+                                  demolition_cost, om_cost, years_until_costs_start, expected_life, om_frequency, runner)
       # edit clone based on percentage reduction
       new_def = object
       if !new_def.lightingLevel.empty?
-        new_lighting_level = new_def.setLightingLevel(new_def.lightingLevel.get - new_def.lightingLevel.get * lighting_power_reduction_percent * 0.01)
+        new_lighting_level = new_def.setLightingLevel(new_def.lightingLevel.get - (new_def.lightingLevel.get * lighting_power_reduction_percent * 0.01))
       elsif !new_def.wattsperSpaceFloorArea.empty?
-        new_lighting_per_area = new_def.setWattsperSpaceFloorArea(new_def.wattsperSpaceFloorArea.get - new_def.wattsperSpaceFloorArea.get * lighting_power_reduction_percent * 0.01)
+        new_lighting_per_area = new_def.setWattsperSpaceFloorArea(new_def.wattsperSpaceFloorArea.get - (new_def.wattsperSpaceFloorArea.get * lighting_power_reduction_percent * 0.01))
       elsif !new_def.wattsperPerson.empty?
-        new_lighting_per_person = new_def.setWattsperPerson(new_def.wattsperPerson.get - new_def.wattsperPerson.get * lighting_power_reduction_percent * 0.01)
+        new_lighting_per_person = new_def.setWattsperPerson(new_def.wattsperPerson.get - (new_def.wattsperPerson.get * lighting_power_reduction_percent * 0.01))
       else
         runner.registerWarning("'#{new_def.name}' is used by one or more instances and has no load values. Its performance was not altered.")
       end
@@ -299,15 +302,15 @@ class ReduceLightingLoadsByPercentage < OpenStudio::Measure::ModelMeasure
       else
         new_def_LCCs.each do |new_def_LCC|
           if new_def_LCC.category == 'Construction'
-            new_def_LCC.setCost(new_def_LCC.cost * (1 + material_and_installation_cost / 100))
+            new_def_LCC.setCost(new_def_LCC.cost * (1 + (material_and_installation_cost / 100)))
             new_def_LCC.setYearsFromStart(years_until_costs_start) # just uses argument value, does not need existing value
             new_def_LCC.setRepeatPeriodYears(expected_life) # just uses argument value, does not need existing value
           elsif new_def_LCC.category == 'Salvage'
-            new_def_LCC.setCost(new_def_LCC.cost * (1 + demolition_cost / 100))
+            new_def_LCC.setCost(new_def_LCC.cost * (1 + (demolition_cost / 100)))
             new_def_LCC.setYearsFromStart(years_until_costs_start + expected_life) # just uses argument value, does not need existing value
             new_def_LCC.setRepeatPeriodYears(expected_life) # just uses argument value, does not need existing value
           elsif new_def_LCC.category == 'Maintenance'
-            new_def_LCC.setCost(new_def_LCC.cost * (1 + om_cost / 100))
+            new_def_LCC.setCost(new_def_LCC.cost * (1 + (om_cost / 100)))
             new_def_LCC.setRepeatPeriodYears(om_frequency) # just uses argument value, does not need existing value
           end
 
@@ -326,11 +329,12 @@ class ReduceLightingLoadsByPercentage < OpenStudio::Measure::ModelMeasure
     # loop through space types
     space_types.each do |space_type|
       next if space_type.spaces.size <= 0
+
       space_type_lights = space_type.lights
       space_type_lights.each do |space_type_light|
         # clone def if it has not already been cloned
         exist_def = space_type_light.lightsDefinition
-        if cloned_lights_defs.any? { |k, v| k.to_s == exist_def.name.to_s }
+        if cloned_lights_defs.any? { |k, _v| k.to_s == exist_def.name.to_s }
           new_def = cloned_lights_defs[exist_def.name.to_s]
         else
           # clone rename and add to hash
@@ -343,7 +347,8 @@ class ReduceLightingLoadsByPercentage < OpenStudio::Measure::ModelMeasure
           demo_costs_of_baseline_objects += add_to_baseline_demo_cost_counter(exist_def, demo_cost_initial_const)
 
           # call def to alter performance and life cycle costs
-          alter_performance_and_lcc(new_def, lighting_power_reduction_percent, material_and_installation_cost, demolition_cost, om_cost, years_until_costs_start, expected_life, om_frequency, runner)
+          alter_performance_and_lcc(new_def, lighting_power_reduction_percent, material_and_installation_cost,
+                                    demolition_cost, om_cost, years_until_costs_start, expected_life, om_frequency, runner)
 
         end
 
@@ -356,7 +361,7 @@ class ReduceLightingLoadsByPercentage < OpenStudio::Measure::ModelMeasure
       space_type_luminaires.each do |space_type_luminaire|
         # clone def if it has not already been cloned
         exist_def = space_type_luminaire.luminaireDefinition
-        if cloned_luminaire_defs.any? { |k, v| k.to_s == exist_def.name }
+        if cloned_luminaire_defs.any? { |k, _v| k.to_s == exist_def.name }
           new_def = cloned_luminaire_defs[exist_def.name]
         else
           # clone rename and add to hash
@@ -369,7 +374,8 @@ class ReduceLightingLoadsByPercentage < OpenStudio::Measure::ModelMeasure
           demo_costs_of_baseline_objects += add_to_baseline_demo_cost_counter(exist_def, demo_cost_initial_const)
 
           # call def to alter performance and life cycle costs
-          alter_performance_and_lcc(new_def, lighting_power_reduction_percent, material_and_installation_cost, demolition_cost, om_cost, years_until_costs_start, expected_life, om_frequency, runner)
+          alter_performance_and_lcc(new_def, lighting_power_reduction_percent, material_and_installation_cost,
+                                    demolition_cost, om_cost, years_until_costs_start, expected_life, om_frequency, runner)
 
         end
 
@@ -385,10 +391,8 @@ class ReduceLightingLoadsByPercentage < OpenStudio::Measure::ModelMeasure
     # get space types in model
     if apply_to_building
       spaces = model.getSpaces
-    else
-      if !space_type.spaces.empty?
-        spaces = space_type.spaces # only run on a single space type
-      end
+    elsif !space_type.spaces.empty?
+      spaces = space_type.spaces
     end
 
     spaces.each do |space|
@@ -396,7 +400,7 @@ class ReduceLightingLoadsByPercentage < OpenStudio::Measure::ModelMeasure
       space_lights.each do |space_light|
         # clone def if it has not already been cloned
         exist_def = space_light.lightsDefinition
-        if cloned_lights_defs.any? { |k, v| k.to_s == exist_def.name.to_s }
+        if cloned_lights_defs.any? { |k, _v| k.to_s == exist_def.name.to_s }
           new_def = cloned_lights_defs[exist_def.name.to_s]
         else
           # clone rename and add to hash
@@ -409,7 +413,8 @@ class ReduceLightingLoadsByPercentage < OpenStudio::Measure::ModelMeasure
           demo_costs_of_baseline_objects += add_to_baseline_demo_cost_counter(exist_def, demo_cost_initial_const)
 
           # call def to alter performance and life cycle costs
-          alter_performance_and_lcc(new_def, lighting_power_reduction_percent, material_and_installation_cost, demolition_cost, om_cost, years_until_costs_start, expected_life, om_frequency, runner)
+          alter_performance_and_lcc(new_def, lighting_power_reduction_percent, material_and_installation_cost,
+                                    demolition_cost, om_cost, years_until_costs_start, expected_life, om_frequency, runner)
 
         end
 
@@ -422,7 +427,7 @@ class ReduceLightingLoadsByPercentage < OpenStudio::Measure::ModelMeasure
       space_luminaires.each do |space_luminaire|
         # clone def if it has not already been cloned
         exist_def = space_luminaire.luminaireDefinition
-        if cloned_luminaire_defs.any? { |k, v| k.to_s == exist_def.name }
+        if cloned_luminaire_defs.any? { |k, _v| k.to_s == exist_def.name }
           new_def = cloned_luminaire_defs[exist_def.name]
         else
           # clone rename and add to hash
@@ -435,7 +440,8 @@ class ReduceLightingLoadsByPercentage < OpenStudio::Measure::ModelMeasure
           demo_costs_of_baseline_objects += add_to_baseline_demo_cost_counter(exist_def, demo_cost_initial_const)
 
           # call def to alter performance and life cycle costs
-          alter_performance_and_lcc(new_def, lighting_power_reduction_percent, material_and_installation_cost, demolition_cost, om_cost, years_until_costs_start, expected_life, om_frequency, runner)
+          alter_performance_and_lcc(new_def, lighting_power_reduction_percent, material_and_installation_cost,
+                                    demolition_cost, om_cost, years_until_costs_start, expected_life, om_frequency, runner)
 
         end
 
@@ -457,12 +463,11 @@ class ReduceLightingLoadsByPercentage < OpenStudio::Measure::ModelMeasure
     if demo_cost_initial_const == true
       building = model.getBuilding
       lcc_baseline_demo = OpenStudio::Model::LifeCycleCost.createLifeCycleCost('LCC_baseline_demo', building, demo_costs_of_baseline_objects, 'CostPerEach', 'Salvage', 0, years_until_costs_start).get # using 0 for repeat period since one time cost.
-      runner.registerInfo("Adding one time cost of $#{neat_numbers(lcc_baseline_demo.totalCost, 0)} related to demolition of baseline objects.")
+      runner.registerInfo("Adding one time cost of $#{neat_numbers(lcc_baseline_demo.totalCost,
+                                                                   0)} related to demolition of baseline objects.")
 
       # if demo occurs on year 0 then add to initial capital cost counter
-      if lcc_baseline_demo.yearsFromStart == 0
-        yr0_capital_totalCosts += lcc_baseline_demo.totalCost
-      end
+      yr0_capital_totalCosts += lcc_baseline_demo.totalCost if lcc_baseline_demo.yearsFromStart == 0
     end
 
     # report final condition
@@ -472,12 +477,18 @@ class ReduceLightingLoadsByPercentage < OpenStudio::Measure::ModelMeasure
     # method should always return double but this is work around for when it is nan because of 0 floor area
     if building.floorArea > 0.0
       final_building_LPD = unit_helper(final_building.lightingPowerPerFloorArea, 'W/m^2', 'W/ft^2')
-      runner.registerFinalCondition("The model's final final lighting power was  #{neat_numbers(final_building_lighting_power, 0)} watts, a lighting power density of #{neat_numbers(final_building_LPD)} w/ft^2. Initial capital costs associated with the improvements are $#{neat_numbers(yr0_capital_totalCosts, 0)}.")
+      runner.registerFinalCondition("The model's final final lighting power was  #{neat_numbers(
+        final_building_lighting_power, 0
+      )} watts, a lighting power density of #{neat_numbers(final_building_LPD)} w/ft^2. Initial capital costs associated with the improvements are $#{neat_numbers(
+        yr0_capital_totalCosts, 0
+      )}.")
     else
-      runner.registerFinalCondition("The model's final final lighting power was  #{neat_numbers(final_building_lighting_power, 0)} wattsBuilding Area is not greater than 0 so an LPD can't be calculated.")
+      runner.registerFinalCondition("The model's final final lighting power was  #{neat_numbers(
+        final_building_lighting_power, 0
+      )} wattsBuilding Area is not greater than 0 so an LPD can't be calculated.")
     end
 
-    return true
+    true
   end
 end
 

@@ -1,0 +1,10 @@
+{
+  "Create DOE Prototype Building" : 
+  {
+    "applicable" : true,
+    "building_type" : "RetailStandalone",
+    "climate_zone" : "ASHRAE 169-2013-5B",
+    "epw_file" : "Not Applicable",
+    "template" : "90.1-2010"
+  }
+}

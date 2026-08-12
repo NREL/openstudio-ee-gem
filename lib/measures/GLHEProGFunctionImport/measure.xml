@@ -3,8 +3,8 @@
   <schema_version>3.1</schema_version>
   <name>glhe_pro_g_function_import</name>
   <uid>001536d4-5048-4bc7-a327-57852f33c263</uid>
-  <version_id>903667ce-1a19-4147-a561-f61a55e469c0</version_id>
-  <version_modified>2024-11-16T23:47:44Z</version_modified>
+  <version_id>342cf1e3-cef2-4ce1-aa76-a04aa4d92788</version_id>
+  <version_modified>2025-09-25T15:33:42Z</version_modified>
   <xml_checksum>4435983D</xml_checksum>
   <class_name>GLHEProGFunctionImport</class_name>
   <display_name>GLHEProGFunctionImport</display_name>
@@ -48,7 +48,7 @@
       <filename>LICENSE.md</filename>
       <filetype>md</filetype>
       <usage_type>license</usage_type>
-      <checksum>8C5A8023</checksum>
+      <checksum>FFCBFF29</checksum>
     </file>
     <file>
       <filename>README.md</filename>
@@ -71,13 +71,13 @@
       <filename>measure.rb</filename>
       <filetype>rb</filetype>
       <usage_type>script</usage_type>
-      <checksum>DF9B7C02</checksum>
+      <checksum>49E95B56</checksum>
     </file>
     <file>
       <filename>GLHEProGFunctionImport_Test.rb</filename>
       <filetype>rb</filetype>
       <usage_type>test</usage_type>
-      <checksum>A8B1BDF5</checksum>
+      <checksum>4092679A</checksum>
     </file>
   </files>
 </measure>

@@ -9,7 +9,7 @@ require 'openstudio'
 require 'openstudio/measure/ShowRunnerOutput'
 require 'fileutils'
 
-require_relative '../measure.rb'
+require_relative '../measure'
 require 'minitest/autorun'
 
 class GLHEProExportLoadsforGroundHeatExchangerSizing_Test < Minitest::Test
@@ -19,11 +19,11 @@ class GLHEProExportLoadsforGroundHeatExchangerSizing_Test < Minitest::Test
     rescue StandardError
       return false
     end
-    return true
+    true
   end
 
   def model_in_path_default
-    return "#{File.dirname(__FILE__)}/ExampleModel.osm"
+    "#{File.dirname(__FILE__)}/ExampleModel.osm"
   end
 
   def epw_path_default
@@ -31,7 +31,7 @@ class GLHEProExportLoadsforGroundHeatExchangerSizing_Test < Minitest::Test
     epw = nil
     epw = OpenStudio::Path.new("#{File.dirname(__FILE__)}/USA_CO_Golden-NREL.724666_TMY3.epw")
     assert(File.exist?(epw.to_s))
-    return epw.to_s
+    epw.to_s
   end
 
   def run_dir(test_name)
@@ -44,19 +44,15 @@ class GLHEProExportLoadsforGroundHeatExchangerSizing_Test < Minitest::Test
   end
 
   def workspace_path(test_name)
-    if is_openstudio_2?
-      return "#{run_dir(test_name)}/run/in.idf"
-    else
-      return "#{run_dir(test_name)}/ModelToIdf/in.idf"
-    end
+    return "#{run_dir(test_name)}/run/in.idf" if is_openstudio_2?
+
+    "#{run_dir(test_name)}/ModelToIdf/in.idf"
   end
 
   def sql_path(test_name)
-    if is_openstudio_2?
-      return "#{run_dir(test_name)}/run/eplusout.sql"
-    else
-      return "#{run_dir(test_name)}/ModelToIdf/EnergyPlusPreProcess-0/EnergyPlus-0/eplusout.sql"
-    end
+    return "#{run_dir(test_name)}/run/eplusout.sql" if is_openstudio_2?
+
+    "#{run_dir(test_name)}/ModelToIdf/EnergyPlusPreProcess-0/EnergyPlus-0/eplusout.sql"
   end
 
   def report_path(test_name)
@@ -68,53 +64,48 @@ class GLHEProExportLoadsforGroundHeatExchangerSizing_Test < Minitest::Test
     co = OpenStudio::Runmanager::ConfigOptions.new(true)
     co.findTools(false, true, false, true)
 
-    if !File.exist?(sql_path(test_name))
-      puts 'Running EnergyPlus'
+    return if File.exist?(sql_path(test_name))
 
-      wf = OpenStudio::Runmanager::Workflow.new('modeltoidf->energypluspreprocess->energyplus')
-      wf.add(co.getTools)
-      job = wf.create(OpenStudio::Path.new(run_dir(test_name)), OpenStudio::Path.new(model_out_path(test_name)), OpenStudio::Path.new(epw_path))
+    puts 'Running EnergyPlus'
 
-      rm = OpenStudio::Runmanager::RunManager.new
-      rm.enqueue(job, true)
-      rm.waitForFinished
-    end
+    wf = OpenStudio::Runmanager::Workflow.new('modeltoidf->energypluspreprocess->energyplus')
+    wf.add(co.getTools)
+    job = wf.create(OpenStudio::Path.new(run_dir(test_name)), OpenStudio::Path.new(model_out_path(test_name)),
+                    OpenStudio::Path.new(epw_path))
+
+    rm = OpenStudio::Runmanager::RunManager.new
+    rm.enqueue(job, true)
+    rm.waitForFinished
   end
 
   # method for running the test simulation using OpenStudio 2.x API
   def setup_test_2(test_name, epw_path)
-    if !File.exist?(sql_path(test_name))
-      osw_path = File.join(run_dir(test_name), 'in.osw')
-      osw_path = File.absolute_path(osw_path)
+    return if File.exist?(sql_path(test_name))
 
-      workflow = OpenStudio::WorkflowJSON.new
-      workflow.setSeedFile(File.absolute_path(model_out_path(test_name)))
-      workflow.setWeatherFile(File.absolute_path(epw_path))
-      workflow.saveAs(osw_path)
+    osw_path = File.join(run_dir(test_name), 'in.osw')
+    osw_path = File.absolute_path(osw_path)
 
-      cli_path = OpenStudio.getOpenStudioCLI
-      cmd = "\"#{cli_path}\" run -w \"#{osw_path}\""
-      puts cmd
-      system(cmd)
-    end
+    workflow = OpenStudio::WorkflowJSON.new
+    workflow.setSeedFile(File.absolute_path(model_out_path(test_name)))
+    workflow.setWeatherFile(File.absolute_path(epw_path))
+    workflow.saveAs(osw_path)
+
+    cli_path = OpenStudio.getOpenStudioCLI
+    cmd = "\"#{cli_path}\" run -w \"#{osw_path}\""
+    puts cmd
+    system(cmd)
   end
 
   # create test files if they do not exist when the test first runs
   def setup_test(test_name, idf_output_requests, model_in_path = model_in_path_default, epw_path = epw_path_default)
-    if !File.exist?(run_dir(test_name))
-      FileUtils.mkdir_p(run_dir(test_name))
-    end
+    FileUtils.mkdir_p(run_dir(test_name)) unless File.exist?(run_dir(test_name))
     assert(File.exist?(run_dir(test_name)))
 
-    if File.exist?(report_path(test_name))
-      FileUtils.rm(report_path(test_name))
-    end
+    FileUtils.rm(report_path(test_name)) if File.exist?(report_path(test_name))
 
     assert(File.exist?(model_in_path))
 
-    if File.exist?(model_out_path(test_name))
-      FileUtils.rm(model_out_path(test_name))
-    end
+    FileUtils.rm(model_out_path(test_name)) if File.exist?(model_out_path(test_name))
 
     # convert output requests to OSM for testing, OS App and PAT will add these to the E+ Idf
     workspace = OpenStudio::Workspace.new('Draft'.to_StrictnessLevel, 'EnergyPlus'.to_IddFileType)
@@ -129,11 +120,7 @@ class GLHEProExportLoadsforGroundHeatExchangerSizing_Test < Minitest::Test
     model.addObjects(request_model.objects)
     model.save(model_out_path(test_name), true)
 
-    if ENV['OPENSTUDIO_TEST_NO_CACHE_SQLFILE']
-      if File.exist?(sql_path(test_name))
-        FileUtils.rm_f(sql_path(test_name))
-      end
-    end
+    FileUtils.rm_f(sql_path(test_name)) if ENV['OPENSTUDIO_TEST_NO_CACHE_SQLFILE'] && File.exist?(sql_path(test_name))
 
     if is_openstudio_2?
       setup_test_2(test_name, epw_path)
@@ -147,9 +134,7 @@ class GLHEProExportLoadsforGroundHeatExchangerSizing_Test < Minitest::Test
     translator = OpenStudio::OSVersion::VersionTranslator.new
     model = translator.loadModel(model_path)
     assert(!model.empty?)
-    model = model.get
-
-    return model
+    model.get
   end
 
   # test_GLHEProExportLoadsforGroundHeatExchangerSizing_air_loop_only
@@ -174,9 +159,7 @@ class GLHEProExportLoadsforGroundHeatExchangerSizing_Test < Minitest::Test
     # populate argument with specified hash value if specified
     arguments.each do |arg|
       temp_arg_var = arg.clone
-      if args_hash[arg.name]
-        assert(temp_arg_var.setValue(args_hash[arg.name]))
-      end
+      assert(temp_arg_var.setValue(args_hash[arg.name])) if args_hash[arg.name]
       argument_map[arg.name] = temp_arg_var
     end
 
@@ -199,9 +182,7 @@ class GLHEProExportLoadsforGroundHeatExchangerSizing_Test < Minitest::Test
     runner.setLastEnergyPlusSqlFilePath(OpenStudio::Path.new(sql_path(test_name)))
 
     # delete the output if it exists
-    if File.exist?(report_path(test_name))
-      FileUtils.rm(report_path(test_name))
-    end
+    FileUtils.rm(report_path(test_name)) if File.exist?(report_path(test_name))
     assert(!File.exist?(report_path(test_name)))
 
     # temporarily change directory to the run directory and run the measure
@@ -247,9 +228,7 @@ class GLHEProExportLoadsforGroundHeatExchangerSizing_Test < Minitest::Test
     # populate argument with specified hash value if specified
     arguments.each do |arg|
       temp_arg_var = arg.clone
-      if args_hash[arg.name]
-        assert(temp_arg_var.setValue(args_hash[arg.name]))
-      end
+      assert(temp_arg_var.setValue(args_hash[arg.name])) if args_hash[arg.name]
       argument_map[arg.name] = temp_arg_var
     end
 
@@ -272,9 +251,7 @@ class GLHEProExportLoadsforGroundHeatExchangerSizing_Test < Minitest::Test
     runner.setLastEnergyPlusSqlFilePath(OpenStudio::Path.new(sql_path(test_name)))
 
     # delete the output if it exists
-    if File.exist?(report_path(test_name))
-      FileUtils.rm(report_path(test_name))
-    end
+    FileUtils.rm(report_path(test_name)) if File.exist?(report_path(test_name))
     assert(!File.exist?(report_path(test_name)))
 
     # temporarily change directory to the run directory and run the measure

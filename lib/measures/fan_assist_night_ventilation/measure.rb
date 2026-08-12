@@ -12,17 +12,17 @@
 class FanAssistNightVentilation < OpenStudio::Measure::ModelMeasure
   # human readable name
   def name
-    return 'Fan Assist Night Ventilation'
+    'Fan Assist Night Ventilation'
   end
 
   # human readable description
   def description
-    return "This measure is meant to roughly model the impact of fan assisted night ventilation. The user needs to have a ventilation schedule in the model, operable windows where natural ventilation is desired, and air walls or interior operable windows in walls and floors to define the path of air through the building. The user specified flow rate is proportionally split up based on the area of exterior operable windows. The size of interior air walls and windows doesn't matter."
+    "This measure is meant to roughly model the impact of fan assisted night ventilation. The user needs to have a ventilation schedule in the model, operable windows where natural ventilation is desired, and air walls or interior operable windows in walls and floors to define the path of air through the building. The user specified flow rate is proportionally split up based on the area of exterior operable windows. The size of interior air walls and windows doesn't matter."
   end
 
   # human readable description of modeling approach
   def modeler_description
-    return "It's up to the modeler to choose a flow rate that is approriate for the fenestration and interior openings within the building. Each zone with operable windows will get a zone ventilation object. The measure will first look for a celing opening to find a connection for zone a zone mixing object. If a ceiling isn't found, then it looks for a wall. Don't provide more than one ceiling paths or more than one wall path. The end result is zone ventilation object followed by a path of zone mixing objects. The fan consumption is modeled in the zone ventilation object, but no heat is brought in from the fan. There is no zone ventilation object at the end of the path of zones. In addition to schedule, the zone ventilation is controlled by a minimum outdoor temperature.
+    "It's up to the modeler to choose a flow rate that is approriate for the fenestration and interior openings within the building. Each zone with operable windows will get a zone ventilation object. The measure will first look for a celing opening to find a connection for zone a zone mixing object. If a ceiling isn't found, then it looks for a wall. Don't provide more than one ceiling paths or more than one wall path. The end result is zone ventilation object followed by a path of zone mixing objects. The fan consumption is modeled in the zone ventilation object, but no heat is brought in from the fan. There is no zone ventilation object at the end of the path of zones. In addition to schedule, the zone ventilation is controlled by a minimum outdoor temperature.
 
 The measure was developed for use in un-conditioned models. Has not been tested in conjunction with mechanical systems.
 
@@ -71,6 +71,7 @@ To address an issue in OpenStudio zones with ZoneVentilation, this measure adds 
     # looping through sorted hash of schedules to find air velocity schedules
     schedule_args_hash.sort.map do |key, value|
       next if value.scheduleTypeLimits.empty?
+
       if value.scheduleTypeLimits.get.unitType == 'Dimensionless'
         ventilation_schedule_handles << value.handle.to_s
         ventilation_schedule_display_names << key
@@ -78,7 +79,8 @@ To address an issue in OpenStudio zones with ZoneVentilation, this measure adds 
     end
 
     # make a choice argument for Air Velocity Schedule Name
-    ventilation_schedule = OpenStudio::Measure::OSArgument.makeChoiceArgument('ventilation_schedule', ventilation_schedule_handles, ventilation_schedule_display_names, true)
+    ventilation_schedule = OpenStudio::Measure::OSArgument.makeChoiceArgument('ventilation_schedule',
+                                                                              ventilation_schedule_handles, ventilation_schedule_display_names, true)
     ventilation_schedule.setDisplayName('Choose a Ventilation Schedule.')
     args << ventilation_schedule
 
@@ -89,7 +91,7 @@ To address an issue in OpenStudio zones with ZoneVentilation, this measure adds 
     min_outdoor_temp.setDefaultValue(55.0)
     args << min_outdoor_temp
 
-    return args
+    args
   end
 
   def inspect_airflow_surfaces(zone)
@@ -97,8 +99,9 @@ To address an issue in OpenStudio zones with ZoneVentilation, this measure adds 
     zone.spaces.each do |space|
       space.surfaces.each do |surface|
         next if surface.adjacentSurface.is_initialized != true
-        next if !surface.adjacentSurface.get.space.is_initialized
-        next if !surface.adjacentSurface.get.space.get.thermalZone.is_initialized
+        next unless surface.adjacentSurface.get.space.is_initialized
+        next unless surface.adjacentSurface.get.space.get.thermalZone.is_initialized
+
         adjacent_zone = surface.adjacentSurface.get.space.get.thermalZone.get
         if surface.surfaceType == 'RoofCeiling' || surface.surfaceType == 'Wall'
           if surface.isAirWall
@@ -106,8 +109,9 @@ To address an issue in OpenStudio zones with ZoneVentilation, this measure adds 
           else
             surface.subSurfaces.each do |sub_surface|
               next if sub_surface.adjacentSubSurface.is_initialized != true
-              next if !sub_surface.adjacentSubSurface.get.surface.get.space.is_initialized
-              next if !sub_surface.adjacentSubSurface.get.surface.get.space.get.thermalZone.is_initialized
+              next unless sub_surface.adjacentSubSurface.get.surface.get.space.is_initialized
+              next unless sub_surface.adjacentSubSurface.get.surface.get.space.get.thermalZone.is_initialized
+
               adjacent_zone = sub_surface.adjacentSubSurface.get.surface.get.space.get.thermalZone.get
               if sub_surface.isAirWall || sub_surface.subSurfaceType == 'OperableWindow'
                 array << [adjacent_zone, surface.surfaceType]
@@ -118,7 +122,7 @@ To address an issue in OpenStudio zones with ZoneVentilation, this measure adds 
       end
     end
 
-    return array
+    array
   end
 
   # define what happens when the measure is run
@@ -126,9 +130,7 @@ To address an issue in OpenStudio zones with ZoneVentilation, this measure adds 
     super(model, runner, user_arguments)
 
     # use the built-in error checking
-    if !runner.validateUserArguments(arguments(model), user_arguments)
-      return false
-    end
+    return false unless runner.validateUserArguments(arguments(model), user_arguments)
 
     # assign the user inputs to variables
     design_flow_rate = runner.getDoubleArgumentValue('design_flow_rate', user_arguments)
@@ -156,9 +158,11 @@ To address an issue in OpenStudio zones with ZoneVentilation, this measure adds 
       zone.spaces.each do |space|
         space.surfaces.each do |surface|
           next if surface.surfaceType != 'Wall'
+
           surface.subSurfaces.each do |sub_surface|
             next if sub_surface.outsideBoundaryCondition != 'Outdoors'
             next if sub_surface.subSurfaceType != 'OperableWindow'
+
             zone_area_counter += sub_surface.netArea * sub_surface.multiplier
           end
         end
@@ -169,6 +173,7 @@ To address an issue in OpenStudio zones with ZoneVentilation, this measure adds 
 
       # add to operable_ext_window_hash if non-zero area
       next if zone_area_counter == 0.0
+
       bldg_area_counter += zone_area_counter
       operable_ext_window_hash[zone] = zone_area_counter
     end
@@ -226,9 +231,10 @@ To address an issue in OpenStudio zones with ZoneVentilation, this measure adds 
       until found_path_end == true
         found_ceiling = false
         path_objects[current_zone].each do |object|
-          next if zones_used_for_this_path.include? (object[0])
+          next if zones_used_for_this_path.include?(object[0])
           next if object[1].to_s != 'RoofCeiling'
-          next if operable_ext_window_hash.include? (object[0])
+          next if operable_ext_window_hash.include?(object[0])
+
           if found_ceiling
             runner.registerWarning("Found more than one possible airflow path for #{current_zone.name}")
           else
@@ -238,12 +244,13 @@ To address an issue in OpenStudio zones with ZoneVentilation, this measure adds 
             found_ceiling = true
           end
         end
-        if !found_ceiling
+        unless found_ceiling
           found_wall = false
           path_objects[current_zone].each do |object|
-            next if zones_used_for_this_path.include? (object[0])
+            next if zones_used_for_this_path.include?(object[0])
             next if object[1].to_s != 'Wall'
-            next if operable_ext_window_hash.include? (object[0])
+            next if operable_ext_window_hash.include?(object[0])
+
             if found_wall
               runner.registerWarning("Found more than one possible airflow path for #{current_zone.name}")
             else
@@ -254,9 +261,7 @@ To address an issue in OpenStudio zones with ZoneVentilation, this measure adds 
             end
           end
         end
-        if (found_ceiling == false) && (found_wall == false)
-          found_path_end = true
-        end
+        found_path_end = true if (found_ceiling == false) && (found_wall == false)
       end
 
       # add one way air mixing objects along path zones
@@ -290,14 +295,12 @@ To address an issue in OpenStudio zones with ZoneVentilation, this measure adds 
         else
           exhaust_zones[flow_paths[zone].last] = fraction_flow
         end
-      else
+      elsif exhaust_zones.include? zone
         # extra code if there is no path from entry zone
-        if exhaust_zones.include? zone
-          exhaust_zones[zone] += fraction_flow
-        else
-          exhaust_zones[zone] = fraction_flow
-          runner.registerWarning("#{zone.name} doesn't have path to other zones. Exhaust assumed to be with the same zone as air enters.")
-        end
+        exhaust_zones[zone] += fraction_flow
+      else
+        exhaust_zones[zone] = fraction_flow
+        runner.registerWarning("#{zone.name} doesn't have path to other zones. Exhaust assumed to be with the same zone as air enters.")
       end
     end
 
@@ -316,11 +319,9 @@ To address an issue in OpenStudio zones with ZoneVentilation, this measure adds 
       # warn if zone multiplier are used
       non_default_multiplier = []
       model.getThermalZones.each do |zone|
-        if zone.multiplier > 1
-          non_default_multiplier << zone
-        end
+        non_default_multiplier << zone if zone.multiplier > 1
       end
-      if !non_default_multiplier.empty?
+      unless non_default_multiplier.empty?
         runner.registerWarning("This measure is not intended to be use when thermal zones have a non 1 multiplier. #{non_default_multiplier.size} zones in this model have multipliers greater than one. Results are likley invalid.")
       end
 

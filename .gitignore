@@ -10,10 +10,24 @@
 /spec/reports/
 /tmp/
 /test/
+/test_results_dashboard_cli_bundler/
+/test_with_cli_bundler/
 /lib/measures/test_results
-/lib/measures/*/tests/output
+/lib/measures/*/tests/output/*
+!/lib/measures/*/tests/output/*.osm
+!/lib/measures/*/tests/output/*.json
+!/lib/measures/IncreaseInsulationRValueForRoofs/tests/output/**/*.json
+!/lib/measures/IncreaseInsulationRValueForRoofs/tests/output/**/*.osm
+!/lib/measures/window_enhancement/tests/output/**/*.json
+/lib/measures/*/tests/run
+/lib/measures/*/tests/obsolete
+/lib/measures/IncreaseInsulationRValueForRoofs/tests/DOE_small_office/
+/lib/measures/IncreaseInsulationRValueForRoofs/tests/example_model/
+**/obsolete/
+/vendor/bundle/
 
 .rubocop*s3*
+
 
 # rspec failure tracking
 .rspec_status
@@ -24,6 +38,9 @@
 # ignore mac files
 .DS_Store
 
+# ignore environment.yml
+environment.yml
+
 # ignore files made when run openstudio measure -r locally for testing
 lib/measures/.rubocop.yml
 lib/test/*
@@ -31,10 +48,61 @@ lib/test/*
 # Ignore measure tester gem local test results
 test_results/
 
-lib/measures/window_enhancement/__pycache__
-lib/measures/window_enhancement/tests/__pycache__
-lib/measures/window_enhancement/resources/__pycache__
-lib/measures/window_enhancement/tests/.pytest_cache
-lib/measures/window_enhancement/tests/example_model/run
+lib/measures/window_enhancement/__pycache__/
+lib/measures/window_enhancement/tests/__pycache__/
+lib/measures/window_enhancement/tests/output/*
+!lib/measures/window_enhancement/tests/output/*.osm
+!lib/measures/window_enhancement/tests/output/apply_measure_results.json
+lib/measures/window_enhancement/resources/__pycache__/
+lib/measures/window_enhancement/tests/.pytest_cache/
+lib/measures/window_enhancement/tests/example_model/run/
+lib/measures/ReportRetrofitImpacts/tests/.pytest_cache/
+lib/measures/ReportRetrofitImpacts/__pycache__/
 **/__pycache__/
+*.pyc
+*.log
+*.jsonl
 config.ini
+
+# Ignore OSW workflow files with API keys
+lib/measures/workflow_with_reporting.osw
+
+
+# Environment variables (contains secrets)
+venv/
+.venv/
+env/
+.env/
+.env
+*.env
+config.env
+lib/measures/ReportRetrofitImpacts/venv
+
+# Act secrets file
+.secrets
+
+# Act configuration file
+.actrc
+node_modules
+
+
+# --- Parametric run simulation outputs ---
+# Keep only meaningful artifacts (CSVs, summary HTML reports, OSMs, OSWs, results.json).
+# Exclude bulky EnergyPlus runtime artifacts; they are regenerable from the OSM + EPW.
+lib/parametric_run/custom_cost_datasets/
+lib/parametric_run/simulations/**/_proto/
+lib/parametric_run/simulations/**/run/data_point.zip
+lib/parametric_run/simulations/**/run/data_point_out.json
+lib/parametric_run/simulations/**/run/eplusout.*
+lib/parametric_run/simulations/**/run/eplusssz.csv
+lib/parametric_run/simulations/**/run/eplustbl.htm
+lib/parametric_run/simulations/**/run/epluszsz.csv
+lib/parametric_run/simulations/**/run/in.idf
+lib/parametric_run/simulations/**/run/pre-preprocess.idf
+lib/parametric_run/simulations/**/run/measure_attributes.json
+lib/parametric_run/simulations/**/run/sqlite.err
+lib/parametric_run/simulations/**/run/finished.job
+lib/parametric_run/simulations/**/run/started.job
+lib/parametric_run/simulations/**/run/stdout-energyplus
+lib/parametric_run/simulations/**/run/run.log
+lib/parametric_run/simulations/**/run/000_create_DOE_prototype_building/
