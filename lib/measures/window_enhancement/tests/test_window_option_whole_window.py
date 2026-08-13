@@ -4,7 +4,7 @@ Test script for window_option (whole window replacement) functionality.
 
 Tests:
 1. window_option = "aluminum double glazing window"
-2. window_option = "wood-aluminum glazing window"
+2. window_option = "wood double glazing window"
 
 Validates:
 - EPD query for window_frame (wood/aluminum based on option)
@@ -113,7 +113,7 @@ def _get_api_key():
 @pytest.mark.skipif(not HAS_OPENSTUDIO, reason="OpenStudio not available")
 @pytest.mark.parametrize("window_option,expected_frame_material", [
     ("aluminum double glazing window", "aluminum"),
-    ("wood-aluminum glazing window", "wood"),
+    ("wood double glazing window", "wood"),
 ])
 def test_window_option_whole_window_replacement(window_option, expected_frame_material):
     """

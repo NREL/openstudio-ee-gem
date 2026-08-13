@@ -235,17 +235,11 @@
     </argument>
     <argument>
       <name>epw_file</name>
-      <display_name>Climate File (NECB only)</display_name>
-      <type>Choice</type>
-      <required>true</required>
+      <display_name>Climate File</display_name>
+      <type>String</type>
+      <required>false</required>
       <model_dependent>false</model_dependent>
       <default_value>Not Applicable</default_value>
-      <choices>
-        <choice>
-          <value>Not Applicable</value>
-          <display_name>Not Applicable</display_name>
-        </choice>
-      </choices>
     </argument>
   </arguments>
   <outputs />

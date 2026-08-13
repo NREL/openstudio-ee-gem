@@ -2545,14 +2545,18 @@ class DoorEnhancement(openstudio.measure.ModelMeasure):
             from dotenv import load_dotenv
             import os
             load_dotenv()
+            offline_mode = str(os.getenv("RSMEANS_OFFLINE_CSV_FORCE", "")).strip().lower() in {"1", "true", "yes", "on"}
             client_id = os.getenv("client_id")
             client_secret = os.getenv("client_secret")
 
-            if not client_id or not client_secret:
+            if (not offline_mode) and (not client_id or not client_secret):
                 runner.registerWarning(
                     "RSMeans API credentials (client_id, client_secret) not found in environment. Skipping RSMeans cost retrieval."
                 )
                 return {}
+
+            if offline_mode and (not client_id or not client_secret):
+                runner.registerInfo("RSMeans offline CSV mode enabled in door measure; skipping credential requirement.")
 
             runner.registerInfo("Initializing RSMeans API client...")
             client = RSMeansAPIClient(client_id, client_secret, use_sandbox=False)

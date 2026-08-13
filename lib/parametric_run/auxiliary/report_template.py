@@ -219,6 +219,10 @@ def build_report_html(
         .bar-chart {{ display: grid; gap: 10px; }}
         .bar-row {{ display: grid; grid-template-columns: 130px 1fr 80px; align-items: center; gap: 10px; }}
         .bar-label {{ font-size: 12px; color: #444; }}
+        .bar-label.has-tip {{ position: relative; cursor: help; border-bottom: 1px dotted #1f4788; display: inline-block; }}
+        .scenario-tip {{ display: none; position: absolute; z-index: 50; left: 0; top: 100%; margin-top: 6px; width: 320px; max-height: 260px; overflow-y: auto; background: #fff; border: 1px solid #1f4788; border-radius: 6px; box-shadow: 0 4px 12px rgba(0,0,0,0.18); padding: 10px; font-size: 11px; color: #333; line-height: 1.5; text-align: left; white-space: normal; }}
+        .scenario-tip-title {{ font-weight: 600; color: #1f4788; margin-bottom: 6px; }}
+        .bar-label.has-tip:hover .scenario-tip {{ display: block; }}
         .bar-track {{ height: 12px; background: #e6e6e6; border-radius: 6px; overflow: hidden; }}
         .bar {{ height: 100%; border-radius: 6px; }}
         .bar.baseline {{ background: #6c757d; }}
@@ -357,7 +361,7 @@ def build_report_html(
 
         </div>
 
-        <div class="section">
+        <div class="section" id="payback-section">
             <h2>Payback Period of the Retrofit</h2>
             <div class="viz-grid">
                 <div class="chart-card">
@@ -397,6 +401,34 @@ def build_report_html(
             <p>Generated: {generated_time} | Report Type: Retrofit Impact Analysis | Run: {run_name}</p>
         </div>
     </div>
+    <script>
+    (function () {{
+        var table = document.querySelector('table.renovation-table');
+        var section = document.getElementById('payback-section');
+        if (!table || !section) {{ return; }}
+        var details = {{}};
+        Array.prototype.forEach.call(table.querySelectorAll('tr'), function (row) {{
+            var cells = row.querySelectorAll('td');
+            if (cells.length < 3) {{ return; }}
+            details[cells[0].textContent.trim()] = cells[2].innerHTML;
+        }});
+        Array.prototype.forEach.call(section.querySelectorAll('.bar-label'), function (label) {{
+            var key = label.textContent.trim();
+            if (!details[key]) {{ return; }}
+            var tip = document.createElement('div');
+            tip.className = 'scenario-tip';
+            var title = document.createElement('div');
+            title.className = 'scenario-tip-title';
+            title.textContent = key + ' - Renovation Details';
+            tip.appendChild(title);
+            var body = document.createElement('div');
+            body.innerHTML = details[key];
+            tip.appendChild(body);
+            label.classList.add('has-tip');
+            label.appendChild(tip);
+        }});
+    }})();
+    </script>
 </body>
 </html>
 """

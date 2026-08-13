@@ -182,22 +182,24 @@ if _AUXILIARY_DIR not in sys.path:
 # Read EC3 API Token from config.ini
 def get_ec3_api_token():
     """Read EC3 API token from config.ini file."""
-    script_dir = Path(__file__).parent
-    repo_root = script_dir.parent.parent
-    config_path = repo_root / "config.ini"
-    if not config_path.exists():
-        print(f"Warning: config.ini not found at {config_path}")
-        return None
+    # DISABLED: Carbon calculation is disabled in this workflow
+    # script_dir = Path(__file__).parent
+    # repo_root = script_dir.parent.parent
+    # config_path = repo_root / "config.ini"
+    # if not config_path.exists():
+    #     print(f"Warning: config.ini not found at {config_path}")
+    #     return None
+    #
+    # config = configparser.ConfigParser()
+    # config.read(config_path)
+    # try:
+    #     return config["EC3_API_TOKEN"]["API_TOKEN"]
+    # except KeyError:
+    #     print("Warning: EC3_API_TOKEN not found in config.ini")
+    #     return None
+    return None
 
-    config = configparser.ConfigParser()
-    config.read(config_path)
-    try:
-        return config["EC3_API_TOKEN"]["API_TOKEN"]
-    except KeyError:
-        print("Warning: EC3_API_TOKEN not found in config.ini")
-        return None
-
-EC3_API_TOKEN = get_ec3_api_token()
+EC3_API_TOKEN = None  # DISABLED: Carbon calculation disabled
 
 # --- HELPER FUNCTIONS ---
 def get_city_weather_files(city_name, base_weather_path):
@@ -260,7 +262,7 @@ def generate_scenario_name(scenario_dict):
                 parts.append(f"window_infil{float(window_infil):g}")
             for key, tag in [
                 ("weatherstrip_option", "window_weatherstrip"),
-                ("window_option", "window_wf"),
+                ("wf_option", "window_wf"),
                 ("film_option", "window_film"),
                 ("caulking_option", "window_caulking"),
                 ("secondary_glazing_option", "window_secondary_igu"),
@@ -286,13 +288,13 @@ def generate_scenario_name(scenario_dict):
     return "_".join(parts)
 
 def detect_window_upgrade_status(model, requested_panes):
-    """Infer whether requested pane upgrade was applied based on model constructions."""
+    """Detect whether requested pane upgrade was actually applied to model windows."""
     windows = [
         ss for ss in model.getSubSurfaces()
         if ss.subSurfaceType() in ["FixedWindow", "OperableWindow", "Skylight"]
     ]
     if not windows:
-        return "none"
+        return None
 
     upgraded_count = 0
     simple_glazing_count = 0
@@ -940,7 +942,7 @@ def create_simulation(
         return scenario_name
 
     measure_paths = [os.path.abspath(measure_dir_path)]
-    file_paths = [os.path.abspath(base_weather_path), os.path.abspath(os.path.dirname(epw_path))]
+    file_paths = [os.path.abspath(base_weather_path), os.path.dirname(epw_path)]
     prototype_step = {
         "measure_dir_name": "create_DOE_prototype_building",
         "name": "Create DOE Prototype Building",
@@ -1003,6 +1005,7 @@ def create_simulation(
         if os.path.exists(sql_path):
             print(f"  Applying reporting measure...")
             apply_reporting_measure(model_path, sql_path, measure_dir_path, scenario_name)
+
     # ====================================================================
     # NON-BASELINE:
     #   Phase 1: create prototype in a _proto/ subfolder
@@ -1056,7 +1059,7 @@ def create_simulation(
             scenario_dict.get("window_num_panes") not in [None, "", 0, 0.0],
             window_infiltration_reduction not in [None, "", 0, 0.0],
             str(scenario_dict.get("weatherstrip_option", "none")).strip().lower() != "none",
-            str(scenario_dict.get("window_option", "none")).strip().lower() != "none",
+            str(scenario_dict.get("wf_option", "none")).strip().lower() != "none",
             str(scenario_dict.get("film_option", "none")).strip().lower() != "none",
             str(scenario_dict.get("caulking_option", "none")).strip().lower() != "none",
             str(scenario_dict.get("secondary_glazing_option", "none")).strip().lower() != "none",
@@ -1067,17 +1070,18 @@ def create_simulation(
             str(scenario_dict.get("door_bottom_seal_option", "none")).strip().lower() != "none",
             str(scenario_dict.get("door_top_side_seal_option", "none")).strip().lower() != "none",
         ])
-        requires_ec3_data = any([
-            scenario_dict.get("wall_r_value"),
-            scenario_dict.get("roof_r_value"),
-            has_window_renovation,
-            has_door_renovation,
-        ])
-        if requires_ec3_data and not EC3_API_TOKEN:
-            print("  EC3 API token is required for online cost/carbon calculations; scenario skipped.")
-            log_failure("missing EC3 API token for required online cost/carbon calculations")
-            del model
-            return None
+        # DISABLED: Carbon calculation disabled - no EC3 API token check needed
+        # requires_ec3_data = any([
+        #     scenario_dict.get("wall_r_value"),
+        #     scenario_dict.get("roof_r_value"),
+        #     has_window_renovation,
+        #     has_door_renovation,
+        # ])
+        # if requires_ec3_data and not EC3_API_TOKEN:
+        #     print("  EC3 API token is required for online cost/carbon calculations; scenario skipped.")
+        #     log_failure("missing EC3 API token for required online cost/carbon calculations")
+        #     del model
+        #     return None
 
         if scenario_dict.get("wall_r_value"):
             wall_material_type = scenario_dict.get("wall_insulation_material_type") or "Blown Fiberglass"
@@ -1087,13 +1091,16 @@ def create_simulation(
                 "analysis_period": 30,
                 "use_lifetime_multiplier": bool(scenario_dict.get("use_lifetime_multiplier", False)),
                 "gwp_statistic": "median",
-                "api_key": EC3_API_TOKEN,
+                # Explicitly skip EC3 lookups for stable cost-only runs.
+                "use_custom_gwp": True,
+                "custom_gwp_per_m3": 0.0,
+                "api_key": "",
                 "insulation_material_type": wall_material_type,
                 "insulation_material_lifetime": wall_material_lifetime,
                 "insulation_thermal_conductivity": 0.0,
                 "insulation_material_density": 0.0,
-                "calculate_costs": bool(scenario_dict.get("calculate_costs", False)),
-                "use_custom_costs": bool(scenario_dict.get("use_custom_costs", True)),
+                "calculate_costs": bool(scenario_dict.get("calculate_costs", True)),
+                "use_custom_costs": bool(scenario_dict.get("use_custom_costs", False)),
                 "cost_calculation_basis": str(scenario_dict.get("cost_calculation_basis") or "totalop"),
                 "custom_cost_per_cf": float(scenario_dict.get("wall_insulation_custom_cost_per_cf") or scenario_dict.get("custom_cost_per_cf") or 0.0),
                 "labor_cost_multiplier": float(scenario_dict.get("labor_cost_multiplier") or 1.0),
@@ -1113,13 +1120,16 @@ def create_simulation(
                 "analysis_period": 30,
                 "use_lifetime_multiplier": bool(scenario_dict.get("use_lifetime_multiplier", False)),
                 "gwp_statistic": "median",
-                "api_key": EC3_API_TOKEN,
+                # Explicitly skip EC3 lookups for stable cost-only runs.
+                "use_custom_gwp": True,
+                "custom_gwp_per_m3": 0.0,
+                "api_key": "",
                 "insulation_material_type": roof_material_type,
                 "insulation_material_lifetime": roof_material_lifetime,
                 "insulation_thermal_conductivity": 0.0,
                 "insulation_material_density": 0.0,
-                "calculate_costs": bool(scenario_dict.get("calculate_costs", False)),
-                "use_custom_costs": bool(scenario_dict.get("use_custom_costs", True)),
+                "calculate_costs": bool(scenario_dict.get("calculate_costs", True)),
+                "use_custom_costs": bool(scenario_dict.get("use_custom_costs", False)),
                 "cost_calculation_basis": str(scenario_dict.get("cost_calculation_basis") or "totalop"),
                 "custom_cost_per_cf": float(scenario_dict.get("roof_insulation_custom_cost_per_cf") or scenario_dict.get("custom_cost_per_cf") or 0.0),
                 "labor_cost_multiplier": float(scenario_dict.get("labor_cost_multiplier") or 1.0),
@@ -1132,27 +1142,20 @@ def create_simulation(
                 del model
                 return None
         if has_window_renovation:
-            window_option = str(scenario_dict.get("window_option") or "none")
             requested_num_panes = scenario_dict.get("window_num_panes")
-            
-            # When entire window replacement is specified, glass_option should be "none"
-            # and num_panes is not used (entire window includes glazing)
-            if window_option.strip().lower() != "none":
-                glass_option = "none"
-                num_panes = 0
-            elif requested_num_panes in [None, "", 0, 0.0]:
-                # No specific pane count provided and no entire window replacement
-                num_panes = 0
+            if requested_num_panes in [None, ""]:
+                num_panes = 2
                 glass_option = str(scenario_dict.get("glass_option") or "none")
             else:
-                # Glass replacement specified
                 raw_num_panes = int(float(requested_num_panes))
                 num_panes = max(1, min(3, raw_num_panes))
                 glass_option = str(scenario_dict.get("glass_option") or "provide user_num_panes")
-            
-            # Note: When window_option (entire window replacement) is specified,
-            # the measure will ignore glass_option as entire window includes glazing.
-            # No validation needed here - measure handles the logic internally.
+            wf_option = str(scenario_dict.get("wf_option") or "none")
+            if wf_option.strip().lower() != "none" and not (glass_option != "none" and num_panes > 0):
+                print("  Window frame replacement requires glass replacement; scenario skipped.")
+                log_failure("window frame replacement requires glass replacement")
+                del model
+                return None
             window_args = {
                 "glass_option": glass_option,
                 "user_num_panes": num_panes,
@@ -1170,11 +1173,11 @@ def create_simulation(
                 "analysis_period": float(scenario_dict.get("analysis_period") or 30),
                 "use_lifetime_multiplier": bool(scenario_dict.get("use_lifetime_multiplier", False)),
                 "glass_lifetime": float(scenario_dict.get("glass_lifetime") or 15),
-                "window_lifetime": float(scenario_dict.get("wf_lifetime") or scenario_dict.get("window_lifetime") or 15),
+                "wf_lifetime": float(scenario_dict.get("wf_lifetime") or 15),
                 "caulking_lifetime": float(scenario_dict.get("caulking_lifetime") or 10),
                 "film_lifetime": float(scenario_dict.get("film_lifetime") or 10),
                 "weatherstrip_lifetime": float(scenario_dict.get("weatherstrip_lifetime") or 10),
-                "window_option": window_option,
+                "wf_option": wf_option,
                 "caulking_option": str(scenario_dict.get("caulking_option") or "none"),
                 "caulking_thickness": float(scenario_dict.get("caulking_thickness") or 0.0),
                 "film_option": str(scenario_dict.get("film_option") or "none"),
@@ -1185,10 +1188,17 @@ def create_simulation(
                 "weatherstrip_option": str(scenario_dict.get("weatherstrip_option") or "none"),
                 "length_per_unit": float(scenario_dict.get("length_per_unit") or 0.0),
                 "secondary_glazing_option": str(scenario_dict.get("secondary_glazing_option") or "none"),
-                "api_key": EC3_API_TOKEN,
+                # Explicitly skip EC3 lookups for stable cost-only runs.
+                "use_custom_gwp": True,
+                "custom_glass_gwp_per_m3": 0.0,
+                "custom_frame_gwp_per_m2": 0.0,
+                "custom_caulking_gwp_per_m3": 0.0,
+                "custom_weatherstrip_gwp_per_m": 0.0,
+                "custom_film_gwp_per_m2": 0.0,
+                "api_key": "",
                 "gwp_statistic": str(scenario_dict.get("gwp_statistic") or "median"),
-                "calculate_costs": bool(scenario_dict.get("calculate_costs", False)),
-                "use_custom_costs": bool(scenario_dict.get("use_custom_costs", True)),
+                "calculate_costs": bool(scenario_dict.get("calculate_costs", True)),
+                "use_custom_costs": bool(scenario_dict.get("use_custom_costs", False)),
                 "cost_calculation_basis": str(scenario_dict.get("cost_calculation_basis") or "totalop"),
                 "glass_cost_per_cf": float(scenario_dict.get("glass_cost_per_cf") or 0.0),
                 "frame_cost_per_sf": float(scenario_dict.get("frame_cost_per_sf") or 0.0),
@@ -1201,10 +1211,7 @@ def create_simulation(
                 "labor_cost_multiplier": float(scenario_dict.get("labor_cost_multiplier") or 1.0),
                 "overhead_profit_percent": float(scenario_dict.get("overhead_profit_percent") or 10.0),
             }
-            if window_option.strip().lower() != "none":
-                print(f"  Applying window enhancement (entire window: {window_option}, infiltration reduction: {window_infiltration_reduction}%)...")
-            else:
-                print(f"  Applying window enhancement (num_panes={num_panes}, glass_option={glass_option})...")
+            print(f"  Applying window enhancement (num_panes={num_panes}, glass_option={glass_option})...")
             if not apply_python_measure(model, Path(measure_dir_path) / "window_enhancement", "WindowEnhancement", window_args, failure_logger=log_failure):
                 print(f"    {scenario_name}: window measure failed")
                 log_failure("window measure failed")
@@ -1226,13 +1233,18 @@ def create_simulation(
                 "strip_lifetime": float(scenario_dict.get("strip_lifetime") or 15),
                 "door_lifetime": float(scenario_dict.get("door_lifetime") or 30),
                 "gwp_statistic": str(scenario_dict.get("gwp_statistic") or "median"),
-                "api_key": EC3_API_TOKEN,
+                # Explicitly skip EC3 lookups for stable cost-only runs.
+                "use_custom_gwp": True,
+                "custom_door_leaf_gwp_per_m2": 0.0,
+                "custom_bottom_strip_gwp_per_m": 0.0,
+                "custom_side_top_strip_gwp_per_m": 0.0,
+                "api_key": "",
                 "length_per_unit_bottom_side": float(scenario_dict.get("length_per_unit_bottom_side") or 0.0),
                 "length_per_unit_other_sides": float(scenario_dict.get("length_per_unit_other_sides") or 0.0),
                 "door_thermal_conductivity": float(scenario_dict.get("door_thermal_conductivity") or 0.0),
                 "door_density": float(scenario_dict.get("door_density") or 0.0),
                 "door_thickness": float(scenario_dict.get("door_thickness") or 0.0),
-                "use_custom_costs": bool(scenario_dict.get("use_custom_costs", True)),
+                "use_custom_costs": bool(scenario_dict.get("use_custom_costs", False)),
                 "custom_door_cost_per_area": float(scenario_dict.get("custom_door_cost_per_area") or 0.0),
                 "custom_bottom_seal_cost": float(scenario_dict.get("custom_bottom_seal_cost") or 0.0),
                 "custom_top_side_seal_cost": float(scenario_dict.get("custom_top_side_seal_cost") or 0.0),
@@ -1304,7 +1316,7 @@ def generate_scenarios(
         "ASHRAE 169-2013-7A": 20.4,
         "ASHRAE 169-2013-8A": 27.0,
     }
-
+    
     # Climate zone to minimum roof R-value mapping (from ASHRAE 90.1)
     CLIMATE_ZONE_TO_ROOF_R_VALUE = {
         "ASHRAE 169-2013-1A": 24.4,
@@ -1322,7 +1334,7 @@ def generate_scenarios(
         "ASHRAE 169-2013-7A": 34.5,
         "ASHRAE 169-2013-8A": 38.5,
     }
-
+    
     scenarios = []
     # 1) BASELINE
     for city, building_type in product(cities, building_types):
@@ -1342,7 +1354,7 @@ def generate_scenarios(
             "window_enhancement_infiltration_reduction_percent": None,
             "door_infiltration_reduction_percent": None,
             "weatherstrip_option": None,
-            "window_option": None,
+            "wf_option": None,
             "film_option": None,
             "caulking_option": None,
             "secondary_glazing_option": None,
@@ -1351,26 +1363,30 @@ def generate_scenarios(
         })
 
     # 2) CUSTOM EXPLICIT COMBINATIONS
+    # Filter: only add combos that match each city's climate zone R-value
     if custom_combos:
         for combo_index, combo in enumerate(custom_combos, start=1):
             for city, building_type in product(cities, building_types):
+                # Get the target R-values for this city's climate zone
                 city_climate_zone = city_climate_zones.get(city)
-                city_target_wall_r_value = CLIMATE_ZONE_TO_R_VALUE.get(city_climate_zone)
-                city_target_roof_r_value = CLIMATE_ZONE_TO_ROOF_R_VALUE.get(city_climate_zone)
-
+                city_target_wall_r_value = CLIMATE_ZONE_TO_R_VALUE.get(city_climate_zone) if city_climate_zone else None
+                city_target_roof_r_value = CLIMATE_ZONE_TO_ROOF_R_VALUE.get(city_climate_zone) if city_climate_zone else None
+                
+                # Get the combo's wall and roof R-values
                 combo_wall_r_value = combo.get("wall_r_value")
                 combo_roof_r_value = combo.get("roof_r_value")
-                if combo_roof_r_value in (0, 0.0, "0", "0.0"):
-                    combo_roof_r_value = None
-
-                # Skip combos whose wall/roof R-values do not match the city's climate-zone targets.
+                
+                # Skip this combo if it doesn't match the city's climate zone R-value
+                # (allows non-wall/roof combos to pass through by checking if values are set)
                 if combo_wall_r_value is not None and city_target_wall_r_value is not None:
-                    if abs(float(combo_wall_r_value) - float(city_target_wall_r_value)) > 0.01:
+                    if abs(combo_wall_r_value - city_target_wall_r_value) > 0.01:  # tolerance for float comparison
                         continue
+                
+                # Also check roof R-value if both are specified
                 if combo_roof_r_value is not None and city_target_roof_r_value is not None:
-                    if abs(float(combo_roof_r_value) - float(city_target_roof_r_value)) > 0.01:
+                    if abs(combo_roof_r_value - city_target_roof_r_value) > 0.01:
                         continue
-
+                
                 scenario = {
                     "is_baseline": False,
                     "city": city,
@@ -1522,52 +1538,51 @@ def extract_scenario_data(osm_path, scenario_name):
         results["renovation_details"] = "Envelope renovation applied (details generated at report time)"
 
     found_any = True
+    # DISABLED: Carbon calculation disabled
     # 1) Embodied carbon from SimulationControl.additionalProperties().
+    # sim_props = model.getSimulationControl().additionalProperties()
+    # ec_keys = [
+    #     "wall_insulation_embodied_carbon_kgCO2eq",
+    #     "roof_insulation_embodied_carbon_kgCO2eq",
+    #     "window_enhancement_embodied_carbon_kgCO2eq",
+    #     "door_enhancement_embodied_carbon_kgCO2eq",
+    # ]
+    # for key in ec_keys:
+    #     if key in sim_props.featureNames():
+    #         val = get_prop_value(sim_props, key)
+    #         if val is not None:
+    #             results[key] = val
+    #             found_any = True
+    #
+    # # Also capture embodied-carbon keys from all AdditionalProperties objects
+    # # (newer measures store keys such as *_embodied_carbon_kgCO2eq).
+    # idd_type = openstudio.IddObjectType("OS:AdditionalProperties")
+    # for obj in model.getObjectsByType(idd_type):
+    #     opt_props = openstudio.model.toAdditionalProperties(obj)
+    #     if not opt_props.is_initialized():
+    #         continue
+    #     props = opt_props.get()
+    #     for fname in props.featureNames():
+    #         lname = str(fname).lower()
+    #         if "embodied_carbon" not in lname:
+    #             continue
+    #         val = get_prop_value(props, fname)
+    #         if val is not None:
+    #             results[fname] = val
+    #             found_any = True
+    #
+    # # Convenience aggregate for analysis widgets.
+    # if "total_additional_embodied_carbon_kg" not in results:
+    #     total_embodied = (
+    #         float(results.get("wall_insulation_embodied_carbon_kgCO2eq", 0.0) or 0.0)
+    #         + float(results.get("roof_insulation_embodied_carbon_kgCO2eq", 0.0) or 0.0)
+    #         + float(results.get("window_enhancement_embodied_carbon_kgCO2eq", 0.0) or 0.0)
+    #         + float(results.get("door_enhancement_embodied_carbon_kgCO2eq", 0.0) or 0.0)
+    #     )
+    #     results["total_additional_embodied_carbon_kg"] = total_embodied
+
+    # Keep SimulationControl props for non-carbon fields (cost keys still sourced here).
     sim_props = model.getSimulationControl().additionalProperties()
-    ec_keys = [
-        "wall_insulation_embodied_carbon_kgCO2eq",
-        "roof_insulation_embodied_carbon_kgCO2eq",
-        "window_enhancement_embodied_carbon_kgCO2eq",
-        "door_enhancement_embodied_carbon_kgCO2eq",
-    ]
-    for key in ec_keys:
-        if key in sim_props.featureNames():
-            val = get_prop_value(sim_props, key)
-            if val is not None:
-                results[key] = val
-                found_any = True
-
-    # Also capture embodied-carbon keys from all AdditionalProperties objects
-    # (newer measures store keys such as *_embodied_carbon_kgCO2eq).
-    idd_type = openstudio.IddObjectType("OS:AdditionalProperties")
-    for obj in model.getObjectsByType(idd_type):
-        opt_props = openstudio.model.toAdditionalProperties(obj)
-        if not opt_props.is_initialized():
-            continue
-        props = opt_props.get()
-        for fname in props.featureNames():
-            lname = str(fname).lower()
-            if "embodied_carbon" not in lname:
-                continue
-            val = get_prop_value(props, fname)
-            if val is not None:
-                results[fname] = val
-                found_any = True
-
-    # Convenience aggregate for analysis widgets.
-    if "total_additional_embodied_carbon_kg" not in results:
-        # Support both legacy and current window measure field names
-        window_carbon = (
-            float(results.get("window_enhancement_embodied_carbon_kgCO2eq", 0.0) or 0.0)
-            or float(results.get("window_embodied_carbon_kgCO2eq", 0.0) or 0.0)
-        )
-        total_embodied = (
-            float(results.get("wall_insulation_embodied_carbon_kgCO2eq", 0.0) or 0.0)
-            + float(results.get("roof_insulation_embodied_carbon_kgCO2eq", 0.0) or 0.0)
-            + window_carbon
-            + float(results.get("door_enhancement_embodied_carbon_kgCO2eq", 0.0) or 0.0)
-        )
-        results["total_additional_embodied_carbon_kg"] = total_embodied
 
     # 2) Operating cost and emissions from Site.additionalProperties().
     site_props = model.getSite().additionalProperties()
@@ -1658,9 +1673,6 @@ def extract_scenario_data(osm_path, scenario_name):
         "door_density_kg_per_m3",
         "door_conductivity_W_per_mK",
         "door_enhancement_custom_labor_cost_multiplier",
-        "door_enhancement_custom_door_cost_per_area",
-        "door_enhancement_custom_bottom_seal_cost_per_lf",
-        "door_enhancement_custom_top_side_seal_cost_per_lf",
         "door_custom_door_cost_per_sf",
         "door_custom_bottom_seal_cost_per_lf",
         "door_custom_top_side_seal_cost_per_lf",
@@ -1729,7 +1741,7 @@ def extract_scenario_data(osm_path, scenario_name):
 
     # Prefer already-computed measure totals when available.
     # If missing, fall back to component sums. Wall/roof use *_usd keys;
-    # window/door measures may expose *_$ keys.
+    # window/door measures expose *_$ keys (window_material_cost_$, etc.).
     wall_total = float(results.get("wall_insulation_total_cost_with_overhead_and_profit_usd", 0.0) or 0.0)
     roof_total = float(results.get("roof_insulation_total_cost_with_overhead_and_profit_usd", 0.0) or 0.0)
     if wall_total <= 0.0:
@@ -1749,29 +1761,15 @@ def extract_scenario_data(osm_path, scenario_name):
 
     window_total = float(results.get("window_total_cost_with_overhead_and_profit_$", 0.0) or 0.0)
     if window_total <= 0.0:
-        window_total = float(results.get("window_enhancement_total_cost_with_overhead_and_profit_usd", 0.0) or 0.0)
-    if window_total <= 0.0:
         window_total = (
             float(results.get("window_material_cost_$", 0.0) or 0.0)
             + float(results.get("window_labor_cost_$", 0.0) or 0.0)
             + float(results.get("window_equipment_cost_$", 0.0) or 0.0)
             + float(results.get("window_overhead_profit_cost_$", 0.0) or 0.0)
         )
-    if window_total <= 0.0:
-        window_total = (
-            float(results.get("window_enhancement_material_cost_usd", 0.0) or 0.0)
-            + float(results.get("window_enhancement_labor_cost_usd", 0.0) or 0.0)
-            + float(results.get("window_enhancement_overhead_profit_cost_usd", 0.0) or 0.0)
-        )
     door_total = float(results.get("door_enhancement_total_cost_with_overhead_and_profit_usd", 0.0) or 0.0)
     if door_total <= 0.0:
         door_total = float(results.get("door_total_cost_with_overhead_and_profit_$", 0.0) or 0.0)
-    if door_total <= 0.0:
-        door_total = (
-            float(results.get("door_enhancement_material_cost_usd", 0.0) or 0.0)
-            + float(results.get("door_enhancement_labor_cost_usd", 0.0) or 0.0)
-            + float(results.get("door_enhancement_overhead_profit_cost_usd", 0.0) or 0.0)
-        )
     results["total_additional_construction_cost_usd"] = wall_total + roof_total + window_total + door_total
     results["total_construction_cost_usd"] = results["total_additional_construction_cost_usd"]
     # Total site energy (GJ): prefer Site AdditionalProperties; fallback to SQL tabular data
@@ -1792,7 +1790,7 @@ def extract_scenario_data(osm_path, scenario_name):
                 results["total_site_energy_gj"] = total_site_energy
                 found_any = True
 
-    # Extract per-fuel site energy from SQL (water is excluded because it is m3, not GJ).
+    # Extract per-fuel site energy from SQL (Water is excluded because End Uses Water uses m3, not GJ).
     sql_path_fuel = osm_path.parent / "eplusout.sql"
     if sql_path_fuel.exists():
         fuel_data = extract_fuel_energy_gj(sql_path_fuel)
@@ -1945,9 +1943,6 @@ def generate_parametric_recap(target_path, city_climate_zones=None):
         "door_sealing_side_length_m",
         "door_enhancement_renovated_area_m2",
         "door_enhancement_custom_labor_cost_multiplier",
-        "door_enhancement_custom_door_cost_per_area",
-        "door_enhancement_custom_bottom_seal_cost_per_lf",
-        "door_enhancement_custom_top_side_seal_cost_per_lf",
         "door_custom_door_cost_per_sf",
         "door_custom_bottom_seal_cost_per_lf",
         "door_custom_top_side_seal_cost_per_lf",
@@ -1962,10 +1957,6 @@ def generate_parametric_recap(target_path, city_climate_zones=None):
         "wall_insulation_custom_cost_per_cf",
         "roof_insulation_custom_labor_cost_multiplier",
         "roof_insulation_custom_cost_per_cf",
-        "wall_insulation_cost_calculation_basis",
-        "roof_insulation_cost_calculation_basis",
-        "window_cost_calculation_basis",
-        "door_cost_calculation_basis",
         "wall_insulation_total_cost_with_overhead_and_profit_usd",
         "roof_insulation_total_cost_with_overhead_and_profit_usd",
         "window_enhancement_total_cost_with_overhead_and_profit_usd",
@@ -2015,7 +2006,7 @@ def generate_parametric_recap(target_path, city_climate_zones=None):
 # (used by run_all_tests.py to drive multiple sequential runs without editing this file).
 # RUN_NAME is purely a folder label under simulations/ -- it has no effect on
 # the model itself. Defaults to "run_test_009" for this branch's ad-hoc standalone runs.
-RUN_NAME = os.environ.get("WORKFLOW_RUN_NAME", "secondary_window_case_study")
+RUN_NAME = os.environ.get("WORKFLOW_RUN_NAME", "envelope_different_climate_zone")
 def detect_openstudio_cli_path():
     """Find the OpenStudio CLI executable on this machine.
 
@@ -2049,26 +2040,23 @@ base_weather_path = str(notebook_dir / "weather")          # EPW/DDY per city
 measure_dir_path = str(notebook_dir.parent / "measures")   # lib/measures/
 base_run_dir = str(notebook_dir / "simulations" / RUN_NAME)  # this run's outputs
 city_climate_zones = {
-    # "TX_Amarillo":     "ASHRAE 169-2013-3B",
-    # "GA_Atlanta":      "ASHRAE 169-2013-3A",
-    # "MD_Baltimore":    "ASHRAE 169-2013-4A",
-    # "NY_Buffalo":      "ASHRAE 169-2013-5A",
-    "IL_Chicago_Midway":      "ASHRAE 169-2013-5A",
-    # "CO_Denver":       "ASHRAE 169-2013-5B",
-    "MN_Duluth":       "ASHRAE 169-2013-7A",
-    "ME_Bangor":        "ASHRAE 169-2013-6A",
-    # "TX_El_Paso":       "ASHRAE 169-2013-3B",
-    # "AK_Fairbanks":    "ASHRAE 169-2013-8A",
-    # "MT_Helena":       "ASHRAE 169-2013-6B",
-    "TX_Houston":      "ASHRAE 169-2013-2A",
-    "FL_Miami":        "ASHRAE 169-2013-1A",
-    "MN_Minneapolis":  "ASHRAE 169-2013-6A",
-    "AZ_Phoenix":      "ASHRAE 169-2013-2B",
-    "NV_Las_Vegas":      "ASHRAE 169-2013-3B",
-    # "WA_Port_Angeles":  "ASHRAE 169-2013-4C",
-    # "OR_Portland":     "ASHRAE 169-2013-4C",
-    "CA_San_Francisco": "ASHRAE 169-2013-3C",
-    "WA_Seattle":      "ASHRAE 169-2013-4C",
+    "Amarillo":     "ASHRAE 169-2013-3B",
+    "Atlanta":      "ASHRAE 169-2013-3A",
+    "Baltimore":    "ASHRAE 169-2013-4A",
+    "Buffalo":      "ASHRAE 169-2013-5A",
+    "Chicago":      "ASHRAE 169-2013-5A",
+    "Denver":       "ASHRAE 169-2013-5B",
+    "Duluth":       "ASHRAE 169-2013-7A",
+    "ElPaso":       "ASHRAE 169-2013-3B",
+    "Fairbanks":    "ASHRAE 169-2013-8A",
+    "Helena":       "ASHRAE 169-2013-6B",
+    "Houston":      "ASHRAE 169-2013-2A",
+    "Miami":        "ASHRAE 169-2013-1A",
+    "Minneapolis":  "ASHRAE 169-2013-6A",
+    "Phoenix":      "ASHRAE 169-2013-2B",
+    "PortAngeles":  "ASHRAE 169-2013-4C",
+    "Portland":     "ASHRAE 169-2013-4C",
+    "SanFrancisco": "ASHRAE 169-2013-3C",
 }
 
 # --- PARAMETRIC STUDY CONFIGURATION ---
@@ -2076,7 +2064,7 @@ CITIES = list(city_climate_zones.keys())
 BUILDING_TYPES = [
     # "LargeOffice",
     # "MediumOffice",
-     "SmallOffice",
+    "SmallOffice",
     # "SmallHotel",
     # "LargeHotel",
     # "Warehouse",
@@ -2104,7 +2092,7 @@ TEMPLATE = "DOE Ref Pre-1980"
 #
 # Supported optional keys (all envelope-measure tuning):
 #   - window_infiltration_reduction_percent, door_infiltration_reduction_percent
-#   - weatherstrip_option, window_option, film_option, caulking_option, secondary_glazing_option
+#   - weatherstrip_option, wf_option, film_option, caulking_option, secondary_glazing_option
 #   - door_bottom_seal_option, door_top_side_seal_option
 #   - wall_insulation_material_type, wall_insulation_material_lifetime
 #   - roof_insulation_material_type, roof_insulation_material_lifetime
@@ -2112,7 +2100,7 @@ TEMPLATE = "DOE Ref Pre-1980"
 # When run_all_tests.py drives this script, WORKFLOW_CUSTOM_COMBOS_JSON
 # (set near the bottom of this section) replaces the file-based defaults.
 
-_CUSTOM_COMBOS_PATH = Path(__file__).with_name("secondary_window_case_study.json")
+_CUSTOM_COMBOS_PATH = Path(__file__).with_name("custom_combos_envelope_climate_zones.json")
 with open(_CUSTOM_COMBOS_PATH, "r", encoding="utf-8") as _custom_combos_file:
     CUSTOM_COMBOS = json.load(_custom_combos_file)
 
@@ -2241,18 +2229,28 @@ if __name__ == "__main__":
             scenario_name = generate_scenario_name(scenario)
             print(f"\n[{sim_count}/{total_sims}] {scenario_name}")
             sim_start = time.time()
-            result = create_simulation(
-                city=city,
-                base_run_dir=base_run_dir,
-                measure_dir_path=measure_dir_path,
-                base_weather_path=base_weather_path,
-                scenario_dict=scenario,
-                overwrite_existing=OVERWRITE_EXISTING,
-                building_type=building_type,
-                template=TEMPLATE,
-                climate_zone=climate_zone,
-                openstudio_path=OPENSTUDIO_PATH,
-            )
+            _raw_log_env_key = "RSMEANS_SCENARIO_RAW_LOG_PATH"
+            _had_raw_log_env = _raw_log_env_key in os.environ
+            _prev_raw_log_env = os.environ.get(_raw_log_env_key)
+            os.environ[_raw_log_env_key] = os.path.join(base_run_dir, scenario_name, "rsmeans_api_raw_fields.jsonl")
+            try:
+                result = create_simulation(
+                    city=city,
+                    base_run_dir=base_run_dir,
+                    measure_dir_path=measure_dir_path,
+                    base_weather_path=base_weather_path,
+                    scenario_dict=scenario,
+                    overwrite_existing=OVERWRITE_EXISTING,
+                    building_type=building_type,
+                    template=TEMPLATE,
+                    climate_zone=climate_zone,
+                    openstudio_path=OPENSTUDIO_PATH,
+                )
+            finally:
+                if _had_raw_log_env:
+                    os.environ[_raw_log_env_key] = _prev_raw_log_env if _prev_raw_log_env is not None else ""
+                else:
+                    os.environ.pop(_raw_log_env_key, None)
             if result:
                 successful_scenarios.append(result)
             else:
@@ -2338,35 +2336,6 @@ for name in scenario_values:
         scenario_display_map[name] = f"Scenario {scenario_counter}"
         scenario_counter += 1
 
-WINDOW_EC_PRIMARY_COL = "window_enhancement_embodied_carbon_kgCO2eq"
-WINDOW_EC_LEGACY_COL = "window_embodied_carbon_kgCO2eq"
-
-
-def _numeric_series_with_default(frame, col):
-    if col in frame.columns:
-        return pd.to_numeric(frame[col], errors="coerce").fillna(0.0)
-    return pd.Series([0.0] * len(frame), index=frame.index)
-
-
-def _window_embodied_series(frame):
-    current = _numeric_series_with_default(frame, WINDOW_EC_PRIMARY_COL)
-    legacy = _numeric_series_with_default(frame, WINDOW_EC_LEGACY_COL)
-    return current.where(current > 0, legacy)
-
-
-def _reconcile_window_embodied_column(frame, emit_logs=False):
-    if WINDOW_EC_LEGACY_COL in frame.columns and WINDOW_EC_PRIMARY_COL not in frame.columns:
-        frame[WINDOW_EC_PRIMARY_COL] = _numeric_series_with_default(frame, WINDOW_EC_LEGACY_COL)
-        if emit_logs:
-            print("Info: Using 'window_embodied_carbon_kgCO2eq' for window enhancement carbon calculation")
-
-    if WINDOW_EC_LEGACY_COL in frame.columns and WINDOW_EC_PRIMARY_COL in frame.columns:
-        current = _numeric_series_with_default(frame, WINDOW_EC_PRIMARY_COL)
-        merged = _window_embodied_series(frame)
-        if emit_logs and not merged.equals(current):
-            print("Info: Filled window_enhancement_embodied_carbon_kgCO2eq from legacy values where needed")
-        frame[WINDOW_EC_PRIMARY_COL] = merged
-
 construction_cost_cols = [
     "total_construction_cost_usd",
     "total_additional_construction_cost_usd",
@@ -2377,6 +2346,7 @@ available_construction_cost_col = next((c for c in construction_cost_cols if c i
 
 required_base_cols = [
     "scenario",
+    "total_site_energy_gj",
     "annual_electricity_operating_emissions_kg_co2e",
     "annual_gas_operating_emissions_kg_co2e",
     "annual_electricity_cost_usd",
@@ -2393,8 +2363,6 @@ missing_required = [c for c in required_base_cols if c not in df.columns]
 if missing_required:
     raise ValueError(f"Missing required columns: {missing_required}")
 
-_reconcile_window_embodied_column(df, emit_logs=True)
-
 for col in expected_embodied_cols:
     if col not in df.columns:
         df[col] = 0.0
@@ -2403,12 +2371,14 @@ for col in expected_embodied_cols:
 numeric_cols = [c for c in required_base_cols if c != "scenario"] + expected_embodied_cols
 df[numeric_cols] = df[numeric_cols].apply(pd.to_numeric, errors="coerce").fillna(0.0)
 
-df["total_additional_embodied_carbon_kg"] = (
-    df["window_enhancement_embodied_carbon_kgCO2eq"]
-    + df["door_enhancement_embodied_carbon_kgCO2eq"]
-    + df["wall_insulation_embodied_carbon_kgCO2eq"]
-    + df["roof_insulation_embodied_carbon_kgCO2eq"]
-)
+# DISABLED: Carbon calculation disabled - set all carbon columns to 0
+df["total_additional_embodied_carbon_kg"] = 0.0
+# df["total_additional_embodied_carbon_kg"] = (
+#     df["window_enhancement_embodied_carbon_kgCO2eq"]
+#     + df["door_enhancement_embodied_carbon_kgCO2eq"]
+#     + df["wall_insulation_embodied_carbon_kgCO2eq"]
+#     + df["roof_insulation_embodied_carbon_kgCO2eq"]
+# )
 df["annual_operational_carbon_kg_co2e"] = (
     df["annual_electricity_operating_emissions_kg_co2e"]
     + df["annual_gas_operating_emissions_kg_co2e"]
@@ -2427,44 +2397,12 @@ else:
 # Calculate payback periods relative to baseline
 baseline_mask = df["scenario"].astype(str).str.contains("baseline", case=False, na=False)
 if baseline_mask.any():
-    baselines = df[baseline_mask].copy()
-
-    if "city" in df.columns:
-        city_series = df["city"].astype(str)
-    else:
-        city_series = pd.Series(["Unknown"] * len(df), index=df.index)
-
-    if city_series.str.strip().eq("").all() or city_series.str.strip().eq("Unknown").all():
-        def _extract_city_from_scenario(scenario_name):
-            match = re.search(r'_(Amarillo|Atlanta|Baltimore|Buffalo|Chicago|Denver|Duluth|ElPaso|Fairbanks|Helena|Houston|Miami|Minneapolis|Phoenix|PortAngeles|Portland|SanFrancisco)(?:_|$)', str(scenario_name))
-            if match:
-                return match.group(1)
-            return "Unknown"
-
-        city_series = df["scenario"].astype(str).apply(_extract_city_from_scenario)
-
-    df["city"] = city_series
-    baseline_by_city = {}
-    for _, baseline_row in baselines.iterrows():
-        baseline_by_city[str(baseline_row.get("city", "Unknown"))] = baseline_row
-    default_baseline = baselines.iloc[0]
-
-    # Calculate cost and carbon deltas per city-specific baseline
-    df["cost_delta"] = 0.0
-    df["emissions_delta"] = 0.0
-    df["energy_delta"] = 0.0
-    df["energy_delta_pct"] = 0.0
-    for idx, row in df.iterrows():
-        city_name = str(row.get("city", "Unknown"))
-        city_baseline = baseline_by_city.get(city_name, default_baseline)
-        df.at[idx, "cost_delta"] = city_baseline["annual_operational_cost_usd"] - row["annual_operational_cost_usd"]
-        df.at[idx, "emissions_delta"] = city_baseline["annual_operational_carbon_kg_co2e"] - row["annual_operational_carbon_kg_co2e"]
-        df.at[idx, "energy_delta"] = city_baseline["annual_operational_energy_gj"] - row["annual_operational_energy_gj"]
-        df.at[idx, "energy_delta_pct"] = (
-            df.at[idx, "energy_delta"] / city_baseline["annual_operational_energy_gj"] * 100.0
-            if city_baseline["annual_operational_energy_gj"] > 0
-            else 0.0
-        )
+    baseline_row = df[baseline_mask].iloc[0]
+    baseline_annual_cost = baseline_row["annual_operational_cost_usd"]
+    baseline_annual_emissions = baseline_row["annual_operational_carbon_kg_co2e"]
+    # Calculate cost and carbon deltas for all scenarios
+    df["cost_delta"] = baseline_annual_cost - df["annual_operational_cost_usd"]
+    df["emissions_delta"] = baseline_annual_emissions - df["annual_operational_carbon_kg_co2e"]
     # Function to safely calculate payback
     def safe_payback(total_value, annual_saving):
         if pd.isna(total_value) or pd.isna(annual_saving):
@@ -2480,27 +2418,25 @@ if baseline_mask.any():
     else:
         df["cost_payback_period_years"] = None
 
-    df["carbon_payback_period_years"] = df.apply(lambda r: safe_payback(r["total_additional_embodied_carbon_kg"], r["emissions_delta"]), axis=1)
+    # DISABLED: Carbon calculation disabled - set carbon payback to None
+    # df["carbon_payback_period_years"] = df.apply(lambda r: safe_payback(r["total_additional_embodied_carbon_kg"], r["emissions_delta"]), axis=1)
+    df["carbon_payback_period_years"] = None
 else:
     df["cost_payback_period_years"] = None
     df["carbon_payback_period_years"] = None
 
 metrics = [
-    "total_additional_embodied_carbon_kg",
-    "annual_operational_carbon_kg_co2e",
+    "annual_operational_energy_gj",
     "annual_operational_cost_usd",
     "total_construction_cost_usd",
     "cost_payback_period_years",
-    "carbon_payback_period_years",
 ]
 
 metric_labels = {
-    "total_additional_embodied_carbon_kg": "Retrofit Embodied Carbon (kgCO2e)",
-    "annual_operational_carbon_kg_co2e": "Annual Operational Carbon (kgCO2e)",
+    "annual_operational_energy_gj": "Annual Operational Energy (GJ)",
     "annual_operational_cost_usd": "Annual Operational Cost (USD)",
     "total_construction_cost_usd": "Retrofit Construction Cost (USD)",
     "cost_payback_period_years": "Cost Payback Period (years)",
-    "carbon_payback_period_years": "Carbon Payback Period (years)",
 }
 
 def wrap_label(text, width=22):
@@ -2509,7 +2445,12 @@ def wrap_label(text, width=22):
 
 theta_raw = [metric_labels[m] for m in metrics]
 theta = [wrap_label(label, width=22) for label in theta_raw]
-max_vals = df[metrics].max().replace(0, 1.0)
+chart_df = df[~baseline_mask].copy()
+if chart_df.empty:
+    chart_df = df.iloc[0:0].copy()
+    max_vals = pd.Series([1.0] * len(metrics), index=metrics)
+else:
+    max_vals = chart_df[metrics].max().replace(0, 1.0)
 
 fig = go.Figure()
 
@@ -2519,7 +2460,7 @@ def _format_hover_value(v):
         return f"{val:,.0f}"
     return f"{val:,.2f}"
 
-for _, row in df.iterrows():
+for _, row in chart_df.iterrows():
     raw_vals = [float(row[m]) if pd.notna(row[m]) else 0 for m in metrics]
     norm_vals = [(float(row[m]) / float(max_vals[m])) if pd.notna(row[m]) and max_vals[m] > 0 else 0 for m in metrics]
     formatted_vals = [_format_hover_value(v) for v in raw_vals]
@@ -2554,7 +2495,7 @@ table_df = table_df.round(2)
 
 # --- Report Builder Imports ---
 # (auxiliary/ is already on sys.path from the top-level setup above)
-from report_template import (
+from cost_report_template import (
     build_report_html,
     build_material_list_row_html,
     component_from_entry,
@@ -2623,11 +2564,15 @@ def generate_html_report(df, html_report_path, run_name="run"):
     else:
         analysis_period_years = pd.Series([default_embodied_analysis_period_years] * len(df), index=df.index)
 
-    _reconcile_window_embodied_column(df)
-    wall_ec = _to_num(df, "wall_insulation_embodied_carbon_kgCO2eq")
-    roof_ec = _to_num(df, "roof_insulation_embodied_carbon_kgCO2eq")
-    window_ec = _window_embodied_series(df)
-    door_ec = _to_num(df, "door_enhancement_embodied_carbon_kgCO2eq")
+    # DISABLED: Carbon calculation disabled - use zero values for all carbon data
+    wall_ec = pd.Series([0.0] * len(df), index=df.index)
+    roof_ec = pd.Series([0.0] * len(df), index=df.index)
+    window_ec = pd.Series([0.0] * len(df), index=df.index)
+    door_ec = pd.Series([0.0] * len(df), index=df.index)
+    # wall_ec = _to_num(df, "wall_insulation_embodied_carbon_kgCO2eq")
+    # roof_ec = _to_num(df, "roof_insulation_embodied_carbon_kgCO2eq")
+    # window_ec = _to_num(df, "window_enhancement_embodied_carbon_kgCO2eq")
+    # door_ec = _to_num(df, "door_enhancement_embodied_carbon_kgCO2eq")
     report = pd.DataFrame({
 
         "scenario": df[scenario_col].astype(str),
@@ -2635,7 +2580,6 @@ def generate_html_report(df, html_report_path, run_name="run"):
         "annual_cost_usd": elec_cost + gas_cost,
         "annual_emissions_kg": elec_emis + gas_emis,
         "total_site_energy_gj": site_energy,
-        "annual_operational_energy_gj": site_energy,
         "analysis_period_years": analysis_period_years,
         "wall_ec": wall_ec,
         "roof_ec": roof_ec,
@@ -2643,17 +2587,18 @@ def generate_html_report(df, html_report_path, run_name="run"):
         "door_ec": door_ec,
 
     })
-
+    
+    # Extract city from scenario name if city column doesn't exist or is empty
     if "city" not in df.columns or report["city"].str.strip().eq("").all() or report["city"].str.strip().eq("Unknown").all():
         def extract_city(scenario_name):
+            """Extract city name from scenario string like 'baseline_SmallOffice_Miami' or 'scenario_1_SmallOffice_Miami'"""
             match = re.search(r'_(Amarillo|Atlanta|Baltimore|Buffalo|Chicago|Denver|Duluth|ElPaso|Fairbanks|Helena|Houston|Miami|Minneapolis|Phoenix|PortAngeles|Portland|SanFrancisco)(?:_|$)', str(scenario_name))
             if match:
                 return match.group(1)
             return "Unknown"
-
         report["city"] = report["scenario"].apply(extract_city)
-
-    report["embodied_carbon_kg"] = report[["wall_ec", "roof_ec", "window_ec", "door_ec"]].sum(axis=1)
+    report["embodied_carbon_kg"] = pd.Series([0.0] * len(report), index=report.index)  # DISABLED: Carbon calculation disabled
+    # report["embodied_carbon_kg"] = report[["wall_ec", "roof_ec", "window_ec", "door_ec"]].sum(axis=1)
     floor_area_col_candidates = [
 
         "building_area_m2",
@@ -2673,15 +2618,19 @@ def generate_html_report(df, html_report_path, run_name="run"):
 
     baseline_mask = report["scenario"].str.contains("baseline", case=False, na=False)
     baselines = report[baseline_mask].copy()
+    
+    # Create city to baseline mapping for multi-city comparisons
     baseline_by_city = {}
     for _, baseline_row in baselines.iterrows():
-        city_name = baseline_row.get("city", "Unknown")
-        baseline_by_city[city_name] = baseline_row
-    baseline = report[baseline_mask].head(1)
-    if baseline.empty:
-        baseline = report.head(1)
-
-    b = baseline.iloc[0]
+        city = baseline_row.get("city", "Unknown")
+        baseline_by_city[city] = baseline_row
+    
+    # Fallback: use first baseline if no city-specific baseline found
+    default_baseline = baselines.iloc[0] if not baselines.empty else report.iloc[0]
+    
+    # Initialize b with default baseline for use in report generation
+    b = default_baseline
+    
     embodied_analysis_period_years = max(float(default_embodied_analysis_period_years), 1.0)
     comparison_df = report[~baseline_mask].copy()
     lowest_cost_payback_text = "N/A"
@@ -2691,51 +2640,49 @@ def generate_html_report(df, html_report_path, run_name="run"):
     if comparison_df.empty:
         comparison_df = report.head(0).copy()
 
+    # Calculate deltas using city-specific baselines
     comparison_df["cost_delta"] = 0.0
     comparison_df["cost_delta_pct"] = 0.0
     comparison_df["emissions_delta"] = 0.0
     comparison_df["emissions_delta_pct"] = 0.0
     comparison_df["energy_delta"] = 0.0
     comparison_df["energy_delta_pct"] = 0.0
+    
     for idx, row in comparison_df.iterrows():
-        city_name = row.get("city", "Unknown")
-        city_baseline = baseline_by_city.get(city_name, b)
-        comparison_df.at[idx, "cost_delta"] = row["annual_cost_usd"] - city_baseline["annual_cost_usd"]
+        city = row.get("city", "Unknown")
+        b = baseline_by_city.get(city, default_baseline)
+        
+        comparison_df.at[idx, "cost_delta"] = row["annual_cost_usd"] - b["annual_cost_usd"]
         comparison_df.at[idx, "cost_delta_pct"] = (
-            comparison_df.at[idx, "cost_delta"] / city_baseline["annual_cost_usd"] * 100.0
-            if city_baseline["annual_cost_usd"] > 0
-            else 0.0
+            comparison_df.at[idx, "cost_delta"] / b["annual_cost_usd"] * 100.0 
+            if b["annual_cost_usd"] > 0 else 0.0
         )
-        comparison_df.at[idx, "emissions_delta"] = row["annual_emissions_kg"] - city_baseline["annual_emissions_kg"]
+        comparison_df.at[idx, "emissions_delta"] = row["annual_emissions_kg"] - b["annual_emissions_kg"]
         comparison_df.at[idx, "emissions_delta_pct"] = (
-            comparison_df.at[idx, "emissions_delta"] / city_baseline["annual_emissions_kg"] * 100.0
-            if city_baseline["annual_emissions_kg"] > 0
-            else 0.0
+            comparison_df.at[idx, "emissions_delta"] / b["annual_emissions_kg"] * 100.0 
+            if b["annual_emissions_kg"] > 0 else 0.0
         )
-        comparison_df.at[idx, "energy_delta"] = city_baseline["annual_operational_energy_gj"] - row["annual_operational_energy_gj"]
+        comparison_df.at[idx, "energy_delta"] = b["total_site_energy_gj"] - row["total_site_energy_gj"]
         comparison_df.at[idx, "energy_delta_pct"] = (
-            comparison_df.at[idx, "energy_delta"] / city_baseline["annual_operational_energy_gj"] * 100.0
-            if city_baseline["annual_operational_energy_gj"] > 0
-            else 0.0
+            comparison_df.at[idx, "energy_delta"] / b["total_site_energy_gj"] * 100.0 
+            if b["total_site_energy_gj"] > 0 else 0.0
         )
     if comparison_df.empty:
-        max_savings = b
-        max_emissions_reduction = b
+        max_savings = default_baseline
+        max_emissions_reduction = default_baseline
         max_savings_scenario = "No renovation scenarios"
         max_emissions_scenario = "No renovation scenarios"
         max_cost_delta = 0.0
         max_cost_delta_pct = 0.0
         max_emis_delta = 0.0
         max_emis_delta_pct = 0.0
-        max_energy_savings_row = b
+        max_energy_savings_row = default_baseline
         max_energy_scenario = "No renovation scenarios"
         max_energy_delta_gj = 0.0
         max_energy_delta_pct = 0.0
         max_energy_class = ""
         max_energy_savings_text = "N/A"
         max_energy_savings_scenario = "No renovation scenarios"
-        baseline_energy_w = 0.0
-        best_energy_w = 0.0
 
     else:
         max_savings = comparison_df.loc[comparison_df["cost_delta"].idxmin()]
@@ -2753,10 +2700,6 @@ def generate_html_report(df, html_report_path, run_name="run"):
         max_energy_class = "positive" if max_energy_delta_gj >= 0 else ""
         max_energy_savings_text = f"{max_energy_delta_gj:,.2f} GJ/yr" if max_energy_delta_gj > 0 else "N/A"
         max_energy_savings_scenario = max_energy_scenario
-        energy_chart_baseline = baseline_by_city.get(str(max_energy_savings_row.get("city", "Unknown")), b)
-        max_chart_energy = max(energy_chart_baseline["annual_operational_energy_gj"], max_energy_savings_row["annual_operational_energy_gj"], 1.0)
-        baseline_energy_w = energy_chart_baseline["annual_operational_energy_gj"] / max_chart_energy * 100.0
-        best_energy_w = max_energy_savings_row["annual_operational_energy_gj"] / max_chart_energy * 100.0
 
     construction_cost_columns = [
 
@@ -2810,16 +2753,26 @@ def generate_html_report(df, html_report_path, run_name="run"):
 
     max_cost_class = "positive" if max_cost_delta <= 0 else ""
     max_emis_class = "positive" if max_emis_delta <= 0 else ""
-    cost_chart_baseline = baseline_by_city.get(max_savings.get("city", "Unknown"), b)
-    emis_chart_baseline = baseline_by_city.get(max_emissions_reduction.get("city", "Unknown"), b)
-    max_chart_cost = max(cost_chart_baseline["annual_cost_usd"], max_savings["annual_cost_usd"], 1.0)
-    baseline_cost_w = cost_chart_baseline["annual_cost_usd"] / max_chart_cost * 100.0
+    
+    # Get city-specific baselines for chart calculations
+    best_cost_city = max_savings.get("city", "Unknown") if not comparison_df.empty else "Unknown"
+    best_cost_baseline = baseline_by_city.get(best_cost_city, default_baseline)
+    
+    best_emis_city = max_emissions_reduction.get("city", "Unknown") if not comparison_df.empty else "Unknown"
+    best_emis_baseline = baseline_by_city.get(best_emis_city, default_baseline)
+    
+    best_energy_city = max_energy_savings_row.get("city", "Unknown") if not comparison_df.empty else "Unknown"
+    best_energy_baseline = baseline_by_city.get(best_energy_city, default_baseline)
+    
+    max_chart_cost = max(best_cost_baseline["annual_cost_usd"], max_savings["annual_cost_usd"], 1.0)
+    baseline_cost_w = best_cost_baseline["annual_cost_usd"] / max_chart_cost * 100.0
     best_cost_w = max_savings["annual_cost_usd"] / max_chart_cost * 100.0
-    max_chart_emis = max(emis_chart_baseline["annual_emissions_kg"], max_emissions_reduction["annual_emissions_kg"], 1.0)
-    baseline_emis_w = emis_chart_baseline["annual_emissions_kg"] / max_chart_emis * 100.0
+    max_chart_emis = max(best_emis_baseline["annual_emissions_kg"], max_emissions_reduction["annual_emissions_kg"], 1.0)
+    baseline_emis_w = best_emis_baseline["annual_emissions_kg"] / max_chart_emis * 100.0
     best_emis_w = max_emissions_reduction["annual_emissions_kg"] / max_chart_emis * 100.0
-    baseline_cost_value = float(cost_chart_baseline["annual_cost_usd"])
-    baseline_emis_value = float(emis_chart_baseline["annual_emissions_kg"])
+    max_chart_energy = max(best_energy_baseline["total_site_energy_gj"], max_energy_savings_row["total_site_energy_gj"], 1.0)
+    baseline_energy_w = best_energy_baseline["total_site_energy_gj"] / max_chart_energy * 100.0
+    best_energy_w = max_energy_savings_row["total_site_energy_gj"] / max_chart_energy * 100.0
     def _format_chart_number(v):
         try:
             val = float(v)
@@ -2848,13 +2801,14 @@ def generate_html_report(df, html_report_path, run_name="run"):
         construction_cost_values = pd.Series([float("nan")] * len(report), index=report.index)
 
     spider_table_rows = "".join(
-
-        f"<tr><td>{scenario_display_map.get(str(report.iloc[i]['scenario']), str(report.iloc[i]['scenario']))}</td><td>{num(float(report.iloc[i]['embodied_carbon_kg']))}</td><td>{money(float(construction_cost_values.iloc[i])) if pd.notna(construction_cost_values.iloc[i]) else 'N/A'}</td><td>{num(float(annual_operational_carbon.iloc[i]))}</td><td>{money(float(annual_operational_cost.iloc[i]))}</td></tr>"
+        f"<tr><td>{scenario_display_map.get(str(report.iloc[i]['scenario']), str(report.iloc[i]['scenario']))}</td>"
+        f"<td>{money(float(construction_cost_values.iloc[i])) if pd.notna(construction_cost_values.iloc[i]) else 'N/A'}</td>"
+        f"<td>{money(float(annual_operational_cost.iloc[i]))}</td>"
+        f"<td>{num_energy(float(report.iloc[i]['total_site_energy_gj'])) if pd.notna(report.iloc[i]['total_site_energy_gj']) else 'N/A'}</td></tr>"
         for i in range(len(report))
-
     )
     if not spider_table_rows:
-        spider_table_rows = "<tr><td colspan='5'>No spider chart data found in CSV.</td></tr>"
+        spider_table_rows = "<tr><td colspan='4'>No spider chart data found in CSV.</td></tr>"
 
     if "renovation_details" in df.columns:
         renovation_df = df[[scenario_col, "renovation_details"]].copy()
@@ -2965,17 +2919,17 @@ def generate_html_report(df, html_report_path, run_name="run"):
             return None
 
         window_requested = any([
-            scenario_cfg.get("window_num_panes"),
+            scenario_cfg.get("window_num_panes") not in [None, "", 0, 0.0],
             scenario_cfg.get("window_enhancement_infiltration_reduction_percent") not in [None, "", 0, 0.0],
             scenario_cfg.get("window_infiltration_reduction_percent") not in [None, "", 0, 0.0],
             str(scenario_cfg.get("weatherstrip_option", "none")).strip().lower() != "none",
-            str(scenario_cfg.get("window_option", "none")).strip().lower() != "none",
+            str(scenario_cfg.get("wf_option", "none")).strip().lower() != "none",
             str(scenario_cfg.get("film_option", "none")).strip().lower() != "none",
             str(scenario_cfg.get("caulking_option", "none")).strip().lower() != "none",
             str(scenario_cfg.get("secondary_glazing_option", "none")).strip().lower() != "none",
         ])
         door_requested = any([
-            scenario_cfg.get("door_option"),
+            str(scenario_cfg.get("door_option", "none")).strip().lower() != "none",
             scenario_cfg.get("door_infiltration_reduction_percent") not in [None, "", 0, 0.0],
             str(scenario_cfg.get("door_bottom_seal_option", "none")).strip().lower() != "none",
             str(scenario_cfg.get("door_top_side_seal_option", "none")).strip().lower() != "none",
@@ -3000,7 +2954,7 @@ def generate_html_report(df, html_report_path, run_name="run"):
                 "shgc_modification_percentage": scenario_cfg.get("shgc_modification_percentage"),
                 "visible_transmittance_modification_percentage": scenario_cfg.get("visible_transmittance_modification_percentage"),
                 "film_option": scenario_cfg.get("film_option"),
-                "window_option": scenario_cfg.get("window_option"),
+                "wf_option": scenario_cfg.get("wf_option"),
                 "caulking_option": scenario_cfg.get("caulking_option"),
                 "secondary_glazing_option": scenario_cfg.get("secondary_glazing_option"),
             },
@@ -3038,22 +2992,14 @@ def generate_html_report(df, html_report_path, run_name="run"):
         args_df_shared["value"] = args_df_shared["value"].astype(str)
 
     def _window_glass_replacement_executed(row, scenario_name, scenario_summary=None):
+        # Priority 1: Check upgrade_status field
         upgrade_status = str(row.get("window_upgrade_status") or "").strip().lower()
-        if upgrade_status in {"", "nan", "null", "none"}:
-            upgrade_status = None
-        if upgrade_status == "upgraded":
-            return True
-
-        material_cost = _as_float(row.get("window_enhancement_material_cost_usd"))
-        if material_cost is None or material_cost <= 0:
-            return False
-
-        u_mod = _as_float(_arg_value(scenario_name, "window", "u_factor_modification_percentage")) or 0.0
-        shgc_mod = _as_float(_arg_value(scenario_name, "window", "shgc_modification_percentage")) or 0.0
-        vt_mod = _as_float(_arg_value(scenario_name, "window", "visible_transmittance_modification_percentage")) or 0.0
-        if abs(u_mod) == 0 and abs(shgc_mod) == 0 and abs(vt_mod) == 0:
-            return False
-
+        if upgrade_status and upgrade_status not in {"", "nan", "null", "none"}:
+            if upgrade_status == "upgraded":
+                return True
+            # Other statuses (e.g., "failed_simple_glazing") continue to lower checks
+        
+        # Priority 2: Check SimpleGlazing blocking condition
         note = None
         if scenario_summary:
             note = _clean_summary_note(scenario_summary.get("window"))
@@ -3063,48 +3009,59 @@ def generate_html_report(df, html_report_path, run_name="run"):
             note = _clean_summary_note(row.get("window_enhancement_summary_notes"))
         if note and "glass replacement selected but all window constructions are simpleglazing" in note.lower():
             return False
+        
+        # Priority 3: Check executed glazing area (primary execution indicator)
+        glazing_area = _as_float(
+            row.get("window_renovated_glazing_area_m2")
+            if row.get("window_renovated_glazing_area_m2") is not None
+            else row.get("window_enhancement_renovated_glazing_area_m2")
+        )
+        if glazing_area is not None and glazing_area > 0:
+            return True
+        
+        # Priority 4: Fallback to material cost check
+        material_cost = _as_float(
+            row.get("window_material_cost_$")
+            if row.get("window_material_cost_$") is not None
+            else row.get("window_enhancement_material_cost_usd")
+        )
+        if material_cost is not None and material_cost > 0:
+            return True
 
-        return True
+        # If none of the above conditions are met, glass replacement was not executed
+        return False
 
     def _window_action_bullets(row, scenario_name, scenario_summary):
         bullets = []
         panes = _arg_value(scenario_name, "window", "user_num_panes")
         weatherstrip_opt = _arg_value(scenario_name, "window", "weatherstrip_option")
         film_opt = _arg_value(scenario_name, "window", "film_option")
-        frame_opt = _arg_value(scenario_name, "window", "window_option")
+        frame_opt = _arg_value(scenario_name, "window", "wf_option")
         caulking_opt = _arg_value(scenario_name, "window", "caulking_option")
         secondary_opt = _arg_value(scenario_name, "window", "secondary_glazing_option")
-        whole_window_selected = (
-            _has_meaningful_value(frame_opt)
-            and str(frame_opt).strip().lower() != "none"
+        frame_area = _as_float(
+            row.get("window_renovated_frame_area_m2")
+            if row.get("window_renovated_frame_area_m2") is not None
+            else row.get("window_enhancement_renovated_frame_area_m2")
         )
-        frame_area = _as_float(row.get("window_enhancement_renovated_frame_area_m2"))
-        glazing_area = _as_float(row.get("window_enhancement_renovated_glazing_area_m2"))
-        caulking_volume = _as_float(row.get("window_enhancement_renovated_caulking_volume_m3"))
-        weatherstrip_length = _as_float(row.get("window_enhancement_renovated_weatherstrip_length_m"))
-
-        # Legacy fallbacks from older/reporting-measure output keys.
-        if glazing_area is None:
-            glazing_area = _as_float(row.get("window_renovated_glazing_area_m2"))
-        if caulking_volume is None:
-            caulking_volume = _as_float(row.get("window_renovated_caulking_volume_m3"))
-        if weatherstrip_length is None:
-            weatherstrip_length = _as_float(row.get("window_renovated_weatherstrip_length_m"))
-        if frame_area is None:
-            total_window_area = _as_float(row.get("window_renovated_area_m2"))
-            if total_window_area is None:
-                total_window_area = _as_float(row.get("window_option_renovated_area_m2"))
-            if total_window_area is not None and glazing_area is not None:
-                frame_area = max(total_window_area - glazing_area, 0.0)
+        glazing_area = _as_float(
+            row.get("window_renovated_glazing_area_m2")
+            if row.get("window_renovated_glazing_area_m2") is not None
+            else row.get("window_enhancement_renovated_glazing_area_m2")
+        )
+        caulking_volume = _as_float(
+            row.get("window_renovated_caulking_volume_m3")
+            if row.get("window_renovated_caulking_volume_m3") is not None
+            else row.get("window_enhancement_renovated_caulking_volume_m3")
+        )
+        weatherstrip_length = _as_float(
+            row.get("window_renovated_weatherstrip_length_m")
+            if row.get("window_renovated_weatherstrip_length_m") is not None
+            else row.get("window_enhancement_renovated_weatherstrip_length_m")
+        )
         operable_count = _as_float(row.get("window_operable_count"))
 
-        if whole_window_selected:
-            if frame_area is not None and frame_area > 0:
-                bullets.append(_applied_action("Entire window replacement", _friendly_option(frame_opt)))
-            else:
-                bullets.append(_skipped_action("Entire window replacement", _friendly_option(frame_opt)))
-
-        if _has_meaningful_value(panes) and not whole_window_selected:
+        if _has_meaningful_value(panes):
             if _window_glass_replacement_executed(row, scenario_name, scenario_summary):
                 bullets.append(_applied_action(f"{panes}-pane replacement"))
             else:
@@ -3130,7 +3087,7 @@ def generate_html_report(df, html_report_path, run_name="run"):
             else:
                 bullets.append(_skipped_action("Caulking application"))
 
-        if _has_meaningful_value(frame_opt) and not whole_window_selected:
+        if _has_meaningful_value(frame_opt):
             if frame_area is not None and frame_area > 0:
                 bullets.append(_applied_action("Window frame replacement", _friendly_option(frame_opt)))
             else:
@@ -3240,6 +3197,8 @@ def generate_html_report(df, html_report_path, run_name="run"):
             door_lines = []
             if _has_meaningful_value(door_opt):
                 total_doors = _as_float(source_row.get("total_doors_processed_count"))
+                if total_doors is None:
+                    total_doors = _as_float(source_row.get("baseline_door_total_count"))
                 changed_doors = _as_float(source_row.get("total_doors_with_r_value_change_count"))
                 friendly_opt = _friendly_option(door_opt)
                 if changed_doors is not None and changed_doors == 0:
@@ -3321,23 +3280,13 @@ def generate_html_report(df, html_report_path, run_name="run"):
         ])
         glazing_area, _ = _pick_first_numeric(data_row, [
             "window_enhancement_renovated_glazing_area_m2",
-            "window_renovated_glazing_area_m2",
         ])
         caulking_volume, _ = _pick_first_numeric(data_row, [
             "window_enhancement_renovated_caulking_volume_m3",
-            "window_renovated_caulking_volume_m3",
         ])
         weatherstrip_length, _ = _pick_first_numeric(data_row, [
             "window_enhancement_renovated_weatherstrip_length_m",
-            "window_renovated_weatherstrip_length_m",
         ])
-        if frame_area is None:
-            total_window_area, _ = _pick_first_numeric(data_row, [
-                "window_renovated_area_m2",
-                "window_option_renovated_area_m2",
-            ])
-            if total_window_area is not None and glazing_area is not None:
-                frame_area = max(total_window_area - glazing_area, 0.0)
         if "weatherstrip" in name or "weatherstrip" in description:
             return weatherstrip_length is not None and weatherstrip_length > 0
         if "sealant" in name or "caulking" in description:
@@ -3496,57 +3445,29 @@ def generate_html_report(df, html_report_path, run_name="run"):
             )
 
         if window_status == "applied":
-            window_option_value = _clean_text(_arg_lookup_material(scenario_name, "window", "window_option"))
-            whole_window_requested = _has_meaningful_value(window_option_value)
-            if whole_window_requested and str(window_option_value).strip().lower() == "none":
-                whole_window_requested = False
-
             frame_area, _ = _pick_first_numeric(data_row, [
                 "window_enhancement_renovated_frame_area_m2",
             ])
-            glazing_area_for_frame, _ = _pick_first_numeric(data_row, [
-                "window_enhancement_renovated_glazing_area_m2",
-                "window_renovated_glazing_area_m2",
-            ])
-            total_window_area, _ = _pick_first_numeric(data_row, [
-                "window_renovated_area_m2",
-                "window_option_renovated_area_m2",
-            ])
-            if frame_area is None:
-                if total_window_area is not None and glazing_area_for_frame is not None:
-                    frame_area = max(total_window_area - glazing_area_for_frame, 0.0)
             caulking_volume, _ = _pick_first_numeric(data_row, [
                 "window_enhancement_renovated_caulking_volume_m3",
-                "window_renovated_caulking_volume_m3",
             ])
             weatherstrip_length, _ = _pick_first_numeric(data_row, [
                 "window_enhancement_renovated_weatherstrip_length_m",
-                "window_renovated_weatherstrip_length_m",
             ])
 
-            if whole_window_requested and total_window_area is not None and total_window_area > 0:
-                _add_material_row(
-                    scenario_name,
-                    "Entire window",
-                    window_option_value,
-                    area_m2=total_window_area,
-                    lifetime_years=_safe_float(data_row.get("window_frame_lifetime_years")),
-                )
-            elif frame_area is not None and frame_area > 0:
+            if frame_area is not None and frame_area > 0:
                 _add_material_row(
                     scenario_name,
                     "Window frame",
-                    _arg_lookup_material(scenario_name, "window", "window_option"),
+                    _arg_lookup_material(scenario_name, "window", "wf_option"),
                     area_m2=frame_area,
                     lifetime_years=_safe_float(data_row.get("window_frame_lifetime_years")),
                 )
-            caulking_option_value = _clean_text(_arg_lookup_material(scenario_name, "window", "caulking_option"))
-            caulking_requested = _has_meaningful_value(caulking_option_value) and str(caulking_option_value).strip().lower() != "none"
-            if caulking_requested and caulking_volume is not None and caulking_volume > 0:
+            if caulking_volume is not None and caulking_volume > 0:
                 _add_material_row(
                     scenario_name,
                     "Window caulking",
-                    caulking_option_value,
+                    _arg_lookup_material(scenario_name, "window", "caulking_option"),
                     volume_m3=caulking_volume,
                     lifetime_years=_safe_float(data_row.get("window_caulking_lifetime_years")),
                 )
@@ -3662,6 +3583,11 @@ def generate_html_report(df, html_report_path, run_name="run"):
             + "</div>"
         )
 
+    fuel_color_map = {
+        "electricity": "#1f77b4",
+        "natural_gas": "#ff7f0e",
+        "other": "#9467bd",
+    }
     measure_color_map = {
         "Wall": "#1f77b4",
         "Roof": "#ff7f0e",
@@ -3685,19 +3611,15 @@ def generate_html_report(df, html_report_path, run_name="run"):
         window_cost, _ = _pick_first_numeric(scenario_row, [
             "window_enhancement_total_cost_with_overhead_and_profit_usd",
             "window_enhancement_total_cost_with_overhead_and_profit_$",
+            "window_total_cost_with_overhead_and_profit_usd",
+            "window_total_cost_with_overhead_and_profit_$",
         ])
         door_cost, _ = _pick_first_numeric(scenario_row, [
             "door_enhancement_total_cost_with_overhead_and_profit_usd",
             "door_enhancement_total_cost_with_overhead_and_profit_$",
+            "door_total_cost_with_overhead_and_profit_usd",
+            "door_total_cost_with_overhead_and_profit_$",
         ])
-
-        wall_carbon, _ = _pick_first_numeric(scenario_row, ["wall_insulation_embodied_carbon_kgCO2eq"])
-        roof_carbon, _ = _pick_first_numeric(scenario_row, ["roof_insulation_embodied_carbon_kgCO2eq"])
-        window_carbon, _ = _pick_first_numeric(scenario_row, [
-            "window_enhancement_embodied_carbon_kgCO2eq",
-            "window_embodied_carbon_kgCO2eq",
-        ])
-        door_carbon, _ = _pick_first_numeric(scenario_row, ["door_enhancement_embodied_carbon_kgCO2eq"])
 
         cost_slices = [
             ("Wall", wall_cost, measure_color_map["Wall"]),
@@ -3705,49 +3627,68 @@ def generate_html_report(df, html_report_path, run_name="run"):
             ("Window", window_cost, measure_color_map["Window"]),
             ("Door", door_cost, measure_color_map["Door"]),
         ]
-        carbon_slices = [
-            ("Wall", wall_carbon, measure_color_map["Wall"]),
-            ("Roof", roof_carbon, measure_color_map["Roof"]),
-            ("Window", window_carbon, measure_color_map["Window"]),
-            ("Door", door_carbon, measure_color_map["Door"]),
+
+        elec_gj = _safe_float(scenario_row.get("electricity_site_energy_gj"))
+        gas_gj = _safe_float(scenario_row.get("natural_gas_site_energy_gj"))
+        total_gj = _safe_float(scenario_row.get("total_site_energy_gj"))
+        other_gj = None
+        if total_gj is not None:
+            elec_for_calc = elec_gj if elec_gj is not None else 0.0
+            gas_for_calc = gas_gj if gas_gj is not None else 0.0
+            other_candidate = total_gj - elec_for_calc - gas_for_calc
+            # Suppress tiny residuals from floating-point/rounding mismatch.
+            if other_candidate > 0.05:
+                other_gj = other_candidate
+
+        energy_slices = [
+            ("Electricity", elec_gj, fuel_color_map["electricity"]),
+            ("Natural Gas", gas_gj, fuel_color_map["natural_gas"]),
         ]
+        if other_gj is not None:
+            energy_slices.append(("Other", other_gj, fuel_color_map["other"]))
 
         scenario_label = scenario_display_map.get(scenario_name, scenario_name)
         pie_cards.append(
             "<div class='scenario-pie-card'>"
             + f"<div class='scenario-pie-title'>{scenario_label}</div>"
             + "<div class='scenario-pie-row'>"
-            + _build_measure_pie_panel("Cost breakdown by retrofit measure", cost_slices, money)
-            + _build_measure_pie_panel("Carbon breakdown by retrofit measure", carbon_slices, num, " kg CO2e")
+            + _build_measure_pie_panel("Cost Breakdown by Retrofit Measure", cost_slices, money)
+            + _build_measure_pie_panel(
+                "Annual Total Site Energy Breakdown (GJ)",
+                energy_slices,
+                lambda v: f"{float(v):,.2f} GJ",
+                "",
+            )
             + "</div></div>"
         )
 
     if pie_cards:
         result_summary_pie_charts_html = (
-            "<div class='summary-box'><p>Per-scenario retrofit contribution breakdown."
-            + " Each scenario includes two pie charts: cost and embodied carbon by retrofit measure.</p></div>"
+            "<div class='summary-box'><p>Per-scenario breakdown: left chart shows retrofit construction cost contribution by measure, right chart shows total site energy by fuel type (electricity, natural gas, and other). Water is excluded from energy breakdown.</p></div>"
             + "<div class='scenario-pie-grid'>"
             + "".join(pie_cards)
             + "</div>"
         )
     else:
         result_summary_pie_charts_html = (
-            "<div class='summary-box'><p>No non-baseline scenarios available for retrofit measure breakdown pie charts.</p></div>"
+            "<div class='summary-box'><p>No non-baseline scenarios available for energy breakdown pie charts.</p></div>"
         )
 
     energy_analysis_rows = []
     for _, row in comparison_df.iterrows():
-        city_name = row.get("city", "Unknown")
-        baseline_energy_row = baseline_by_city.get(city_name, b)
-        row_delta = baseline_energy_row["total_site_energy_gj"] - row["total_site_energy_gj"]
-        row_delta_pct = (row_delta / baseline_energy_row["total_site_energy_gj"] * 100.0) if baseline_energy_row["total_site_energy_gj"] > 0 else 0.0
+        # Get city-specific baseline
+        city = row.get("city", "Unknown")
+        b = baseline_by_city.get(city, default_baseline)
+        
+        row_delta = b["total_site_energy_gj"] - row["total_site_energy_gj"]
+        row_delta_pct = (row_delta / b["total_site_energy_gj"] * 100.0) if b["total_site_energy_gj"] > 0 else 0.0
         positive_class = "positive" if row_delta >= 0 else ""
         energy_analysis_rows.append(
 
             f"<tr>"
             f"<td>{scenario_display_map.get(row['scenario'], row['scenario'])}</td>"
-            f"<td>Total Site Energy (GJ)</td>"
-            f"<td>{num_energy(baseline_energy_row['total_site_energy_gj'])}</td>"
+            f"<td>Anual Total Site Energy (GJ)</td>"
+            f"<td>{num_energy(b['total_site_energy_gj'])}</td>"
             f"<td>{num_energy(row['total_site_energy_gj'])}</td>"
             f"<td class=\"{positive_class}\">{num_energy(row_delta)}</td>"
             f"<td class=\"{positive_class}\">{num_energy(row_delta_pct)}%</td>"
@@ -3795,11 +3736,13 @@ def generate_html_report(df, html_report_path, run_name="run"):
             payback_df["construction_cost"] = float("nan")
 
         payback_df["cost_payback_years"] = payback_df.apply(lambda r: _safe_payback_report(r["construction_cost"], -r["cost_delta"]), axis=1)
-        payback_df["carbon_payback_years"] = payback_df.apply(lambda r: _safe_payback_report(r["embodied_carbon_kg"], -r["emissions_delta"]), axis=1)
+        # DISABLED: Carbon calculation disabled - set carbon payback to None
+        # payback_df["carbon_payback_years"] = payback_df.apply(lambda r: _safe_payback_report(r["embodied_carbon_kg"], -r["emissions_delta"]), axis=1)
+        payback_df["carbon_payback_years"] = None
         valid_cost_paybacks = payback_df["cost_payback_years"].dropna()
         valid_carbon_paybacks = payback_df["carbon_payback_years"].dropna()
         max_cost_payback = float(valid_cost_paybacks.max()) if not valid_cost_paybacks.empty else 1.0
-        max_carbon_payback = float(valid_carbon_paybacks.max()) if not valid_carbon_paybacks.empty else 1.0
+        max_carbon_payback = 1.0  # DISABLED: Carbon calculation disabled
         if max_cost_payback <= 0:
             max_cost_payback = 1.0
 
@@ -3865,8 +3808,11 @@ def generate_html_report(df, html_report_path, run_name="run"):
 
             for _, payback_row in payback_df.iterrows():
                 scenario_name = str(payback_row["scenario"])
-                city_name = str(payback_row.get("city", "Unknown"))
-                city_baseline = baseline_by_city.get(city_name, b)
+                
+                # Get city-specific baseline for this scenario
+                city = payback_row.get("city", "Unknown")
+                b = baseline_by_city.get(city, default_baseline)
+                
                 wall_status = _cmp_arg_value(scenario_name, "wall", "__status__")
                 roof_status = _cmp_arg_value(scenario_name, "roof", "__status__")
                 # Prefer wall material comparison groups first, then roof.
@@ -3907,13 +3853,13 @@ def generate_html_report(df, html_report_path, run_name="run"):
                     "label": label,
                     "material": material_name,
                     "scenario_display": scenario_display_map.get(str(payback_row["scenario"]), str(payback_row["scenario"])),
-                    "cost_saving": float(payback_row["annual_cost_usd"]) - float(city_baseline["annual_cost_usd"]),
+                    "cost_saving": float(payback_row["annual_cost_usd"]) - float(b["annual_cost_usd"]),
                     "annual_operational_carbon": float(payback_row["annual_emissions_kg"]),
                     "total_embodied_carbon": float(payback_row["embodied_carbon_kg"]),
-                    "operational_carbon_saving": float(payback_row["annual_emissions_kg"]) - float(city_baseline["annual_emissions_kg"]),
+                    "operational_carbon_saving": float(payback_row["annual_emissions_kg"]) - float(b["annual_emissions_kg"]),
                     "annual_operational_cost": float(payback_row["annual_cost_usd"]),
                     "total_construction_cost": float(payback_row["construction_cost"]) if pd.notna(payback_row["construction_cost"]) else 0.0,
-                    "operational_cost_saving": float(payback_row["annual_cost_usd"]) - float(city_baseline["annual_cost_usd"]),
+                    "operational_cost_saving": float(payback_row["annual_cost_usd"]) - float(b["annual_cost_usd"]),
                     "cost_payback": float(payback_row["cost_payback_years"]) if pd.notna(payback_row["cost_payback_years"]) else None,
                     "carbon_payback": float(payback_row["carbon_payback_years"]) if pd.notna(payback_row["carbon_payback_years"]) else None,
 
@@ -3989,7 +3935,6 @@ def generate_html_report(df, html_report_path, run_name="run"):
     generated_time = datetime.now().strftime("%B %d, %Y")
     report_year = datetime.now().year
     html = build_report_html(
-        embodied_analysis_period_years=embodied_analysis_period_years,
         renovation_rows=renovation_rows,
         energy_analysis_table=energy_analysis_table,
         max_cost_class=max_cost_class,
@@ -3997,34 +3942,28 @@ def generate_html_report(df, html_report_path, run_name="run"):
         max_cost_delta=max_cost_delta,
         max_cost_delta_pct=max_cost_delta_pct,
         max_savings_scenario=max_savings_scenario,
-        max_emis_class=max_emis_class,
+        max_energy_class=max_energy_class,
         num=num,
-        max_emis_delta=max_emis_delta,
-        max_emis_delta_pct=max_emis_delta_pct,
-        max_emissions_scenario=max_emissions_scenario,
+        max_energy_delta_gj=max_energy_delta_gj,
+        max_energy_delta_pct=max_energy_delta_pct,
+        max_energy_scenario=max_energy_scenario,
+        max_energy_savings_text=max_energy_savings_text,
+        max_energy_savings_scenario=max_energy_savings_scenario,
         min_construction_cost_text=min_construction_cost_text,
         min_construction_cost_scenario=min_construction_cost_scenario,
-        min_embodied_text=min_embodied_text,
-        min_embodied_intensity_text=min_embodied_intensity_text,
-        min_embodied_scenario=min_embodied_scenario,
         lowest_cost_payback_text=lowest_cost_payback_text,
         lowest_cost_payback_scenario=lowest_cost_payback_scenario,
-        lowest_carbon_payback_text=lowest_carbon_payback_text,
-        lowest_carbon_payback_scenario=lowest_carbon_payback_scenario,
         spider_table_rows=spider_table_rows,
         baseline_cost_w=baseline_cost_w,
-        baseline_cost_value=baseline_cost_value,
         b=b,
         best_cost_w=best_cost_w,
         max_savings=max_savings,
-        baseline_emis_w=baseline_emis_w,
-        baseline_emis_value=baseline_emis_value,
-        best_emis_w=best_emis_w,
-        max_emissions_reduction=max_emissions_reduction,
+        baseline_energy_w=baseline_energy_w,
+        best_energy_w=best_energy_w,
+        max_energy_savings_row=max_energy_savings_row,
         cost_payback_chart_rows=cost_payback_chart_rows,
-        carbon_payback_chart_rows=carbon_payback_chart_rows,
         material_list_section_html=material_list_section_html,
-        material_comparison_section_html=material_comparison_section_html,
+        material_comparison_section_html="",
         generated_time=generated_time,
         report_year=report_year,
         run_name=run_name,
@@ -4363,7 +4302,7 @@ def _normalize_renovation_table(report_path):
             film = _extract_param(details_plain, "film_option")
             if film:
                 window_bullets.append(f"Glazing film: {film}")
-            frame = _extract_param(details_plain, "window_option")
+            frame = _extract_param(details_plain, "wf_option")
             if frame:
                 window_bullets.append(f"Window frame: {frame}")
             if window_bullets:
@@ -4401,7 +4340,8 @@ def _normalize_renovation_table(report_path):
 
 building_info = _derive_building_information(df_report)
 
-_patch_min_embodied_metric(out)
+# DISABLED: Carbon calculation disabled - skip carbon metric patching
+# _patch_min_embodied_metric(out)
 _patch_building_information(out, building_info)
 _patch_report_headings(out)
 _normalize_renovation_table(out)
@@ -4647,21 +4587,21 @@ def _derive_window_submeasure_notes(scenario_name, details_html, args_df, simple
     notes = []
     user_num_panes = _to_float_or_none(_arg_value(args_df, scenario_name, "window", "user_num_panes"))
     glass_option = _arg_value(args_df, scenario_name, "window", "glass_option")
-    window_option = _arg_value(args_df, scenario_name, "window", "window_option")
+    wf_option = _arg_value(args_df, scenario_name, "window", "wf_option")
     caulking_option = _arg_value(args_df, scenario_name, "window", "caulking_option")
     film_option = _arg_value(args_df, scenario_name, "window", "film_option")
     weatherstrip_option = _arg_value(args_df, scenario_name, "window", "weatherstrip_option")
     secondary_option = _arg_value(args_df, scenario_name, "window", "secondary_glazing_option")
     simple_glazing_blocked = scenario_name in simple_glazing_failed_scenarios
     glass_requested = (user_num_panes is not None and user_num_panes > 0) or _is_meaningful_option(glass_option)
-    frame_requested = _is_meaningful_option(window_option)
+    frame_requested = _is_meaningful_option(wf_option)
     caulking_requested = _is_meaningful_option(caulking_option)
     film_requested = _is_meaningful_option(film_option)
     weatherstrip_requested = _is_meaningful_option(weatherstrip_option)
     secondary_requested = _is_meaningful_option(secondary_option)
     panes_detail = _fmt_panes(user_num_panes)
     glass_detail = _clean_option_value(glass_option)
-    frame_detail = _clean_option_value(window_option)
+    frame_detail = _clean_option_value(wf_option)
     caulking_detail = _clean_option_value(caulking_option)
     film_detail = _clean_option_value(film_option)
     weatherstrip_detail = _clean_option_value(weatherstrip_option)

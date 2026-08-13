@@ -46,6 +46,12 @@ _LOGGING_MODULE = importlib.util.module_from_spec(_LOGGING_SPEC)
 _LOGGING_SPEC.loader.exec_module(_LOGGING_MODULE)
 append_measure_raw_record = _LOGGING_MODULE.append_measure_raw_record
 append_measure_summary_record = _LOGGING_MODULE.append_measure_summary_record
+from rsmeans_offline_csv import (
+    build_rsmeans_item_from_csv_row,
+    is_offline_csv_mode_enabled,
+    lookup_rsmeans_row_by_id,
+    offline_csv_path_for_logging,
+)
 
 
 DEFAULT_FEATURE_KEYS = {
@@ -764,6 +770,12 @@ class RSMeansAPIClient:
         self.token_type = None
 
     def authenticate(self) -> bool:
+        if is_offline_csv_mode_enabled():
+            self.access_token = "offline_csv"
+            self.token_type = "Offline"
+            print("RSMeans offline CSV mode enabled; skipping OAuth authentication.")
+            return True
+
         data = {
             "grant_type": "client_credentials",
             "client_id": self.client_id,
@@ -800,6 +812,13 @@ class RSMeansAPIClient:
         labor_type: Optional[str] = "std",
         division_code: Optional[str] = None,
     ) -> Optional[Dict[str, Any]]:
+        if is_offline_csv_mode_enabled():
+            return {
+                "items": [],
+                "offline_csv": True,
+                "csv_path": offline_csv_path_for_logging(),
+            }
+
         catalog_id = f"{catalog}-{measurement_system}-{labor_type}-{release_id}-{location_id}"
         endpoint = f"{self.base_url}/v1/costdata/unit/catalogs/{catalog_id}/costlines/_search"
         params = {"searchTerm": search_term} if search_term else {}
@@ -825,6 +844,27 @@ class RSMeansAPIClient:
         location_id: str = "us-us-national",
         labor_type: str = "std",
     ) -> Optional[Dict[str, Any]]:
+        if is_offline_csv_mode_enabled():
+            row = lookup_rsmeans_row_by_id(division_code)
+            if not row:
+                return {
+                    "items": [],
+                    "offline_csv": True,
+                    "csv_path": offline_csv_path_for_logging(),
+                    "query_id": str(division_code or "").strip(),
+                }
+            item = build_rsmeans_item_from_csv_row(
+                costline_id=division_code,
+                row=row,
+                description_fallback="offline csv costline match",
+            )
+            return {
+                "items": [item],
+                "offline_csv": True,
+                "csv_path": offline_csv_path_for_logging(),
+                "query_id": str(division_code or "").strip(),
+            }
+
         catalog_id = f"{catalog}-{measurement_system}-{labor_type}-{release_id}-{location_id}"
         endpoint = f"{self.base_url}/v1/costdata/unit/catalogs/{catalog_id}/costlines"
         params = {"divisionCode": division_code} if division_code else {}
@@ -2118,10 +2158,11 @@ def run_rsmeans_cost_lookup(
 ) -> Dict[str, Any]:
     """Run RSMeans lookup for provided materials and return summary/results."""
     load_dotenv()
+    offline_mode = is_offline_csv_mode_enabled()
     client_id = os.getenv("client_id")
     client_secret = os.getenv("client_secret")
 
-    if not client_id or not client_secret:
+    if (not offline_mode) and (not client_id or not client_secret):
         append_measure_summary_record(MEASURE_LOG_SLUG, {
             "status": "auth_error",
             "message": "RSMeans API credentials not found in environment",
@@ -2130,6 +2171,10 @@ def run_rsmeans_cost_lookup(
             "status": "auth_error",
             "message": "RSMeans API credentials not found in environment",
         }
+
+    if offline_mode and (not client_id or not client_secret):
+        client_id = client_id or "offline_csv"
+        client_secret = client_secret or "offline_csv"
 
     client = RSMeansAPIClient(client_id, client_secret, use_sandbox=use_sandbox)
     if not client.authenticate():
@@ -2195,12 +2240,16 @@ def run_rsmeans_cost_lookup(
         "status": "ok",
         "summary": summary,
         "results": results,
+        "source": "offline_csv" if offline_mode else "rsmeans_api",
+        "csv_path": offline_csv_path_for_logging() if offline_mode else "",
     })
 
     return {
         "status": "ok",
         "summary": summary,
         "results": results,
+        "source": "offline_csv" if offline_mode else "rsmeans_api",
+        "csv_path": offline_csv_path_for_logging() if offline_mode else "",
     }
 
 

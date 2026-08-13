@@ -4,22 +4,26 @@
   "step_values": {
     "r_value": 30.0,
     "analysis_period": 30,
+    "use_lifetime_multiplier": false,
     "gwp_statistic": "median",
     "api_key": "<redacted>",
-    "insulation_material_type": "Pure Wool Batts",
+    "insulation_material_type": "Fiberglass Batts",
     "insulation_material_lifetime": 30,
     "insulation_thermal_conductivity": 0.0,
     "insulation_material_density": 0.0,
+    "use_custom_gwp": false,
+    "custom_gwp_per_m3": 0.0,
     "use_custom_costs": false,
     "use_exact_costline_id": true,
     "exact_costline_id": "072116201320",
     "custom_cost_per_cf": 0.73,
     "labor_cost_multiplier": 1.0,
-    "overhead_profit_percent": 10.0
+    "overhead_profit_percent": 10.0,
+    "cost_calculation_basis": "totalop"
   },
   "cost_response": {
-    "cost_source": "none",
-    "cost_factor_basis": "not_calculated",
+    "cost_source": "rsmeans_api",
+    "cost_factor_basis": "cost_per_volume",
     "cost_unit_basis": null,
     "material_cost": {
       "value": null,
@@ -30,61 +34,61 @@
       "unit": "$"
     },
     "total_cost_with_overhead_and_profit": {
-      "value": 0.0,
+      "value": 10925.032457134545,
       "unit": "$"
     },
     "materials": []
   },
-  "additional_properties_count": 12,
+  "additional_properties_count": 19,
   "additional_properties_sample": [
     {
       "construction": "Facility",
+      "property": "roof_insulation_api_material_cost_per_cf",
+      "value": 6.274285714285714
+    },
+    {
+      "construction": "Facility",
+      "property": "roof_insulation_api_pricing_unit_cost",
+      "value": 2.48
+    },
+    {
+      "construction": "Facility",
+      "property": "roof_insulation_api_pricing_unit_uom",
+      "value": "SF"
+    },
+    {
+      "construction": "Facility",
+      "property": "roof_insulation_cost_calculation_basis",
+      "value": "total Op"
+    },
+    {
+      "construction": "Facility",
       "property": "roof_insulation_cost_factor_basis",
-      "value": "not_calculated"
+      "value": "cost_per_volume"
     },
     {
       "construction": "Facility",
       "property": "roof_insulation_cost_source",
-      "value": "none"
+      "value": "rsmeans_api"
     },
     {
       "construction": "Facility",
       "property": "roof_insulation_material_gwp_per_kg",
-      "value": 2.637913741
+      "value": 1.0614615124555558
     },
     {
       "construction": "Facility",
       "property": "roof_insulation_material_gwp_per_m2",
-      "value": 2.63
+      "value": 0.7575419999999999
+    },
+    {
+      "construction": "Facility",
+      "property": "roof_insulation_material_gwp_per_m3",
+      "value": 13.153736172983335
     },
     {
       "construction": "Facility",
       "property": "roof_insulation_overhead_profit_percent",
-      "value": 10.0
-    },
-    {
-      "construction": "SimulationControl",
-      "property": "roof_insulation_cost_factor_basis",
-      "value": "not_calculated"
-    },
-    {
-      "construction": "SimulationControl",
-      "property": "roof_insulation_embodied_carbon_kgCO2eq",
-      "value": 3287.0245362304145
-    },
-    {
-      "construction": "SimulationControl",
-      "property": "roof_insulation_labor_cost_$",
-      "value": 0.0
-    },
-    {
-      "construction": "SimulationControl",
-      "property": "roof_insulation_material_cost_$",
-      "value": 0.0
-    },
-    {
-      "construction": "SimulationControl",
-      "property": "roof_insulation_overhead_profit_cost_$",
       "value": 0.0
     }
   ]

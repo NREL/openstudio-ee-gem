@@ -100,11 +100,8 @@ class CreateDOEPrototypeBuilding < OpenStudio::Measure::ModelMeasure
     climate_zone.setDefaultValue('ASHRAE 169-2013-2A')
     args << climate_zone
 
-    # Drop down selector for Canadian weather files.
-    epw_files = OpenStudio::StringVector.new
-    epw_files << 'Not Applicable'
-    #BTAP::Environment.get_canadian_weather_file_names.each { |file| epw_files << file }
-    epw_file = OpenStudio::Measure::OSArgument.makeChoiceArgument('epw_file', epw_files, true)
+    # Accept an explicit weather file so DOE prototypes use the scenario city weather.
+    epw_file = OpenStudio::Measure::OSArgument.makeStringArgument('epw_file', false)
     epw_file.setDisplayName('Climate File (NECB only)')
     epw_file.setDefaultValue('Not Applicable')
     args << epw_file

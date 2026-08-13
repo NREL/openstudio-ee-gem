@@ -495,6 +495,7 @@ class IncreaseInsulationRValueForRoofs(openstudio.measure.ModelMeasure):
                 # First try to extract explicit thickness values (highest priority)
                 thickness_patterns = [
                     r'(\d+(?:-\d+/\d+|/\d+|\.\d+)?)\s*"',
+                    r"(\d+(?:-\d+/\d+|/\d+|\.\d+)?)\s*''",
                     r'(\d+(?:-\d+/\d+|/\d+|\.\d+)?)\s*(?:in|inch|inches)\b',
                 ]
                 for pattern in thickness_patterns:
@@ -571,7 +572,7 @@ class IncreaseInsulationRValueForRoofs(openstudio.measure.ModelMeasure):
         # the boundary before any model reads or API calls begin.)
 
         # Lookup selected material properties.
-        # Priority order: RSMeans-extracted text (Phase 2) > user-provided > hardcoded defaults.
+        # Priority order: user-provided > RSMeans-extracted text > hardcoded defaults.
         # selected_k and selected_rho are used in Phase 3 for thickness calculations and
         # Phase 4 for embodied-carbon volume-to-mass conversions.
         selected_k = None
@@ -658,13 +659,13 @@ class IncreaseInsulationRValueForRoofs(openstudio.measure.ModelMeasure):
             has_rsmeans_density = "density_kg_m3" in rsmeans_extracted_properties
             fallback_fields = []
 
-            if has_rsmeans_k:
-                selected_k = rsmeans_extracted_properties["conductivity_W_mK"]
-                selected_k_source = "rsmeans_extracted"
-            elif user_specified_conductivity:
+            if user_specified_conductivity:
                 selected_k = insulation_thermal_conductivity
                 selected_k_source = "user_fallback_due_to_rsmeans_parse_failure"
                 fallback_fields.append("thermal_conductivity")
+            elif has_rsmeans_k:
+                selected_k = rsmeans_extracted_properties["conductivity_W_mK"]
+                selected_k_source = "rsmeans_extracted"
             else:
                 # Use hardcoded default as final fallback
                 selected_k = material_k_dict[insulation_material_type]
@@ -1410,6 +1411,8 @@ class IncreaseInsulationRValueForRoofs(openstudio.measure.ModelMeasure):
                                     if _selected_mat is None:
                                         _selected_mat = materials_results[0]
 
+                                _material_op_unit = float(_selected_mat.get("material_op_unit_cost_raw", 0.0) or 0.0)
+                                _material_op_uom = str(_selected_mat.get("material_op_unit_uom_raw", "")).upper().replace(" ", "")
                                 _bare_unit = float(_selected_mat.get("bare_material_unit_cost", 0.0) or 0.0)
                                 _basis = str(_selected_mat.get("bare_material_unit_basis", _selected_mat.get("unit_cost_basis", _selected_mat.get("unit", "")))).upper().replace(" ", "")
                                 _mode = str(_selected_mat.get("costing_mode", "")).strip().lower()
@@ -1418,23 +1421,49 @@ class IncreaseInsulationRValueForRoofs(openstudio.measure.ModelMeasure):
                                 _pricing_eff_uom = str(_selected_mat.get("pricing_unit_uom_effective", "")).upper().replace(" ", "")
                                 _pricing_raw = float(_selected_mat.get("pricing_unit_cost_raw", 0.0) or 0.0)
                                 _pricing_raw_uom = str(_selected_mat.get("pricing_unit_uom_raw", "")).upper().replace(" ", "")
-                                if _bare_unit > 0.0:
-                                    if _basis == "CF":
-                                        _cost_per_cf = _bare_unit
-                                    elif _basis == "CY":
-                                        _cost_per_cf = _bare_unit / 27.0
-                                    elif _basis == "SF" and _mode == "volume_from_area":
-                                        _thk_ft = float(_selected_mat.get("source_line_thickness_ft", 0.0) or 0.0)
-                                        if _thk_ft > 0.0:
-                                            _cost_per_cf = _bare_unit / _thk_ft
-                                if _cost_per_cf <= 0.0 and _pricing_eff > 0.0:
-                                    if _pricing_eff_uom == "CF":
-                                        _cost_per_cf = _pricing_eff
-                                    elif _pricing_eff_uom == "CY":
-                                        _cost_per_cf = _pricing_eff / 27.0
+                                if cost_calculation_basis == "totalop":
+                                    # totalop basis may only use total Op pricing.
+                                    # For SF-priced lines, convert the original raw
+                                    # totalOp SF rate exactly once using the RSMeans
+                                    # reference thickness. This avoids using an
+                                    # already-normalized effective value from a
+                                    # component conversion.
+                                    if _pricing_raw > 0.0:
+                                        if _pricing_raw_uom == "CF":
+                                            _cost_per_cf = _pricing_raw
+                                        elif _pricing_raw_uom == "CY":
+                                            _cost_per_cf = _pricing_raw / 27.0
+                                        elif _pricing_raw_uom == "SF" and _mode == "volume_from_area":
+                                            _thk_ft = float(_selected_mat.get("source_line_thickness_ft", 0.0) or 0.0)
+                                            if _thk_ft > 0.0:
+                                                _cost_per_cf = _pricing_raw / _thk_ft
+                                    if _cost_per_cf <= 0.0 and _pricing_eff > 0.0:
+                                        if _pricing_eff_uom == "CF":
+                                            _cost_per_cf = _pricing_eff
+                                        elif _pricing_eff_uom == "CY":
+                                            _cost_per_cf = _pricing_eff / 27.0
+                                else:
+                                    # bare_material basis may only use materialOp
+                                    # or bare material pricing.
+                                    if _material_op_unit > 0.0:
+                                        if _material_op_uom == "CF":
+                                            _cost_per_cf = _material_op_unit
+                                        elif _material_op_uom == "CY":
+                                            _cost_per_cf = _material_op_unit / 27.0
+                                        elif _material_op_uom == "SF" and _mode == "volume_from_area":
+                                            _thk_ft = float(_selected_mat.get("source_line_thickness_ft", 0.0) or 0.0)
+                                            if _thk_ft > 0.0:
+                                                _cost_per_cf = _material_op_unit / _thk_ft
+                                    if _cost_per_cf <= 0.0 and _bare_unit > 0.0:
+                                        if _basis == "CF":
+                                            _cost_per_cf = _bare_unit
+                                        elif _basis == "CY":
+                                            _cost_per_cf = _bare_unit / 27.0
+                                        elif _basis == "SF" and _mode == "volume_from_area":
+                                            _thk_ft = float(_selected_mat.get("source_line_thickness_ft", 0.0) or 0.0)
+                                            if _thk_ft > 0.0:
+                                                _cost_per_cf = _bare_unit / _thk_ft
                                 if _cost_per_cf > 0.0:
-                                    # API cost-per-CF feature is bare material-only
-                                    # from selected RSMeans line unit pricing.
                                     rsmeans_cost_per_cf_feature_value = _cost_per_cf
                                 else:
                                     runner.registerWarning(
@@ -1456,18 +1485,15 @@ class IncreaseInsulationRValueForRoofs(openstudio.measure.ModelMeasure):
                                 final_rsmeans_has_density = "density_kg_m3" in extracted_from_selected
                                 final_fallback_fields = []
 
-                                if final_rsmeans_has_k:
-                                    newly_extracted_k = extracted_from_selected["conductivity_W_mK"]
-                                elif user_specified_conductivity:
+                                if user_specified_conductivity:
                                     newly_extracted_k = insulation_thermal_conductivity
-                                    final_fallback_fields.append("thermal_conductivity")
+                                    selected_k_source = "user_provided"
+                                elif final_rsmeans_has_k:
+                                    newly_extracted_k = extracted_from_selected["conductivity_W_mK"]
                                 else:
-                                    runner.registerError(
-                                        "RSMeans final cost lookup result does not contain extractable thermal conductivity, "
-                                        "and no user-provided fallback is available. "
-                                        f"Description excerpt: {selected_mat_desc[:100]}..."
-                                    )
-                                    return False
+                                    newly_extracted_k = material_k_dict[insulation_material_type]
+                                    selected_k_source = "hardcoded_default_due_to_rsmeans_final_parse_failure"
+                                    final_fallback_fields.append("thermal_conductivity(default)")
 
                                 if final_rsmeans_has_density:
                                     insulation_material_density = extracted_from_selected["density_kg_m3"]
@@ -1504,7 +1530,7 @@ class IncreaseInsulationRValueForRoofs(openstudio.measure.ModelMeasure):
                                     selected_k = newly_extracted_k
                                     selected_k_source = "rsmeans_final_lookup"
 
-                                if final_rsmeans_has_k and selected_k_source != "rsmeans_final_lookup":
+                                if final_rsmeans_has_k and not user_specified_conductivity and selected_k_source != "rsmeans_final_lookup":
                                     selected_k = newly_extracted_k
                                     selected_k_source = "rsmeans_final_lookup"
 
@@ -1817,13 +1843,26 @@ class IncreaseInsulationRValueForRoofs(openstudio.measure.ModelMeasure):
             factors.setFeature("roof_insulation_api_pricing_unit_uom", rsmeans_pricing_unit_uom_raw_feature_value)
         
 
-        # Emission factors aggregated from selected statistic lists
+        def _select_gwp_statistic(values):
+            if not values:
+                return None
+            if len(values) == 1:
+                return float(values[0])
+            if gwp_statistic == "minimum":
+                return float(np.min(values))
+            if gwp_statistic == "maximum":
+                return float(np.max(values))
+            if gwp_statistic == "mean":
+                return float(np.mean(values))
+            return float(np.median(values))
+
+        # Emission factors use the same statistic as total GWP calculations.
         if gwp_values["gwp_per_kg"]:
-            factors.setFeature("roof_insulation_material_gwp_per_kg", float(np.mean(gwp_values["gwp_per_kg"])))
+            factors.setFeature("roof_insulation_material_gwp_per_kg", _select_gwp_statistic(gwp_values["gwp_per_kg"]))
         if gwp_values["gwp_per_m2"]:
-            factors.setFeature("roof_insulation_material_gwp_per_m2", float(np.mean(gwp_values["gwp_per_m2"])))
+            factors.setFeature("roof_insulation_material_gwp_per_m2", _select_gwp_statistic(gwp_values["gwp_per_m2"]))
         if gwp_values["gwp_per_m3"]:
-            factors.setFeature("roof_insulation_material_gwp_per_m3", float(np.mean(gwp_values["gwp_per_m3"])))
+            factors.setFeature("roof_insulation_material_gwp_per_m3", _select_gwp_statistic(gwp_values["gwp_per_m3"]))
 
         # Construction names for traceability
         construction_names = [item["construction"].nameString() for item in modified_constructions]

@@ -41,6 +41,12 @@ if str(_AUXILIARY_UTILS_DIR) not in sys.path:
     sys.path.insert(0, str(_AUXILIARY_UTILS_DIR))
 
 from rsmeans_logging import append_measure_raw_record, append_measure_summary_record
+from rsmeans_offline_csv import (
+    build_rsmeans_item_from_csv_row,
+    is_offline_csv_mode_enabled,
+    lookup_rsmeans_row_by_id,
+    offline_csv_path_for_logging,
+)
 
 
 def load_dotenv() -> bool:
@@ -250,6 +256,17 @@ def _can_convert_weatherstrip_each_to_lf(material: Dict[str, Any], requested_uni
     return each_length_ft > 0.0
 
 
+def _can_convert_window_each_to_sf(material: Dict[str, Any], requested_unit: Any, returned_uom: Any) -> bool:
+    """Return True when whole-window pricing can convert EA/OPNG -> SF."""
+    material_name_norm = _normalize_search_text(material.get("name", ""))
+    if material_name_norm != "entire window":
+        return False
+
+    req = _normalize_uom(requested_unit)
+    ret = _normalize_uom(returned_uom)
+    return req == "SF" and ret in {"EA", "OPNG"}
+
+
 def _get_double_pane_fallback_rsmeans_id(area_sf: float) -> str:
     """Return double-pane glass fallback ID by area bin.
 
@@ -413,6 +430,14 @@ def _get_default_fallback_rsmeans_id(material_name: str, material: Optional[Dict
         (material or {}).get("glazing_area_sf", (material or {}).get("quantity", 0.0)) or 0.0
     )
 
+    # Entire window replacement (frame + glazing assembly) should be
+    # resolved before pane-based glazing heuristics.
+    if name_norm == "entire window" or "double glazing window" in name_norm:
+        if "wood" in description_norm:
+            return "085210550100"
+        if "aluminum" in description_norm or "aluminium" in description_norm:
+            return "085113204100"
+
     # Handle area-sensitive double-pane options before static lookups.
     if (
         "num pane 2" in name_norm
@@ -485,13 +510,6 @@ def _get_default_fallback_rsmeans_id(material_name: str, material: Optional[Dict
     if "secondary glazing" in name_norm or "num pane 1" in name_norm:
         return "088155100015"
     
-    # Entire window replacement (frame + glazing assembly)
-    if name_norm == "entire window" or "double glazing window" in name_norm:
-        if "wood" in description_norm:
-            return "085210550100"
-        if "aluminum" in description_norm or "aluminium" in description_norm:
-            return "085113204100"
-    
     if "aluminum" in name_norm or "aluminium" in name_norm:
         if "double glazing window" in name_norm:
             return "085113204100"
@@ -523,7 +541,7 @@ def _get_forced_fallback_rsmeans_id(material_name: str, material: Optional[Dict[
     user did not provide a usable explicit ID.
     """
     name_norm = _canonicalize_window_material_name(material_name, material)
-    if name_norm == "weatherstrip":
+    if name_norm in {"weatherstrip", "entire window"}:
         return _get_default_fallback_rsmeans_id(material_name, material)
     return None
 
@@ -1014,6 +1032,21 @@ def _compute_total_cost_for_material(material: Dict[str, Any], unit_cost: float,
             "source_line_uom": source_uom,
         }
 
+    if _can_convert_window_each_to_sf(material, requested_unit, source_uom):
+        area_per_opening_sf = _parse_window_area_sf_from_description(matched_description)
+        if area_per_opening_sf and area_per_opening_sf > 0.0:
+            unit_cost_per_sf = float(unit_cost) / area_per_opening_sf
+            total_cost = unit_cost_per_sf * quantity
+            return {
+                "unit_cost": unit_cost_per_sf,
+                "total_cost": total_cost,
+                "costing_mode": "window_each_to_sf",
+                "effective_unit": requested_unit,
+                "source_unit_cost_per_each": float(unit_cost),
+                "source_area_per_each_sf": float(area_per_opening_sf),
+                "source_line_uom": source_uom,
+            }
+
     # Sealant path: when RSMeans line is GAL and volume context is present,
     # normalize reported unit-cost basis to $/CY for downstream consistency.
     if material_name_norm == "sealant" and _normalize_uom(requested_unit) == "GAL":
@@ -1211,6 +1244,12 @@ class RSMeansAPIClient:
         self.token_type = None
 
     def authenticate(self) -> bool:
+        if is_offline_csv_mode_enabled():
+            self.access_token = "offline_csv"
+            self.token_type = "Offline"
+            print("RSMeans offline CSV mode enabled; skipping OAuth authentication.")
+            return True
+
         data = {
             "grant_type": "client_credentials",
             "client_id": self.client_id,
@@ -1247,6 +1286,13 @@ class RSMeansAPIClient:
         labor_type: Optional[str] = "std",
         division_code: Optional[str] = None,
     ) -> Optional[Dict[str, Any]]:
+        if is_offline_csv_mode_enabled():
+            return {
+                "items": [],
+                "offline_csv": True,
+                "csv_path": offline_csv_path_for_logging(),
+            }
+
         catalog_id = f"{catalog}-{measurement_system}-{labor_type}-{release_id}-{location_id}"
         endpoint = f"{self.base_url}/v1/costdata/unit/catalogs/{catalog_id}/costlines/_search"
         params = {"searchTerm": search_term} if search_term else {}
@@ -1273,6 +1319,27 @@ class RSMeansAPIClient:
         location_id: str = "us-us-national",
         labor_type: str = "std",
     ) -> Optional[Dict[str, Any]]:
+        if is_offline_csv_mode_enabled():
+            row = lookup_rsmeans_row_by_id(division_code)
+            if not row:
+                return {
+                    "items": [],
+                    "offline_csv": True,
+                    "csv_path": offline_csv_path_for_logging(),
+                    "query_id": str(division_code or "").strip(),
+                }
+            item = build_rsmeans_item_from_csv_row(
+                costline_id=division_code,
+                row=row,
+                description_fallback="offline csv costline match",
+            )
+            return {
+                "items": [item],
+                "offline_csv": True,
+                "csv_path": offline_csv_path_for_logging(),
+                "query_id": str(division_code or "").strip(),
+            }
+
         catalog_id = f"{catalog}-{measurement_system}-{labor_type}-{release_id}-{location_id}"
         endpoint = f"{self.base_url}/v1/costdata/unit/catalogs/{catalog_id}/costlines"
         params = {"divisionCode": division_code} if division_code else {}
@@ -2034,6 +2101,7 @@ def search_materials_across_catalogs(
                                     unit_cost > 0
                                     and str(material.get("costing_mode", "")).lower() != "volume_from_area"
                                     and not _can_convert_weatherstrip_each_to_lf(material, unit, line_uom)
+                                    and not _can_convert_window_each_to_sf(material, unit, line_uom)
                                     and not _uom_compatible(unit, line_uom)
                                 ):
                                     if sealant_requires_volume and not _is_volume_uom(line_uom):
@@ -2205,6 +2273,7 @@ def search_materials_across_catalogs(
                         if (
                             str(material.get("costing_mode", "")).lower() != "volume_from_area"
                             and not _can_convert_weatherstrip_each_to_lf(material, unit, line_uom)
+                            and not _can_convert_window_each_to_sf(material, unit, line_uom)
                             and not _uom_compatible(unit, line_uom)
                         ):
                             search_log.append({
@@ -2366,6 +2435,7 @@ def search_materials_across_catalogs(
                                         unit_cost > 0
                                         and str(material.get("costing_mode", "")).lower() != "volume_from_area"
                                         and not _can_convert_weatherstrip_each_to_lf(material, unit, line_uom)
+                                        and not _can_convert_window_each_to_sf(material, unit, line_uom)
                                         and not _uom_compatible(unit, line_uom)
                                     ):
                                         search_log.append({
@@ -2460,9 +2530,11 @@ def search_materials_across_catalogs(
                 else float(material.get("quantity", 0.0) or 0.0)
             )
             _bare_unit = (float(best_total_material_cost or 0.0) / _eff_qty) if _eff_qty > 0.0 else 0.0
-            _raw_comp = _extract_bare_components(best_match)
-            _raw_unit_cost = float(_raw_comp.get("material", 0.0) or 0.0) + float(_raw_comp.get("labor", 0.0) or 0.0) + float(_raw_comp.get("equipment", 0.0) or 0.0)
+            _raw_unit_cost = float(((best_match.get("localizedCosts") or {}).get("totalOpCost") or 0.0))
             _raw_uom = _normalize_uom(best_match.get("unitOfMeasure", ""))
+            if _raw_unit_cost <= 0.0:
+                _raw_comp = _extract_bare_components(best_match)
+                _raw_unit_cost = float(_raw_comp.get("material", 0.0) or 0.0) + float(_raw_comp.get("labor", 0.0) or 0.0) + float(_raw_comp.get("equipment", 0.0) or 0.0)
             if _raw_unit_cost <= 0.0:
                 _raw_unit_cost = float(best_unit_cost or 0.0)
             if not _raw_uom:
@@ -2545,10 +2617,11 @@ def run_rsmeans_cost_lookup(
 
     try:
         load_dotenv()
+        offline_mode = is_offline_csv_mode_enabled()
         client_id = os.getenv("client_id")
         client_secret = os.getenv("client_secret")
 
-        if not client_id or not client_secret:
+        if (not offline_mode) and (not client_id or not client_secret):
             _append_rsmeans_summary_log({
                 "status": "auth_error",
                 "message": "RSMeans API credentials not found in environment",
@@ -2557,6 +2630,10 @@ def run_rsmeans_cost_lookup(
                 "status": "auth_error",
                 "message": "RSMeans API credentials not found in environment",
             }
+
+        if offline_mode and (not client_id or not client_secret):
+            client_id = client_id or "offline_csv"
+            client_secret = client_secret or "offline_csv"
 
         client = RSMeansAPIClient(client_id, client_secret, use_sandbox=use_sandbox)
         if not client.authenticate():
@@ -2621,12 +2698,16 @@ def run_rsmeans_cost_lookup(
             "status": "ok",
             "summary": summary,
             "results": results,
+            "source": "offline_csv" if offline_mode else "rsmeans_api",
+            "csv_path": offline_csv_path_for_logging() if offline_mode else "",
         })
 
         return {
             "status": "ok",
             "summary": summary,
             "results": results,
+            "source": "offline_csv" if offline_mode else "rsmeans_api",
+            "csv_path": offline_csv_path_for_logging() if offline_mode else "",
         }
     finally:
         _WRITE_API_LOGS = previous_write_api_logs
