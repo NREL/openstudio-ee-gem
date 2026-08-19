@@ -2365,7 +2365,7 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
         if normalized_window_option != "none":
             if normalized_window_option == "aluminum double glazing window":
                 urls["window"] = generate_url_byname(
-                    name_like='aluminum window systems'
+                    name_like= "fixed window", description_like="EFCO"
                 )
             elif normalized_window_option in {"wood double glazing window", "wood-aluminum glazing window", "wood-aluminum double glazing window"}:
                 urls["window"] = generate_url_byname(
@@ -2577,18 +2577,10 @@ class WindowEnhancement(openstudio.measure.ModelMeasure):
             if material_name == "glass":
                 whole_window_mode = str(subsurface_data.get("window", {}).get("renovation_option", "none")).strip().lower() != "none"
                 if whole_window_mode:
-                    if subsurface_data[material_name]["gwp_per_m2"] is None:
-                        embodied_carbon = 0.0
-                        _mark_carbon_data_unavailable(f"missing_gwp_{material_name}")
-                        runner.registerWarning(
-                            f"No gwp_per_m2 data found for {material_name} in {subsurface_name} (whole-window mode), assigning 0 embodied carbon."
-                        )
-                    else:
-                        window_area_m2 = subsurface_data["dimension"]["area_m2"]
-                        embodied_carbon = float(subsurface_data[material_name]["gwp_per_m2"] * window_area_m2 * multiplier)
-                        runner.registerInfo(
-                            f"    • Double glazing (whole-window mode): gwp_per_m2 * area = {embodied_carbon:.2f} kg CO2 eq"
-                        )
+                    embodied_carbon = 0.0
+                    runner.registerInfo(
+                        "    NOTE: Whole-window EPD includes glazing; standalone glass carbon is excluded."
+                    )
                 elif subsurface_data[material_name]["gwp_per_m3"] is None:
                     embodied_carbon = 0.0
                     _mark_carbon_data_unavailable(f"missing_gwp_{material_name}")

@@ -1208,6 +1208,7 @@ class IncreaseInsulationRValueForRoofs(openstudio.measure.ModelMeasure):
                 "insulation_material_type": insulation_material_type,
                 "added_total_area_m2": area_m2,
                 "added_thickness_m": add_t_m,
+                "original_insulation_r_value_si": item["original_r_value_si"],
                 "added_total_volume_m3": added_volume_m3,
                 "gwp_per_kg": sel_gwp_per_kg,
                 "gwp_per_m2": sel_gwp_per_m2,
@@ -1522,7 +1523,11 @@ class IncreaseInsulationRValueForRoofs(openstudio.measure.ModelMeasure):
                                     # Recalculate thicknesses for all modified constructions using new k value
                                     for row in gwp_summary_rows:
                                         r_value_si = self._unit_convert(r_value_ip, "ft^2*h*R/Btu", "m^2*K/W")
-                                        add_t_m = r_value_si * newly_extracted_k
+                                        delta_r_si = max(
+                                            r_value_si - row["original_insulation_r_value_si"],
+                                            0.0,
+                                        )
+                                        add_t_m = delta_r_si * newly_extracted_k
                                         row["added_thickness_m"] = add_t_m
                                         area_m2 = row["added_total_area_m2"]
                                         row["added_total_volume_m3"] = area_m2 * add_t_m

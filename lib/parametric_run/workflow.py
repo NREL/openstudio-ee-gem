@@ -2143,7 +2143,7 @@ def generate_parametric_recap(target_path, city_climate_zones=None):
 # (used by run_all_tests.py to drive multiple sequential runs without editing this file).
 # RUN_NAME is purely a folder label under simulations/ -- it has no effect on
 # the model itself. Defaults to "run_test_009" for this branch's ad-hoc standalone runs.
-RUN_NAME = os.environ.get("WORKFLOW_RUN_NAME", "roof_insulation_case_study")
+RUN_NAME = os.environ.get("WORKFLOW_RUN_NAME", "secondary_window_case_study")
 def detect_openstudio_cli_path():
     """Find the OpenStudio CLI executable on this machine.
 
@@ -2193,10 +2193,10 @@ city_climate_zones = {
     "TX_Houston":      "ASHRAE 169-2013-2A",
     "FL_Miami":        "ASHRAE 169-2013-1A",
     "MN_Minneapolis":  "ASHRAE 169-2013-6A",
-    # "AZ_Phoenix":      "ASHRAE 169-2013-2B",
-    # "NV_Las_Vegas":      "ASHRAE 169-2013-3B",
-    # "CA_San_Francisco": "ASHRAE 169-2013-3C",
-    # "WA_Seattle":      "ASHRAE 169-2013-4C",
+    "AZ_Phoenix":      "ASHRAE 169-2013-2B",
+    "NV_Las_Vegas":      "ASHRAE 169-2013-3B",
+    "CA_San_Francisco": "ASHRAE 169-2013-3C",
+    "WA_Seattle":      "ASHRAE 169-2013-4C",
 }
 
 # --- PARAMETRIC STUDY CONFIGURATION ---
@@ -2239,7 +2239,7 @@ TEMPLATE = "DOE Ref Pre-1980"
 ## When run_all_tests.py drives this script, WORKFLOW_CUSTOM_COMBOS_JSON
 # (set near the bottom of this section) replaces the file-based defaults.
 
-_CUSTOM_COMBOS_PATH = Path(__file__).with_name("roof_insulation_case_study.json")
+_CUSTOM_COMBOS_PATH = Path(__file__).with_name("secondary_window_case_study.json")
 with open(_CUSTOM_COMBOS_PATH, "r", encoding="utf-8") as _custom_combos_file:
     CUSTOM_COMBOS = json.load(_custom_combos_file)
 
@@ -3289,16 +3289,13 @@ def generate_html_report(df, html_report_path, run_name="run"):
             bullets.append(f"Window infiltration reduction: {infil_reduction:.1f}%")
         
         if u_factor_mod is not None and abs(u_factor_mod - baseline_u_factor_mod) > 0.01:
-            direction = "improvement" if u_factor_mod < 0 else "degradation"
-            bullets.append(f"U-factor modification: {u_factor_mod:+.1f}% ({direction})")
+            bullets.append(f"U-factor modification: {u_factor_mod:+.1f}%")
         
         if shgc_mod is not None and abs(shgc_mod - baseline_shgc_mod) > 0.01:
-            direction = "reduction" if shgc_mod < 0 else "increase"
-            bullets.append(f"SHGC modification: {shgc_mod:+.1f}% ({direction})")
+            bullets.append(f"SHGC modification: {shgc_mod:+.1f}%")
         
         if vt_mod is not None and abs(vt_mod - baseline_vt_mod) > 0.01:
-            direction = "reduction" if vt_mod < 0 else "increase"
-            bullets.append(f"Visible transmittance modification: {vt_mod:+.1f}% ({direction})")
+            bullets.append(f"Visible transmittance modification: {vt_mod:+.1f}%")
         
         return bullets
 
@@ -3940,18 +3937,26 @@ def generate_html_report(df, html_report_path, run_name="run"):
         wall_cost, _ = _pick_first_numeric(scenario_row, [
             "wall_insulation_total_cost_with_overhead_and_profit_usd",
             "wall_insulation_total_cost_with_overhead_and_profit_$",
+            "wall_total_cost_with_overhead_and_profit_usd",
+            "wall_total_cost_with_overhead_and_profit_$",
         ])
         roof_cost, _ = _pick_first_numeric(scenario_row, [
             "roof_insulation_total_cost_with_overhead_and_profit_usd",
             "roof_insulation_total_cost_with_overhead_and_profit_$",
+            "roof_total_cost_with_overhead_and_profit_usd",
+            "roof_total_cost_with_overhead_and_profit_$",
         ])
         window_cost, _ = _pick_first_numeric(scenario_row, [
             "window_enhancement_total_cost_with_overhead_and_profit_usd",
             "window_enhancement_total_cost_with_overhead_and_profit_$",
+            "window_total_cost_with_overhead_and_profit_usd",
+            "window_total_cost_with_overhead_and_profit_$",
         ])
         door_cost, _ = _pick_first_numeric(scenario_row, [
             "door_enhancement_total_cost_with_overhead_and_profit_usd",
             "door_enhancement_total_cost_with_overhead_and_profit_$",
+            "door_total_cost_with_overhead_and_profit_usd",
+            "door_total_cost_with_overhead_and_profit_$",
         ])
 
         wall_carbon, _ = _pick_first_numeric(scenario_row, ["wall_insulation_embodied_carbon_kgCO2eq"])
